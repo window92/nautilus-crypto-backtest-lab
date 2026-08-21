@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools==80.9.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nautilus-crypto-backtest-lab"
+version = "0.1.0"
+description = "Strict, reproducible crypto backtesting laboratory built on NautilusTrader"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "msgspec==0.21.1",
+  "nautilus_trader==1.231.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]

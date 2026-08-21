@@ -1,0 +1,23 @@
+{
+  "actual_class_path": "nautilus_trader.backtest.models.latency:LatencyModel",
+  "artifact_source_files": {
+    "engine.pyx": "eb404e3558cf00ab9a13e3a1c67b05aab1d1d02647ac67409faa8350d33a1fbb",
+    "latency.pyx": "ad4d16dde0e7cf72683e9bcafa102ba785b14ba768a6055aa97e8d39dfc98ff1",
+    "node.py": "1026c3efc631972c44f832e6021f7540a6971be201ca6257e896943b5788f856"
+  },
+  "base_latency_nanos": 60000000000,
+  "config_class_path": "nautilus_trader.backtest.config:LatencyModelConfig",
+  "configured_cancel_latency_nanos": 0,
+  "configured_insert_latency_nanos": 0,
+  "configured_update_latency_nanos": 0,
+  "effective_cancel_latency_nanos": 60000000000,
+  "effective_insert_latency_nanos": 60000000000,
+  "effective_update_latency_nanos": 60000000000,
+  "source_proofs": {
+    "constructor_adds_base_to_insert": true,
+    "inflight_submit_uses_effective_insert": true,
+    "none_fee_resolves_maker_taker": true
+  },
+  "status": "VERIFIED",
+  "venue_accepted": true
+}

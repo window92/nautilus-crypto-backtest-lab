@@ -1,0 +1,12 @@
+{
+  "user": "builder",
+  "repository": "/home/builder/projects/nautilus-crypto-backtest-lab",
+  "branch": "main",
+  "starting_head": "55338e31e99cfa30683858747faf16a4f5f46287",
+  "origin_main": "55338e31e99cfa30683858747faf16a4f5f46287",
+  "starting_git_status": "CLEAN",
+  "starting_ssot_sha256": "82103e96f5660632c81c02823fb763f80192f1d4a12515de0e53e3daefc1a684",
+  "agents_md_read_completely": true,
+  "ssot_md_read_completely": true,
+  "ssot_identity_verified": "PASS"
+}

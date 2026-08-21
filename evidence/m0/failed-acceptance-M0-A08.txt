@@ -1,0 +1,15 @@
+Command:
+TZ=UTC LC_ALL=C.UTF-8 PYTHONPATH=src .venv/bin/python scripts/run_m0_acceptance.py
+
+Result:
+FAILED (errors=1), 21 tests run.
+
+Retained error:
+tests.qualification.test_runtime_identity.RuntimeIdentityQualificationTests.test_current_process_matches_complete_runtime_lock
+crypto_lab.runtime.RuntimeLockMismatch: RUNTIME_LOCK_MISMATCH: installed distribution set differs from requirements.lock.txt
+
+Root cause and repair:
+The local project-wheel build created nautilus-crypto-backtest-lab distribution
+metadata on PYTHONPATH. The project is locked by project_git_commit, so only that
+project distribution is excluded from the external dependency set comparison.
+No third-party distribution is excluded.

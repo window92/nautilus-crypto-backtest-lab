@@ -1,0 +1,16 @@
+{
+  "verification_status": "PASS",
+  "verifier": "gh attestation verify 2.97.0",
+  "predicate_type": "https://slsa.dev/provenance/v1",
+  "repository": "nautechsystems/nautilus_trader",
+  "acquisition_source": "PyPI/files.pythonhosted.org",
+  "source_repository_digest": "27a8e54e7ac3c57d6cbf8891f0283dfbaee97317",
+  "build_signer_digest": "27a8e54e7ac3c57d6cbf8891f0283dfbaee97317",
+  "workflow": "https://github.com/nautechsystems/nautilus_trader/.github/workflows/build.yml@refs/heads/master",
+  "runner_environment": "github-hosted",
+  "artifact_filename": "nautilus_trader-1.231.0-cp312-cp312-manylinux_2_35_x86_64.whl",
+  "artifact_sha256": "8c438e95c275a13df0c0ddb7012c462708b5e99ff3612e36a1b7bd49ab39c216",
+  "verification_command": "gh attestation verify <wheel> --repo nautechsystems/nautilus_trader --source-digest 27a8e54e7ac3c57d6cbf8891f0283dfbaee97317 --format json",
+  "raw_bundle": "sha256:8c438e95c275a13df0c0ddb7012c462708b5e99ff3612e36a1b7bd49ab39c216.jsonl",
+  "raw_bundle_sha256": "a0d97c0d917954450cd41796bae6e9c90d022c08227dc18430e576f43cada031"
+}

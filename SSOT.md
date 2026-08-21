@@ -2,6 +2,8 @@
 
 Status: `OWNER_REVIEW_CANDIDATE`
 
+Adoption: `PENDING_OWNER_ADOPTION`
+
 This document defines one strict, offline crypto backtesting laboratory built on NautilusTrader. It is the complete engineering specification for V1.
 
 This document does not authorize implementation. Implementation starts only after the Owner adopts the exact document bytes and gives a separate implementation instruction.
@@ -273,14 +275,17 @@ python_version
 platform
 machine_architecture
 dependency_lock_sha256
-project_git_commit
 timezone
 locale
 ```
 
 `timezone` MUST be `UTC`.
 
-A missing or mismatched field makes an Official Run `BLOCKED` before data loading.
+Runtime Lock identity covers the locked execution runtime, platform, dependency set, timezone, and locale. It is not the project's Git Source Revision identity. `runtime.lock.json` MUST NOT contain `project_git_commit` or a project-source-tree digest invented by this project.
+
+Project source identity is recorded separately as immutable Source Revision evidence for each Run. That evidence contains `repository`, `branch_ref`, the full `git_commit` returned by `git rev-parse HEAD`, the full `git_tree` returned by `git rev-parse HEAD^{tree}`, `clean_worktree`, and `captured_at_utc`. The capture timestamp is evidence metadata; Git commit and tree object IDs are the source identities. Section 10.5 defines the persisted Run evidence shape.
+
+A missing or mismatched Runtime Lock field makes an Official Run `BLOCKED` before data loading. Missing, dirty, changed-after-freeze, or otherwise invalid Source Revision evidence also blocks an Official Run before data loading, but it does not change Runtime Lock identity.
 
 ### 3.2 Explicit Nautilus configuration
 
@@ -934,18 +939,19 @@ Changing a material field creates a new Run identity.
 
 Before creating the Nautilus backtest node or engine, preflight MUST verify:
 
-1.  Runtime Lock matches the current process.
-2.  Dataset Release resolves and passes completeness checks.
-3.  Market Profile and Instrument agree.
-4.  StrategySpec agrees with the Instrument and Market Profile.
-5.  Initial Capital is finite, positive, and in the required currency.
-6.  `warmup_start <= scoring_start < scoring_end_exclusive`; equality between `warmup_start` and `scoring_start` means the Run has zero warmup duration.
-7.  The full `[warmup_start, scoring_end_exclusive)` interval required by the Run is inside the Dataset Release and satisfies the applicable completeness contract.
-8.  Required fee, mark, and funding inputs exist.
-9.  All material Nautilus settings are explicit, including the resolved latency-model class and effective insert latency.
-10. The configuration contains no excluded order type or profile.
-11. The Official Run network policy is enforceable.
-12. The configuration hash is frozen.
+1.  Runtime Lock matches the current execution process and locked dependencies. Runtime Lock matching does not compare a field inside `runtime.lock.json` with Git `HEAD`.
+2.  An Official Run has a clean Git worktree, then captures and freezes the Source Revision fields from Section 10.5, including `HEAD` and `HEAD^{tree}`. If either identity changes after freeze, preflight blocks the Run.
+3.  Dataset Release resolves and passes completeness checks.
+4.  Market Profile and Instrument agree.
+5.  StrategySpec agrees with the Instrument and Market Profile.
+6.  Initial Capital is finite, positive, and in the required currency.
+7.  `warmup_start <= scoring_start < scoring_end_exclusive`; equality between `warmup_start` and `scoring_start` means the Run has zero warmup duration.
+8.  The full `[warmup_start, scoring_end_exclusive)` interval required by the Run is inside the Dataset Release and satisfies the applicable completeness contract.
+9.  Required fee, mark, and funding inputs exist.
+10. All material Nautilus settings are explicit, including the resolved latency-model class and effective insert latency.
+11. The configuration contains no excluded order type or profile.
+12. The Official Run network policy is enforceable.
+13. The configuration hash is frozen.
 
 A failed preflight produces no Official backtest result.
 
@@ -1032,6 +1038,7 @@ The checker reads persisted evidence after the Nautilus run. It MUST NOT mutate 
 The checker MUST verify at least:
 
 - Runtime Lock matches the Run evidence;
+- the frozen Source Revision is present, reports a clean preflight worktree, and matches the Run evidence inventory;
 - config hash matches the exact config bytes;
 - Dataset Release hashes resolve;
 - no required data gap was ignored;
@@ -1067,7 +1074,7 @@ An Official Result requires `CHECK_PASS`.
 
 ### 8.6 Deterministic replay
 
-For the same Runtime Lock, code commit, Dataset Release, StrategySpec, and LabRunConfig, two clean runs MUST match on the semantic sequence of:
+For the same Runtime Lock, frozen Source Revision, Dataset Release, StrategySpec, and LabRunConfig, two clean runs MUST match on the semantic sequence of:
 
 ``` text
 orders
@@ -1396,6 +1403,7 @@ A report MUST NOT replace an undefined, missing, or invalid metric with `0`, `Na
 `MechanicalIntegrity=PASS` requires all of these:
 
 - Runtime Lock match;
+- frozen Source Revision evidence from a clean preflight worktree;
 - Dataset Release completeness for the Run;
 - causal data visibility;
 - causal execution timing;
@@ -1469,6 +1477,7 @@ runs/<run_id>/
   lab_run_config.json
   lab_run_config.sha256
   runtime.lock.json
+  source_revision.json
   dataset_release.json
   strategy_spec.json
   orders.csv
@@ -1479,8 +1488,20 @@ runs/<run_id>/
   nautilus_result.json
   checker.json
   status.json
-  code_git_sha.txt
 ```
+
+`source_revision.json` MUST contain exactly the required Source Revision evidence fields:
+
+``` text
+repository
+branch_ref
+git_commit
+git_tree
+clean_worktree
+captured_at_utc
+```
+
+`git_commit` and `git_tree` are the full Git object IDs captured from `git rev-parse HEAD` and `git rev-parse HEAD^{tree}`. `clean_worktree` MUST be `true` at the Official Run preflight boundary. The exact `source_revision.json` bytes MUST be frozen with and bound to the Run evidence inventory. If the captured Git commit or tree changes after freeze, the Run is `BLOCKED`; do not update the frozen evidence in place. The final Run report MUST identify the frozen repository, branch/ref, Git commit, and Git tree. Do not substitute a custom project source-tree SHA-256.
 
 If the pinned Nautilus runtime exposes a more faithful native event export than one of the CSV files, preserve that native export too. Do not remove the required human-readable projection.
 
@@ -1682,11 +1703,14 @@ Verify:
 - unknown or missing material config fields fail;
 - `price_protection_points=0`, the single Maker/Taker fee path, and the profile-specific `PortfolioConfig.use_mark_prices` value are explicit in resolved configuration;
 - the exact v1.231.0 latency-model import path/class is resolved from the pinned wheel, and its effective insert latency is exactly `60_000_000_000` ns;
-- Runtime Lock mismatch blocks before data loading.
+- Runtime Lock mismatch blocks before data loading;
+- the separate Source Revision evidence contract exists for later Run execution and contains `repository`, `branch_ref`, `git_commit`, `git_tree`, `clean_worktree`, and `captured_at_utc` without putting project Git identity in Runtime Lock.
 
 Do not acquire market data or run a research strategy in M0.
 
-M0 exports stable `LabRunConfig`, Runtime Lock, status enums, and hashing rules to all later phases.
+M0 MUST NOT implement the M1 runner or execute an Official Run. It publishes only the Source Revision contract shape required by the later Run evidence path.
+
+M0 exports stable `LabRunConfig`, Runtime Lock, Source Revision, status enums, and hashing rules to all later phases.
 
 ### M1 — Causal Nautilus harness
 
@@ -1831,7 +1855,7 @@ Freeze these interfaces at the end of the named phase:
 
 | Producer | Interface                                                            | First consumers |
 |----------|----------------------------------------------------------------------|-----------------|
-| M0       | `RuntimeLock`, `LabRunConfig`, status enums                          | M1-M4           |
+| M0       | `RuntimeLock`, `SourceRevision`, `LabRunConfig`, status enums        | M1-M4           |
 | M1       | `run_lab`, `RunResult`, Run evidence shape                           | M2-M4           |
 | M2       | `DatasetRelease`                                                     | M3-M4           |
 | M3       | qualified profile IDs and evidence                                   | M4              |
@@ -1845,7 +1869,7 @@ Before a phase is accepted, run at least one small fixture that exercises the in
 
 Required checks:
 
-- M0 creates a config that M1 can parse without defaults.
+- M0 creates a config and separate Source Revision evidence shape that M1 can parse without defaults.
 - M1 emits a `RunResult` and evidence bundle that M4 can read without a real strategy edge.
 - M2 emits a tiny Dataset Release that M3 can run without conversion changes.
 - M3 emits one completed Spot and one completed Perpetual fixture that M4 can journal and report.
@@ -2042,6 +2066,8 @@ A phase is done only when:
 An Official Run is valid only when:
 
 - the runtime matches `runtime.lock.json`;
+- a frozen Source Revision is present in Run evidence and binds the Run to its repository, branch/ref, Git commit, and Git tree;
+- the Git worktree was clean at the Source Revision preflight boundary;
 - the Dataset Release is immutable and complete for the Run;
 - the Run Configuration is frozen and hashed;
 - the strategy uses only causal inputs;
@@ -2313,6 +2339,8 @@ The implementation MUST use the pinned Nautilus source commit and package artifa
 
 Current official source anchors used to write this SSOT:
 
+- Git's official data-model, `git commit-tree`, and `git rev-parse` documentation for commit and tree object identity.
+- SLSA v1.2 source requirements and provenance specification for separating source revision/provenance from runtime and build inputs.
 - NautilusTrader package `1.231.0`.
 - Source commit `27a8e54e7ac3c57d6cbf8891f0283dfbaee97317`.
 - PyPI CPython 3.12 Linux x86-64 wheel SHA-256 `8c438e95c275a13df0c0ddb7012c462708b5e99ff3612e36a1b7bd49ab39c216`.

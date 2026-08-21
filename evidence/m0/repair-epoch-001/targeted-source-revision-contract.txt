@@ -1,0 +1,10 @@
+test_source_revision_rejects_invalid_git_object_id (tests.unit.test_source_revision.SourceRevisionContractTests.test_source_revision_rejects_invalid_git_object_id) ... ok
+test_source_revision_rejects_missing_field (tests.unit.test_source_revision.SourceRevisionContractTests.test_source_revision_rejects_missing_field) ... ok
+test_source_revision_rejects_non_utc_capture_time (tests.unit.test_source_revision.SourceRevisionContractTests.test_source_revision_rejects_non_utc_capture_time) ... ok
+test_source_revision_rejects_unknown_field (tests.unit.test_source_revision.SourceRevisionContractTests.test_source_revision_rejects_unknown_field) ... ok
+test_source_revision_round_trip_has_exact_separate_fields (tests.unit.test_source_revision.SourceRevisionContractTests.test_source_revision_round_trip_has_exact_separate_fields) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.001s
+
+OK

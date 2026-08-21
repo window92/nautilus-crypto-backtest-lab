@@ -1,0 +1,176 @@
+{
+  "repair_epoch": "M0_REPAIR_EPOCH_001",
+  "status": "PASS_PENDING_OWNER_REVIEW",
+  "captured_at_utc": "2026-08-21T20:39:33Z",
+  "ssot_adoption_status": "PENDING_OWNER_ADOPTION",
+  "defect": {
+    "identity": "RUNTIME_LOCK_PROJECT_GIT_COMMIT_SELF_REFERENCE",
+    "root_component": "M0 RuntimeLock contract",
+    "resolution": "Separate execution Runtime Lock identity from immutable Run Source Revision evidence"
+  },
+  "ssot": {
+    "old_sha256": "82103e96f5660632c81c02823fb763f80192f1d4a12515de0e53e3daefc1a684",
+    "new_sha256": "a2171d55ca1f01ad69d586e216c55b1227801851c21761c4cc299b7c99c30e6f",
+    "sections_changed": [
+      "document adoption status",
+      "3.1 Runtime Lock",
+      "7.3 Preflight",
+      "8.4 Invariant checker",
+      "8.6 Deterministic replay",
+      "10.2 Mechanical Integrity",
+      "10.5 Run evidence directory",
+      "12 M0 Contract and runtime foundation",
+      "13.1 Freeze the interfaces early",
+      "13.2 Downstream contract tests",
+      "16.2 An Official Run is valid when",
+      "Appendix C Source anchors"
+    ]
+  },
+  "runtime_lock_before": {
+    "schema_version": 1,
+    "sha256": "87af6efe825f70664ccd519fd6bc28ad0f5f8091d5aa51819930c216ccaefe79",
+    "evidence": "evidence/m0/repair-epoch-001/runtime-lock-before.json",
+    "fields": [
+      "schema_version",
+      "nautilus_version",
+      "nautilus_source_repository",
+      "nautilus_source_commit",
+      "nautilus_wheel_filename",
+      "nautilus_wheel_sha256",
+      "nautilus_wheel_size_bytes",
+      "nautilus_provenance_status",
+      "python_implementation",
+      "python_version",
+      "python_abi",
+      "platform",
+      "machine_architecture",
+      "glibc_version",
+      "dependency_lock_filename",
+      "dependency_lock_sha256",
+      "dependencies",
+      "pip_version",
+      "project_git_commit",
+      "project_worktree_policy",
+      "timezone",
+      "locale"
+    ]
+  },
+  "runtime_lock_after": {
+    "schema_version": 2,
+    "sha256": "b4f8d9904fdba4984f60874e846053bf8f3ab5d597ee935e418f5b15972f67ea",
+    "evidence": "runtime.lock.json",
+    "fields": [
+      "schema_version",
+      "nautilus_version",
+      "nautilus_source_repository",
+      "nautilus_source_commit",
+      "nautilus_wheel_filename",
+      "nautilus_wheel_sha256",
+      "nautilus_wheel_size_bytes",
+      "nautilus_provenance_status",
+      "python_implementation",
+      "python_version",
+      "python_abi",
+      "platform",
+      "machine_architecture",
+      "glibc_version",
+      "dependency_lock_filename",
+      "dependency_lock_sha256",
+      "dependencies",
+      "pip_version",
+      "timezone",
+      "locale"
+    ],
+    "project_git_commit_removed": true,
+    "project_worktree_policy_removed": true,
+    "custom_project_source_tree_sha256_added": false
+  },
+  "source_revision_before": {
+    "contract": "ABSENT",
+    "git_identity_location": "runtime.lock.json project_git_commit"
+  },
+  "source_revision_after": {
+    "contract": "crypto_lab.config.SourceRevision",
+    "location": "separate immutable Run evidence shape",
+    "fixture": "tests/golden/fixtures/source-revision.json",
+    "qualification_evidence": "evidence/m0/repair-epoch-001/source-revision-contract.json",
+    "fields": [
+      "repository",
+      "branch_ref",
+      "git_commit",
+      "git_tree",
+      "clean_worktree",
+      "captured_at_utc"
+    ],
+    "full_run_capture_implemented": false,
+    "m1_runner_required_for_future_capture": true
+  },
+  "affected_interfaces": [
+    "RuntimeLock schema_version 1 to 2; removed project_git_commit and project_worktree_policy",
+    "verify_runtime_lock now verifies execution runtime and dependencies only",
+    "run_after_runtime_preflight no longer accepts or compares project_root Git identity",
+    "qualify_runtime_identity no longer emits Git revision or worktree fields",
+    "SourceRevision strict M0 contract added and exported",
+    "M0 downstream fixture parses LabRunConfig and separate SourceRevision without defaults"
+  ],
+  "verification": {
+    "targeted_runtime_lock_schema": {
+      "status": "PASS",
+      "tests_run": 5,
+      "evidence": "evidence/m0/repair-epoch-001/targeted-runtime-lock-schema.txt"
+    },
+    "targeted_source_revision_contract": {
+      "status": "PASS",
+      "tests_run": 5,
+      "evidence": "evidence/m0/repair-epoch-001/targeted-source-revision-contract.txt"
+    },
+    "targeted_runtime_mismatch_g20": {
+      "status": "PASS",
+      "tests_run": 2,
+      "evidence": "evidence/m0/repair-epoch-001/targeted-g20-runtime-mismatch.txt"
+    },
+    "targeted_downstream_contract": {
+      "status": "PASS",
+      "tests_run": 2,
+      "evidence": "evidence/m0/repair-epoch-001/targeted-downstream-contract.txt"
+    },
+    "complete_m0_suite": {
+      "status": "PASS",
+      "tests_run": 31,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "result_evidence": "evidence/m0/repair-epoch-001/test-results.json",
+      "output_evidence": "evidence/m0/repair-epoch-001/test-output.txt"
+    },
+    "runtime_identity": {
+      "status": "VERIFIED",
+      "nautilus_version": "1.231.0",
+      "wheel_sha256": "8c438e95c275a13df0c0ddb7012c462708b5e99ff3612e36a1b7bd49ab39c216",
+      "evidence": "evidence/m0/repair-epoch-001/runtime-qualification.json"
+    },
+    "latency_contract": {
+      "status": "VERIFIED_UNCHANGED",
+      "effective_insert_latency_nanos": 60000000000,
+      "evidence": "evidence/m0/repair-epoch-001/latency-qualification.json"
+    },
+    "material_execution_semantics": {
+      "status": "UNCHANGED",
+      "evidence": "evidence/m0/repair-epoch-001/semantic-continuity.json"
+    },
+    "historical_evidence": {
+      "status": "PRESERVED_BYTE_FOR_BYTE",
+      "manifest": "evidence/m0/repair-epoch-001/historical-evidence-before.sha256"
+    }
+  },
+  "scope": {
+    "market_data_acquired": false,
+    "strategy_executed": false,
+    "official_run_executed": false,
+    "m1_started": false,
+    "m2_m3_m4_functionality_added": false,
+    "network_used": false,
+    "dependencies_installed": false
+  },
+  "repair_attempt_history": "evidence/m0/repair-epoch-001/repair-attempts.jsonl"
+}

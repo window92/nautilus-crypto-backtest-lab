@@ -1,0 +1,13 @@
+{
+  "status": "PASS",
+  "latency_evidence_byte_identical": true,
+  "downstream_material_execution_fields_identical": true,
+  "comparison_excluded_expected_identity_fields": [
+    "config_sha256",
+    "runtime_lock_sha256"
+  ],
+  "old_config_sha256": "3435abb610831cde1006adae56fc40c8bb2f821d84a08556674d879dac66240e",
+  "new_config_sha256": "0ee339062718b1dd5b382e3321457c1cab603d952c4b2b8f826998880ce97bda",
+  "old_runtime_lock_sha256": "87af6efe825f70664ccd519fd6bc28ad0f5f8091d5aa51819930c216ccaefe79",
+  "new_runtime_lock_sha256": "b4f8d9904fdba4984f60874e846053bf8f3ab5d597ee935e418f5b15972f67ea"
+}

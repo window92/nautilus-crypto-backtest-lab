@@ -1,0 +1,10 @@
+test_runtime_lock_rejects_missing_field (tests.unit.test_runtime_lock.RuntimeLockSchemaTests.test_runtime_lock_rejects_missing_field) ... ok
+test_runtime_lock_rejects_obsolete_schema_version (tests.unit.test_runtime_lock.RuntimeLockSchemaTests.test_runtime_lock_rejects_obsolete_schema_version) ... ok
+test_runtime_lock_rejects_project_git_identity_as_unknown (tests.unit.test_runtime_lock.RuntimeLockSchemaTests.test_runtime_lock_rejects_project_git_identity_as_unknown) ... ok
+test_runtime_lock_rejects_unknown_field (tests.unit.test_runtime_lock.RuntimeLockSchemaTests.test_runtime_lock_rejects_unknown_field) ... ok
+test_runtime_lock_v2_excludes_project_source_identity (tests.unit.test_runtime_lock.RuntimeLockSchemaTests.test_runtime_lock_v2_excludes_project_source_identity) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.001s
+
+OK

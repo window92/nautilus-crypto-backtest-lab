@@ -1,0 +1,98 @@
+{
+  "command": "TZ=UTC LC_ALL=C.UTF-8 PYTHONPATH=src .venv/bin/python scripts/run_m0_acceptance.py",
+  "errors": 0,
+  "failures": 0,
+  "skipped": 0,
+  "status": "PASS",
+  "tests": [
+    {
+      "status": "PASS",
+      "test_id": "tests.golden.test_g18_config_hash.G18ConfigHashTests.test_material_change_changes_config_sha256"
+    },
+    {
+      "status": "PASS",
+      "test_id": "tests.golden.test_g18_config_hash.G18ConfigHashTests.test_occurrence_id_and_physical_catalog_path_are_not_material"
+    },
+    {
+      "status": "PASS",
+      "test_id": "tests.golden.test_g20_runtime_lock_mismatch.G20RuntimeLockMismatchTests.test_dependency_lock_mismatch_blocks_before_data_loading"
+    },
+    {
+      "status": "PASS",
+      "test_id": "tests.golden.test_g20_runtime_lock_mismatch.G20RuntimeLockMismatchTests.test_wheel_mismatch_blocks_before_data_loading"
+    },
+    {
+      "status": "PASS",
+      "test_id": "tests.integration.test_m0_downstream_contract.M0DownstreamContractTests.test_m1_can_parse_and_bind_m0_config_without_defaults"
+    },
+    {
+      "status": "PASS",
+      "test_id": "tests.qualification.test_latency_contract.LatencyContractQualificationTests.test_pinned_backtest_venue_accepts_exact_constant_latency_contract"
+    },
+    {
+      "status": "PASS",
+      "test_id": "tests.qualification.test_runtime_identity.RuntimeIdentityQualificationTests.test_current_process_matches_complete_runtime_lock"
+    },
+    {
+      "status": "PASS",
+      "test_id": "tests.unit.test_config.LabRunConfigTests.test_duplicate_field_fails"
+    },
+    {
+      "status": "PASS",
+      "test_id": "tests.unit.test_config.LabRunConfigTests.test_frozen_config_rejects_nested_material_mutation"
+    },
+    {
+      "status": "PASS",
+      "test_id": "tests.unit.test_config.LabRunConfigTests.test_missing_material_field_fails"
+    },
+    {
+      "status": "PASS",
+      "test_id": "tests.unit.test_config.LabRunConfigTests.test_perpetual_profile_requires_mark_prices_funding_and_mark_bindings"
+    },
+    {
+      "status": "PASS",
+      "test_id": "tests.unit.test_config.LabRunConfigTests.test_required_material_runtime_settings_are_explicit"
+    },
+    {
+      "status": "PASS",
+      "test_id": "tests.unit.test_config.LabRunConfigTests.test_round_trip_preserves_decimal_strings_and_utc_timestamps"
+    },
+    {
+      "status": "PASS",
+      "test_id": "tests.unit.test_config.LabRunConfigTests.test_unknown_or_missing_nested_material_field_fails"
+    },
+    {
+      "status": "PASS",
+      "test_id": "tests.unit.test_config.LabRunConfigTests.test_unknown_top_level_field_fails"
+    },
+    {
+      "status": "PASS",
+      "test_id": "tests.unit.test_hashing.CanonicalJSONTests.test_decimal_timestamp_and_key_order_match_independent_golden"
+    },
+    {
+      "status": "PASS",
+      "test_id": "tests.unit.test_hashing.CanonicalJSONTests.test_nan_and_infinity_are_rejected"
+    },
+    {
+      "status": "PASS",
+      "test_id": "tests.unit.test_hashing.CanonicalJSONTests.test_non_utc_or_naive_datetime_is_rejected"
+    },
+    {
+      "status": "PASS",
+      "test_id": "tests.unit.test_runtime_lock.RuntimeLockSchemaTests.test_runtime_lock_rejects_missing_field"
+    },
+    {
+      "status": "PASS",
+      "test_id": "tests.unit.test_runtime_lock.RuntimeLockSchemaTests.test_runtime_lock_rejects_unknown_field"
+    },
+    {
+      "status": "PASS",
+      "test_id": "tests.unit.test_status.StatusContractTests.test_m0_failure_codes_are_stable"
+    },
+    {
+      "status": "PASS",
+      "test_id": "tests.unit.test_status.StatusContractTests.test_run_terminal_states_match_ssot"
+    }
+  ],
+  "tests_run": 22
+}

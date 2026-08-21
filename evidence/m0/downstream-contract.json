@@ -1,0 +1,14 @@
+{
+  "config_sha256": "3435abb610831cde1006adae56fc40c8bb2f821d84a08556674d879dac66240e",
+  "configured_fee_model": null,
+  "effective_fee_model": "nautilus_trader.backtest.models.fee:MakerTakerFeeModel",
+  "fixture": "tests/golden/fixtures/spot-lab-run-config.json",
+  "market_profile": "BINANCE_SPOT_CASH_LONG_ONLY",
+  "no_market_data_loaded": true,
+  "no_strategy_executed": true,
+  "parsed_without_defaults": true,
+  "portfolio_use_mark_prices": false,
+  "price_protection_points": 0,
+  "runtime_lock_sha256": "87af6efe825f70664ccd519fd6bc28ad0f5f8091d5aa51819930c216ccaefe79",
+  "status": "PASS"
+}

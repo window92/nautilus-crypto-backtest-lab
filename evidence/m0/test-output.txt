@@ -1,0 +1,27 @@
+test_material_change_changes_config_sha256 (tests.golden.test_g18_config_hash.G18ConfigHashTests.test_material_change_changes_config_sha256) ... ok
+test_occurrence_id_and_physical_catalog_path_are_not_material (tests.golden.test_g18_config_hash.G18ConfigHashTests.test_occurrence_id_and_physical_catalog_path_are_not_material) ... ok
+test_dependency_lock_mismatch_blocks_before_data_loading (tests.golden.test_g20_runtime_lock_mismatch.G20RuntimeLockMismatchTests.test_dependency_lock_mismatch_blocks_before_data_loading) ... ok
+test_wheel_mismatch_blocks_before_data_loading (tests.golden.test_g20_runtime_lock_mismatch.G20RuntimeLockMismatchTests.test_wheel_mismatch_blocks_before_data_loading) ... ok
+test_m1_can_parse_and_bind_m0_config_without_defaults (tests.integration.test_m0_downstream_contract.M0DownstreamContractTests.test_m1_can_parse_and_bind_m0_config_without_defaults) ... ok
+test_pinned_backtest_venue_accepts_exact_constant_latency_contract (tests.qualification.test_latency_contract.LatencyContractQualificationTests.test_pinned_backtest_venue_accepts_exact_constant_latency_contract) ... ok
+test_current_process_matches_complete_runtime_lock (tests.qualification.test_runtime_identity.RuntimeIdentityQualificationTests.test_current_process_matches_complete_runtime_lock) ... ok
+test_duplicate_field_fails (tests.unit.test_config.LabRunConfigTests.test_duplicate_field_fails) ... ok
+test_frozen_config_rejects_nested_material_mutation (tests.unit.test_config.LabRunConfigTests.test_frozen_config_rejects_nested_material_mutation) ... ok
+test_missing_material_field_fails (tests.unit.test_config.LabRunConfigTests.test_missing_material_field_fails) ... ok
+test_perpetual_profile_requires_mark_prices_funding_and_mark_bindings (tests.unit.test_config.LabRunConfigTests.test_perpetual_profile_requires_mark_prices_funding_and_mark_bindings) ... ok
+test_required_material_runtime_settings_are_explicit (tests.unit.test_config.LabRunConfigTests.test_required_material_runtime_settings_are_explicit) ... ok
+test_round_trip_preserves_decimal_strings_and_utc_timestamps (tests.unit.test_config.LabRunConfigTests.test_round_trip_preserves_decimal_strings_and_utc_timestamps) ... ok
+test_unknown_or_missing_nested_material_field_fails (tests.unit.test_config.LabRunConfigTests.test_unknown_or_missing_nested_material_field_fails) ... ok
+test_unknown_top_level_field_fails (tests.unit.test_config.LabRunConfigTests.test_unknown_top_level_field_fails) ... ok
+test_decimal_timestamp_and_key_order_match_independent_golden (tests.unit.test_hashing.CanonicalJSONTests.test_decimal_timestamp_and_key_order_match_independent_golden) ... ok
+test_nan_and_infinity_are_rejected (tests.unit.test_hashing.CanonicalJSONTests.test_nan_and_infinity_are_rejected) ... ok
+test_non_utc_or_naive_datetime_is_rejected (tests.unit.test_hashing.CanonicalJSONTests.test_non_utc_or_naive_datetime_is_rejected) ... ok
+test_runtime_lock_rejects_missing_field (tests.unit.test_runtime_lock.RuntimeLockSchemaTests.test_runtime_lock_rejects_missing_field) ... ok
+test_runtime_lock_rejects_unknown_field (tests.unit.test_runtime_lock.RuntimeLockSchemaTests.test_runtime_lock_rejects_unknown_field) ... ok
+test_m0_failure_codes_are_stable (tests.unit.test_status.StatusContractTests.test_m0_failure_codes_are_stable) ... ok
+test_run_terminal_states_match_ssot (tests.unit.test_status.StatusContractTests.test_run_terminal_states_match_ssot) ... ok
+
+----------------------------------------------------------------------
+Ran 22 tests in 1.021s
+
+OK

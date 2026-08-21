@@ -1,0 +1,2 @@
+"""SSOT-derived golden tests."""
+

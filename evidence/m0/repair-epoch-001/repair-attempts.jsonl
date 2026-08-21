@@ -1,0 +1,1 @@
+{"attempt_id":"M0-REPAIR-A01","action":"apply combined fixture and test patch","state":"FAILED_THEN_RESOLVED","failure":"apply_patch context did not match the existing tests/golden/fixtures/README.md text; the patch was rejected atomically","resolution":"split the change into smaller patches using the exact existing context; no partial files from the rejected patch existed"}
