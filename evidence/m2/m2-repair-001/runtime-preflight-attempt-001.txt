@@ -1,0 +1,7 @@
+INITIAL COMMAND: PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src .venv/bin/python [verify_runtime_lock]
+INITIAL EXIT_CODE: 1
+INITIAL RESULT: RUNTIME_LOCK_MISMATCH: current timezone=None, lock='UTC'
+ROOT_CAUSE: The diagnostic invocation omitted the locked TZ=UTC process environment. Product code and Runtime Lock were unchanged.
+CORRECTED COMMAND: TZ=UTC LC_ALL=C.UTF-8 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src .venv/bin/python [verify_runtime_lock]
+CORRECTED EXIT_CODE: 0
+CORRECTED RESULT: Runtime identity matched nautilus_trader 2.0.0rc2, CPython 3.12.3, x86_64, glibc 2.39, wheel SHA-256 716169aca15bfb615a27610a9230e670dec5be3d4606fea591fe64eca145a5ac, and dependency lock SHA-256 b2765c9e33b10566fc327b48920fd1d3a73618c19622baaceab1fe9dca61df47.

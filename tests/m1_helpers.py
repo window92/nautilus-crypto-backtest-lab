@@ -28,6 +28,9 @@ from crypto_lab.config import LabRunConfig
 from crypto_lab.config import MarketProfile
 from crypto_lab.config import SourceRevision
 from crypto_lab.hashing import canonical_sha256
+from crypto_lab.data import SyntheticDataDescriptor
+from crypto_lab.data import SyntheticFundingExpectation
+from crypto_lab.data import SyntheticQualificationDatasetRelease
 from crypto_lab.runner import LabRunRequest
 from crypto_lab.runner import QualificationControl
 from crypto_lab.strategies import OrderIntent
@@ -228,45 +231,50 @@ def make_request(
     instrument = make_instrument(profile, maker_fee=fee, taker_fee=fee)
     instrument_id = str(instrument.id)
     spec = make_strategy_spec(profile, instrument_id)
-    data_material = [
-        {
-            "type": type(item).__name__,
-            "instrument_id": str(item.instrument_id if not isinstance(item, Bar) else item.bar_type.instrument_id),
-            "ts_event": int(item.ts_event),
-            "ts_init": int(item.ts_init),
-            "value": str(item),
-        }
+    data_material = tuple(
+        SyntheticDataDescriptor(
+            type=type(item).__name__,
+            instrument_id=str(item.instrument_id if not isinstance(item, Bar) else item.bar_type.instrument_id),
+            ts_event=int(item.ts_event),
+            ts_init=int(item.ts_init),
+            value=str(item),
+        )
         for item in data
-    ]
-    release_material = {
-        "qualification_scope": "M1_SYNTHETIC",
-        "market_profile": profile.value,
-        "instrument_id": instrument_id,
-        "data": data_material,
-        "mark_role": (
+    )
+    release = SyntheticQualificationDatasetRelease.create(
+        qualification_scope="M1_SYNTHETIC_QUALIFICATION_ONLY",
+        market_profile=profile,
+        instrument_id=instrument_id,
+        data=data_material,
+        mark_role=(
             "NOT_APPLICABLE"
             if profile is MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY
             else "markPriceKlines"
         ),
-        "mark_complete": (
+        mark_complete=(
             "NOT_APPLICABLE"
             if profile is MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY
             else mark_complete
         ),
-        "funding_role": (
+        funding_role=(
             "NOT_APPLICABLE"
             if profile is MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY
             else "fundingRate"
         ),
-        "funding_complete": (
+        funding_complete=(
             "NOT_APPLICABLE"
             if profile is MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY
             else True
         ),
-        "expected_funding_settlements": list(expected_funding_settlements),
-    }
-    release_id = canonical_sha256(release_material)
-    release = {"dataset_release_id": release_id, **release_material}
+        expected_funding_settlements=tuple(
+            SyntheticFundingExpectation(
+                boundary_ns=int(item["boundary_ns"]),
+                pnl_change=str(item["pnl_change"]),
+            )
+            for item in expected_funding_settlements
+        ),
+    )
+    release_id = release.dataset_release_id
 
     raw = copy.deepcopy(load_spot_config_dict())
     raw["run_id"] = run_id

@@ -149,6 +149,9 @@ class GuardedCausalStrategy(Strategy):
         self._scoring_end_exclusive_ns = 0
         self._effective_insert_latency_ns = 0
         self._size_precision = 0
+        self._min_quantity: Decimal | None = None
+        self._max_quantity: Decimal | None = None
+        self._size_increment = Decimal(0)
         self._initial_capital_amount = Decimal(0)
         self._initial_capital_currency = ""
         self._live_client_order_id = None
@@ -174,6 +177,9 @@ class GuardedCausalStrategy(Strategy):
         scoring_end_exclusive_ns: int,
         effective_insert_latency_ns: int,
         size_precision: int,
+        min_quantity: Decimal | None,
+        max_quantity: Decimal | None,
+        size_increment: Decimal,
         initial_capital_amount: Decimal,
         initial_capital_currency: str,
     ) -> None:
@@ -187,6 +193,9 @@ class GuardedCausalStrategy(Strategy):
         self._scoring_end_exclusive_ns = scoring_end_exclusive_ns
         self._effective_insert_latency_ns = effective_insert_latency_ns
         self._size_precision = size_precision
+        self._min_quantity = min_quantity
+        self._max_quantity = max_quantity
+        self._size_increment = size_increment
         self._initial_capital_amount = initial_capital_amount
         self._initial_capital_currency = initial_capital_currency
         self._configured = True
@@ -328,6 +337,19 @@ class GuardedCausalStrategy(Strategy):
             return
         signed = self._signed_position()
         requested = Decimal(intent.quantity)
+        if (
+            self._size_increment <= 0
+            or requested % self._size_increment != 0
+            or (self._min_quantity is not None and requested < self._min_quantity)
+            or (self._max_quantity is not None and requested > self._max_quantity)
+        ):
+            self._record_guard_failure(
+                FailureCode.INSTRUMENT_METADATA_INVALID,
+                intent=intent,
+                timestamp_ns=now,
+                detail="MARKET quantity violates the native Instrument min/max/grid",
+            )
+            return
         if self._profile is MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY:
             if signed < 0 or (intent.side == "SELL" and requested > signed):
                 self._record_guard_failure(

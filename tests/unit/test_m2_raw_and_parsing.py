@@ -134,20 +134,28 @@ class RawObjectTests(unittest.TestCase):
                 RawObjectRecord.from_json_bytes(duplicate.encode())
 
     def test_prohibited_archive_role_substitution_is_rejected(self) -> None:
-        prohibited = (
-            "https://data.binance.vision/data/futures/um/daily/indexPriceKlines/"
-            "BTCUSDT/1m/BTCUSDT-1m-2025-01-01.zip"
+        prohibited_paths = (
+            "futures/um/daily/indexPriceKlines",
+            "futures/um/daily/premiumIndexKlines",
+            "futures/um/daily/klines",
+            "spot/daily/klines",
         )
-        with self.assertRaises(ConfigError):
-            AcquisitionRequest(
-                source_role=SourceRole.USDM_PERPETUAL_MARK_1M,
-                source_locator=prohibited,
-                exact_filename="BTCUSDT-1m-2025-01-01.zip",
-                instrument="BTCUSDT",
-                market_profile=MarketProfile.BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING.value,
-                requested_interval="1m",
-                requested_time_range=perp_range(),
-            )
+        for path in prohibited_paths:
+            with self.subTest(prohibited_role=path), self.assertRaises(ConfigError):
+                AcquisitionRequest(
+                    source_role=SourceRole.USDM_PERPETUAL_MARK_1M,
+                    source_locator=(
+                        f"https://data.binance.vision/data/{path}/"
+                        "BTCUSDT/1m/BTCUSDT-1m-2025-01-01.zip"
+                    ),
+                    exact_filename="BTCUSDT-1m-2025-01-01.zip",
+                    instrument="BTCUSDT",
+                    market_profile=(
+                        MarketProfile.BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING.value
+                    ),
+                    requested_interval="1m",
+                    requested_time_range=perp_range(),
+                )
 
 
 class TimestampAndParsingTests(unittest.TestCase):

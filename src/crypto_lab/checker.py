@@ -15,6 +15,9 @@ from typing import Any
 from crypto_lab.config import LabRunConfig
 from crypto_lab.config import MarketProfile
 from crypto_lab.config import SourceRevision
+from crypto_lab.data import DatasetRelease
+from crypto_lab.data import NORMALIZER_VERSION
+from crypto_lab.data import SyntheticQualificationDatasetRelease
 from crypto_lab.hashing import canonical_sha256
 from crypto_lab.hashing import sha256_file
 from crypto_lab.status import FailureCode
@@ -180,36 +183,84 @@ def check_evidence_directory(run_dir: Path) -> CheckerReport:
     if not source_ok:
         blocked.append(FailureCode.EVIDENCE_INCOMPLETE.value)
 
-    dataset = _read_json(run_dir / "dataset_release.json")
-    dataset_material = {
-        key: value
-        for key, value in dataset.items()
-        if key != "dataset_release_id"
-    }
+    dataset_bytes = (run_dir / "dataset_release.json").read_bytes()
+    dataset_raw = _read_json(run_dir / "dataset_release.json")
+    declared_dataset_identity = dataset_raw.get("dataset_release_id")
+    raw_material = dict(dataset_raw)
+    raw_material.pop("dataset_release_id", None)
+    if "qualification_scope" not in dataset_raw:
+        raw_material.pop("created_at_utc", None)
+        if dataset_raw.get("normalizer_version") != NORMALIZER_VERSION:
+            for source_object in raw_material.get("source_objects", []):
+                if isinstance(source_object, dict):
+                    source_object.pop("conflicts_with_sha256", None)
+    raw_identity_mismatch = (
+        not isinstance(declared_dataset_identity, str)
+        or canonical_sha256(raw_material) != declared_dataset_identity
+    )
+    try:
+        dataset = (
+            SyntheticQualificationDatasetRelease.from_json_bytes(dataset_bytes)
+            if "qualification_scope" in dataset_raw
+            else DatasetRelease.from_json_bytes(dataset_bytes)
+        )
+    except Exception as exc:
+        detail = str(exc)
+        failure_code = (
+            FailureCode.DATA_HASH_MISMATCH.value
+            if raw_identity_mismatch or "identity" in detail or "dataset_release_id" in detail
+            else FailureCode.DOWNSTREAM_CONTRACT_FAILURE.value
+        )
+        checks.append({"name": "dataset_binding", "pass": False, "detail": detail})
+        return CheckerReport(
+            CheckerOutcome.CHECK_BLOCKED,
+            tuple(dict.fromkeys([*blocked, failure_code])),
+            tuple(checks),
+        )
+    resolved_identity = canonical_sha256(dataset.material_payload())
     dataset_ok = (
-        dataset.get("dataset_release_id") == config.dataset_release_id
-        and canonical_sha256(dataset_material) == config.dataset_release_id
+        dataset.dataset_release_id == config.dataset_release_id
+        and resolved_identity == config.dataset_release_id
     )
     checks.append(
         {
             "name": "dataset_binding",
             "pass": dataset_ok,
-            "content_identity_resolved": canonical_sha256(dataset_material),
+            "content_identity_resolved": resolved_identity,
         },
     )
     if not dataset_ok:
         blocked.append(FailureCode.DATA_HASH_MISMATCH.value)
 
-    data_rows = dataset.get("data", [])
-    bar_times = sorted(
-        int(row["ts_init"])
-        for row in data_rows
-        if row.get("type") == "Bar"
-    )
-    no_ignored_gap = len(bar_times) == len(set(bar_times)) and all(
-        current - previous == ONE_MINUTE_NS
-        for previous, current in zip(bar_times, bar_times[1:], strict=False)
-    )
+    if isinstance(dataset, SyntheticQualificationDatasetRelease):
+        bar_times = sorted(
+            item.ts_init for item in dataset.data if item.type == "Bar"
+        )
+        no_ignored_gap = len(bar_times) == len(set(bar_times)) and all(
+            current - previous == ONE_MINUTE_NS
+            for previous, current in zip(bar_times, bar_times[1:], strict=False)
+        )
+        source_roles_ok = True
+        catalog_binding_ok = True
+    else:
+        role_results = dataset.completeness_result.role_results
+        bar_times = []
+        no_ignored_gap = (
+            dataset.completeness_result.status == "PASS"
+            and dataset.completeness_result.no_repairs
+            and all(item.actual_count == item.expected_count for item in role_results)
+        )
+        contract = result.get("dataset_contract", {})
+        source_roles_ok = (
+            dataset.is_current_contract
+            and contract.get("source_roles_verified") is True
+            and contract.get("dataset_release_id") == dataset.dataset_release_id
+        )
+        catalog_binding_ok = (
+            contract.get("catalog_identity_verified") is True
+            and contract.get("catalog_identity") == dataset.catalog_identity
+            and contract.get("caller_side_conversion_used") is False
+        )
     checks.append(
         {
             "name": "no_required_data_gap_ignored",
@@ -219,6 +270,10 @@ def check_evidence_directory(run_dir: Path) -> CheckerReport:
     )
     if not no_ignored_gap:
         blocked.append(FailureCode.DATA_GAP.value)
+    checks.append({"name": "dataset_source_roles", "pass": source_roles_ok})
+    checks.append({"name": "dataset_catalog_binding", "pass": catalog_binding_ok})
+    if not source_roles_ok or not catalog_binding_ok:
+        blocked.append(FailureCode.DOWNSTREAM_CONTRACT_FAILURE.value)
 
     strategy_spec = _read_json(run_dir / "strategy_spec.json")
     strategy_material = dict(strategy_spec)
@@ -442,22 +497,42 @@ def check_evidence_directory(run_dir: Path) -> CheckerReport:
 
     if config.market_profile is MarketProfile.BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING:
         mark_ok = (
-            dataset.get("mark_role") == "markPriceKlines"
-            and dataset.get("mark_complete") is True
-            and int(result.get("mark_price_count", 0)) > 0
+            int(result.get("mark_price_count", 0)) > 0
             and result.get("mark_fallback_accepted") is False
         )
+        if isinstance(dataset, SyntheticQualificationDatasetRelease):
+            mark_ok = mark_ok and dataset.mark_role == "markPriceKlines" and dataset.mark_complete is True
+        else:
+            mark_ok = mark_ok and dataset.mark_data_identity != "NOT_APPLICABLE" and source_roles_ok
         checks.append({"name": "perpetual_mark_role", "pass": mark_ok})
         if not mark_ok:
             blocked.append(FailureCode.MARK_ROLE_INVALID.value)
         funding_rows = _read_csv(run_dir / "funding.csv")
-        expected_settlements = dataset.get("expected_funding_settlements", [])
+        expected_settlements = (
+            dataset.expected_funding_settlements
+            if isinstance(dataset, SyntheticQualificationDatasetRelease)
+            else ()
+        )
+        unique_native_settlements = {
+            (
+                row["instrument_id"],
+                row["ts_event"],
+                row["pnl_change"],
+                row["quantity_change"],
+                row["reason"],
+            )
+            for row in funding_rows
+        }
         funding_ok = (
             int(result.get("project_funding_postings", -1)) == 0
             and result.get("project_financial_ledger") is False
-            and len(funding_rows) == len(expected_settlements)
+            and len(unique_native_settlements) == len(funding_rows)
             and (
-                not expected_settlements
+                not isinstance(dataset, SyntheticQualificationDatasetRelease)
+                or len(funding_rows) == len(expected_settlements)
+            )
+            and (
+                not expected_settlements and isinstance(dataset, SyntheticQualificationDatasetRelease)
                 or (
                     int(result.get("funding_rate_count", 0)) > 0
                     and int(result.get("mark_price_count", 0)) > 0
@@ -473,8 +548,8 @@ def check_evidence_directory(run_dir: Path) -> CheckerReport:
             matches = [
                 row
                 for row in funding_rows
-                if int(row["ts_event"]) == int(expected["boundary_ns"])
-                and row["pnl_change"] == expected["pnl_change"]
+                if int(row["ts_event"]) == expected.boundary_ns
+                and row["pnl_change"] == expected.pnl_change
                 and row["adjustment_type"] == "FUNDING"
             ]
             if len(matches) != 1:

@@ -382,6 +382,8 @@ def main() -> int:
 
     spot_metadata = parse_spot_instrument_metadata(
         store.read_bytes(records["spot_metadata"].sha256),
+        raw_symbol="BTCUSDT",
+        instrument_id="BTCUSDT.BINANCE",
         source_object_sha256=records["spot_metadata"].sha256,
         maker_fee_rate=Decimal("0"),
         taker_fee_rate=Decimal("0"),
@@ -389,6 +391,8 @@ def main() -> int:
     )
     perp_metadata = parse_usdm_instrument_metadata(
         store.read_bytes(records["perp_metadata"].sha256),
+        raw_symbol="BTCUSDT",
+        instrument_id="BTCUSDT-PERP.BINANCE",
         source_object_sha256=records["perp_metadata"].sha256,
         maker_fee_rate=Decimal("0"),
         taker_fee_rate=Decimal("0"),

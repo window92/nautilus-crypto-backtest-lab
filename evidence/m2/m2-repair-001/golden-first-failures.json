@@ -1,0 +1,77 @@
+{
+  "command": "TZ=UTC LC_ALL=C.UTF-8 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src .venv/bin/python -m unittest -v tests.unit.test_m2_repair_contracts tests.integration.test_m2_repair_downstream_contract",
+  "errors_reported_by_unittest": 9,
+  "failures_reported_by_unittest": 6,
+  "production_behavior_changed_before_execution": false,
+  "schema": "m2-repair-golden-first-v1",
+  "status": "EXPECTED_FAIL",
+  "test_cases_executed": 11,
+  "tests": [
+    {
+      "finding": "F-01",
+      "result": "ERROR",
+      "root_observation": "TypeError: Object of type DatasetRelease is not JSON serializable",
+      "test_id": "tests.unit.test_m2_repair_contracts.F01DatasetReleaseBoundaryTests.test_lab_run_request_accepts_the_typed_release_without_dict_conversion"
+    },
+    {
+      "finding": "F-02",
+      "result": "ERROR",
+      "root_observation": "archive blob absent after malformed publisher-checksum parsing failed",
+      "test_id": "tests.unit.test_m2_repair_contracts.F02PreserveBeforeParseTests.test_malformed_checksum_preserves_both_responses_and_retry_history"
+    },
+    {
+      "finding": "F-03",
+      "result": "ERROR",
+      "root_observation": "SourceObjectBinding has no conflicts_with_sha256 field",
+      "test_id": "tests.unit.test_m2_repair_contracts.F03StrictSourceBindingTests.test_conflict_provenance_survives_binding_and_blocks_release"
+    },
+    {
+      "finding": "F-03",
+      "result": "ERROR",
+      "root_observation": "metadata parser does not accept an explicit raw_symbol/instrument_id",
+      "test_id": "tests.unit.test_m2_repair_contracts.F03StrictSourceBindingTests.test_second_symbol_pipeline_has_no_btc_product_default"
+    },
+    {
+      "finding": "F-03",
+      "result": "FAIL",
+      "root_observation": "five mismatched source-object mutations were accepted",
+      "test_id": "tests.unit.test_m2_repair_contracts.F03StrictSourceBindingTests.test_target_release_rejects_mismatched_symbol_profile_interval_range_and_filename"
+    },
+    {
+      "finding": "F-04",
+      "result": "ERROR",
+      "root_observation": "metadata parser lacks explicit symbol binding and effective MARKET filter fields",
+      "test_id": "tests.unit.test_m2_repair_contracts.F04MarketOrderMetadataTests.test_frozen_filters_resolve_exact_market_intersections_and_native_limits"
+    },
+    {
+      "finding": "F-04",
+      "result": "ERROR",
+      "root_observation": "validate_market_order_quantity is absent",
+      "test_id": "tests.unit.test_m2_repair_contracts.F04MarketOrderMetadataTests.test_market_quantity_max_above_max_and_grid_are_checked_before_fill"
+    },
+    {
+      "finding": "F-04",
+      "result": "ERROR",
+      "root_observation": "validate_market_order_quantity is absent",
+      "test_id": "tests.unit.test_m2_repair_contracts.F04MarketOrderMetadataTests.test_quantity_precision_is_not_used_as_step_size"
+    },
+    {
+      "finding": "F-05",
+      "result": "FAIL",
+      "root_observation": "combined acceptance has no unique-ID reconciliation function",
+      "test_id": "tests.unit.test_m2_repair_contracts.F05AcceptanceCountTests.test_reconciliation_deduplicates_shared_g09_and_discloses_occurrences"
+    },
+    {
+      "finding": "F-01",
+      "result": "ERROR",
+      "root_observation": "repaired strict-release fixture did not yet exist",
+      "test_id": "tests.integration.test_m2_repair_downstream_contract.M2RepairedDownstreamContractTests.test_interface_identity_mutation_blocks_with_downstream_contract_failure"
+    },
+    {
+      "finding": "F-01",
+      "result": "ERROR",
+      "root_observation": "repaired strict-release fixture did not yet exist",
+      "test_id": "tests.integration.test_m2_repair_downstream_contract.M2RepairedDownstreamContractTests.test_strict_datasetrelease_flows_directly_through_public_run_lab"
+    }
+  ]
+}

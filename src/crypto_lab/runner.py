@@ -12,7 +12,6 @@ from datetime import datetime
 from decimal import Decimal
 from enum import StrEnum
 from pathlib import Path
-from types import MappingProxyType
 from typing import Any
 
 from nautilus_trader.backtest import BacktestEngine
@@ -28,6 +27,10 @@ from crypto_lab.config import MarketProfile
 from crypto_lab.config import RunPurpose
 from crypto_lab.config import RuntimeLock
 from crypto_lab.config import SourceRevision
+from crypto_lab.data import DataContractError
+from crypto_lab.data import DatasetRelease
+from crypto_lab.data import ResolvedDatasetRelease
+from crypto_lab.data import SyntheticQualificationDatasetRelease
 from crypto_lab.hashing import canonical_json_bytes
 from crypto_lab.hashing import canonical_sha256
 from crypto_lab.hashing import sha256_file
@@ -57,8 +60,8 @@ class LabRunRequest:
     lab_run_config: LabRunConfig
     source_revision: SourceRevision
     strategy_spec: StrategySpec
-    dataset_release: dict[str, Any]
-    instrument: Any
+    dataset_release: DatasetRelease | SyntheticQualificationDatasetRelease
+    instrument: Any | None
     data: tuple[Any, ...]
     strategy_plan: StrategyPlan
     evidence_root: Path
@@ -77,11 +80,11 @@ class LabRunRequest:
             raise TypeError("evidence_root must be pathlib.Path")
         if not isinstance(self.qualification_control, QualificationControl):
             raise TypeError("qualification_control must be QualificationControl")
-        object.__setattr__(
-            self,
-            "dataset_release",
-            MappingProxyType(json.loads(json.dumps(self.dataset_release))),
-        )
+        if not isinstance(
+            self.dataset_release,
+            DatasetRelease | SyntheticQualificationDatasetRelease,
+        ):
+            raise TypeError("dataset_release must be a strict DatasetRelease contract")
         object.__setattr__(self, "data", tuple(self.data))
 
 
@@ -145,7 +148,7 @@ def _timestamp_ns(value: datetime) -> int:
     return int(value.timestamp() * 1_000_000_000)
 
 
-def _preflight(config: LabRunRequest) -> list[str]:
+def _preflight_identity(config: LabRunRequest) -> list[str]:
     run = config.lab_run_config
     failures: list[str] = []
     if sha256_file(ROOT / "runtime.lock.json") != run.runtime_lock_sha256:
@@ -165,15 +168,48 @@ def _preflight(config: LabRunRequest) -> list[str]:
         or config.strategy_spec.signal_bar_types != run.signal_bar_types
     ):
         failures.append(FailureCode.CONFIG_INVALID.value)
-    if config.dataset_release.get("dataset_release_id") != run.dataset_release_id:
-        failures.append(FailureCode.DATASET_RELEASE_STALE.value)
-    release_material = {
-        key: value
-        for key, value in config.dataset_release.items()
-        if key != "dataset_release_id"
-    }
-    if canonical_sha256(release_material) != run.dataset_release_id:
+    release = config.dataset_release
+    if release.dataset_release_id != run.dataset_release_id:
+        failures.append(FailureCode.DOWNSTREAM_CONTRACT_FAILURE.value)
+    if canonical_sha256(release.material_payload()) != release.dataset_release_id:
         failures.append(FailureCode.DATA_HASH_MISMATCH.value)
+    if release.market_profile is not run.market_profile or release.instrument_id != run.instrument_id:
+        failures.append(FailureCode.DOWNSTREAM_CONTRACT_FAILURE.value)
+    if isinstance(release, DatasetRelease):
+        if not release.is_current_contract:
+            failures.append(FailureCode.DATASET_RELEASE_STALE.value)
+        required_start = run.warmup_start
+        required_end = run.scoring_end_exclusive
+        if (
+            required_start < release.normalized_time_range.start_inclusive
+            or required_end > release.normalized_time_range.end_exclusive
+            or not any(
+                interval.start_inclusive <= run.scoring_start
+                and interval.end_exclusive >= required_end
+                for interval in release.available_signal_bar_intervals
+            )
+        ):
+            failures.append(FailureCode.DOWNSTREAM_CONTRACT_FAILURE.value)
+        if run.market_profile is MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY:
+            if run.mark_binding != "NOT_APPLICABLE" or run.funding_binding != "NOT_APPLICABLE":
+                failures.append(FailureCode.DATA_ROLE_MISMATCH.value)
+        elif (
+            run.mark_binding != release.mark_data_identity
+            or run.funding_binding != release.funding_data_identity
+        ):
+            failures.append(FailureCode.DOWNSTREAM_CONTRACT_FAILURE.value)
+        expected_catalog = (ROOT / "data/catalog" / release.catalog_identity).resolve()
+        configured_catalogs = {
+            Path(item.catalog_path).resolve()
+            for item in run.nautilus_data_config
+        }
+        if configured_catalogs != {expected_catalog}:
+            failures.append(FailureCode.DOWNSTREAM_CONTRACT_FAILURE.value)
+        if config.instrument is not None or config.data:
+            failures.append(FailureCode.DOWNSTREAM_CONTRACT_FAILURE.value)
+    else:
+        if run.run_purpose is not RunPurpose.QUALIFICATION:
+            failures.append(FailureCode.DATA_SOURCE_INVALID.value)
     try:
         source_tree = subprocess.run(
             ["git", "rev-parse", f"{config.source_revision.git_commit}^{{tree}}"],
@@ -187,23 +223,49 @@ def _preflight(config: LabRunRequest) -> list[str]:
     else:
         if source_tree != config.source_revision.git_tree:
             failures.append(FailureCode.EVIDENCE_INCOMPLETE.value)
-    if str(config.instrument.id) != run.instrument_id:
-        failures.append(FailureCode.INSTRUMENT_METADATA_INVALID.value)
-    if Decimal(str(config.instrument.maker_fee)) != run.fee_assumption.maker_fee or Decimal(
-        str(config.instrument.taker_fee),
-    ) != run.fee_assumption.taker_fee:
-        failures.append(FailureCode.FEE_MISSING.value)
-
     if config.qualification_control is QualificationControl.ZERO_LATENCY_NEGATIVE_CONTROL:
         if run.run_purpose is not RunPurpose.QUALIFICATION:
             failures.append(FailureCode.CONFIG_INVALID.value)
 
-    bars = [item for item in config.data if isinstance(item, Bar)]
-    marks = [item for item in config.data if isinstance(item, MarkPriceUpdate)]
-    funding = [item for item in config.data if isinstance(item, FundingRateUpdate)]
+    if run.run_purpose is RunPurpose.OFFICIAL:
+        if not config.source_revision.clean_worktree:
+            failures.append(FailureCode.EVIDENCE_INCOMPLETE.value)
+        actual = capture_source_revision(ROOT)
+        if (
+            not actual.clean_worktree
+            or actual.git_commit != config.source_revision.git_commit
+            or actual.git_tree != config.source_revision.git_tree
+        ):
+            failures.append(FailureCode.EVIDENCE_INCOMPLETE.value)
+        if isinstance(release, SyntheticQualificationDatasetRelease):
+            failures.append(FailureCode.DATA_SOURCE_INVALID.value)
+    return list(dict.fromkeys(failures))
+
+
+def _preflight_data(
+    config: LabRunRequest,
+    *,
+    instrument: Any,
+    data: tuple[Any, ...],
+    resolved: ResolvedDatasetRelease | None,
+) -> list[str]:
+    run = config.lab_run_config
+    release = config.dataset_release
+    failures: list[str] = []
+    if instrument is None or str(instrument.id) != run.instrument_id:
+        failures.append(FailureCode.INSTRUMENT_METADATA_INVALID.value)
+        return failures
+    if Decimal(str(instrument.maker_fee)) != run.fee_assumption.maker_fee or Decimal(
+        str(instrument.taker_fee),
+    ) != run.fee_assumption.taker_fee:
+        failures.append(FailureCode.FEE_MISSING.value)
+
+    bars = [item for item in data if isinstance(item, Bar)]
+    marks = [item for item in data if isinstance(item, MarkPriceUpdate)]
+    funding = [item for item in data if isinstance(item, FundingRateUpdate)]
     if any(
         not isinstance(item, Bar | MarkPriceUpdate | FundingRateUpdate)
-        for item in config.data
+        for item in data
     ):
         failures.append(FailureCode.DATA_ROLE_MISMATCH.value)
     if not bars:
@@ -212,9 +274,9 @@ def _preflight(config: LabRunRequest) -> list[str]:
     for bar in bars:
         bar_timestamps.append(int(bar.ts_init))
         precision_ok = all(
-            price.precision == config.instrument.price_precision
+            price.precision == instrument.price_precision
             for price in (bar.open, bar.high, bar.low, bar.close)
-        ) and bar.volume.precision == config.instrument.size_precision
+        ) and bar.volume.precision == instrument.size_precision
         identity_ok = (
             str(bar.bar_type.instrument_id) == run.instrument_id
             and str(bar.bar_type) == run.execution_bar_type
@@ -232,7 +294,7 @@ def _preflight(config: LabRunRequest) -> list[str]:
             failures.append(FailureCode.INSTRUMENT_METADATA_INVALID.value)
     if bar_timestamps != sorted(bar_timestamps) or len(set(bar_timestamps)) != len(bar_timestamps):
         failures.append(FailureCode.DATA_TIMESTAMP_INVALID.value)
-    if config.dataset_release.get("qualification_scope") == "M1_SYNTHETIC":
+    if isinstance(release, SyntheticQualificationDatasetRelease):
         warmup_start_ns = _timestamp_ns(run.warmup_start)
         scoring_end_ns = _timestamp_ns(run.scoring_end_exclusive)
         required_bar_timestamps = list(
@@ -244,6 +306,32 @@ def _preflight(config: LabRunRequest) -> list[str]:
         )
         if bar_timestamps != required_bar_timestamps:
             failures.append(FailureCode.DATA_GAP.value)
+        descriptors = tuple(
+            {
+                "type": type(item).__name__,
+                "instrument_id": str(
+                    item.instrument_id if not isinstance(item, Bar) else item.bar_type.instrument_id
+                ),
+                "ts_event": int(item.ts_event),
+                "ts_init": int(item.ts_init),
+                "value": str(item),
+            }
+            for item in data
+        )
+        if descriptors != tuple(item.to_builtins() for item in release.data):
+            failures.append(FailureCode.DATA_HASH_MISMATCH.value)
+    else:
+        expected = list(
+            range(
+                release.normalized_time_range.start_ns + ONE_MINUTE_NS,
+                release.normalized_time_range.end_ns + 1,
+                ONE_MINUTE_NS,
+            ),
+        )
+        if bar_timestamps != expected:
+            failures.append(FailureCode.DATA_GAP.value)
+        if resolved is None or canonical_sha256(resolved.semantic_inventory) != release.catalog_identity:
+            failures.append(FailureCode.DATASET_RELEASE_STALE.value)
     if not set(config.strategy_plan.intents_by_bar_ns).issubset(set(bar_timestamps)):
         failures.append(FailureCode.DATA_TIMESTAMP_INVALID.value)
 
@@ -252,39 +340,35 @@ def _preflight(config: LabRunRequest) -> list[str]:
             failures.append(FailureCode.DATA_ROLE_MISMATCH.value)
     else:
         mark_ok = (
-            config.dataset_release.get("mark_role") == "markPriceKlines"
-            and config.dataset_release.get("mark_complete") is True
-            and bool(marks)
-            and all(str(mark.instrument_id) == run.instrument_id for mark in marks)
+            bool(marks) and all(str(mark.instrument_id) == run.instrument_id for mark in marks)
         )
+        if isinstance(release, SyntheticQualificationDatasetRelease):
+            mark_ok = mark_ok and release.mark_role == "markPriceKlines" and release.mark_complete is True
+        else:
+            mark_ok = mark_ok and release.mark_data_identity != "NOT_APPLICABLE"
+            if [int(mark.ts_init) for mark in marks] != bar_timestamps:
+                mark_ok = False
         if not mark_ok:
             failures.append(FailureCode.MARK_ROLE_INVALID.value)
         funding_ok = (
-            config.dataset_release.get("funding_role") == "fundingRate"
-            and config.dataset_release.get("funding_complete") is True
-            and bool(funding)
-            and all(str(event.instrument_id) == run.instrument_id for event in funding)
+            bool(funding) and all(str(event.instrument_id) == run.instrument_id for event in funding)
         )
+        if isinstance(release, SyntheticQualificationDatasetRelease):
+            funding_ok = (
+                funding_ok
+                and release.funding_role == "fundingRate"
+                and release.funding_complete is True
+            )
+        else:
+            funding_ok = funding_ok and release.funding_data_identity != "NOT_APPLICABLE"
         if not funding_ok:
             failures.append(FailureCode.FUNDING_MISSING.value)
         if any(int(event.ts_event) >= _timestamp_ns(run.scoring_end_exclusive) for event in funding):
             failures.append(FailureCode.DATA_TIMESTAMP_INVALID.value)
 
-    all_timestamps = [int(item.ts_init) for item in config.data]
+    all_timestamps = [int(item.ts_init) for item in data]
     if all_timestamps != sorted(all_timestamps):
         failures.append(FailureCode.DATA_TIMESTAMP_INVALID.value)
-    if run.run_purpose is RunPurpose.OFFICIAL:
-        if not config.source_revision.clean_worktree:
-            failures.append(FailureCode.EVIDENCE_INCOMPLETE.value)
-        actual = capture_source_revision(ROOT)
-        if (
-            not actual.clean_worktree
-            or actual.git_commit != config.source_revision.git_commit
-            or actual.git_tree != config.source_revision.git_tree
-        ):
-            failures.append(FailureCode.EVIDENCE_INCOMPLETE.value)
-        if config.dataset_release.get("qualification_scope") == "M1_SYNTHETIC":
-            failures.append(FailureCode.DATA_SOURCE_INVALID.value)
     return list(dict.fromkeys(failures))
 
 
@@ -507,10 +591,32 @@ def run_lab(config: LabRunRequest) -> RunResult:
     )
     (run_dir / "runtime.lock.json").write_bytes((ROOT / "runtime.lock.json").read_bytes())
     (run_dir / "source_revision.json").write_bytes(config.source_revision.to_json_bytes() + b"\n")
-    _write_json(run_dir / "dataset_release.json", dict(config.dataset_release))
+    (run_dir / "dataset_release.json").write_bytes(config.dataset_release.to_json_bytes() + b"\n")
     (run_dir / "strategy_spec.json").write_bytes(config.strategy_spec.to_json_bytes() + b"\n")
 
-    preflight = _preflight(config)
+    preflight = _preflight_identity(config)
+    instrument = config.instrument
+    data = config.data
+    resolved_release: ResolvedDatasetRelease | None = None
+    if not preflight and isinstance(config.dataset_release, DatasetRelease):
+        try:
+            resolved_release = config.dataset_release.resolve_runtime_data(ROOT / "data")
+        except DataContractError as exc:
+            preflight.append(exc.code)
+        except Exception:
+            preflight.append(FailureCode.DOWNSTREAM_CONTRACT_FAILURE.value)
+        else:
+            instrument = resolved_release.instrument
+            data = resolved_release.data
+    if not preflight:
+        preflight.extend(
+            _preflight_data(
+                config,
+                instrument=instrument,
+                data=data,
+                resolved=resolved_release,
+            ),
+        )
     capture = _empty_capture()
     observations: dict[str, Any] = {
         "bars": [],
@@ -538,11 +644,12 @@ def run_lab(config: LabRunRequest) -> RunResult:
                 run.nautilus_venue_config,
                 latency_model_override=latency_override,
             )
-            engine.add_instrument(config.instrument)
-            bars = [item for item in config.data if isinstance(item, Bar)]
+            assert instrument is not None
+            engine.add_instrument(instrument)
+            bars = [item for item in data if isinstance(item, Bar)]
             strategy = GuardedCausalStrategy()
             strategy.configure(
-                instrument_id=config.instrument.id,
+                instrument_id=instrument.id,
                 bar_type=bars[0].bar_type,
                 profile=run.market_profile,
                 plan=config.strategy_plan,
@@ -554,24 +661,36 @@ def run_lab(config: LabRunRequest) -> RunResult:
                     is QualificationControl.ZERO_LATENCY_NEGATIVE_CONTROL
                     else run.nautilus_venue_config.latency_model.effective_insert_latency_nanos
                 ),
-                size_precision=config.instrument.size_precision,
+                size_precision=instrument.size_precision,
+                min_quantity=(
+                    None
+                    if instrument.min_quantity is None
+                    else instrument.min_quantity.as_decimal()
+                ),
+                max_quantity=(
+                    None
+                    if instrument.max_quantity is None
+                    else instrument.max_quantity.as_decimal()
+                ),
+                size_increment=instrument.size_increment.as_decimal(),
                 initial_capital_amount=run.initial_capital.amount,
                 initial_capital_currency=run.initial_capital.currency,
             )
             engine.add_strategy(strategy)
-            engine.add_data(list(config.data))
+            engine.add_data(list(data))
             engine_started = True
             engine.run()
             engine_completed = True
             observations = json.loads(json.dumps(strategy.observations))
-            capture = _capture_engine(engine, strategy, config.instrument.id)
+            capture = _capture_engine(engine, strategy, instrument.id)
         except Exception as exc:
             engine_error = f"{type(exc).__name__}: {exc}"
             preflight.append(FailureCode.UNSUPPORTED_RUNTIME.value)
             if engine is not None and strategy is not None:
                 try:
                     observations = json.loads(json.dumps(strategy.observations))
-                    capture = _capture_engine(engine, strategy, config.instrument.id)
+                    assert instrument is not None
+                    capture = _capture_engine(engine, strategy, instrument.id)
                 except Exception as capture_exc:
                     engine_error += (
                         f"; evidence_capture={type(capture_exc).__name__}: {capture_exc}"
@@ -720,6 +839,35 @@ def run_lab(config: LabRunRequest) -> RunResult:
         "project_funding_postings": 0,
         "project_financial_ledger": False,
         "terminal_policy": run.terminal_policy,
+        "dataset_contract": {
+            "type": type(config.dataset_release).__name__,
+            "dataset_release_id": config.dataset_release.dataset_release_id,
+            "canonical_material_identity": canonical_sha256(
+                config.dataset_release.material_payload(),
+            ),
+            "source_roles_verified": (
+                isinstance(config.dataset_release, DatasetRelease)
+                and config.dataset_release.is_current_contract
+            ),
+            "catalog_identity_verified": (
+                True
+                if isinstance(config.dataset_release, SyntheticQualificationDatasetRelease)
+                else (
+                    resolved_release is not None
+                    and canonical_sha256(resolved_release.semantic_inventory)
+                    == config.dataset_release.catalog_identity
+                )
+            ),
+            "catalog_identity": (
+                None
+                if not isinstance(config.dataset_release, DatasetRelease)
+                else config.dataset_release.catalog_identity
+            ),
+            "physical_catalog_path": (
+                None if resolved_release is None else str(resolved_release.catalog_path)
+            ),
+            "caller_side_conversion_used": False,
+        },
         "terminal_position_open": any(
             Decimal(str(row["signed_qty"])) != 0
             for row in capture["positions"]

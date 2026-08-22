@@ -1,0 +1,54 @@
+{
+  "results": {
+    "catalog_mutation_stale": {
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_release_contract.DatasetReleaseTests.test_catalog_rebuild_semantic_stability_and_mutation_staleness"
+    },
+    "conflicting_duplicate": {
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_raw_and_parsing.TimestampAndParsingTests.test_conflicting_duplicate_blocks"
+    },
+    "corrupted_raw_bytes": {
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_raw_and_parsing.RawObjectTests.test_acquirer_stores_corrupted_download_before_failing_checksum"
+    },
+    "funding_duplicate_conflict": {
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_release_contract.FundingContractTests.test_conflicting_funding_duplicate_blocks"
+    },
+    "funding_missing": {
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_release_contract.FundingContractTests.test_removed_required_event_is_funding_missing"
+    },
+    "funding_schedule_unproven": {
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_release_contract.FundingContractTests.test_unproven_schedule_is_funding_ambiguous"
+    },
+    "locator_republication_conflict": {
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_raw_and_parsing.RawObjectTests.test_locator_replay_with_different_bytes_preserves_both_and_links_conflict"
+    },
+    "malformed_nonmonotonic_ohlc_negative_volume": {
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_raw_and_parsing.TimestampAndParsingTests.test_malformed_nonmonotonic_invalid_ohlc_and_negative_volume_block_without_repair"
+    },
+    "missing_minute": {
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_raw_and_parsing.TimestampAndParsingTests.test_one_minute_completeness_passes_and_missing_minute_blocks"
+    },
+    "perpetual_mark_funding_required": {
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_release_contract.DatasetReleaseTests.test_perpetual_requires_mark_and_funding_roles"
+    },
+    "source_role_substitution": {
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_raw_and_parsing.RawObjectTests.test_prohibited_archive_role_substitution_is_rejected"
+    },
+    "spot_mark_funding_forbidden": {
+      "status": "FAIL",
+      "test_id": "tests.unit.test_m2_release_contract.DatasetReleaseTests.test_spot_forbids_mark_and_funding_roles"
+    }
+  },
+  "schema": "m2-negative-fixture-results-v1",
+  "status": "FAIL"
+}

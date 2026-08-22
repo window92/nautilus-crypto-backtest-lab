@@ -1,0 +1,6 @@
+COMMAND: TZ=UTC LC_ALL=C.UTF-8 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src .venv/bin/python scripts/generate_m2_repair_evidence.py
+EXIT_CODE: 1
+RESULT: FAILED_ATTEMPT_RETAINED
+ROOT_CAUSE: The repaired Perpetual qualification release retained the same funding material identity as the historical release. The first generator implementation refused every pre-existing content-addressed funding path instead of verifying exact bytes and reusing an identical immutable object.
+EXCEPTION: FileExistsError: refusing to overwrite data/releases/9ba29151f105785d1f8b8fc1797ac49deaae8976c7c2a40f446b61ccaefc3aae.funding.json
+DISPOSITION: Generator changed to reuse an existing content-addressed object only after byte-for-byte equality; collisions still fail closed. No historical object was modified or deleted.

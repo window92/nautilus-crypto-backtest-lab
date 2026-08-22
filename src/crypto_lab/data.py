@@ -24,10 +24,14 @@ from datetime import datetime
 from datetime import timedelta
 from decimal import Decimal
 from decimal import InvalidOperation
+from decimal import ROUND_CEILING
+from decimal import ROUND_FLOOR
 from enum import StrEnum
+from math import lcm
 from pathlib import Path
 from types import MappingProxyType
 from typing import Any
+from urllib.parse import parse_qs
 from urllib.parse import urlparse
 
 from nautilus_trader.model import AggregationSource
@@ -51,6 +55,8 @@ from nautilus_trader.persistence import ParquetDataCatalog
 from crypto_lab.config import ConfigError
 from crypto_lab.config import MarketProfile
 from crypto_lab.config import StrictModel
+from crypto_lab.config import _decode_json
+from crypto_lab.config import _decode_typed
 from crypto_lab.hashing import canonical_json_bytes
 from crypto_lab.hashing import canonical_sha256
 from crypto_lab.status import FailureCode
@@ -60,7 +66,8 @@ ONE_MINUTE_NS = 60_000_000_000
 SPOT_MICROSECOND_TRANSITION = date(2025, 1, 1)
 NOT_APPLICABLE = "NOT_APPLICABLE"
 NOT_AVAILABLE = "NOT_AVAILABLE"
-NORMALIZER_VERSION = "binance-public-data-v1-m2.1"
+NORMALIZER_VERSION = "binance-public-data-v1-m2.2"
+HISTORICAL_NORMALIZER_VERSIONS = frozenset({"binance-public-data-v1-m2.1"})
 
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 _INTEGER = re.compile(r"0|[1-9][0-9]*\Z")
@@ -81,8 +88,15 @@ _USDM_FUNDING_ARCHIVE = re.compile(
 class DataContractError(ValueError):
     """A fail-closed SSOT data-boundary violation."""
 
-    def __init__(self, code: FailureCode | str, message: str) -> None:
+    def __init__(
+        self,
+        code: FailureCode | str,
+        message: str,
+        *,
+        evidence: dict[str, str] | None = None,
+    ) -> None:
         self.code = code.value if isinstance(code, FailureCode) else code
+        self.evidence = MappingProxyType(dict(evidence or {}))
         super().__init__(f"{self.code}: {message}")
 
 
@@ -146,6 +160,7 @@ class AcquisitionRequest(StrictModel):
         valid_profiles = {item.value for item in MarketProfile} | {NOT_APPLICABLE}
         if self.market_profile not in valid_profiles:
             raise ConfigError("acquisition.market_profile: unsupported value")
+        _validate_acquisition_request(self)
 
 
 class RawObjectRecord(StrictModel):
@@ -191,6 +206,7 @@ class SourceObjectBinding(StrictModel):
     market_profile: str
     requested_interval: str
     requested_time_range: TimeRange | str
+    conflicts_with_sha256: tuple[str, ...]
 
     def __post_init__(self) -> None:
         _validate_source_locator(self.source_role, self.source_locator)
@@ -199,6 +215,10 @@ class SourceObjectBinding(StrictModel):
         _require_sha256(self.sha256, "source_object.sha256")
         if self.publisher_checksum != NOT_AVAILABLE:
             _require_sha256(self.publisher_checksum, "source_object.publisher_checksum")
+        for digest in self.conflicts_with_sha256:
+            _require_sha256(digest, "source_object.conflicts_with_sha256")
+        if tuple(sorted(set(self.conflicts_with_sha256))) != self.conflicts_with_sha256:
+            raise ConfigError("source_object.conflicts_with_sha256: must be unique and sorted")
 
     @classmethod
     def from_raw(cls, record: RawObjectRecord) -> SourceObjectBinding:
@@ -213,6 +233,7 @@ class SourceObjectBinding(StrictModel):
             market_profile=record.market_profile,
             requested_interval=record.requested_interval,
             requested_time_range=record.requested_time_range,
+            conflicts_with_sha256=record.conflicts_with_sha256,
         )
 
 
@@ -245,6 +266,80 @@ class CompletenessResult(StrictModel):
             raise ConfigError("completeness_result.role_results: must not be empty")
 
 
+class SyntheticDataDescriptor(StrictModel):
+    """Typed, qualification-only description of one M1 native input object."""
+
+    type: str
+    instrument_id: str
+    ts_event: int
+    ts_init: int
+    value: str
+
+    def __post_init__(self) -> None:
+        if self.type not in {"Bar", "MarkPriceUpdate", "FundingRateUpdate"}:
+            raise ConfigError("synthetic_data.type: unsupported native object")
+        if not self.instrument_id or self.ts_event < 0 or self.ts_init < 0:
+            raise ConfigError("synthetic_data: invalid identity or timestamp")
+
+
+class SyntheticFundingExpectation(StrictModel):
+    boundary_ns: int
+    pnl_change: str
+
+    def __post_init__(self) -> None:
+        if self.boundary_ns < 0 or not self.pnl_change:
+            raise ConfigError("synthetic_funding_expectation: invalid expected settlement")
+
+
+class SyntheticQualificationDatasetRelease(StrictModel):
+    """M1-only strict fixture; prohibited from RESEARCH and OFFICIAL paths."""
+
+    dataset_release_id: str
+    qualification_scope: str
+    market_profile: MarketProfile
+    instrument_id: str
+    data: tuple[SyntheticDataDescriptor, ...]
+    mark_role: str
+    mark_complete: bool | str
+    funding_role: str
+    funding_complete: bool | str
+    expected_funding_settlements: tuple[SyntheticFundingExpectation, ...]
+
+    def __post_init__(self) -> None:
+        _require_sha256(self.dataset_release_id, "synthetic_release.dataset_release_id")
+        if self.qualification_scope != "M1_SYNTHETIC_QUALIFICATION_ONLY":
+            raise ConfigError("synthetic_release.qualification_scope: qualification-only value required")
+        if not self.instrument_id or not self.data:
+            raise ConfigError("synthetic_release: instrument and native data descriptors are required")
+        if any(item.instrument_id != self.instrument_id for item in self.data):
+            raise ConfigError("synthetic_release: data Instrument mismatch")
+        if self.market_profile is MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY:
+            if (
+                self.mark_role != NOT_APPLICABLE
+                or self.mark_complete != NOT_APPLICABLE
+                or self.funding_role != NOT_APPLICABLE
+                or self.funding_complete != NOT_APPLICABLE
+                or self.expected_funding_settlements
+            ):
+                raise ConfigError("synthetic_release: Spot forbids derivative roles")
+        else:
+            if self.mark_role != "markPriceKlines" or type(self.mark_complete) is not bool:
+                raise ConfigError("synthetic_release: Perpetual mark fixture state must be explicit")
+            if self.funding_role != "fundingRate" or type(self.funding_complete) is not bool:
+                raise ConfigError("synthetic_release: Perpetual funding fixture state must be explicit")
+        if canonical_sha256(self.material_payload()) != self.dataset_release_id:
+            raise ConfigError("synthetic_release.dataset_release_id mismatch")
+
+    def material_payload(self) -> dict[str, Any]:
+        payload = self.to_builtins()
+        payload.pop("dataset_release_id", None)
+        return payload
+
+    @classmethod
+    def create(cls, **values: Any) -> SyntheticQualificationDatasetRelease:
+        return cls(dataset_release_id=canonical_sha256(values), **values)
+
+
 class InstrumentMetadata(StrictModel):
     schema_version: int
     instrument_metadata_identity: str
@@ -270,6 +365,13 @@ class InstrumentMetadata(StrictModel):
     max_price: Decimal
     min_quantity: Decimal
     max_quantity: Decimal
+    lot_size_min_quantity: Decimal
+    lot_size_max_quantity: Decimal
+    lot_size_step_size: Decimal
+    market_lot_size_min_quantity: Decimal
+    market_lot_size_max_quantity: Decimal
+    market_lot_size_step_size: Decimal
+    effective_market_derivation: tuple[str, ...]
     min_notional: Decimal
     max_notional: Decimal | str
     multiplier: Decimal
@@ -281,8 +383,8 @@ class InstrumentMetadata(StrictModel):
     official_definition: dict[str, Any]
 
     def __post_init__(self) -> None:
-        if self.schema_version != 1:
-            raise ConfigError("instrument_metadata.schema_version: only version 1 is supported")
+        if self.schema_version != 2:
+            raise ConfigError("instrument_metadata.schema_version: only version 2 is supported")
         _require_sha256(
             self.instrument_metadata_identity,
             "instrument_metadata.instrument_metadata_identity",
@@ -313,11 +415,38 @@ class InstrumentMetadata(StrictModel):
             self.min_notional,
             self.maker_fee_rate,
             self.taker_fee_rate,
+            self.lot_size_min_quantity,
+            self.lot_size_max_quantity,
+            self.lot_size_step_size,
+            self.market_lot_size_min_quantity,
+            self.market_lot_size_max_quantity,
+            self.market_lot_size_step_size,
         )
         if any(not item.is_finite() or item < 0 for item in nonnegative):
             raise ConfigError("instrument_metadata: non-negative finite values are required")
         if not self.fee_rate_basis:
             raise ConfigError("instrument_metadata.fee_rate_basis: must be explicit")
+        if not self.effective_market_derivation:
+            raise ConfigError("instrument_metadata.effective_market_derivation: required")
+        if self.size_increment != _market_quantity_intersection(
+            lot_min=self.lot_size_min_quantity,
+            lot_max=self.lot_size_max_quantity,
+            lot_step=self.lot_size_step_size,
+            market_min=self.market_lot_size_min_quantity,
+            market_max=self.market_lot_size_max_quantity,
+            market_step=self.market_lot_size_step_size,
+        )[2]:
+            raise ConfigError("instrument_metadata.size_increment: effective MARKET grid mismatch")
+        effective = _market_quantity_intersection(
+            lot_min=self.lot_size_min_quantity,
+            lot_max=self.lot_size_max_quantity,
+            lot_step=self.lot_size_step_size,
+            market_min=self.market_lot_size_min_quantity,
+            market_max=self.market_lot_size_max_quantity,
+            market_step=self.market_lot_size_step_size,
+        )
+        if (self.min_quantity, self.max_quantity, self.size_increment) != effective[:3]:
+            raise ConfigError("instrument_metadata: effective MARKET limits mismatch")
         object.__setattr__(self, "official_definition", _deep_freeze(self.official_definition))
         if canonical_sha256(self._material_payload()) != self.instrument_metadata_identity:
             raise ConfigError("instrument_metadata_identity does not match material payload")
@@ -332,9 +461,9 @@ class InstrumentMetadata(StrictModel):
     def create(cls, **values: Any) -> InstrumentMetadata:
         material = dict(values)
         material.pop("observed_at_utc", None)
-        material["schema_version"] = 1
+        material["schema_version"] = 2
         identity = canonical_sha256(material)
-        return cls(schema_version=1, instrument_metadata_identity=identity, **values)
+        return cls(schema_version=2, instrument_metadata_identity=identity, **values)
 
 
 class FundingSlot(StrictModel):
@@ -417,7 +546,7 @@ class DatasetRelease(StrictModel):
             raise ConfigError("dataset_release.created_at_utc: must use UTC")
         if self.execution_bar_interval != "1m":
             raise ConfigError("dataset_release.execution_bar_interval: V1 requires 1m")
-        if self.normalizer_version != NORMALIZER_VERSION:
+        if self.normalizer_version not in {NORMALIZER_VERSION, *HISTORICAL_NORMALIZER_VERSIONS}:
             raise ConfigError("dataset_release.normalizer_version: unsupported version")
         if not self.source_objects or not self.available_signal_bar_intervals:
             raise ConfigError("dataset_release: source objects and signal intervals are required")
@@ -429,6 +558,13 @@ class DatasetRelease(StrictModel):
         )
         if ordering != self.source_objects:
             raise ConfigError("dataset_release.source_objects: canonical ordering required")
+        if self.normalizer_version == NORMALIZER_VERSION:
+            _validate_source_bindings(
+                market_profile=self.market_profile,
+                instrument_id=self.instrument_id,
+                source_objects=self.source_objects,
+                normalized_time_range=self.normalized_time_range,
+            )
         roles = {item.source_role for item in self.source_objects}
         if self.market_profile is MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY:
             required = {SourceRole.SPOT_EXECUTION_1M, SourceRole.SPOT_INSTRUMENT_METADATA}
@@ -457,14 +593,49 @@ class DatasetRelease(StrictModel):
         if canonical_sha256(self.material_payload()) != self.dataset_release_id:
             raise ConfigError("dataset_release_id does not match canonical material payload")
 
+    @classmethod
+    def from_json_bytes(cls, payload: bytes) -> DatasetRelease:
+        """Parse current releases strictly and old M2.1 manifests as historical only."""
+
+        value = _decode_json(payload)
+        if not isinstance(value, dict):
+            raise ConfigError("$: expected object")
+        normalizer = value.get("normalizer_version")
+        if normalizer in HISTORICAL_NORMALIZER_VERSIONS:
+            sources = value.get("source_objects")
+            if isinstance(sources, list):
+                for source in sources:
+                    if isinstance(source, dict):
+                        source.setdefault("conflicts_with_sha256", [])
+        elif normalizer == NORMALIZER_VERSION:
+            sources = value.get("source_objects")
+            if isinstance(sources, list) and any(
+                not isinstance(source, dict) or "conflicts_with_sha256" not in source
+                for source in sources
+            ):
+                raise ConfigError("$.source_objects: missing conflicts_with_sha256")
+        return _decode_typed(value, cls, "$")
+
     def material_payload(self) -> dict[str, Any]:
         payload = self.to_builtins()
         payload.pop("dataset_release_id", None)
         payload.pop("created_at_utc", None)
+        if self.normalizer_version in HISTORICAL_NORMALIZER_VERSIONS:
+            for source in payload["source_objects"]:
+                source.pop("conflicts_with_sha256", None)
         return payload
 
     def with_created_at(self, value: datetime) -> DatasetRelease:
         return replace(self, created_at_utc=value)
+
+    @property
+    def is_current_contract(self) -> bool:
+        return self.normalizer_version == NORMALIZER_VERSION
+
+    def resolve_runtime_data(self, data_root: Path) -> ResolvedDatasetRelease:
+        """Resolve physical derived data without putting its path in content identity."""
+
+        return _resolve_dataset_release_runtime(self, Path(data_root))
 
 
 @dataclass(frozen=True)
@@ -527,6 +698,14 @@ class CatalogBuildResult:
     funding_updates: tuple[FundingRateUpdate, ...]
 
 
+@dataclass(frozen=True)
+class ResolvedDatasetRelease:
+    instrument: CurrencyPair | CryptoPerpetual
+    data: tuple[Bar | MarkPriceUpdate | FundingRateUpdate, ...]
+    catalog_path: Path
+    semantic_inventory: dict[str, Any]
+
+
 def _require_sha256(value: str, path: str) -> None:
     if _SHA256.fullmatch(value) is None:
         raise ConfigError(f"{path}: must be a lowercase SHA-256")
@@ -587,35 +766,48 @@ def _validate_source_locator(role: SourceRole, locator: str) -> None:
     elif role is SourceRole.PUBLISHER_CHECKSUM:
         valid = parsed.netloc == "data.binance.vision" and path.endswith(".zip.CHECKSUM")
     elif role is SourceRole.SPOT_INSTRUMENT_METADATA:
+        query = parse_qs(parsed.query, keep_blank_values=True)
         valid = (
             parsed.netloc == "api.binance.com"
             and path == "/api/v3/exchangeInfo"
-            and parsed.query == "symbol=BTCUSDT"
+            and set(query) == {"symbol"}
+            and len(query["symbol"]) == 1
+            and re.fullmatch(r"[A-Z0-9]+", query["symbol"][0]) is not None
         )
     elif role is SourceRole.USDM_PERPETUAL_INSTRUMENT_METADATA:
         valid = parsed.netloc == "fapi.binance.com" and path == "/fapi/v1/exchangeInfo"
     elif role is SourceRole.USDM_PERPETUAL_FUNDING_METADATA:
         valid = parsed.netloc == "fapi.binance.com" and path == "/fapi/v1/fundingInfo"
     elif role is SourceRole.USDM_EXECUTION_TIMESTAMP_PROBE:
+        query = parse_qs(parsed.query, keep_blank_values=True)
         valid = (
             parsed.netloc == "fapi.binance.com"
             and path == "/fapi/v1/klines"
-            and parsed.query
-            == "symbol=BTCUSDT&interval=1m&startTime=1735689600000&endTime=1735689659999&limit=1"
+            and set(query) == {"symbol", "interval", "startTime", "endTime", "limit"}
+            and query.get("interval") == ["1m"]
+            and query.get("limit") == ["1"]
+            and all(_INTEGER.fullmatch(query[name][0]) for name in ("startTime", "endTime"))
+            and re.fullmatch(r"[A-Z0-9]+", query.get("symbol", [""])[0]) is not None
         )
     elif role is SourceRole.USDM_MARK_TIMESTAMP_PROBE:
+        query = parse_qs(parsed.query, keep_blank_values=True)
         valid = (
             parsed.netloc == "fapi.binance.com"
             and path == "/fapi/v1/markPriceKlines"
-            and parsed.query
-            == "symbol=BTCUSDT&interval=1m&startTime=1735689600000&endTime=1735689659999&limit=1"
+            and set(query) == {"symbol", "interval", "startTime", "endTime", "limit"}
+            and query.get("interval") == ["1m"]
+            and query.get("limit") == ["1"]
+            and all(_INTEGER.fullmatch(query[name][0]) for name in ("startTime", "endTime"))
+            and re.fullmatch(r"[A-Z0-9]+", query.get("symbol", [""])[0]) is not None
         )
     elif role is SourceRole.USDM_FUNDING_TIMESTAMP_PROBE:
+        query = parse_qs(parsed.query, keep_blank_values=True)
         valid = (
             parsed.netloc == "fapi.binance.com"
             and path == "/fapi/v1/fundingRate"
-            and parsed.query
-            == "symbol=BTCUSDT&startTime=1735689600000&endTime=1735689601000&limit=10"
+            and set(query) == {"symbol", "startTime", "endTime", "limit"}
+            and all(_INTEGER.fullmatch(query[name][0]) for name in ("startTime", "endTime", "limit"))
+            and re.fullmatch(r"[A-Z0-9]+", query.get("symbol", [""])[0]) is not None
         )
     elif role is SourceRole.BINANCE_PUBLIC_DATA_CONTRACT:
         valid = (
@@ -632,6 +824,65 @@ def _validate_source_locator(role: SourceRole, locator: str) -> None:
         )
     if not valid:
         raise ConfigError(f"source_locator: locator is invalid for role {role.value}")
+
+
+def _archive_locator_fields(locator: str) -> tuple[str, str, str, str] | None:
+    """Return cadence, symbol, interval, and filename for an allowed archive path."""
+
+    parts = urlparse(locator).path.strip("/").split("/")
+    if len(parts) < 7 or parts[0] != "data":
+        return None
+    filename = parts[-1]
+    if parts[1:4] == ["spot", "daily", "klines"] or parts[1:4] == ["spot", "monthly", "klines"]:
+        return parts[2], parts[4], parts[5], filename
+    if parts[1:5] in (
+        ["futures", "um", "daily", "klines"],
+        ["futures", "um", "monthly", "klines"],
+        ["futures", "um", "daily", "markPriceKlines"],
+        ["futures", "um", "monthly", "markPriceKlines"],
+    ):
+        return parts[3], parts[5], parts[6], filename
+    if parts[1:5] == ["futures", "um", "monthly", "fundingRate"]:
+        return parts[3], parts[5], "EVENT", filename
+    return None
+
+
+def _validate_acquisition_request(request: AcquisitionRequest) -> None:
+    role = request.source_role
+    profile = request.market_profile
+    archive_fields = _archive_locator_fields(request.source_locator.removesuffix(".CHECKSUM"))
+    market_roles = {
+        SourceRole.SPOT_EXECUTION_1M,
+        SourceRole.USDM_PERPETUAL_EXECUTION_1M,
+        SourceRole.USDM_PERPETUAL_MARK_1M,
+        SourceRole.USDM_PERPETUAL_FUNDING,
+        SourceRole.PUBLISHER_CHECKSUM,
+    }
+    if role in market_roles:
+        if archive_fields is None:
+            raise ConfigError("acquisition.source_locator: archive identity is not resolvable")
+        _cadence, symbol, interval, filename = archive_fields
+        expected_filename = filename + (".CHECKSUM" if role is SourceRole.PUBLISHER_CHECKSUM else "")
+        if request.instrument != symbol or request.exact_filename != expected_filename:
+            raise ConfigError("acquisition: symbol or filename does not match locator")
+        if request.requested_interval != interval:
+            raise ConfigError("acquisition.requested_interval: does not match locator")
+        if not isinstance(request.requested_time_range, TimeRange):
+            raise ConfigError("acquisition.requested_time_range: market object requires a range")
+    elif role is SourceRole.SPOT_INSTRUMENT_METADATA:
+        query = parse_qs(urlparse(request.source_locator).query)
+        if query.get("symbol") != [request.instrument]:
+            raise ConfigError("acquisition.instrument: Spot metadata symbol mismatch")
+        if request.exact_filename != f"spot-exchangeInfo-{request.instrument}.json":
+            raise ConfigError("acquisition.exact_filename: Spot metadata filename mismatch")
+    if role is SourceRole.SPOT_EXECUTION_1M and profile != MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY.value:
+        raise ConfigError("acquisition.market_profile: Spot execution profile mismatch")
+    if role in {
+        SourceRole.USDM_PERPETUAL_EXECUTION_1M,
+        SourceRole.USDM_PERPETUAL_MARK_1M,
+        SourceRole.USDM_PERPETUAL_FUNDING,
+    } and profile != MarketProfile.BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING.value:
+        raise ConfigError("acquisition.market_profile: USD-M profile mismatch")
 
 
 def timestamp_unit_for(source_role: SourceRole, *, source_date: date) -> TimestampUnit:
@@ -1157,8 +1408,13 @@ class OfficialBinanceAcquirer:
     ) -> tuple[RawObjectRecord, RawObjectRecord | None]:
         _validate_source_locator(request.source_role, request.source_locator)
         payload = self.fetch_bytes(request.source_locator)
+        # Preserve the exact archive response before any parsing or semantic work.
+        preliminary_archive = self.store.store_bytes(
+            payload,
+            request=request,
+            acquired_at_utc=acquired_at_utc,
+        )
         checksum_record: RawObjectRecord | None = None
-        publisher_checksum = NOT_AVAILABLE
         checksum_bytes: bytes | None = None
         if checksum_request is not None:
             if checksum_request.source_role is not SourceRole.PUBLISHER_CHECKSUM:
@@ -1167,24 +1423,40 @@ class OfficialBinanceAcquirer:
                     "checksum request has the wrong role",
                 )
             checksum_bytes = self.fetch_bytes(checksum_request.source_locator)
-            publisher_checksum = parse_publisher_checksum(
-                checksum_bytes,
-                exact_filename=request.exact_filename,
-            )
+            # Preserve the exact checksum response before attempting to decode it.
             checksum_record = self.store.store_bytes(
                 checksum_bytes,
                 request=checksum_request,
                 acquired_at_utc=acquired_at_utc,
             )
-        raw_record = self.store.store_bytes(
-            payload,
-            request=request,
-            acquired_at_utc=acquired_at_utc,
-            publisher_checksum=publisher_checksum,
-        )
-        if checksum_bytes is not None:
-            verify_publisher_checksum(payload, checksum_bytes, exact_filename=request.exact_filename)
-        return raw_record, checksum_record
+            evidence = {
+                "archive_sha256": preliminary_archive.sha256,
+                "checksum_sha256": checksum_record.sha256,
+            }
+            try:
+                publisher_checksum = parse_publisher_checksum(
+                    checksum_bytes,
+                    exact_filename=request.exact_filename,
+                )
+                verify_publisher_checksum(
+                    payload,
+                    checksum_bytes,
+                    exact_filename=request.exact_filename,
+                )
+            except DataContractError as exc:
+                raise DataContractError(
+                    exc.code,
+                    f"{exc}; preserved archive/checksum response hashes",
+                    evidence=evidence,
+                ) from exc
+            verified_archive = self.store.store_bytes(
+                payload,
+                request=request,
+                acquired_at_utc=acquired_at_utc,
+                publisher_checksum=publisher_checksum,
+            )
+            return verified_archive, checksum_record
+        return preliminary_archive, None
 
 
 def _strict_json(payload: bytes) -> dict[str, Any]:
@@ -1227,6 +1499,64 @@ def _precision(increment: Decimal) -> int:
     return max(0, -normalized.as_tuple().exponent)
 
 
+def _market_quantity_intersection(
+    *,
+    lot_min: Decimal,
+    lot_max: Decimal,
+    lot_step: Decimal,
+    market_min: Decimal,
+    market_max: Decimal,
+    market_step: Decimal,
+) -> tuple[Decimal, Decimal, Decimal, tuple[str, ...]]:
+    """Resolve the exact intersection of enabled LOT and MARKET_LOT rules."""
+
+    values = (lot_min, lot_max, lot_step, market_min, market_max, market_step)
+    if any(not value.is_finite() or value < 0 for value in values):
+        raise DataContractError(
+            FailureCode.INSTRUMENT_METADATA_INVALID,
+            "quantity filter values must be finite and non-negative",
+        )
+    steps = tuple(value for value in (lot_step, market_step) if value > 0)
+    lower_bounds = tuple(value for value in (lot_min, market_min) if value > 0)
+    upper_bounds = tuple(value for value in (lot_max, market_max) if value > 0)
+    if not steps or not lower_bounds or not upper_bounds:
+        raise DataContractError(
+            FailureCode.INSTRUMENT_METADATA_INVALID,
+            "effective MARKET quantity grid and bounds are not representable",
+        )
+    scale = max(max(0, -value.as_tuple().exponent) for value in steps)
+    step_units: list[int] = []
+    for value in steps:
+        scaled = value.scaleb(scale)
+        if scaled != scaled.to_integral_value():
+            raise DataContractError(
+                FailureCode.INSTRUMENT_METADATA_INVALID,
+                "quantity step cannot be represented exactly",
+            )
+        step_units.append(int(scaled))
+    intersection_step = Decimal(lcm(*step_units)).scaleb(-scale)
+    raw_lower = max(lower_bounds)
+    raw_upper = min(upper_bounds)
+    lower_grid_index = (raw_lower / intersection_step).to_integral_value(rounding=ROUND_CEILING)
+    upper_grid_index = (raw_upper / intersection_step).to_integral_value(rounding=ROUND_FLOOR)
+    effective_min = lower_grid_index * intersection_step
+    effective_max = upper_grid_index * intersection_step
+    if effective_min <= 0 or effective_min > effective_max:
+        raise DataContractError(
+            FailureCode.INSTRUMENT_METADATA_INVALID,
+            "LOT_SIZE and MARKET_LOT_SIZE have no valid MARKET quantity intersection",
+        )
+    derivation = (
+        "ZERO_FILTER_COMPONENTS_DISABLED_BY_OFFICIAL_BINANCE_FILTER_CONTRACT",
+        f"ENABLED_MIN_INTERSECTION=max({lot_min},{market_min})={raw_lower}",
+        f"ENABLED_MAX_INTERSECTION=min({lot_max},{market_max})={raw_upper}",
+        f"ENABLED_STEP_INTERSECTION=lcm_decimal({lot_step},{market_step})={intersection_step}",
+        f"EFFECTIVE_MIN=ceil({raw_lower}/{intersection_step})*{intersection_step}={effective_min}",
+        f"EFFECTIVE_MAX=floor({raw_upper}/{intersection_step})*{intersection_step}={effective_max}",
+    )
+    return effective_min, effective_max, intersection_step, derivation
+
+
 def _official_server_time(value: Any) -> datetime:
     if type(value) is not int or value < 0:
         raise DataContractError(
@@ -1239,6 +1569,8 @@ def _official_server_time(value: Any) -> datetime:
 def parse_spot_instrument_metadata(
     payload: bytes,
     *,
+    raw_symbol: str,
+    instrument_id: str,
     source_object_sha256: str,
     maker_fee_rate: Decimal,
     taker_fee_rate: Decimal,
@@ -1248,20 +1580,39 @@ def parse_spot_instrument_metadata(
     definitions = data.get("symbols")
     if not isinstance(definitions, list):
         raise DataContractError(FailureCode.INSTRUMENT_METADATA_INVALID, "symbols missing")
-    matches = [item for item in definitions if item.get("symbol") == "BTCUSDT"]
+    if instrument_id != f"{raw_symbol}.BINANCE":
+        raise DataContractError(
+            FailureCode.INSTRUMENT_METADATA_INVALID,
+            "Spot Instrument ID does not match the explicit Binance symbol",
+        )
+    matches = [item for item in definitions if item.get("symbol") == raw_symbol]
     if len(matches) != 1:
-        raise DataContractError(FailureCode.INSTRUMENT_METADATA_INVALID, "BTCUSDT definition ambiguous")
+        raise DataContractError(FailureCode.INSTRUMENT_METADATA_INVALID, "Spot symbol definition ambiguous")
     definition = matches[0]
     price = _filter(definition, "PRICE_FILTER")
     lot = _filter(definition, "LOT_SIZE")
+    market_lot = _filter(definition, "MARKET_LOT_SIZE")
     notional = _filter(definition, "NOTIONAL")
     increment = _decimal(price["tickSize"], "tickSize")
-    size_increment = _decimal(lot["stepSize"], "stepSize")
+    lot_min = _decimal(lot["minQty"], "LOT_SIZE.minQty")
+    lot_max = _decimal(lot["maxQty"], "LOT_SIZE.maxQty")
+    lot_step = _decimal(lot["stepSize"], "LOT_SIZE.stepSize")
+    market_min = _decimal(market_lot["minQty"], "MARKET_LOT_SIZE.minQty")
+    market_max = _decimal(market_lot["maxQty"], "MARKET_LOT_SIZE.maxQty")
+    market_step = _decimal(market_lot["stepSize"], "MARKET_LOT_SIZE.stepSize")
+    effective_min, effective_max, size_increment, derivation = _market_quantity_intersection(
+        lot_min=lot_min,
+        lot_max=lot_max,
+        lot_step=lot_step,
+        market_min=market_min,
+        market_max=market_max,
+        market_step=market_step,
+    )
     values = {
         "market_profile": MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY,
-        "instrument_id": "BTCUSDT.BINANCE",
-        "raw_symbol": "BTCUSDT",
-        "official_source": "https://api.binance.com/api/v3/exchangeInfo?symbol=BTCUSDT",
+        "instrument_id": instrument_id,
+        "raw_symbol": raw_symbol,
+        "official_source": f"https://api.binance.com/api/v3/exchangeInfo?symbol={raw_symbol}",
         "source_object_sha256": source_object_sha256,
         "observed_at_utc": _official_server_time(data.get("serverTime")),
         "historical_exact": False,
@@ -1282,8 +1633,15 @@ def parse_spot_instrument_metadata(
         "size_increment": size_increment,
         "min_price": _decimal(price["minPrice"], "minPrice"),
         "max_price": _decimal(price["maxPrice"], "maxPrice"),
-        "min_quantity": _decimal(lot["minQty"], "minQty"),
-        "max_quantity": _decimal(lot["maxQty"], "maxQty"),
+        "min_quantity": effective_min,
+        "max_quantity": effective_max,
+        "lot_size_min_quantity": lot_min,
+        "lot_size_max_quantity": lot_max,
+        "lot_size_step_size": lot_step,
+        "market_lot_size_min_quantity": market_min,
+        "market_lot_size_max_quantity": market_max,
+        "market_lot_size_step_size": market_step,
+        "effective_market_derivation": derivation,
         "min_notional": _decimal(notional["minNotional"], "minNotional"),
         "max_notional": _decimal(notional["maxNotional"], "maxNotional"),
         "multiplier": Decimal("1"),
@@ -1300,6 +1658,8 @@ def parse_spot_instrument_metadata(
 def parse_usdm_instrument_metadata(
     payload: bytes,
     *,
+    raw_symbol: str,
+    instrument_id: str,
     source_object_sha256: str,
     maker_fee_rate: Decimal,
     taker_fee_rate: Decimal,
@@ -1309,21 +1669,40 @@ def parse_usdm_instrument_metadata(
     definitions = data.get("symbols")
     if not isinstance(definitions, list):
         raise DataContractError(FailureCode.INSTRUMENT_METADATA_INVALID, "symbols missing")
-    matches = [item for item in definitions if item.get("symbol") == "BTCUSDT"]
+    if instrument_id != f"{raw_symbol}-PERP.BINANCE":
+        raise DataContractError(
+            FailureCode.INSTRUMENT_METADATA_INVALID,
+            "Perpetual Instrument ID does not match the explicit Binance symbol",
+        )
+    matches = [item for item in definitions if item.get("symbol") == raw_symbol]
     if len(matches) != 1:
-        raise DataContractError(FailureCode.INSTRUMENT_METADATA_INVALID, "BTCUSDT definition ambiguous")
+        raise DataContractError(FailureCode.INSTRUMENT_METADATA_INVALID, "USD-M symbol definition ambiguous")
     definition = matches[0]
     if definition.get("contractType") != "PERPETUAL" or definition.get("marginAsset") != "USDT":
         raise DataContractError(FailureCode.INSTRUMENT_METADATA_INVALID, "not linear USDT perpetual")
     price = _filter(definition, "PRICE_FILTER")
     lot = _filter(definition, "LOT_SIZE")
+    market_lot = _filter(definition, "MARKET_LOT_SIZE")
     notional = _filter(definition, "MIN_NOTIONAL")
     increment = _decimal(price["tickSize"], "tickSize")
-    size_increment = _decimal(lot["stepSize"], "stepSize")
+    lot_min = _decimal(lot["minQty"], "LOT_SIZE.minQty")
+    lot_max = _decimal(lot["maxQty"], "LOT_SIZE.maxQty")
+    lot_step = _decimal(lot["stepSize"], "LOT_SIZE.stepSize")
+    market_min = _decimal(market_lot["minQty"], "MARKET_LOT_SIZE.minQty")
+    market_max = _decimal(market_lot["maxQty"], "MARKET_LOT_SIZE.maxQty")
+    market_step = _decimal(market_lot["stepSize"], "MARKET_LOT_SIZE.stepSize")
+    effective_min, effective_max, size_increment, derivation = _market_quantity_intersection(
+        lot_min=lot_min,
+        lot_max=lot_max,
+        lot_step=lot_step,
+        market_min=market_min,
+        market_max=market_max,
+        market_step=market_step,
+    )
     values = {
         "market_profile": MarketProfile.BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING,
-        "instrument_id": "BTCUSDT-PERP.BINANCE",
-        "raw_symbol": "BTCUSDT",
+        "instrument_id": instrument_id,
+        "raw_symbol": raw_symbol,
         "official_source": "https://fapi.binance.com/fapi/v1/exchangeInfo",
         "source_object_sha256": source_object_sha256,
         "observed_at_utc": _official_server_time(data.get("serverTime")),
@@ -1345,8 +1724,15 @@ def parse_usdm_instrument_metadata(
         "size_increment": size_increment,
         "min_price": _decimal(price["minPrice"], "minPrice"),
         "max_price": _decimal(price["maxPrice"], "maxPrice"),
-        "min_quantity": _decimal(lot["minQty"], "minQty"),
-        "max_quantity": _decimal(lot["maxQty"], "maxQty"),
+        "min_quantity": effective_min,
+        "max_quantity": effective_max,
+        "lot_size_min_quantity": lot_min,
+        "lot_size_max_quantity": lot_max,
+        "lot_size_step_size": lot_step,
+        "market_lot_size_min_quantity": market_min,
+        "market_lot_size_max_quantity": market_max,
+        "market_lot_size_step_size": market_step,
+        "effective_market_derivation": derivation,
         "min_notional": _decimal(notional["notional"], "minNotional"),
         "max_notional": NOT_APPLICABLE,
         "multiplier": Decimal("1"),
@@ -1412,6 +1798,27 @@ def to_nautilus_instrument(metadata: InstrumentMetadata) -> CurrencyPair | Crypt
             "instrument_metadata_identity": metadata.instrument_metadata_identity,
             "historical_exact": metadata.historical_exact,
             "fee_rate_basis": metadata.fee_rate_basis,
+            "official_source": metadata.official_source,
+            "source_object_sha256": metadata.source_object_sha256,
+            "official_definition": metadata.to_builtins()["official_definition"],
+            "binance_quantity_filters": {
+                "LOT_SIZE": {
+                    "minQty": str(metadata.lot_size_min_quantity),
+                    "maxQty": str(metadata.lot_size_max_quantity),
+                    "stepSize": str(metadata.lot_size_step_size),
+                },
+                "MARKET_LOT_SIZE": {
+                    "minQty": str(metadata.market_lot_size_min_quantity),
+                    "maxQty": str(metadata.market_lot_size_max_quantity),
+                    "stepSize": str(metadata.market_lot_size_step_size),
+                },
+                "effective_MARKET": {
+                    "minQty": str(metadata.min_quantity),
+                    "maxQty": str(metadata.max_quantity),
+                    "stepSize": str(metadata.size_increment),
+                    "derivation": list(metadata.effective_market_derivation),
+                },
+            },
         },
     }
     if isinstance(metadata.max_notional, Decimal):
@@ -1436,6 +1843,38 @@ def to_nautilus_instrument(metadata: InstrumentMetadata) -> CurrencyPair | Crypt
         margin_init=metadata.margin_init,
         margin_maint=metadata.margin_maint,
     )
+
+
+def validate_market_order_quantity(
+    instrument: CurrencyPair | CryptoPerpetual,
+    quantity: Quantity,
+) -> None:
+    """Validate V1 MARKET eligibility from the native Instrument constraints."""
+
+    if quantity.precision != instrument.size_precision:
+        raise DataContractError(
+            FailureCode.INSTRUMENT_METADATA_INVALID,
+            "MARKET quantity precision differs from the native Instrument",
+        )
+    value = quantity.as_decimal()
+    minimum = None if instrument.min_quantity is None else instrument.min_quantity.as_decimal()
+    maximum = None if instrument.max_quantity is None else instrument.max_quantity.as_decimal()
+    increment = instrument.size_increment.as_decimal()
+    if minimum is not None and value < minimum:
+        raise DataContractError(
+            FailureCode.INSTRUMENT_METADATA_INVALID,
+            f"MARKET quantity {value} is below native minimum {minimum}",
+        )
+    if maximum is not None and value > maximum:
+        raise DataContractError(
+            FailureCode.INSTRUMENT_METADATA_INVALID,
+            f"MARKET quantity {value} is above native maximum {maximum}",
+        )
+    if increment <= 0 or value % increment != 0:
+        raise DataContractError(
+            FailureCode.INSTRUMENT_METADATA_INVALID,
+            f"MARKET quantity {value} is not on native grid {increment}",
+        )
 
 
 def _bar_type(instrument_id: str) -> BarType:
@@ -1622,6 +2061,122 @@ def build_nautilus_catalog(
     )
 
 
+def _resolve_dataset_release_runtime(
+    release: DatasetRelease,
+    data_root: Path,
+) -> ResolvedDatasetRelease:
+    """Resolve and verify one current release through the public DatasetRelease boundary."""
+
+    if not release.is_current_contract:
+        raise DataContractError(
+            FailureCode.DATASET_RELEASE_STALE,
+            "historical Dataset Releases cannot enter the active run path",
+        )
+    if canonical_sha256(release.material_payload()) != release.dataset_release_id:
+        raise DataContractError(FailureCode.DATA_HASH_MISMATCH, "Dataset Release identity mismatch")
+    raw_root = data_root / "raw" / "sha256"
+    for source in release.source_objects:
+        path = raw_root / source.sha256[:2] / f"{source.sha256}.blob"
+        if not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest() != source.sha256:
+            raise DataContractError(
+                FailureCode.DATA_HASH_MISMATCH,
+                f"source object {source.sha256} does not resolve",
+            )
+
+    release_root = data_root / "releases"
+    metadata_path = release_root / f"{release.instrument_metadata_identity}.metadata.json"
+    try:
+        metadata = InstrumentMetadata.from_json_bytes(metadata_path.read_bytes())
+    except Exception as exc:
+        raise DataContractError(
+            FailureCode.INSTRUMENT_METADATA_INVALID,
+            "instrument metadata does not resolve",
+        ) from exc
+    if (
+        metadata.instrument_metadata_identity != release.instrument_metadata_identity
+        or metadata.instrument_id != release.instrument_id
+        or metadata.market_profile is not release.market_profile
+    ):
+        raise DataContractError(
+            FailureCode.INSTRUMENT_METADATA_INVALID,
+            "instrument metadata binding mismatch",
+        )
+
+    catalog_path = data_root / "catalog" / release.catalog_identity
+    if not catalog_path.is_dir():
+        raise DataContractError(FailureCode.DATASET_RELEASE_STALE, "catalog identity does not resolve")
+    catalog = ParquetDataCatalog(str(catalog_path))
+    instruments = tuple(catalog.instruments([release.instrument_id]))
+    bars = tuple(catalog.query_bars([str(_bar_type(release.instrument_id))]))
+    marks = tuple(catalog.query_mark_price_updates([release.instrument_id]))
+    if len(instruments) != 1 or not bars:
+        raise DataContractError(FailureCode.DATASET_RELEASE_STALE, "catalog inventory is incomplete")
+    instrument = instruments[0]
+    if (
+        str(instrument.id) != release.instrument_id
+        or instrument.info.get("instrument_metadata_identity") != release.instrument_metadata_identity
+    ):
+        raise DataContractError(
+            FailureCode.INSTRUMENT_METADATA_INVALID,
+            "native Instrument is not bound to release metadata",
+        )
+
+    funding_updates: tuple[FundingRateUpdate, ...] = ()
+    if release.market_profile is MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY:
+        if marks or release.mark_data_identity != NOT_APPLICABLE or release.funding_data_identity != NOT_APPLICABLE:
+            raise DataContractError(FailureCode.DATA_ROLE_MISMATCH, "Spot catalog has derivative roles")
+    else:
+        if not marks:
+            raise DataContractError(FailureCode.MARK_ROLE_INVALID, "Perpetual mark catalog is empty")
+        funding_path = release_root / f"{release.funding_data_identity}.funding.json"
+        try:
+            funding_payload = _strict_json(funding_path.read_bytes())
+        except Exception as exc:
+            raise DataContractError(FailureCode.FUNDING_MISSING, "funding evidence does not resolve") from exc
+        declared = funding_payload.pop("funding_data_identity", None)
+        if declared != release.funding_data_identity or canonical_sha256(funding_payload) != declared:
+            raise DataContractError(FailureCode.DATA_HASH_MISMATCH, "funding data identity mismatch")
+        events = funding_payload.get("events")
+        if not isinstance(events, list) or not events:
+            raise DataContractError(FailureCode.FUNDING_MISSING, "funding evidence has no events")
+        instrument_id = InstrumentId.from_str(release.instrument_id)
+        try:
+            funding_updates = tuple(
+                FundingRateUpdate(
+                    instrument_id,
+                    Decimal(str(item["funding_rate"])),
+                    int(item["calc_time_ns"]),
+                    int(item["calc_time_ns"]),
+                    interval=int(item["funding_interval_hours"]) * 60,
+                    next_funding_ns=None,
+                )
+                for item in events
+            )
+        except Exception as exc:
+            raise DataContractError(FailureCode.FUNDING_AMBIGUOUS, "funding event is malformed") from exc
+
+    inventory = catalog_semantic_inventory(
+        catalog,
+        instrument_id=release.instrument_id,
+        bar_type=str(_bar_type(release.instrument_id)),
+        funding_updates=funding_updates,
+    )
+    verify_catalog_identity(release, inventory)
+    priorities = {MarkPriceUpdate: 0, FundingRateUpdate: 1, Bar: 2}
+    data = tuple(
+        sorted(
+            (*marks, *funding_updates, *bars),
+            key=lambda item: (int(item.ts_init), priorities[type(item)]),
+        ),
+    )
+    return ResolvedDatasetRelease(
+        instrument=instrument,
+        data=data,
+        catalog_path=catalog_path,
+        semantic_inventory=inventory,
+    )
+
+
 def verify_catalog_identity(release: DatasetRelease, semantic_inventory: dict[str, Any]) -> None:
     actual = canonical_sha256(semantic_inventory)
     if actual != release.catalog_identity:
@@ -1648,6 +2203,181 @@ def _normalized_identity(bars: tuple[NormalizedBar, ...] | list[NormalizedBar]) 
     return canonical_sha256([item.semantic_payload() for item in bars])
 
 
+def _raw_symbol_for_release(profile: MarketProfile, instrument_id: str) -> str:
+    suffix = (
+        ".BINANCE"
+        if profile is MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY
+        else "-PERP.BINANCE"
+    )
+    if not instrument_id.endswith(suffix):
+        raise DataContractError(
+            FailureCode.INSTRUMENT_METADATA_INVALID,
+            "release Instrument ID is incompatible with its Market Profile",
+        )
+    symbol = instrument_id.removesuffix(suffix)
+    if re.fullmatch(r"[A-Z0-9]+", symbol) is None:
+        raise DataContractError(
+            FailureCode.INSTRUMENT_METADATA_INVALID,
+            "release Binance symbol is invalid",
+        )
+    return symbol
+
+
+def _source_date_from_filename(role: SourceRole, filename: str) -> date:
+    patterns = (
+        rf"[A-Z0-9]+-1m-(\d{{4}}-\d{{2}}-\d{{2}})\.zip",
+        rf"[A-Z0-9]+-1m-(\d{{4}}-\d{{2}})\.zip",
+        rf"[A-Z0-9]+-fundingRate-(\d{{4}}-\d{{2}})\.zip",
+    )
+    for pattern in patterns:
+        match = re.fullmatch(pattern, filename)
+        if match is None:
+            continue
+        raw = match.group(1)
+        try:
+            return date.fromisoformat(raw + ("-01" if len(raw) == 7 else ""))
+        except ValueError as exc:
+            raise DataContractError(
+                FailureCode.DATA_TIMESTAMP_INVALID,
+                "source filename date is invalid",
+            ) from exc
+    raise DataContractError(
+        FailureCode.DATA_SOURCE_INVALID,
+        f"source filename {filename!r} has no supported date identity",
+    )
+
+
+def _ranges_cover(bindings: tuple[SourceObjectBinding, ...], target: TimeRange) -> bool:
+    ranges = sorted(
+        (
+            item.requested_time_range.start_inclusive,
+            item.requested_time_range.end_exclusive,
+        )
+        for item in bindings
+        if isinstance(item.requested_time_range, TimeRange)
+    )
+    cursor = target.start_inclusive
+    for start, end in ranges:
+        if end <= cursor:
+            continue
+        if start > cursor:
+            return False
+        cursor = max(cursor, end)
+        if cursor >= target.end_exclusive:
+            return True
+    return cursor >= target.end_exclusive
+
+
+def _validate_source_bindings(
+    *,
+    market_profile: MarketProfile,
+    instrument_id: str,
+    source_objects: tuple[SourceObjectBinding, ...],
+    normalized_time_range: TimeRange,
+) -> None:
+    symbol = _raw_symbol_for_release(market_profile, instrument_id)
+    if market_profile is MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY:
+        allowed = {
+            SourceRole.SPOT_EXECUTION_1M,
+            SourceRole.SPOT_INSTRUMENT_METADATA,
+        }
+        range_roles = {SourceRole.SPOT_EXECUTION_1M: "1m"}
+    else:
+        allowed = {
+            SourceRole.USDM_PERPETUAL_EXECUTION_1M,
+            SourceRole.USDM_PERPETUAL_MARK_1M,
+            SourceRole.USDM_PERPETUAL_FUNDING,
+            SourceRole.USDM_PERPETUAL_INSTRUMENT_METADATA,
+        }
+        range_roles = {
+            SourceRole.USDM_PERPETUAL_EXECUTION_1M: "1m",
+            SourceRole.USDM_PERPETUAL_MARK_1M: "1m",
+            SourceRole.USDM_PERPETUAL_FUNDING: "EVENT",
+        }
+    for source in source_objects:
+        if source.conflicts_with_sha256:
+            raise DataContractError(
+                FailureCode.DATA_DUPLICATE_CONFLICT,
+                f"unresolved source conflict for {source.source_locator}",
+            )
+        if source.source_role not in allowed:
+            raise DataContractError(
+                FailureCode.DATA_ROLE_MISMATCH,
+                "source role is not allowed by the target release",
+            )
+        if source.instrument != symbol or source.market_profile != market_profile.value:
+            raise DataContractError(
+                FailureCode.DATA_ROLE_MISMATCH,
+                "source Instrument or Market Profile does not match target release",
+            )
+        expected_interval = range_roles.get(source.source_role, NOT_APPLICABLE)
+        if source.requested_interval != expected_interval:
+            raise DataContractError(
+                FailureCode.DATA_ROLE_MISMATCH,
+                "source interval does not match target role",
+            )
+        if source.source_role in range_roles:
+            fields = _archive_locator_fields(source.source_locator)
+            if fields is None:
+                raise DataContractError(FailureCode.DATA_SOURCE_INVALID, "archive locator is unresolved")
+            _cadence, locator_symbol, locator_interval, locator_filename = fields
+            if (
+                locator_symbol != symbol
+                or locator_interval != expected_interval
+                or locator_filename != source.exact_filename
+            ):
+                raise DataContractError(
+                    FailureCode.DATA_SOURCE_INVALID,
+                    "archive locator, filename, symbol, or interval is inconsistent",
+                )
+            if not isinstance(source.requested_time_range, TimeRange):
+                raise DataContractError(
+                    FailureCode.DATA_SOURCE_INVALID,
+                    "market source has no requested time range",
+                )
+            source_date = _source_date_from_filename(source.source_role, source.exact_filename)
+            unit = timestamp_unit_for(source.source_role, source_date=source_date)
+            expected_unit = (
+                TimestampUnit.MICROSECONDS
+                if source.source_role is SourceRole.SPOT_EXECUTION_1M
+                and source_date >= SPOT_MICROSECOND_TRANSITION
+                else TimestampUnit.MILLISECONDS
+            )
+            if unit is not expected_unit:
+                raise DataContractError(
+                    FailureCode.DATA_TIMESTAMP_INVALID,
+                    "source timestamp unit contract is unresolved",
+                )
+        elif source.source_role is SourceRole.SPOT_INSTRUMENT_METADATA:
+            query = parse_qs(urlparse(source.source_locator).query)
+            if (
+                query.get("symbol") != [symbol]
+                or source.exact_filename != f"spot-exchangeInfo-{symbol}.json"
+                or source.requested_time_range != NOT_APPLICABLE
+            ):
+                raise DataContractError(
+                    FailureCode.DATA_SOURCE_INVALID,
+                    "Spot metadata binding is inconsistent",
+                )
+        elif source.source_role is SourceRole.USDM_PERPETUAL_INSTRUMENT_METADATA:
+            if (
+                urlparse(source.source_locator).path != "/fapi/v1/exchangeInfo"
+                or source.exact_filename != "usdm-exchangeInfo.json"
+                or source.requested_time_range != NOT_APPLICABLE
+            ):
+                raise DataContractError(
+                    FailureCode.DATA_SOURCE_INVALID,
+                    "USD-M metadata binding is inconsistent",
+                )
+    for role in range_roles:
+        role_bindings = tuple(item for item in source_objects if item.source_role is role)
+        if not role_bindings or not _ranges_cover(role_bindings, normalized_time_range):
+            raise DataContractError(
+                FailureCode.DATA_SOURCE_INVALID,
+                f"source range for {role.value} does not cover the release",
+            )
+
+
 def build_dataset_release(
     *,
     market_profile: MarketProfile,
@@ -1667,6 +2397,20 @@ def build_dataset_release(
             FailureCode.INSTRUMENT_METADATA_INVALID,
             "metadata does not match release profile/instrument",
         )
+    bindings = tuple(
+        sorted(
+            source_objects,
+            key=lambda item: (item.source_role.value, item.source_locator, item.sha256),
+        ),
+    )
+    _validate_source_bindings(
+        market_profile=market_profile,
+        instrument_id=instrument_id,
+        source_objects=bindings,
+        normalized_time_range=normalized_time_range,
+    )
+    if any(item.instrument_id != instrument_id for item in execution_bars):
+        raise DataContractError(FailureCode.DATA_ROLE_MISMATCH, "execution Bar Instrument mismatch")
     execution_role = (
         SourceRole.SPOT_EXECUTION_1M
         if market_profile is MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY
@@ -1690,6 +2434,10 @@ def build_dataset_release(
     else:
         if not mark_bars:
             raise DataContractError(FailureCode.MARK_ROLE_INVALID, "Perpetual mark role missing")
+        if any(item.instrument_id != instrument_id for item in mark_bars):
+            raise DataContractError(FailureCode.MARK_ROLE_INVALID, "mark Bar Instrument mismatch")
+        if any(item.instrument_id != instrument_id for item in funding_events):
+            raise DataContractError(FailureCode.DATA_ROLE_MISMATCH, "funding Instrument mismatch")
         role_results.append(
             validate_one_minute_grid(
                 mark_bars,
@@ -1703,12 +2451,6 @@ def build_dataset_release(
         status="PASS",
         no_repairs=True,
         role_results=tuple(role_results),
-    )
-    bindings = tuple(
-        sorted(
-            source_objects,
-            key=lambda item: (item.source_role.value, item.source_locator, item.sha256),
-        ),
     )
     values = {
         "schema_version": 1,

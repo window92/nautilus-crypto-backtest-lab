@@ -1,0 +1,6 @@
+COMMAND: TZ=UTC LC_ALL=C.UTF-8 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src .venv/bin/python scripts/generate_m2_repair_evidence.py
+EXIT_CODE: 1
+RESULT: FAILED_ATTEMPT_RETAINED
+ROOT_CAUSE: A partial first generation had already frozen a release representation. A repeat build produced the same material dataset_release_id but a later non-material created_at_utc and the byte-level reuse check rejected it.
+EXCEPTION: FileExistsError: content-addressed artifact collision: data/releases/2e0bdefe2b664821c559e95d35a3462c8354606076e1ec81d0ce6272f89b9a44.json
+DISPOSITION: The generator now parses the first immutable release, verifies equality of its canonical material payload, and reuses that exact representation. A material collision still fails closed. No prior object was modified or deleted.

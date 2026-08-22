@@ -105,6 +105,12 @@ def spot_metadata_payload(server_time: int = 1_787_365_504_874) -> bytes:
                             "stepSize": "0.00001000",
                         },
                         {
+                            "filterType": "MARKET_LOT_SIZE",
+                            "minQty": "0.00000000",
+                            "maxQty": "107.65653775",
+                            "stepSize": "0.00000000",
+                        },
+                        {
                             "filterType": "NOTIONAL",
                             "minNotional": "5.00000000",
                             "maxNotional": "9000000.00000000",
@@ -147,6 +153,12 @@ def perp_metadata_payload(server_time: int = 1_787_364_010_802) -> bytes:
                             "maxQty": "1000",
                             "stepSize": "0.001",
                         },
+                        {
+                            "filterType": "MARKET_LOT_SIZE",
+                            "minQty": "0.001",
+                            "maxQty": "120",
+                            "stepSize": "0.001",
+                        },
                         {"filterType": "MIN_NOTIONAL", "notional": "50"},
                     ],
                 },
@@ -159,6 +171,8 @@ def perp_metadata_payload(server_time: int = 1_787_364_010_802) -> bytes:
 def spot_metadata() -> InstrumentMetadata:
     return parse_spot_instrument_metadata(
         spot_metadata_payload(),
+        raw_symbol="BTCUSDT",
+        instrument_id="BTCUSDT.BINANCE",
         source_object_sha256="1" * 64,
         maker_fee_rate=Decimal("0"),
         taker_fee_rate=Decimal("0"),
@@ -169,6 +183,8 @@ def spot_metadata() -> InstrumentMetadata:
 def perp_metadata() -> InstrumentMetadata:
     return parse_usdm_instrument_metadata(
         perp_metadata_payload(),
+        raw_symbol="BTCUSDT",
+        instrument_id="BTCUSDT-PERP.BINANCE",
         source_object_sha256="2" * 64,
         maker_fee_rate=Decimal("0"),
         taker_fee_rate=Decimal("0"),
@@ -238,6 +254,7 @@ def binding(role: SourceRole, digest_char: str) -> SourceObjectBinding:
         market_profile=profile,
         requested_interval=interval,
         requested_time_range=requested,
+        conflicts_with_sha256=(),
     )
 
 

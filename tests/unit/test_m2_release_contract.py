@@ -156,6 +156,8 @@ class MetadataTests(unittest.TestCase):
     def test_material_metadata_change_changes_identity_but_observation_time_does_not(self) -> None:
         first = parse_spot_instrument_metadata(
             spot_metadata_payload(1_700_000_000_000),
+            raw_symbol="BTCUSDT",
+            instrument_id="BTCUSDT.BINANCE",
             source_object_sha256="1" * 64,
             maker_fee_rate=Decimal("0"),
             taker_fee_rate=Decimal("0"),
@@ -163,6 +165,8 @@ class MetadataTests(unittest.TestCase):
         )
         second = parse_spot_instrument_metadata(
             spot_metadata_payload(1_800_000_000_000),
+            raw_symbol="BTCUSDT",
+            instrument_id="BTCUSDT.BINANCE",
             source_object_sha256="1" * 64,
             maker_fee_rate=Decimal("0"),
             taker_fee_rate=Decimal("0"),
@@ -171,6 +175,8 @@ class MetadataTests(unittest.TestCase):
         self.assertEqual(first.instrument_metadata_identity, second.instrument_metadata_identity)
         changed = parse_spot_instrument_metadata(
             spot_metadata_payload(1_700_000_000_000),
+            raw_symbol="BTCUSDT",
+            instrument_id="BTCUSDT.BINANCE",
             source_object_sha256="1" * 64,
             maker_fee_rate=Decimal("0.001"),
             taker_fee_rate=Decimal("0.001"),
@@ -184,6 +190,8 @@ class MetadataTests(unittest.TestCase):
         with self.assertRaises(DataContractError) as raised:
             parse_usdm_instrument_metadata(
                 json.dumps(payload).encode(),
+                raw_symbol="BTCUSDT",
+                instrument_id="BTCUSDT-PERP.BINANCE",
                 source_object_sha256="2" * 64,
                 maker_fee_rate=Decimal("0"),
                 taker_fee_rate=Decimal("0"),
