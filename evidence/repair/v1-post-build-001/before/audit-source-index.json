@@ -1,0 +1,17 @@
+{
+  "audit_root": "/tmp/nautilus-v1-post-build-audit-mHbXvI",
+  "audit_root_inspected_read_only": true,
+  "baseline_commit": "0507549ad60ae63d9ae1e93d6852a11d4660ce0c",
+  "files": {
+    "ending-integrity.json": "1ebb00123361c187fdde53c5d563059e89595242795540aa5465e3d6aaac48fe",
+    "m4-boundary-bypasses.json": "baa695c67f9cdf12bd9f0c59c0f205f938660407da9513d752688c7002d9a813",
+    "network-guard-scope-proof.json": "2da0ba875079464a0f62563e215138441c304b1d6dbec23dcdf30d0daac7de67",
+    "path-traversal-proof.json": "7855cd1026e8dded0e6f6ba2cb79f2a2346a9d88c189903d2a70a08f602e0867",
+    "qualification-holdout-mutation.json": "77b644a1ac8b6091fceb10ae095f6e13c354b98c2dd650bef51c2cf052391fe7",
+    "source-revision-binding-proof.json": "8dcc19cc9d9aee3e3bf63f6fbee9e73f4248f2b7a9cf675160c9b2e57e16d0aa",
+    "trial-journal-replacement-proof.json": "e1164fddcae0216e82c62d95fd32221dd44aa3268464ee8ec0525e1f7e1401ef",
+    "unbound-strategy-plan-proof.json": "86515808516de52cbda0930c0e0aaef03f06f7bb730f54e092b263bdab3b593c",
+    "winner-only-official-report-bypass.json": "1e1e0f94aa7dd735341a9e35169086b57b2537d60a4568f79b55a9d9b4d17f2b"
+  },
+  "schema": "v1-repair-before-audit-source-index-v1"
+}

@@ -1,0 +1,19 @@
+{
+  "checker_outcome": "CHECK_PASS",
+  "claim_eligibility": "INELIGIBLE",
+  "commits": [
+    "1e3147d92e0245e320af82cb09be80f49aaa462f",
+    "8dc2d2c105912fbc321193a67c3c0c95500d2b10",
+    "64572e39ae40aa73e492efab524c007fe621840e",
+    "78c1af3fcfe1fb5f8301887c055e9c9b4b912eb8",
+    "3938a52959a3bdf301c05537fde2236b006a16a3"
+  ],
+  "final_holdout_used": false,
+  "history_anchor_sha256": "5cd02d3ba20109e99660534ed75af2e8a1496109de22c71a1df631cfae99d993",
+  "real_profitability_claim": false,
+  "report_id": "73c4133948014bca64f11708d21e452537414e68fe9b0a84ebc1cdaa813ab801",
+  "run_id": "qualification-interface-run-final",
+  "run_state": "COMPLETED",
+  "status": "PASS",
+  "trial_id": "qualification-interface-fixture-final"
+}

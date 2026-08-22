@@ -1,0 +1,5 @@
+{
+  "detail": "TRIAL_HISTORY_INCOMPLETE: interrupted trials were terminalized; submit a new trial_id/run_id: qualification-interface-fixture-acceptance",
+  "error_type": "ResearchError",
+  "status": "BLOCKED"
+}

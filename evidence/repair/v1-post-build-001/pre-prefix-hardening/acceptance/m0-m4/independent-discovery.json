@@ -1,0 +1,21 @@
+{
+  "command": [
+    "/tmp/nautilus-v1-repair-history-YxfQh9eJ/repository/.venv/bin/python",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "tests",
+    "-t",
+    ".",
+    "-v"
+  ],
+  "executed_test_cases": 196,
+  "missing_from_discovery": [],
+  "output_sha256": "bcf7ebedecc33c6a667f54f29698dcfddfd5343774e2d2746a9975acd4f9a2e1",
+  "returncode": 0,
+  "schema": "m4-independent-discovery-v1",
+  "status": "PASS",
+  "unexpected_in_discovery": [],
+  "unique_executable_test_cases": 196
+}

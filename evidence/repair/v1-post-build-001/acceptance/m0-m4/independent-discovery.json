@@ -1,0 +1,21 @@
+{
+  "command": [
+    "/tmp/nautilus-v1-repair-final3-nBMrCs/repository/.venv/bin/python",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "tests",
+    "-t",
+    ".",
+    "-v"
+  ],
+  "executed_test_cases": 206,
+  "missing_from_discovery": [],
+  "output_sha256": "bbc746f722b82115370520ab85892e6b68d3b2b25b980a50a9ee2512605dc5d9",
+  "returncode": 0,
+  "schema": "m4-independent-discovery-v1",
+  "status": "PASS",
+  "unexpected_in_discovery": [],
+  "unique_executable_test_cases": 206
+}

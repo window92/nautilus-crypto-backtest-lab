@@ -1,0 +1,2 @@
+event_index,ts_event,account_id,account_type,currency,total,locked,free,reported
+0,1735689540000000000,BINANCE-001,CASH,USDT,1000.00000000,0.00000000,1000.00000000,True

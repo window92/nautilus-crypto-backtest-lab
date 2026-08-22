@@ -1,0 +1,75 @@
+test_m4_protocol (unittest.loader._FailedTest.test_m4_protocol) ... ERROR
+test_m4_journal_holdout (unittest.loader._FailedTest.test_m4_journal_holdout) ... ERROR
+test_m4_monte_carlo_diagnostics (unittest.loader._FailedTest.test_m4_monte_carlo_diagnostics) ... ERROR
+test_m4_claim_reporting (unittest.loader._FailedTest.test_m4_claim_reporting) ... ERROR
+test_m4_public_contract (unittest.loader._FailedTest.test_m4_public_contract) ... ERROR
+
+======================================================================
+ERROR: test_m4_protocol (unittest.loader._FailedTest.test_m4_protocol)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_m4_protocol
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/unittest/loader.py", line 137, in loadTestsFromName
+    module = __import__(module_name)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/builder/projects/nautilus-crypto-backtest-lab/tests/unit/test_m4_protocol.py", line 8, in <module>
+    from crypto_lab.research import ClaimScope
+ImportError: cannot import name 'ClaimScope' from 'crypto_lab.research' (/home/builder/projects/nautilus-crypto-backtest-lab/src/crypto_lab/research.py)
+
+
+======================================================================
+ERROR: test_m4_journal_holdout (unittest.loader._FailedTest.test_m4_journal_holdout)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_m4_journal_holdout
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/unittest/loader.py", line 137, in loadTestsFromName
+    module = __import__(module_name)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/builder/projects/nautilus-crypto-backtest-lab/tests/unit/test_m4_journal_holdout.py", line 8, in <module>
+    from crypto_lab.research import HoldoutLockStore
+ImportError: cannot import name 'HoldoutLockStore' from 'crypto_lab.research' (/home/builder/projects/nautilus-crypto-backtest-lab/src/crypto_lab/research.py)
+
+
+======================================================================
+ERROR: test_m4_monte_carlo_diagnostics (unittest.loader._FailedTest.test_m4_monte_carlo_diagnostics)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_m4_monte_carlo_diagnostics
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/unittest/loader.py", line 137, in loadTestsFromName
+    module = __import__(module_name)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/builder/projects/nautilus-crypto-backtest-lab/tests/golden/test_m4_monte_carlo_diagnostics.py", line 7, in <module>
+    from crypto_lab.reporting import EquityObservation
+ImportError: cannot import name 'EquityObservation' from 'crypto_lab.reporting' (/home/builder/projects/nautilus-crypto-backtest-lab/src/crypto_lab/reporting.py)
+
+
+======================================================================
+ERROR: test_m4_claim_reporting (unittest.loader._FailedTest.test_m4_claim_reporting)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_m4_claim_reporting
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/unittest/loader.py", line 137, in loadTestsFromName
+    module = __import__(module_name)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/builder/projects/nautilus-crypto-backtest-lab/tests/golden/test_m4_claim_reporting.py", line 11, in <module>
+    from crypto_lab.reporting import ReportInput
+ImportError: cannot import name 'ReportInput' from 'crypto_lab.reporting' (/home/builder/projects/nautilus-crypto-backtest-lab/src/crypto_lab/reporting.py)
+
+
+======================================================================
+ERROR: test_m4_public_contract (unittest.loader._FailedTest.test_m4_public_contract)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_m4_public_contract
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/unittest/loader.py", line 137, in loadTestsFromName
+    module = __import__(module_name)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/builder/projects/nautilus-crypto-backtest-lab/tests/integration/test_m4_public_contract.py", line 10, in <module>
+    from crypto_lab.research import M3ResearchBoundary
+ImportError: cannot import name 'M3ResearchBoundary' from 'crypto_lab.research' (/home/builder/projects/nautilus-crypto-backtest-lab/src/crypto_lab/research.py)
+
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.000s
+
+FAILED (errors=5)

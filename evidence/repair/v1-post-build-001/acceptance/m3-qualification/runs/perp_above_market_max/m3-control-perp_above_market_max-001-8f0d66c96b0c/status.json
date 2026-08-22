@@ -1,0 +1,1 @@
+{"checker_outcome":"CHECK_FAIL","failure_codes":["FUNDING_DOUBLE_COUNT","PERP_PROFILE_INVALID"],"run_id":"m3-control-perp_above_market_max-001","started_run_retained":true,"state":"FAILED"}

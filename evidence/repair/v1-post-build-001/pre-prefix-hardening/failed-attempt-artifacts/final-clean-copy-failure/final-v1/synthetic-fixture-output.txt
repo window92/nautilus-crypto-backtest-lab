@@ -1,0 +1,33 @@
+test_g02_no_same_bar_fill (tests.golden.test_m1_contracts.M1GoldenContractTests.test_g02_no_same_bar_fill) ... FAIL
+test_g07_spot_oversell_is_blocked_before_submission (tests.golden.test_m1_contracts.M1GoldenContractTests.test_g07_spot_oversell_is_blocked_before_submission) ... FAIL
+test_g08_perpetual_netting_lifecycle_and_guards (tests.golden.test_m1_contracts.M1GoldenContractTests.test_g08_perpetual_netting_lifecycle_and_guards) ... FAIL
+test_g09_positive_funding_debits_long_exactly_once (tests.qualification.test_m1_native_funding.M1NativeFundingQualificationTests.test_g09_positive_funding_debits_long_exactly_once) ... ok
+
+======================================================================
+FAIL: test_g02_no_same_bar_fill (tests.golden.test_m1_contracts.M1GoldenContractTests.test_g02_no_same_bar_fill)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/nautilus-v1-repair-clean-7Rlq5IGc/repository/tests/golden/test_m1_contracts.py", line 78, in test_g02_no_same_bar_fill
+    self.assertEqual(result.state, RunState.COMPLETED)
+AssertionError: <RunState.BLOCKED: 'BLOCKED'> != <RunState.COMPLETED: 'COMPLETED'>
+
+======================================================================
+FAIL: test_g07_spot_oversell_is_blocked_before_submission (tests.golden.test_m1_contracts.M1GoldenContractTests.test_g07_spot_oversell_is_blocked_before_submission)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/nautilus-v1-repair-clean-7Rlq5IGc/repository/tests/golden/test_m1_contracts.py", line 149, in test_g07_spot_oversell_is_blocked_before_submission
+    self.assertIn(expected["oversell_failure_code"], result.failure_codes)
+AssertionError: 'SPOT_SHORT_OR_BORROW_DETECTED' not found in ('EVIDENCE_INCOMPLETE',)
+
+======================================================================
+FAIL: test_g08_perpetual_netting_lifecycle_and_guards (tests.golden.test_m1_contracts.M1GoldenContractTests.test_g08_perpetual_netting_lifecycle_and_guards)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/nautilus-v1-repair-clean-7Rlq5IGc/repository/tests/golden/test_m1_contracts.py", line 171, in test_g08_perpetual_netting_lifecycle_and_guards
+    self.assertEqual(legal.state, RunState.COMPLETED)
+AssertionError: <RunState.BLOCKED: 'BLOCKED'> != <RunState.COMPLETED: 'COMPLETED'>
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.455s
+
+FAILED (failures=3)

@@ -1,0 +1,1 @@
+{"material_payload":{"conflict_rule":"FIRST_ELIGIBLE_INTENT","intents_by_bar_ns":{"1735689600000000000":[{"order_type":"MARKET","quantity":"0.00100","reason":"M3_SPOT_COMPLETED_BAR_LONG_ENTRY","side":"BUY"}]},"qualification_attempt_all_intents":false},"schema":"strategy-plan-evidence-v1","strategy_plan_sha256":"569ede1830685fae491cff681682330879ea417fc46b5a4764186783d8ed48c5"}

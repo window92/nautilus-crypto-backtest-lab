@@ -1,0 +1,1 @@
+{"BINANCE_SPOT_CASH_LONG_ONLY":{"checker_result":"CHECK_PASS","failure_codes":[],"replay_result":"PASS","run_ids":["m3-spot-primary-001","m3-spot-replay-001"],"state":"PASS"},"BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING":{"checker_result":"CHECK_PASS","failure_codes":[],"replay_result":"PASS","run_ids":["m3-perpetual-primary-001","m3-perpetual-replay-001"],"state":"PASS"}}

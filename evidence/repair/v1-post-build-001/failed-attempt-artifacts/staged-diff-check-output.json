@@ -1,0 +1,1 @@
+{"command":["git","diff","--cached","--check"],"detail":"tests/adversarial/__init__.py:2: new blank line at EOF.","replacement_test_results_used":false,"returncode":2,"schema":"v1-repair-failed-command-v1","status":"FAILED"}

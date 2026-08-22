@@ -1,0 +1,19 @@
+{
+  "checks": {
+    "both_profiles_qualified": true,
+    "downstream_BINANCE_SPOT_CASH_LONG_ONLY": true,
+    "downstream_BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING": true,
+    "duplicate_funding_checker_control": true,
+    "fresh_process_replay": true,
+    "negative_controls_complete": true,
+    "qualification_manifest": true,
+    "qualification_only": true,
+    "registry_has_exact_profiles": true,
+    "run_manifest_perpetual-primary": true,
+    "run_manifest_perpetual-replay": true,
+    "run_manifest_spot-primary": true,
+    "run_manifest_spot-replay": true
+  },
+  "schema": "m3-evidence-validation-v1",
+  "status": "PASS"
+}

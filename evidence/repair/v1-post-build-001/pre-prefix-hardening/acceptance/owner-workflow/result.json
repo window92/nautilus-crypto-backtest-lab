@@ -1,0 +1,19 @@
+{
+  "checker_outcome": "CHECK_PASS",
+  "claim_eligibility": "INELIGIBLE",
+  "commits": [
+    "616287cd13c300616738710e285447abf5241eed",
+    "90554adfa7aae562a203b659321346174cefd4ec",
+    "790ed5d0a3373503876d736627dfb47fdb0837a3",
+    "70f352d355ae1c1a1645e3d6e49cbc886616b927",
+    "c6aed2f4af490b8e03afee5d2cdd3815e3c2c646"
+  ],
+  "final_holdout_used": false,
+  "history_anchor_sha256": "dde21dfc0d30a44c226fb31c1fe2d2d2805b50d218c940ec5ba0888168b1094e",
+  "real_profitability_claim": false,
+  "report_id": "3e5f2e6655f40c4e8a78cc151e3e48cd3b82c1a825c78957011c316b83385076",
+  "run_id": "repair-final-owner-run",
+  "run_state": "COMPLETED",
+  "status": "PASS",
+  "trial_id": "repair-final-owner-fixture"
+}

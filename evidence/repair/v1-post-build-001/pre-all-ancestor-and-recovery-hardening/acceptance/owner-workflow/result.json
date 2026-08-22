@@ -1,0 +1,19 @@
+{
+  "checker_outcome": "CHECK_PASS",
+  "claim_eligibility": "INELIGIBLE",
+  "commits": [
+    "b545153f2b54bfef23fffd15784235680182a3c3",
+    "f9c7d0c51d2fcc3073b4276675a247582e6bbc71",
+    "04fa04c92a0696f8357088f3b3441c4d07056ed3",
+    "3a5ac865f3e08c8ee096ee24c786f9cfb080f52e",
+    "6481d1e2a5a4ff8ca79325dde5eb8af073844fcf"
+  ],
+  "final_holdout_used": false,
+  "history_anchor_sha256": "4a838454a5e943798682f8814d918b0ecc313e3aebb5ffcf7af91ecad0fd9ded",
+  "real_profitability_claim": false,
+  "report_id": "cf7b413bca8b4846d7267accf4780c8f1769ec6d6d238dcc4ffd3f06f112e4ec",
+  "run_id": "repair-final-hardening-owner-run",
+  "run_state": "COMPLETED",
+  "status": "PASS",
+  "trial_id": "repair-final-hardening-owner-fixture"
+}
