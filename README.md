@@ -141,3 +141,65 @@ PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src \
 The synthetic eligibility fixture proves the claim-gate contract only. It is
 permanently labeled as non-research and never constitutes a real profitability
 claim or an Owner study.
+
+## Public Owner workflow
+
+The Repair Epoch adds one public, strict interface for a future Owner-selected
+study.  Its JSON input is `crypto_lab.OwnerWorkflowInput`; unknown, missing, or
+duplicate fields are rejected.  The input freezes the complete
+`ResearchProtocol`, trial/candidate/run identities, registered StrategySpec,
+Dataset Release and Qualified Profile identities, partition and warmup/scoring
+boundaries, Initial Capital, fee assumption, and seed.  It contains no caller
+booleans for integrity, Holdout freshness, diagnostics, eligibility, metrics,
+or completed trades.
+
+Run it only from a clean checked-out branch whose `HEAD` equals its
+`origin/<branch>` tracking ref:
+
+```bash
+TZ=UTC LC_ALL=C.UTF-8 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src \
+  .venv/bin/python scripts/run_owner_workflow.py \
+  --input /absolute/path/to/strict-owner-workflow.json \
+  --repository "$PWD" \
+  --output /tmp/owner-workflow-result.json
+```
+
+The command performs the complete lifecycle without private imports or a glue
+script.  It refreezes and persists the protocol, validates candidate order and
+budget, first commits and normal-pushes an immutable workflow intent, then
+records `PLANNED` and `STARTED` and publishes the history anchor, runs the
+registered Nautilus Strategy in a dedicated
+seccomp-isolated child, always records a terminal state, commits and pushes the
+Run evidence, reruns the read-only checker, derives diagnostics and Monte Carlo
+status from Run evidence, resolves the claim from authoritative identities,
+and publishes the full JSON/Markdown report.  A Final Holdout is checked by the
+authoritative exposure resolver before designation and consumed/anchored on
+first result exposure.  Each history checkpoint is fsynced, committed, and
+normal-pushed before the next phase, which preserves a clean-worktree Official
+preflight and makes prior anchors independently reconcilable.  A later
+invocation detects either a committed intent interrupted before `STARTED` or
+an interrupted `STARTED` trial, records the full attempt as `ABORTED` (or
+reconciles complete persisted terminal evidence), publishes that recovery, and
+stops so a retry must use new trial and run IDs.  An uncommitted journal/anchor
+extension without the earlier committed workflow authorization is rejected.
+
+For interface qualification only, this command generates a complete strict
+input over the already exposed M3 Spot interval.  It is not a Strategy Research
+selection, Owner Study, Final Holdout use, or profitability claim:
+
+```bash
+TZ=UTC LC_ALL=C.UTF-8 PYTHONPATH=src .venv/bin/python \
+  scripts/generate_owner_workflow_fixture_input.py \
+  --repository "$PWD" \
+  --frozen-at-utc 2026-08-22T12:00:00Z \
+  --trial-id qualification-interface-fixture-001 \
+  --run-id qualification-interface-run-001 \
+  --output /tmp/qualification-interface-input.json
+```
+
+The currently registered implementation is deliberately qualification-only
+and permanently claim-ineligible.  A future Owner-selected economic Strategy
+must first have a reviewed, static public registry entry; configuration files
+cannot provide callables, dynamic imports, source code, or precomputed order
+schedules, and no Product Code change is needed between trials of an already
+registered implementation.

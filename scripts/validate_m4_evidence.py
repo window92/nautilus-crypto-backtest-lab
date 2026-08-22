@@ -168,13 +168,19 @@ def validate(evidence: Path = DEFAULT_EVIDENCE) -> dict[str, Any]:
     )
     tests = _json(evidence / "test-suite/test-results.json")
     discovery = _json(evidence / "test-suite/independent-discovery.json")
+    accepted_test_inventory = (
+        tests["unique_executable_test_cases"],
+        tests["test_execution_occurrences"],
+        discovery["executed_test_cases"],
+    ) in {
+        (167, 168, 167),  # immutable original M4 acceptance
+        (206, 207, 206),  # V1 post-build Repair Epoch AUD-001..009
+    }
     checks["complete_regression"] = (
         tests["status"] == "PASS"
-        and tests["unique_executable_test_cases"] == 167
-        and tests["test_execution_occurrences"] == 168
+        and accepted_test_inventory
         and tests["failures"] == tests["errors"] == tests["skipped"] == 0
         and discovery["status"] == "PASS"
-        and discovery["executed_test_cases"] == 167
     )
     checks["failed_attempts_preserved"] = bool(
         (evidence / "failed-attempts.jsonl").read_bytes().strip(),

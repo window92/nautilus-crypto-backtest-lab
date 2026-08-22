@@ -209,6 +209,41 @@ class GuardedCausalStrategy(Strategy):
         initial_capital_amount: Decimal,
         initial_capital_currency: str,
     ) -> None:
+        if not isinstance(plan, StrategyPlan):
+            raise TypeError("qualification strategy requires StrategyPlan")
+        self._configure_runtime(
+            instrument_id=instrument_id,
+            bar_type=bar_type,
+            profile=profile,
+            plan=plan,
+            scoring_start_ns=scoring_start_ns,
+            scoring_end_exclusive_ns=scoring_end_exclusive_ns,
+            effective_insert_latency_ns=effective_insert_latency_ns,
+            size_precision=size_precision,
+            min_quantity=min_quantity,
+            max_quantity=max_quantity,
+            size_increment=size_increment,
+            initial_capital_amount=initial_capital_amount,
+            initial_capital_currency=initial_capital_currency,
+        )
+
+    def _configure_runtime(
+        self,
+        *,
+        instrument_id: InstrumentId,
+        bar_type: Any,
+        profile: MarketProfile,
+        plan: StrategyPlan | None,
+        scoring_start_ns: int,
+        scoring_end_exclusive_ns: int,
+        effective_insert_latency_ns: int,
+        size_precision: int,
+        min_quantity: Decimal | None,
+        max_quantity: Decimal | None,
+        size_increment: Decimal,
+        initial_capital_amount: Decimal,
+        initial_capital_currency: str,
+    ) -> None:
         if self._configured:
             raise RuntimeError("strategy already configured")
         self._instrument_id = instrument_id
@@ -445,7 +480,7 @@ class GuardedCausalStrategy(Strategy):
         self.submit_order(order)
 
     def on_bar(self, bar: Bar) -> None:
-        if not self._configured or self._plan is None:
+        if not self._configured:
             raise RuntimeError("strategy is not configured")
         now = int(self.clock.timestamp_ns())
         self._boundary_snapshot(now)
@@ -462,6 +497,8 @@ class GuardedCausalStrategy(Strategy):
                 "volume": str(bar.volume),
             },
         )
+        if self._plan is None:
+            return
         intents = self._plan.intents_by_bar_ns.get(int(bar.ts_init), ())
         if not intents:
             return
@@ -499,3 +536,75 @@ class GuardedCausalStrategy(Strategy):
 
     def on_position_closed(self, event: Any) -> None:
         self._record_position(event)
+
+
+class FirstEligibleBarQualificationFixture(GuardedCausalStrategy):
+    """Registered Nautilus Strategy used only to qualify the Official boundary.
+
+    This is deliberately not an economic strategy and is permanently
+    ineligible for a profitability claim.  Unlike ``StrategyPlan``, its order
+    behavior is implemented by this registered Strategy class and resolved from
+    the complete frozen StrategySpec.
+    """
+
+    REGISTRATION_ID = "qualification_fixture_first_eligible_bar_v1"
+    IMPLEMENTATION_REVISION = "QUALIFICATION_FIXTURE_FIRST_ELIGIBLE_BAR_V1"
+    REQUIRED_PARAMETERS = {
+        "fixture_purpose",
+        "network_access",
+        "order_quantity",
+        "order_side",
+        "profitability_claim",
+        "trigger",
+    }
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._fixture_intent: OrderIntent | None = None
+        self._fixture_attempted = False
+
+    def configure_registered(self, *, strategy_spec: StrategySpec, **configuration: Any) -> None:
+        parameters = dict(strategy_spec.parameters)
+        if set(parameters) != self.REQUIRED_PARAMETERS:
+            missing = sorted(self.REQUIRED_PARAMETERS - set(parameters))
+            unknown = sorted(set(parameters) - self.REQUIRED_PARAMETERS)
+            raise ValueError(
+                f"registered strategy parameters differ; missing={missing}, unknown={unknown}",
+            )
+        expected = {
+            "fixture_purpose": "PUBLIC_BOUNDARY_QUALIFICATION_ONLY",
+            "network_access": "FORBIDDEN",
+            "profitability_claim": "INELIGIBLE",
+            "trigger": "FIRST_SCORING_ELIGIBLE_BAR",
+        }
+        mismatches = [name for name, value in expected.items() if parameters[name] != value]
+        if mismatches:
+            raise ValueError(
+                "registered qualification fixture contract mismatch: " + ",".join(mismatches),
+            )
+        side = parameters["order_side"]
+        if side not in {"BUY", "SELL"}:
+            raise ValueError("registered strategy order_side must be BUY or SELL")
+        self._fixture_intent = OrderIntent(
+            side=side,
+            quantity=parameters["order_quantity"],
+            order_type="MARKET",
+            reason="REGISTERED_FIRST_SCORING_ELIGIBLE_BAR_FIXTURE",
+        )
+        self._configure_runtime(
+            plan=None,
+            **configuration,
+        )
+
+    def on_bar(self, bar: Bar) -> None:
+        super().on_bar(bar)
+        if self._fixture_attempted or self._fixture_intent is None:
+            return
+        interval_end = int(bar.ts_init)
+        interval_start = interval_end - ONE_MINUTE_NS
+        if (
+            interval_start >= self._scoring_start_ns
+            and interval_end <= self._scoring_end_exclusive_ns
+        ):
+            self._fixture_attempted = True
+            self._submit_guarded(self._fixture_intent, bar)

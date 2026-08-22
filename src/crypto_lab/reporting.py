@@ -515,6 +515,7 @@ class ReportInput(StrictModel):
     qualification_limitations: tuple[str, ...]
     open_terminal_positions: dict[str, str]
     source_evidence_hashes: dict[str, str]
+    source_revision: dict[str, str]
     report_purpose: str
 
     def __post_init__(self) -> None:
@@ -538,11 +539,20 @@ class ReportInput(StrictModel):
             raise ResearchError("TRIAL_HISTORY_INCOMPLETE", "report references an unstarted trial")
         for identity in self.source_evidence_hashes.values():
             _require_sha256(identity, "report.source_evidence_hashes")
+        required_source_fields = {"repository", "branch_ref", "git_commit", "git_tree"}
+        if set(self.source_revision) != required_source_fields or any(
+            not value for value in self.source_revision.values()
+        ):
+            raise ResearchError(
+                "EVIDENCE_INCOMPLETE",
+                "report SourceRevision identity is incomplete",
+            )
         _freeze_field(self, "sample_adequacy_by_instrument")
         _freeze_field(self, "holdout_state")
         _freeze_field(self, "benchmark_result")
         _freeze_field(self, "open_terminal_positions")
         _freeze_field(self, "source_evidence_hashes")
+        _freeze_field(self, "source_revision")
 
     @classmethod
     def synthetic(
@@ -574,6 +584,12 @@ class ReportInput(StrictModel):
             ),
             open_terminal_positions={},
             source_evidence_hashes={"synthetic-contract": "f" * 64},
+            source_revision={
+                "repository": NOT_APPLICABLE,
+                "branch_ref": NOT_APPLICABLE,
+                "git_commit": NOT_APPLICABLE,
+                "git_tree": NOT_APPLICABLE,
+            },
             report_purpose="SYNTHETIC_CONTRACT_FIXTURE",
         )
 
@@ -608,7 +624,7 @@ class ReportOutput(StrictModel):
         return cls(report_id=canonical_sha256(material), **material)
 
 
-def build_report(value: ReportInput) -> ReportOutput:
+def _build_report_from_resolved_evidence(value: ReportInput) -> ReportOutput:
     started_ids: list[str] = []
     latest: dict[str, TrialRecord] = {}
     for record in value.trial_records:
@@ -661,6 +677,7 @@ def build_report(value: ReportInput) -> ReportOutput:
         "monte_carlo": [item.to_builtins() for item in value.monte_carlo_results],
         "performance_diagnostics": [item.to_builtins() for item in value.performance_diagnostics],
         "claim_scope": value.protocol.intended_claim_scope.value,
+        "source_revision": dict(value.source_revision),
         "claim_result": claim.to_builtins(),
         "qualification_limitations": list(value.qualification_limitations),
         "open_terminal_positions": dict(value.open_terminal_positions),
@@ -726,7 +743,28 @@ def build_report(value: ReportInput) -> ReportOutput:
     )
 
 
-def write_report(output: ReportOutput, *, json_path: Path, markdown_path: Path) -> None:
+def build_report(value: ReportInput) -> ReportOutput:
+    """Build only a non-Official low-level contract fixture.
+
+    ``OFFICIAL_RESEARCH_REPORT`` is deliberately unavailable here because a
+    caller-created ``ReportInput`` contains material truth assertions.  Official
+    production reports are built by ``OfficialEvidenceResolver``.
+    """
+
+    if value.report_purpose == "OFFICIAL_RESEARCH_REPORT":
+        raise ResearchError(
+            "EVIDENCE_INCOMPLETE",
+            "Official reports require an OfficialEvidenceLocator",
+        )
+    return _build_report_from_resolved_evidence(value)
+
+
+def _write_resolved_report(
+    output: ReportOutput,
+    *,
+    json_path: Path,
+    markdown_path: Path,
+) -> None:
     """Persist an already-built report atomically without touching Run evidence."""
 
     for path, payload in (
@@ -746,6 +784,17 @@ def write_report(output: ReportOutput, *, json_path: Path, markdown_path: Path) 
             if not handle.closed:
                 handle.close()
             temporary.unlink(missing_ok=True)
+
+
+def write_report(output: ReportOutput, *, json_path: Path, markdown_path: Path) -> None:
+    """Persist a non-Official contract fixture without touching Run evidence."""
+
+    if output.json_payload.get("report_purpose") == "OFFICIAL_RESEARCH_REPORT":
+        raise ResearchError(
+            "EVIDENCE_INCOMPLETE",
+            "Official report persistence requires OfficialEvidenceResolver",
+        )
+    _write_resolved_report(output, json_path=json_path, markdown_path=markdown_path)
 
 
 __all__ = [

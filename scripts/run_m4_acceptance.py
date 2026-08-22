@@ -42,6 +42,16 @@ M4_MODULES = (
     "tests.golden.test_m4_claim_reporting",
     "tests.integration.test_m4_public_contract",
 )
+REPAIR_MODULES = (
+    "tests.adversarial.test_aud001_strategy_identity",
+    "tests.adversarial.test_aud002_m3_holdout_exposure",
+    "tests.adversarial.test_aud003_004_authoritative_history",
+    "tests.adversarial.test_aud005_claim_report_resolver",
+    "tests.adversarial.test_aud006_source_revision",
+    "tests.adversarial.test_aud007_evidence_paths",
+    "tests.adversarial.test_aud008_offline_enforcement",
+    "tests.adversarial.test_aud009_owner_workflow",
+)
 EXPECTED_LOCKS = {
     "SSOT.md": "7bb2fc68d9b73b168a582d890a6f952fd0c4eb20fc0e31857903909f27dfaa8f",
     "runtime.lock.json": "4032df9f355348c2a0cfa9f79f331f97c9a8d24ecc8490a573d2c7f788bafddd",
@@ -288,6 +298,7 @@ def main() -> int:
         ("M2_REGRESSION", *_run_phase("M2_REGRESSION", M2_MODULES)),
         ("M3_REGRESSION", *_run_phase("M3_REGRESSION", M3_MODULES)),
         ("M4", *_run_phase("M4", M4_MODULES)),
+        ("REPAIR_ADVERSARIAL", *_run_phase("REPAIR_ADVERSARIAL", REPAIR_MODULES)),
     ]
     rows = [row for _, phase_rows, _, _ in phases for row in phase_rows]
     reconciliation = reconcile_test_executions(rows)
@@ -325,6 +336,10 @@ def main() -> int:
         "phase_execution_occurrences": {
             phase: len(phase_rows) for phase, phase_rows, _, _ in phases
         },
+        "repair_adversarial_unique_test_cases": sum(
+            item["canonical_owner_phase"] == "REPAIR_ADVERSARIAL"
+            for item in unique
+        ),
         "failures": failures,
         "errors": errors,
         "skipped": skipped,

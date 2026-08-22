@@ -554,6 +554,12 @@ def _research_lifecycle(staging: Path, *, head: str) -> dict[str, Any]:
             "diagnostics": diagnostics.diagnostics_id,
             "monte_carlo": monte_carlo.diagnostic_id,
         },
+        source_revision={
+            "repository": "NOT_APPLICABLE",
+            "branch_ref": "NOT_APPLICABLE",
+            "git_commit": "NOT_APPLICABLE",
+            "git_tree": "NOT_APPLICABLE",
+        },
         report_purpose="SYNTHETIC_CONTRACT_FIXTURE",
     )
     reports = research / "reports"
@@ -590,6 +596,12 @@ def _research_lifecycle(staging: Path, *, head: str) -> dict[str, Any]:
                 M3_EVIDENCE
                 / "downstream/BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING.json",
             ),
+        },
+        source_revision={
+            "repository": "NOT_APPLICABLE",
+            "branch_ref": "NOT_APPLICABLE",
+            "git_commit": "NOT_APPLICABLE",
+            "git_tree": "NOT_APPLICABLE",
         },
         report_purpose="M3_QUALIFICATION_EVIDENCE_ONLY",
     )

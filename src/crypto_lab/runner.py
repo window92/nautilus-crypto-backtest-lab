@@ -34,16 +34,26 @@ from crypto_lab.data import SyntheticQualificationDatasetRelease
 from crypto_lab.hashing import canonical_json_bytes
 from crypto_lab.hashing import canonical_sha256
 from crypto_lab.hashing import sha256_file
+from crypto_lab.git_identity import GitIdentityError
+from crypto_lab.git_identity import capture_actual_source_revision
+from crypto_lab.git_identity import verify_source_revision
 from crypto_lab.nautilus_config import add_venue_from_config
 from crypto_lab.nautilus_config import to_nautilus_engine_config
+from crypto_lab.offline import OfflineBoundaryUnavailable
 from crypto_lab.offline import NetworkAttemptBlocked
+from crypto_lab.offline import activate_process_network_isolation
 from crypto_lab.offline import offline_network_guard
+from crypto_lab.paths import atomic_create_run_directory
+from crypto_lab.paths import validate_safe_component
 from crypto_lab.runtime import verify_runtime_lock
 from crypto_lab.status import FailureCode
 from crypto_lab.status import RunState
 from crypto_lab.strategies import GuardedCausalStrategy
+from crypto_lab.strategies import RegisteredStrategyIdentity
 from crypto_lab.strategies import StrategyPlan
 from crypto_lab.strategies import StrategySpec
+from crypto_lab.strategies import create_registered_strategy
+from crypto_lab.strategies import resolve_registered_strategy_identity
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -58,7 +68,7 @@ class QualificationControl(StrEnum):
 
 @dataclass(frozen=True)
 class LabRunRequest:
-    """One fully bound M1 call; M2 can later supply its validated native data objects."""
+    """Qualification-only schedule boundary; never an Official Research request."""
 
     lab_run_config: LabRunConfig
     source_revision: SourceRevision
@@ -88,7 +98,51 @@ class LabRunRequest:
             DatasetRelease | SyntheticQualificationDatasetRelease,
         ):
             raise TypeError("dataset_release must be a strict DatasetRelease contract")
+        if self.lab_run_config.run_purpose is not RunPurpose.QUALIFICATION:
+            raise ValueError(
+                "CONFIG_INVALID: StrategyPlan and QualificationControl are forbidden outside QUALIFICATION",
+            )
         object.__setattr__(self, "data", tuple(self.data))
+
+
+@dataclass(frozen=True)
+class OfficialLabRunRequest:
+    """Strict Official/Research request resolved through the closed Strategy registry."""
+
+    lab_run_config: LabRunConfig
+    source_revision: SourceRevision
+    strategy_spec: StrategySpec
+    dataset_release: DatasetRelease
+    registered_strategy_id: str
+    evidence_root: Path
+    repository_root: Path
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.lab_run_config, LabRunConfig):
+            raise TypeError("lab_run_config must be LabRunConfig")
+        if self.lab_run_config.run_purpose not in {RunPurpose.RESEARCH, RunPurpose.OFFICIAL}:
+            raise ValueError("CONFIG_INVALID: Official boundary requires RESEARCH or OFFICIAL purpose")
+        if not isinstance(self.source_revision, SourceRevision):
+            raise TypeError("source_revision must be SourceRevision")
+        if not isinstance(self.strategy_spec, StrategySpec):
+            raise TypeError("strategy_spec must be StrategySpec")
+        if not isinstance(self.dataset_release, DatasetRelease):
+            raise TypeError("Official boundary requires a strict non-synthetic DatasetRelease")
+        if not isinstance(self.registered_strategy_id, str) or not self.registered_strategy_id:
+            raise TypeError("registered_strategy_id must be a non-empty registry identifier")
+        if not isinstance(self.evidence_root, Path) or not isinstance(self.repository_root, Path):
+            raise TypeError("evidence_root and repository_root must be pathlib.Path")
+        # Reject an unregistered or incomplete material identity before an
+        # Official request can reach preflight or evidence creation.
+        self.strategy_identity
+
+    @property
+    def strategy_identity(self) -> RegisteredStrategyIdentity:
+        return resolve_registered_strategy_identity(
+            self.registered_strategy_id,
+            strategy_spec=self.strategy_spec,
+            source_revision=self.source_revision,
+        )
 
 
 @dataclass(frozen=True)
@@ -127,49 +181,42 @@ class RunResult:
 def capture_source_revision(repository: Path = ROOT) -> SourceRevision:
     """Capture Git commit/tree provenance separately from Runtime Lock identity."""
 
-    def git(*args: str) -> str:
-        return subprocess.run(
-            ["git", *args],
-            cwd=repository,
-            check=True,
-            capture_output=True,
-            text=True,
-        ).stdout.strip()
-
-    clean = not git("status", "--porcelain=v1")
-    return SourceRevision(
-        repository=git("config", "--get", "remote.origin.url"),
-        branch_ref=git("symbolic-ref", "--short", "HEAD"),
-        git_commit=git("rev-parse", "HEAD"),
-        git_tree=git("rev-parse", "HEAD^{tree}"),
-        clean_worktree=clean,
-        captured_at_utc=datetime.now(UTC),
-    )
+    return capture_actual_source_revision(repository)
 
 
 def _timestamp_ns(value: datetime) -> int:
     return int(value.timestamp() * 1_000_000_000)
 
 
-def _preflight_identity(config: LabRunRequest) -> list[str]:
+def _preflight_identity(config: LabRunRequest | OfficialLabRunRequest) -> list[str]:
     run = config.lab_run_config
     failures: list[str] = []
-    if sha256_file(ROOT / "runtime.lock.json") != run.runtime_lock_sha256:
+    repository_root = config.repository_root if isinstance(config, OfficialLabRunRequest) else ROOT
+    if sha256_file(repository_root / "runtime.lock.json") != run.runtime_lock_sha256:
         failures.append(FailureCode.RUNTIME_LOCK_MISMATCH.value)
     else:
-        lock = RuntimeLock.from_json_bytes((ROOT / "runtime.lock.json").read_bytes())
+        lock = RuntimeLock.from_json_bytes((repository_root / "runtime.lock.json").read_bytes())
         try:
-            verify_runtime_lock(lock, dependency_lock_path=ROOT / "requirements.lock.txt")
+            verify_runtime_lock(
+                lock,
+                dependency_lock_path=repository_root / "requirements.lock.txt",
+            )
         except Exception:
             failures.append(FailureCode.RUNTIME_LOCK_MISMATCH.value)
 
     if config.strategy_spec.strategy_spec_id != run.strategy_spec_id:
         failures.append(FailureCode.CONFIG_HASH_MISMATCH.value)
-    if "strategy_plan_sha256" in config.strategy_spec.parameters and (
-        config.strategy_spec.parameters["strategy_plan_sha256"]
-        != config.strategy_plan.strategy_plan_sha256
-    ):
-        failures.append(FailureCode.CONFIG_HASH_MISMATCH.value)
+    if isinstance(config, LabRunRequest):
+        if "strategy_plan_sha256" in config.strategy_spec.parameters and (
+            config.strategy_spec.parameters["strategy_plan_sha256"]
+            != config.strategy_plan.strategy_plan_sha256
+        ):
+            failures.append(FailureCode.CONFIG_HASH_MISMATCH.value)
+    else:
+        try:
+            config.strategy_identity
+        except Exception:
+            failures.append(FailureCode.CONFIG_INVALID.value)
     if (
         config.strategy_spec.market_profile is not run.market_profile
         or config.strategy_spec.instrument_id != run.instrument_id
@@ -206,14 +253,14 @@ def _preflight_identity(config: LabRunRequest) -> list[str]:
                 failures.append(FailureCode.MARK_ROLE_INVALID.value)
             if run.funding_binding != release.funding_data_identity:
                 failures.append(FailureCode.FUNDING_MISSING.value)
-        expected_catalog = (ROOT / "data/catalog" / release.catalog_identity).resolve()
+        expected_catalog = (repository_root / "data/catalog" / release.catalog_identity).resolve()
         configured_catalogs = {
             Path(item.catalog_path).resolve()
             for item in run.nautilus_data_config
         }
         if configured_catalogs != {expected_catalog}:
             failures.append(FailureCode.DOWNSTREAM_CONTRACT_FAILURE.value)
-        if config.instrument is not None or config.data:
+        if isinstance(config, LabRunRequest) and (config.instrument is not None or config.data):
             failures.append(FailureCode.DOWNSTREAM_CONTRACT_FAILURE.value)
     else:
         if run.run_purpose is not RunPurpose.QUALIFICATION:
@@ -221,7 +268,7 @@ def _preflight_identity(config: LabRunRequest) -> list[str]:
     try:
         source_tree = subprocess.run(
             ["git", "rev-parse", f"{config.source_revision.git_commit}^{{tree}}"],
-            cwd=ROOT,
+            cwd=repository_root,
             check=True,
             capture_output=True,
             text=True,
@@ -231,22 +278,22 @@ def _preflight_identity(config: LabRunRequest) -> list[str]:
     else:
         if source_tree != config.source_revision.git_tree:
             failures.append(FailureCode.EVIDENCE_INCOMPLETE.value)
-    if config.qualification_control is not QualificationControl.STANDARD:
-        if run.run_purpose is not RunPurpose.QUALIFICATION:
-            failures.append(FailureCode.CONFIG_INVALID.value)
+    if isinstance(config, LabRunRequest) and (
+        config.qualification_control is not QualificationControl.STANDARD
+        and run.run_purpose is not RunPurpose.QUALIFICATION
+    ):
+        failures.append(FailureCode.CONFIG_INVALID.value)
 
-    if run.run_purpose is RunPurpose.OFFICIAL:
-        if not config.source_revision.clean_worktree:
+    if isinstance(config, OfficialLabRunRequest):
+        try:
+            verify_source_revision(
+                config.source_revision,
+                repository=repository_root,
+                require_current_head=True,
+                require_clean=True,
+            )
+        except GitIdentityError:
             failures.append(FailureCode.EVIDENCE_INCOMPLETE.value)
-        actual = capture_source_revision(ROOT)
-        if (
-            not actual.clean_worktree
-            or actual.git_commit != config.source_revision.git_commit
-            or actual.git_tree != config.source_revision.git_tree
-        ):
-            failures.append(FailureCode.EVIDENCE_INCOMPLETE.value)
-        if isinstance(release, SyntheticQualificationDatasetRelease):
-            failures.append(FailureCode.DATA_SOURCE_INVALID.value)
     if config.strategy_spec.parameters.get("m3_profile_qualification") == "true":
         if run.run_purpose is not RunPurpose.QUALIFICATION or not isinstance(
             release,
@@ -255,20 +302,20 @@ def _preflight_identity(config: LabRunRequest) -> list[str]:
             failures.append(FailureCode.CONFIG_INVALID.value)
         if not config.source_revision.clean_worktree:
             failures.append(FailureCode.EVIDENCE_INCOMPLETE.value)
-        actual = capture_source_revision(ROOT)
-        if (
-            not actual.clean_worktree
-            or actual.repository != config.source_revision.repository
-            or actual.branch_ref != config.source_revision.branch_ref
-            or actual.git_commit != config.source_revision.git_commit
-            or actual.git_tree != config.source_revision.git_tree
-        ):
+        try:
+            verify_source_revision(
+                config.source_revision,
+                repository=ROOT,
+                require_current_head=True,
+                require_clean=True,
+            )
+        except GitIdentityError:
             failures.append(FailureCode.EVIDENCE_INCOMPLETE.value)
     return list(dict.fromkeys(failures))
 
 
 def _preflight_data(
-    config: LabRunRequest,
+    config: LabRunRequest | OfficialLabRunRequest,
     *,
     instrument: Any,
     data: tuple[Any, ...],
@@ -357,7 +404,9 @@ def _preflight_data(
             failures.append(FailureCode.DATA_GAP.value)
         if resolved is None or canonical_sha256(resolved.semantic_inventory) != release.catalog_identity:
             failures.append(FailureCode.DATASET_RELEASE_STALE.value)
-    if not set(config.strategy_plan.intents_by_bar_ns).issubset(set(bar_timestamps)):
+    if isinstance(config, LabRunRequest) and not set(
+        config.strategy_plan.intents_by_bar_ns,
+    ).issubset(set(bar_timestamps)):
         failures.append(FailureCode.DATA_TIMESTAMP_INVALID.value)
 
     if run.market_profile is MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY:
@@ -684,22 +733,75 @@ def _empty_capture() -> dict[str, Any]:
     }
 
 
-def run_lab(config: LabRunRequest) -> RunResult:
-    """Run one isolated Nautilus engine and check its persisted evidence."""
+def _run_bound(
+    config: LabRunRequest | OfficialLabRunRequest,
+    *,
+    process_isolation: Any | None = None,
+) -> RunResult:
+    """Execute a request after its qualification/Official boundary is fixed."""
 
     run = config.lab_run_config
-    run_dir = config.evidence_root / f"{run.run_id}-{run.config_sha256[:12]}"
-    run_dir.mkdir(parents=True, exist_ok=False)
+    repository_root = config.repository_root if isinstance(config, OfficialLabRunRequest) else ROOT
+    preflight = _preflight_identity(config)
+    instrument = config.instrument if isinstance(config, LabRunRequest) else None
+    data = config.data if isinstance(config, LabRunRequest) else ()
+    resolved_release: ResolvedDatasetRelease | None = None
+    metadata_path: Path | None = None
+    funding_path: Path | None = None
+    if not preflight and isinstance(config.dataset_release, DatasetRelease):
+        try:
+            resolved_release = config.dataset_release.resolve_runtime_data(repository_root / "data")
+        except DataContractError as exc:
+            preflight.append(exc.code)
+        except Exception:
+            preflight.append(FailureCode.DOWNSTREAM_CONTRACT_FAILURE.value)
+        else:
+            instrument = resolved_release.instrument
+            data = resolved_release.data
+            metadata_path = (
+                repository_root
+                / "data/releases"
+                / f"{config.dataset_release.instrument_metadata_identity}.metadata.json"
+            )
+            if config.dataset_release.funding_data_identity != "NOT_APPLICABLE":
+                funding_path = (
+                    repository_root
+                    / "data/releases"
+                    / f"{config.dataset_release.funding_data_identity}.funding.json"
+                )
+    if not preflight:
+        preflight.extend(
+            _preflight_data(
+                config,
+                instrument=instrument,
+                data=data,
+                resolved=resolved_release,
+            ),
+        )
+
+    # Caller-controlled run_id is validated before evidence_root or any other
+    # filesystem path is created.  Creation is one atomic mkdir under a resolved
+    # root and collisions are never overwritten.
+    is_official = isinstance(config, OfficialLabRunRequest)
+    run_dir = atomic_create_run_directory(
+        config.evidence_root,
+        run_id=run.run_id,
+        config_sha256=run.config_sha256,
+        containment_root=repository_root if is_official else None,
+    )
     (run_dir / "lab_run_config.json").write_bytes(run.to_json_bytes() + b"\n")
     (run_dir / "lab_run_config.sha256").write_text(
         run.config_sha256 + "\n",
         encoding="utf-8",
     )
-    (run_dir / "runtime.lock.json").write_bytes((ROOT / "runtime.lock.json").read_bytes())
+    (run_dir / "runtime.lock.json").write_bytes(
+        (repository_root / "runtime.lock.json").read_bytes(),
+    )
     (run_dir / "source_revision.json").write_bytes(config.source_revision.to_json_bytes() + b"\n")
     (run_dir / "dataset_release.json").write_bytes(config.dataset_release.to_json_bytes() + b"\n")
     (run_dir / "strategy_spec.json").write_bytes(config.strategy_spec.to_json_bytes() + b"\n")
-    is_m3_qualification = (
+    strategy_identity = config.strategy_identity if is_official else None
+    is_m3_qualification = isinstance(config, LabRunRequest) and (
         config.strategy_spec.parameters.get("m3_profile_qualification") == "true"
     )
     if is_m3_qualification:
@@ -711,45 +813,18 @@ def run_lab(config: LabRunRequest) -> RunResult:
                 "material_payload": config.strategy_plan.material_payload(),
             },
         )
-
-    preflight = _preflight_identity(config)
-    instrument = config.instrument
-    data = config.data
-    resolved_release: ResolvedDatasetRelease | None = None
-    if not preflight and isinstance(config.dataset_release, DatasetRelease):
-        try:
-            resolved_release = config.dataset_release.resolve_runtime_data(ROOT / "data")
-        except DataContractError as exc:
-            preflight.append(exc.code)
-        except Exception:
-            preflight.append(FailureCode.DOWNSTREAM_CONTRACT_FAILURE.value)
-        else:
-            instrument = resolved_release.instrument
-            data = resolved_release.data
-            metadata_path = (
-                ROOT
-                / "data/releases"
-                / f"{config.dataset_release.instrument_metadata_identity}.metadata.json"
-            )
-            if metadata_path.is_file():
-                (run_dir / "instrument_metadata.json").write_bytes(metadata_path.read_bytes())
-            if config.dataset_release.funding_data_identity != "NOT_APPLICABLE":
-                funding_path = (
-                    ROOT
-                    / "data/releases"
-                    / f"{config.dataset_release.funding_data_identity}.funding.json"
-                )
-                if funding_path.is_file():
-                    (run_dir / "funding_source.json").write_bytes(funding_path.read_bytes())
-    if not preflight:
-        preflight.extend(
-            _preflight_data(
-                config,
-                instrument=instrument,
-                data=data,
-                resolved=resolved_release,
-            ),
+    if strategy_identity is not None:
+        (run_dir / "strategy_identity.json").write_bytes(
+            strategy_identity.to_json_bytes() + b"\n",
         )
+        (run_dir / "strategy_identity.sha256").write_text(
+            strategy_identity.strategy_identity_sha256 + "\n",
+            encoding="utf-8",
+        )
+    if metadata_path is not None and metadata_path.is_file():
+        (run_dir / "instrument_metadata.json").write_bytes(metadata_path.read_bytes())
+    if funding_path is not None and funding_path.is_file():
+        (run_dir / "funding_source.json").write_bytes(funding_path.read_bytes())
     capture = _empty_capture()
     observations: dict[str, Any] = {
         "bars": [],
@@ -770,6 +845,9 @@ def run_lab(config: LabRunRequest) -> RunResult:
         "required": config.strategy_spec.parameters.get("network_access") == "FORBIDDEN",
         "enforced": False,
         "attempts": [],
+        "process_isolation": (
+            None if process_isolation is None else process_isolation.to_builtins()
+        ),
     }
     if not preflight:
         engine: BacktestEngine | None = None
@@ -779,7 +857,9 @@ def run_lab(config: LabRunRequest) -> RunResult:
                 network_guard_evidence["enforced"] = True
                 engine = BacktestEngine(to_nautilus_engine_config(run.nautilus_engine_config))
                 latency_override = None
-                if config.qualification_control is QualificationControl.ZERO_LATENCY_NEGATIVE_CONTROL:
+                if isinstance(config, LabRunRequest) and (
+                    config.qualification_control is QualificationControl.ZERO_LATENCY_NEGATIVE_CONTROL
+                ):
                     latency_override = StaticLatencyModel(0, 0, 0, 0)
                 add_venue_from_config(
                     engine,
@@ -789,17 +869,16 @@ def run_lab(config: LabRunRequest) -> RunResult:
                 assert instrument is not None
                 engine.add_instrument(instrument)
                 bars = [item for item in data if isinstance(item, Bar)]
-                strategy = GuardedCausalStrategy()
-                strategy.configure(
+                strategy_configuration = dict(
                     instrument_id=instrument.id,
                     bar_type=bars[0].bar_type,
                     profile=run.market_profile,
-                    plan=config.strategy_plan,
                     scoring_start_ns=_timestamp_ns(run.scoring_start),
                     scoring_end_exclusive_ns=_timestamp_ns(run.scoring_end_exclusive),
                     effective_insert_latency_ns=(
                         0
-                        if config.qualification_control
+                        if isinstance(config, LabRunRequest)
+                        and config.qualification_control
                         is QualificationControl.ZERO_LATENCY_NEGATIVE_CONTROL
                         else run.nautilus_venue_config.latency_model.effective_insert_latency_nanos
                     ),
@@ -818,10 +897,22 @@ def run_lab(config: LabRunRequest) -> RunResult:
                     initial_capital_amount=run.initial_capital.amount,
                     initial_capital_currency=run.initial_capital.currency,
                 )
+                if isinstance(config, LabRunRequest):
+                    strategy = GuardedCausalStrategy()
+                    strategy.configure(plan=config.strategy_plan, **strategy_configuration)
+                else:
+                    assert strategy_identity is not None
+                    strategy = create_registered_strategy(
+                        strategy_identity,
+                        strategy_spec=config.strategy_spec,
+                        source_revision=config.source_revision,
+                        configuration=strategy_configuration,
+                    )
                 engine.add_strategy(strategy)
                 engine_started = True
                 if (
-                    config.qualification_control
+                    isinstance(config, LabRunRequest)
+                    and config.qualification_control
                     is QualificationControl.NETWORK_ATTEMPT_NEGATIVE_CONTROL
                 ):
                     import socket
@@ -853,6 +944,9 @@ def run_lab(config: LabRunRequest) -> RunResult:
             )
         except NetworkAttemptBlocked as exc:
             network_guard_evidence["attempts"] = list(network_evidence.attempts)
+            engine_error = f"{type(exc).__name__}: {exc}"
+            preflight.append(FailureCode.NETWORK_DURING_OFFICIAL_RUN.value)
+        except OfflineBoundaryUnavailable as exc:
             engine_error = f"{type(exc).__name__}: {exc}"
             preflight.append(FailureCode.NETWORK_DURING_OFFICIAL_RUN.value)
         except Exception as exc:
@@ -980,6 +1074,43 @@ def run_lab(config: LabRunRequest) -> RunResult:
             ],
             capture["funding_events"],
         )
+    if is_official:
+        _write_json(
+            run_dir / "native_completed_trades.json",
+            {
+                "schema": "nautilus-native-completed-trades-v1",
+                "run_id": run.run_id,
+                "status": "UNAVAILABLE",
+                "completed_trade_count": "UNDEFINED",
+                "net_outcomes": [],
+                "settlement_currency": run.initial_capital.currency,
+                "source": "PINNED_NAUTILUS_NATIVE_SEQUENCE_NOT_EXPOSED_UNAMBIGUOUSLY",
+                "reason": (
+                    "No qualified public v2.0.0rc2 API provides an unambiguous net-after-fee-and-"
+                    "funding completed-trade sequence for this Run"
+                ),
+                "project_trade_pairing_used": False,
+            },
+        )
+
+    evidence_bindings = {
+        "lab_run_config_sha256": sha256_file(run_dir / "lab_run_config.json"),
+        "runtime_lock_sha256": sha256_file(run_dir / "runtime.lock.json"),
+        "source_revision_sha256": sha256_file(run_dir / "source_revision.json"),
+        "dataset_release_sha256": sha256_file(run_dir / "dataset_release.json"),
+        "strategy_spec_sha256": sha256_file(run_dir / "strategy_spec.json"),
+    }
+    if isinstance(config, LabRunRequest):
+        evidence_bindings["strategy_plan_sha256"] = config.strategy_plan.strategy_plan_sha256
+    else:
+        evidence_bindings["strategy_identity_sha256"] = (
+            None if strategy_identity is None else strategy_identity.strategy_identity_sha256
+        )
+        evidence_bindings["strategy_identity_bytes_sha256"] = (
+            None
+            if strategy_identity is None
+            else sha256_file(run_dir / "strategy_identity.json")
+        )
 
     nautilus_result = {
         "schema": "m1-nautilus-run-result-v1",
@@ -995,14 +1126,7 @@ def run_lab(config: LabRunRequest) -> RunResult:
         "semantic_sequence": capture["semantic_sequence"],
         "semantic_digest": capture["semantic_digest"],
         "native_fill_evidence_sha256": hashlib.sha256(native_fill_bytes).hexdigest(),
-        "evidence_bindings": {
-            "lab_run_config_sha256": sha256_file(run_dir / "lab_run_config.json"),
-            "runtime_lock_sha256": sha256_file(run_dir / "runtime.lock.json"),
-            "source_revision_sha256": sha256_file(run_dir / "source_revision.json"),
-            "dataset_release_sha256": sha256_file(run_dir / "dataset_release.json"),
-            "strategy_spec_sha256": sha256_file(run_dir / "strategy_spec.json"),
-            "strategy_plan_sha256": config.strategy_plan.strategy_plan_sha256,
-        },
+        "evidence_bindings": evidence_bindings,
         "mark_price_count": capture["mark_price_count"],
         "funding_rate_count": capture["funding_rate_count"],
         "native_funding_checkpoints": list(funding_checkpoints),
@@ -1085,7 +1209,11 @@ def run_lab(config: LabRunRequest) -> RunResult:
     if is_m3_qualification:
         _write_json(run_dir / "strategy_observations.json", observations)
 
-    report = check_evidence_directory(run_dir)
+    report = check_evidence_directory(
+        run_dir,
+        repository_root=repository_root,
+        official_source_required=is_official,
+    )
     _write_json(run_dir / "checker.json", report.to_builtins())
     all_codes = list(dict.fromkeys([*preflight, *report.failure_codes]))
     if report.outcome is CheckerOutcome.CHECK_PASS and not all_codes:
@@ -1104,7 +1232,7 @@ def run_lab(config: LabRunRequest) -> RunResult:
             "started_run_retained": True,
         },
     )
-    if is_m3_qualification:
+    if is_m3_qualification or is_official:
         manifest_entries = [
             {"path": path.name, "sha256": sha256_file(path), "byte_size": path.stat().st_size}
             for path in sorted(run_dir.iterdir())
@@ -1143,10 +1271,34 @@ def run_lab(config: LabRunRequest) -> RunResult:
     )
 
 
+def run_lab(config: LabRunRequest) -> RunResult:
+    """Execute only a Qualification request with a frozen StrategyPlan."""
+
+    if not isinstance(config, LabRunRequest):
+        raise TypeError("run_lab accepts only the Qualification LabRunRequest boundary")
+    return _run_bound(config)
+
+
+def run_official_lab(config: OfficialLabRunRequest) -> RunResult:
+    """Execute a registered Nautilus Strategy inside the enforced Offline boundary."""
+
+    if not isinstance(config, OfficialLabRunRequest):
+        raise TypeError("run_official_lab requires OfficialLabRunRequest")
+    # Validate the caller-controlled path component before any side effect,
+    # then install the irreversible inherited boundary at the public entry
+    # point.  Preflight, data resolution, Nautilus, and every descendant all
+    # execute beneath the same kernel-enforced filter.
+    validate_safe_component(config.lab_run_config.run_id)
+    isolation = activate_process_network_isolation()
+    return _run_bound(config, process_isolation=isolation)
+
+
 __all__ = [
     "LabRunRequest",
+    "OfficialLabRunRequest",
     "QualificationControl",
     "RunResult",
     "capture_source_revision",
     "run_lab",
+    "run_official_lab",
 ]

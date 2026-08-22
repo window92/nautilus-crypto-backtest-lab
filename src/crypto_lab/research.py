@@ -1478,7 +1478,7 @@ class ClaimEvaluation(StrictModel):
         )
 
 
-def evaluate_claim(value: ClaimEvaluationInput) -> ClaimEvaluation:
+def _evaluate_claim_from_resolved_evidence(value: ClaimEvaluationInput) -> ClaimEvaluation:
     hard_reasons: list[str] = []
     exploratory_reasons: list[str] = []
     blocked_reasons: list[str] = []
@@ -1574,6 +1574,26 @@ def evaluate_claim(value: ClaimEvaluationInput) -> ClaimEvaluation:
         reasons=reasons,
         limitations=tuple(limitations),
     )
+
+
+def evaluate_claim(value: ClaimEvaluationInput) -> ClaimEvaluation:
+    """Evaluate only an internal/synthetic contract fixture or an ineligible view.
+
+    Official callers cannot turn asserted booleans into an eligible claim.  The
+    production boundary is ``OfficialEvidenceResolver``, which invokes the
+    private evaluator only after resolving every fact from repository evidence.
+    """
+
+    result = _evaluate_claim_from_resolved_evidence(value)
+    if (
+        result.research_eligibility is ResearchEligibility.ELIGIBLE
+        and not value.synthetic_contract_fixture
+    ):
+        raise ResearchError(
+            "EVIDENCE_INCOMPLETE",
+            "eligible Official claims require OfficialEvidenceResolver identities",
+        )
+    return result
 
 
 class M3QualificationResearchView(StrictModel):

@@ -20,7 +20,11 @@ from crypto_lab.data import NORMALIZER_VERSION
 from crypto_lab.data import SyntheticQualificationDatasetRelease
 from crypto_lab.hashing import canonical_sha256
 from crypto_lab.hashing import sha256_file
+from crypto_lab.git_identity import verify_source_revision
 from crypto_lab.status import FailureCode
+from crypto_lab.strategies import RegisteredStrategyIdentity
+from crypto_lab.strategies import StrategySpec
+from crypto_lab.strategies import resolve_registered_strategy_identity
 
 
 class CheckerOutcome(StrEnum):
@@ -80,7 +84,13 @@ def _commission_amount(value: str) -> Decimal:
     return Decimal(amount)
 
 
-def check_evidence_directory(run_dir: Path) -> CheckerReport:
+def check_evidence_directory(
+    run_dir: Path,
+    *,
+    repository_root: Path = ROOT,
+    official_source_required: bool | None = None,
+    source_revision_current_head_required: bool = True,
+) -> CheckerReport:
     """Check immutable files without writing to the directory or engine state."""
 
     checks: list[dict[str, Any]] = []
@@ -117,6 +127,29 @@ def check_evidence_directory(run_dir: Path) -> CheckerReport:
     checks.append({"name": "config_identity", "pass": config_ok})
     if not config_ok:
         blocked.append(FailureCode.CONFIG_HASH_MISMATCH.value)
+    official = (
+        config.run_purpose.value in {"RESEARCH", "OFFICIAL"}
+        if official_source_required is None
+        else official_source_required
+    )
+    if official:
+        official_missing = sorted(
+            {
+                "native_completed_trades.json",
+                "strategy_identity.json",
+                "strategy_identity.sha256",
+            }
+            - present,
+        )
+        checks.append(
+            {
+                "name": "official_strategy_identity_inventory",
+                "pass": not official_missing,
+                "missing": official_missing,
+            },
+        )
+        if official_missing:
+            blocked.append(FailureCode.EVIDENCE_INCOMPLETE.value)
 
     result = _read_json(run_dir / "nautilus_result.json")
     bindings = result.get("evidence_bindings", {})
@@ -127,6 +160,8 @@ def check_evidence_directory(run_dir: Path) -> CheckerReport:
         "dataset_release_sha256": "dataset_release.json",
         "strategy_spec_sha256": "strategy_spec.json",
     }
+    if official and (run_dir / "strategy_identity.json").is_file():
+        binding_paths["strategy_identity_bytes_sha256"] = "strategy_identity.json"
     binding_mismatches = [
         name
         for name, filename in binding_paths.items()
@@ -152,31 +187,46 @@ def check_evidence_directory(run_dir: Path) -> CheckerReport:
 
     try:
         source = SourceRevision.from_json_bytes((run_dir / "source_revision.json").read_bytes())
-        resolved_tree = subprocess.run(
-            ["git", "rev-parse", f"{source.git_commit}^{{tree}}"],
-            cwd=ROOT,
-            check=True,
-            capture_output=True,
-            text=True,
-        ).stdout.strip()
-        source_ok = bool(
-            source.repository
-            and source.git_commit
-            and source.git_tree
-            and resolved_tree == source.git_tree
-        )
+        if official:
+            verification = verify_source_revision(
+                source,
+                repository=repository_root,
+                require_current_head=source_revision_current_head_required,
+                require_clean=True,
+                allowed_output_paths=(run_dir,),
+            )
+            resolved_tree = source.git_tree
+            source_ok = (
+                verification.frozen_commit_tree_valid
+                and verification.frozen_commit_on_branch
+                and source.clean_worktree
+            )
+        else:
+            resolved_tree = subprocess.run(
+                ["git", "rev-parse", f"{source.git_commit}^{{tree}}"],
+                cwd=repository_root,
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+            source_ok = bool(
+                source.repository
+                and source.git_commit
+                and source.git_tree
+                and resolved_tree == source.git_tree
+            )
     except Exception as exc:
         source_ok = False
         checks.append({"name": "source_revision", "pass": False, "detail": str(exc)})
     else:
-        if config.run_purpose.value == "OFFICIAL" and not source.clean_worktree:
+        if official and not source.clean_worktree:
             source_ok = False
         checks.append(
             {
                 "name": "source_revision",
                 "pass": source_ok,
                 "clean_worktree": source.clean_worktree,
-                "qualification_clean_required": config.run_purpose.value == "OFFICIAL",
+                "official_clean_required": official,
                 "git_tree_resolves_from_commit": resolved_tree == source.git_tree,
             },
         )
@@ -282,6 +332,46 @@ def check_evidence_directory(run_dir: Path) -> CheckerReport:
     checks.append({"name": "strategy_spec_binding", "pass": strategy_ok})
     if not strategy_ok:
         blocked.append(FailureCode.CONFIG_HASH_MISMATCH.value)
+    if official and not any(
+        code == FailureCode.EVIDENCE_INCOMPLETE.value for code in blocked
+    ):
+        try:
+            parsed_spec = StrategySpec.from_json_bytes(
+                (run_dir / "strategy_spec.json").read_bytes(),
+            )
+            identity = RegisteredStrategyIdentity.from_json_bytes(
+                (run_dir / "strategy_identity.json").read_bytes(),
+            )
+            declared_identity = (run_dir / "strategy_identity.sha256").read_text(
+                encoding="utf-8",
+            ).strip()
+            resolved_identity = resolve_registered_strategy_identity(
+                identity.registration_id,
+                strategy_spec=parsed_spec,
+                source_revision=source,
+            )
+            official_identity_ok = (
+                identity == resolved_identity
+                and identity.strategy_spec == strategy_spec
+                and identity.strategy_spec_id == config.strategy_spec_id
+                and declared_identity == identity.strategy_identity_sha256
+                and bindings.get("strategy_identity_sha256")
+                == identity.strategy_identity_sha256
+            )
+        except Exception as exc:
+            official_identity_ok = False
+            identity_detail = str(exc)
+        else:
+            identity_detail = identity.strategy_identity_sha256
+        checks.append(
+            {
+                "name": "official_registered_strategy_identity",
+                "pass": official_identity_ok,
+                "detail": identity_detail,
+            },
+        )
+        if not official_identity_ok:
+            blocked.append(FailureCode.CONFIG_HASH_MISMATCH.value)
     is_m3_qualification = (
         strategy_spec.get("parameters", {}).get("m3_profile_qualification") == "true"
     )
@@ -336,6 +426,27 @@ def check_evidence_directory(run_dir: Path) -> CheckerReport:
         )
     else:
         checks.append({"name": "preflight", "pass": True})
+
+    if official:
+        isolation = result.get("network_guard", {}).get("process_isolation")
+        offline_ok = bool(
+            isinstance(isolation, dict)
+            and isolation.get("mechanism") == "LINUX_SECCOMP_BPF_TSYNC_ERRNO_EPERM"
+            and isolation.get("no_new_privs") is True
+            and isolation.get("seccomp_mode") == 2
+            and isolation.get("filters_after", 0) > isolation.get("filters_before", -1)
+            and isinstance(isolation.get("closed_inherited_socket_descriptors"), list)
+            and isolation.get("current_process_probe_errno") == 1
+            and isolation.get("io_uring_probe_errno") == 1
+            and isolation.get("child_python_probe_errno") == 1
+            and isolation.get("child_native_probe_blocked") is True
+            and isolation.get("child_dns_probe_blocked") is True
+            and isolation.get("inherited_by_fork_exec") is True
+            and isolation.get("external_endpoint_contacted") is False
+        )
+        checks.append({"name": "official_process_network_isolation", "pass": offline_ok})
+        if not offline_ok:
+            blocked.append(FailureCode.NETWORK_DURING_OFFICIAL_RUN.value)
 
     observations = result.get("strategy_observations", {})
     bars = observations.get("bars", [])
