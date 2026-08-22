@@ -1,0 +1,35 @@
+{
+  "schema": "m1-ending-integrity-v1",
+  "status": "PASS",
+  "capture_stage": "PRE_COMMIT_ACCEPTANCE",
+  "baseline_migration_commit": "c305417a38f9e0acdcd611c9c211f24fc73ccdcf",
+  "baseline_migration_tree": "d31ab84af7d79bb14b715d2967552057718e746e",
+  "ssot_sha256": "7bb2fc68d9b73b168a582d890a6f952fd0c4eb20fc0e31857903909f27dfaa8f",
+  "runtime_lock_sha256": "4032df9f355348c2a0cfa9f79f331f97c9a8d24ecc8490a573d2c7f788bafddd",
+  "dependency_lock_sha256": "b2765c9e33b10566fc327b48920fd1d3a73618c19622baaceab1fe9dca61df47",
+  "nautilus_version": "2.0.0rc2",
+  "python_version": "3.12.3",
+  "platform": "Linux-6.8.0-136-generic-x86_64-with-glibc2.39",
+  "architecture": "x86_64",
+  "m0_regression": {
+    "passed": 32,
+    "failed": 0,
+    "skipped": 0
+  },
+  "m1_acceptance": {
+    "passed": 29,
+    "failed": 0,
+    "skipped": 0
+  },
+  "test_results_sha256": "9e8c6333ed4a1ce0a7d83e75dc0f9e2b5b5001a98340c5cc064f46e1c1742698",
+  "test_output_sha256": "78497cfb9ab66762d69d0c0a87bcea6addc536d924cb3aa523e1ffeedbfc1517",
+  "evidence_validation_sha256": "ad3460b53ac3286d6e93d677bf7746106069e735c52654fa846023135fac7ca2",
+  "failed_attempts_retained": 12,
+  "failed_attempts_sha256": "334ce4ffe7874f67bd6ddf90849d60561730dd79db9bbb50dfaf081376bac375",
+  "historical_m0_and_migration_evidence_modified": false,
+  "real_market_data_acquired": false,
+  "official_run_executed": false,
+  "m2_started": false,
+  "commit_pending": true,
+  "push_pending": true
+}

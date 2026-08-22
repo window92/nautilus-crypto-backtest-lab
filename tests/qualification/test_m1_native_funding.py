@@ -40,6 +40,9 @@ class M1NativeFundingQualificationTests(unittest.TestCase):
             ),
         )
         self.assertFalse(result["project_cash_posting"])
+        self.assertFalse(result["project_funding_ledger"])
+        self.assertFalse(result["synthetic_bid_ask_or_quote_data_used"])
+        self.assertEqual(result["execution_data"], "external one-minute LAST Bars")
 
 
 if __name__ == "__main__":

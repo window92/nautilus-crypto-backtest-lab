@@ -1,0 +1,61 @@
+{
+  "G01": {
+    "first_bar_available_at_ns": 60000000000,
+    "visible_before_available_at": false
+  },
+  "G02": {
+    "fill_time_strictly_after_signal": true,
+    "signal_bar_low": "99.00",
+    "signal_bar_high": "101.00",
+    "fill_price_inside_signal_bar": false
+  },
+  "G03": {
+    "zero_latency_fill_price": "100.01",
+    "zero_latency_fill_time_ns": 60000000000,
+    "checker_outcome": "CHECK_FAIL",
+    "failure_code": "SAME_BAR_EXECUTION_DETECTED"
+  },
+  "G07": {
+    "ending_spot_position_minimum": "0",
+    "borrowed_balance": false,
+    "oversell_failure_code": "SPOT_SHORT_OR_BORROW_DETECTED"
+  },
+  "G08": {
+    "legal_signed_position_sequence": ["2", "1", "0", "-1"],
+    "direct_cross_zero_failure_code": "CROSS_ZERO_ORDER_REJECTED",
+    "concurrent_failure_code": "CONCURRENT_STRATEGY_ORDER_REJECTED"
+  },
+  "G09": {
+    "long_cash_effect_usdt": "-2.00000000",
+    "short_cash_effect_usdt": "2.00000000",
+    "settlement_count_each": 1
+  },
+  "G10": {
+    "fill_price": "100.00",
+    "fill_quantity": "2",
+    "taker_fee_rate": "0.001",
+    "commission_usdt": "0.20000000",
+    "commission_count": 1
+  },
+  "G11": {
+    "required_role": "markPriceKlines",
+    "missing_mark_failure_code": "MARK_ROLE_INVALID"
+  },
+  "G13": {
+    "boundary_position": "0",
+    "boundary_non_terminal_orders": 0,
+    "warmup_submissions": 0
+  },
+  "G14": {
+    "failure_code": "UNSUPPORTED_V1_ORDER_TYPE",
+    "native_submissions": 0
+  },
+  "G21": {
+    "arrival_equal_boundary_submissions": 0,
+    "fills_at_or_after_boundary": 0
+  },
+  "PRECISION_NEGATIVE": {
+    "failure_code": "INSTRUMENT_METADATA_INVALID",
+    "native_orders": 0
+  }
+}

@@ -1,0 +1,6 @@
+test_m1_contracts (unittest.loader._FailedTest.test_m1_contracts) ... ERROR
+
+ImportError: cannot import name 'LabRunRequest' from 'crypto_lab.runner'
+
+Ran 1 test in 0.000s
+FAILED (errors=1)

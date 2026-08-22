@@ -1,0 +1,14 @@
+{
+  "schema": "m1-venue-profile-v1",
+  "market_profile": "BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING",
+  "venue": "BINANCE",
+  "oms_type": "NETTING",
+  "account_type": "MARGIN",
+  "book_type": "L1_MBP",
+  "allow_cash_borrowing": false,
+  "default_leverage": "1",
+  "use_mark_prices": true,
+  "funding_role": "fundingRate",
+  "mark_role": "markPriceKlines",
+  "liquidation_enabled": false
+}

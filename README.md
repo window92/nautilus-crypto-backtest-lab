@@ -50,3 +50,26 @@ TZ=UTC LC_ALL=C.UTF-8 PYTHONPATH=src .venv/bin/python scripts/generate_m0_eviden
 The official NautilusTrader wheel is not stored in this repository. Its exact
 filename, SHA-256, source commit, SLSA attestation, and resolved dependencies are
 recorded in `runtime.lock.json`, `requirements.lock.txt`, and `evidence/m0/`.
+
+## M1 causal harness
+
+M1 exposes `run_lab(config) -> RunResult` for one isolated Instrument, Market
+Profile, StrategySpec, Dataset Release, and initial-capital allocation. The
+runner uses the public NautilusTrader v2 `BacktestEngine`, `Strategy`, native
+orders/Fills/positions/accounts, `MakerTakerFeeModel`, mark valuation, and
+funding settlement. Project code is limited to strict boundary validation,
+pre-submit V1 safety guards, immutable evidence projections, and a read-only
+post-run checker.
+
+M1 qualification data are synthetic external one-minute LAST bars and, for the
+Perpetual profile, native `MarkPriceUpdate` and `FundingRateUpdate` objects. M1
+does not acquire market data or execute an Official Run.
+
+Run the completed-phase regression and M1 acceptance suite, generate additive
+engine evidence, then validate the evidence without mutation:
+
+```bash
+TZ=UTC LC_ALL=C.UTF-8 PYTHONPATH=src .venv/bin/python scripts/run_m1_acceptance.py
+TZ=UTC LC_ALL=C.UTF-8 PYTHONPATH=src .venv/bin/python scripts/generate_m1_evidence.py
+TZ=UTC LC_ALL=C.UTF-8 PYTHONPATH=src .venv/bin/python scripts/validate_m1_evidence.py
+```

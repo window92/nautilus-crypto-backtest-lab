@@ -11,6 +11,7 @@ from nautilus_trader.backtest import BacktestVenueConfig
 from nautilus_trader.common import CacheConfig as NativeCacheConfig
 from nautilus_trader.common import ImportableActorConfig
 from nautilus_trader.common import LoggerConfig
+from nautilus_trader.common import LogLevel
 from nautilus_trader.common import MessageBusConfig as NativeMessageBusConfig
 from nautilus_trader.common import SerializationEncoding
 from nautilus_trader.core import dt_to_unix_nanos
@@ -146,7 +147,12 @@ def to_nautilus_venue_config(config: NautilusVenueConfig) -> BacktestVenueConfig
     )
 
 
-def add_venue_from_config(engine: BacktestEngine, config: NautilusVenueConfig) -> None:
+def add_venue_from_config(
+    engine: BacktestEngine,
+    config: NautilusVenueConfig,
+    *,
+    latency_model_override: StaticLatencyModel | None = None,
+) -> None:
     engine.add_venue(
         venue=Venue(config.name),
         oms_type=getattr(OmsType, config.oms_type),
@@ -168,7 +174,11 @@ def add_venue_from_config(engine: BacktestEngine, config: NautilusVenueConfig) -
         margin_model=LeveragedMarginModel(),
         fill_model=make_fill_model(config),
         fee_model=make_fee_model(config),
-        latency_model=make_latency_model(config),
+        latency_model=(
+            make_latency_model(config)
+            if latency_model_override is None
+            else latency_model_override
+        ),
         modules=[],
         book_type=getattr(BookType, config.book_type),
         routing=config.routing,
@@ -316,6 +326,7 @@ def to_nautilus_engine_config(config: NautilusEngineConfig) -> BacktestEngineCon
         shutdown_on_error=config.shutdown_on_error,
         bypass_logging=config.bypass_logging,
         logging=LoggerConfig(
+            stdout_level=LogLevel.ERROR,
             bypass_logging=config.bypass_logging,
             print_config=False,
             is_colored=False,

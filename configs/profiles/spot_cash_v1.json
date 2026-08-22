@@ -1,0 +1,14 @@
+{
+  "schema": "m1-venue-profile-v1",
+  "market_profile": "BINANCE_SPOT_CASH_LONG_ONLY",
+  "venue": "BINANCE",
+  "oms_type": "NETTING",
+  "account_type": "CASH",
+  "book_type": "L1_MBP",
+  "allow_cash_borrowing": false,
+  "default_leverage": "1",
+  "use_mark_prices": false,
+  "funding_role": "NOT_APPLICABLE",
+  "mark_role": "NOT_APPLICABLE",
+  "liquidation_enabled": false
+}
