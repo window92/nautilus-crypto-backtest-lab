@@ -117,3 +117,27 @@ TZ=UTC LC_ALL=C.UTF-8 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src \
 The run starts only when `HEAD == origin/main` and the worktree is clean.  Its
 additive output is written under `evidence/m3/m3-acceptance-001/`; M3 never
 acquires data, starts research, performs an Official Run, or implements M4.
+
+## M4 research governance and reporting
+
+M4 reads immutable completed evidence and adds strict content-addressed
+`ResearchProtocol`, append-only trial history, chronological partition checks,
+Holdout consumption, deterministic search-budget enforcement, sample adequacy,
+path-risk Monte Carlo diagnostics, claim eligibility, and JSON/Markdown
+reporting. It never submits orders, modifies Fills, posts cash, or reconstructs
+Nautilus financial truth. Synthetic acceptance workspaces are isolated from the
+future Owner journal under `research/`.
+
+From a clean committed checkout, Final V1 Acceptance replays the accepted Spot
+and Perpetual qualification paths offline and writes only additive evidence:
+
+```bash
+TZ=UTC LC_ALL=C.UTF-8 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src \
+  .venv/bin/python scripts/run_final_v1_acceptance.py
+PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src \
+  .venv/bin/python scripts/validate_m4_evidence.py
+```
+
+The synthetic eligibility fixture proves the claim-gate contract only. It is
+permanently labeled as non-research and never constitutes a real profitability
+claim or an Owner study.
