@@ -67,6 +67,10 @@ SPOT_MICROSECOND_TRANSITION = date(2025, 1, 1)
 NOT_APPLICABLE = "NOT_APPLICABLE"
 NOT_AVAILABLE = "NOT_AVAILABLE"
 NORMALIZER_VERSION = "binance-public-data-v1-m2.2"
+FUNDING_NATIVE_BINDING_SINGLE = "SINGLE_SOURCE_EVENT"
+FUNDING_NATIVE_BINDING_RC2_INTERVAL_BOUNDARY = (
+    "NAUTILUS_2_0_0RC2_INTERVAL_BOUNDARY_REPEAT_ONCE"
+)
 HISTORICAL_NORMALIZER_VERSIONS = frozenset({"binance-public-data-v1-m2.1"})
 
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
@@ -704,6 +708,9 @@ class ResolvedDatasetRelease:
     data: tuple[Bar | MarkPriceUpdate | FundingRateUpdate, ...]
     catalog_path: Path
     semantic_inventory: dict[str, Any]
+    funding_native_binding: str = FUNDING_NATIVE_BINDING_SINGLE
+    funding_source_event_count: int = 0
+    funding_runtime_update_count: int = 0
 
 
 def _require_sha256(value: str, path: str) -> None:
@@ -1951,10 +1958,25 @@ def to_nautilus_mark_updates(
 def to_nautilus_funding_updates(
     events: tuple[FundingEvent, ...] | list[FundingEvent],
     metadata: InstrumentMetadata,
+    *,
+    native_binding: str = FUNDING_NATIVE_BINDING_SINGLE,
 ) -> tuple[FundingRateUpdate, ...]:
     if metadata.market_profile is not MarketProfile.BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING:
         raise DataContractError(FailureCode.DATA_ROLE_MISMATCH, "Spot cannot have funding updates")
     instrument_id = InstrumentId.from_str(metadata.instrument_id)
+    if native_binding not in {
+        FUNDING_NATIVE_BINDING_SINGLE,
+        FUNDING_NATIVE_BINDING_RC2_INTERVAL_BOUNDARY,
+    }:
+        raise DataContractError(
+            FailureCode.FUNDING_AMBIGUOUS,
+            f"unsupported native funding binding {native_binding!r}",
+        )
+    repetitions = (
+        2
+        if native_binding == FUNDING_NATIVE_BINDING_RC2_INTERVAL_BOUNDARY
+        else 1
+    )
     return tuple(
         FundingRateUpdate(
             instrument_id,
@@ -1965,6 +1987,7 @@ def to_nautilus_funding_updates(
             next_funding_ns=None,
         )
         for item in events
+        for _ in range(repetitions)
     )
 
 
@@ -2027,6 +2050,7 @@ def build_nautilus_catalog(
     execution_bars: tuple[NormalizedBar, ...] | list[NormalizedBar],
     mark_bars: tuple[NormalizedBar, ...] | list[NormalizedBar] = (),
     funding_events: tuple[FundingEvent, ...] | list[FundingEvent] = (),
+    funding_native_binding: str = FUNDING_NATIVE_BINDING_SINGLE,
 ) -> CatalogBuildResult:
     root = Path(catalog_root)
     if root.exists() and any(root.iterdir()):
@@ -2038,7 +2062,15 @@ def build_nautilus_catalog(
     instrument = to_nautilus_instrument(metadata)
     native_bars = to_nautilus_execution_bars(execution_bars, metadata)
     native_marks = to_nautilus_mark_updates(mark_bars, metadata) if mark_bars else ()
-    native_funding = to_nautilus_funding_updates(funding_events, metadata) if funding_events else ()
+    native_funding = (
+        to_nautilus_funding_updates(
+            funding_events,
+            metadata,
+            native_binding=funding_native_binding,
+        )
+        if funding_events
+        else ()
+    )
     catalog = ParquetDataCatalog(str(root))
     catalog.write_instruments([instrument])
     if native_bars:
@@ -2122,6 +2154,8 @@ def _resolve_dataset_release_runtime(
         )
 
     funding_updates: tuple[FundingRateUpdate, ...] = ()
+    funding_native_binding = FUNDING_NATIVE_BINDING_SINGLE
+    funding_source_event_count = 0
     if release.market_profile is MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY:
         if marks or release.mark_data_identity != NOT_APPLICABLE or release.funding_data_identity != NOT_APPLICABLE:
             raise DataContractError(FailureCode.DATA_ROLE_MISMATCH, "Spot catalog has derivative roles")
@@ -2139,18 +2173,35 @@ def _resolve_dataset_release_runtime(
         events = funding_payload.get("events")
         if not isinstance(events, list) or not events:
             raise DataContractError(FailureCode.FUNDING_MISSING, "funding evidence has no events")
+        funding_native_binding = str(
+            funding_payload.get("native_binding", FUNDING_NATIVE_BINDING_SINGLE),
+        )
+        if funding_native_binding not in {
+            FUNDING_NATIVE_BINDING_SINGLE,
+            FUNDING_NATIVE_BINDING_RC2_INTERVAL_BOUNDARY,
+        }:
+            raise DataContractError(
+                FailureCode.FUNDING_AMBIGUOUS,
+                "funding evidence declares an unsupported native binding",
+            )
+        funding_source_event_count = len(events)
         instrument_id = InstrumentId.from_str(release.instrument_id)
         try:
-            funding_updates = tuple(
-                FundingRateUpdate(
-                    instrument_id,
-                    Decimal(str(item["funding_rate"])),
-                    int(item["calc_time_ns"]),
-                    int(item["calc_time_ns"]),
-                    interval=int(item["funding_interval_hours"]) * 60,
-                    next_funding_ns=None,
-                )
-                for item in events
+            funding_updates = to_nautilus_funding_updates(
+                tuple(
+                    FundingEvent(
+                        instrument_id=release.instrument_id,
+                        calc_time_ns=int(item["calc_time_ns"]),
+                        funding_interval_hours=int(item["funding_interval_hours"]),
+                        funding_rate=Decimal(str(item["funding_rate"])),
+                        source_row_number=0,
+                        source_row_sha256="0" * 64,
+                        event_key=str(item["event_key"]),
+                    )
+                    for item in events
+                ),
+                metadata,
+                native_binding=funding_native_binding,
             )
         except Exception as exc:
             raise DataContractError(FailureCode.FUNDING_AMBIGUOUS, "funding event is malformed") from exc
@@ -2174,6 +2225,9 @@ def _resolve_dataset_release_runtime(
         data=data,
         catalog_path=catalog_path,
         semantic_inventory=inventory,
+        funding_native_binding=funding_native_binding,
+        funding_source_event_count=funding_source_event_count,
+        funding_runtime_update_count=len(funding_updates),
     )
 
 
@@ -2391,6 +2445,7 @@ def build_dataset_release(
     mark_bars: tuple[NormalizedBar, ...] | list[NormalizedBar] = (),
     funding_events: tuple[FundingEvent, ...] | list[FundingEvent] = (),
     funding_schedule: FundingScheduleEvidence | None = None,
+    funding_native_binding: str = FUNDING_NATIVE_BINDING_SINGLE,
 ) -> DatasetRelease:
     if instrument_metadata.market_profile is not market_profile or instrument_metadata.instrument_id != instrument_id:
         raise DataContractError(
@@ -2447,6 +2502,19 @@ def build_dataset_release(
         )
         mark_identity = _normalized_identity(mark_bars)
         funding_identity = validate_funding_schedule(funding_events, funding_schedule)
+        if funding_native_binding != FUNDING_NATIVE_BINDING_SINGLE:
+            if funding_native_binding != FUNDING_NATIVE_BINDING_RC2_INTERVAL_BOUNDARY:
+                raise DataContractError(
+                    FailureCode.FUNDING_AMBIGUOUS,
+                    "unsupported native funding binding",
+                )
+            funding_identity = canonical_sha256(
+                {
+                    "schedule_identity": funding_schedule.schedule_identity,
+                    "events": [item.semantic_payload() for item in funding_events],
+                    "native_binding": funding_native_binding,
+                },
+            )
     completeness = CompletenessResult(
         status="PASS",
         no_repairs=True,

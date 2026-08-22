@@ -36,6 +36,8 @@ from crypto_lab.hashing import canonical_sha256
 from crypto_lab.hashing import sha256_file
 from crypto_lab.nautilus_config import add_venue_from_config
 from crypto_lab.nautilus_config import to_nautilus_engine_config
+from crypto_lab.offline import NetworkAttemptBlocked
+from crypto_lab.offline import offline_network_guard
 from crypto_lab.runtime import verify_runtime_lock
 from crypto_lab.status import FailureCode
 from crypto_lab.status import RunState
@@ -51,6 +53,7 @@ ONE_MINUTE_NS = 60_000_000_000
 class QualificationControl(StrEnum):
     STANDARD = "STANDARD"
     ZERO_LATENCY_NEGATIVE_CONTROL = "ZERO_LATENCY_NEGATIVE_CONTROL"
+    NETWORK_ATTEMPT_NEGATIVE_CONTROL = "NETWORK_ATTEMPT_NEGATIVE_CONTROL"
 
 
 @dataclass(frozen=True)
@@ -162,6 +165,11 @@ def _preflight_identity(config: LabRunRequest) -> list[str]:
 
     if config.strategy_spec.strategy_spec_id != run.strategy_spec_id:
         failures.append(FailureCode.CONFIG_HASH_MISMATCH.value)
+    if "strategy_plan_sha256" in config.strategy_spec.parameters and (
+        config.strategy_spec.parameters["strategy_plan_sha256"]
+        != config.strategy_plan.strategy_plan_sha256
+    ):
+        failures.append(FailureCode.CONFIG_HASH_MISMATCH.value)
     if (
         config.strategy_spec.market_profile is not run.market_profile
         or config.strategy_spec.instrument_id != run.instrument_id
@@ -193,11 +201,11 @@ def _preflight_identity(config: LabRunRequest) -> list[str]:
         if run.market_profile is MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY:
             if run.mark_binding != "NOT_APPLICABLE" or run.funding_binding != "NOT_APPLICABLE":
                 failures.append(FailureCode.DATA_ROLE_MISMATCH.value)
-        elif (
-            run.mark_binding != release.mark_data_identity
-            or run.funding_binding != release.funding_data_identity
-        ):
-            failures.append(FailureCode.DOWNSTREAM_CONTRACT_FAILURE.value)
+        else:
+            if run.mark_binding != release.mark_data_identity:
+                failures.append(FailureCode.MARK_ROLE_INVALID.value)
+            if run.funding_binding != release.funding_data_identity:
+                failures.append(FailureCode.FUNDING_MISSING.value)
         expected_catalog = (ROOT / "data/catalog" / release.catalog_identity).resolve()
         configured_catalogs = {
             Path(item.catalog_path).resolve()
@@ -223,7 +231,7 @@ def _preflight_identity(config: LabRunRequest) -> list[str]:
     else:
         if source_tree != config.source_revision.git_tree:
             failures.append(FailureCode.EVIDENCE_INCOMPLETE.value)
-    if config.qualification_control is QualificationControl.ZERO_LATENCY_NEGATIVE_CONTROL:
+    if config.qualification_control is not QualificationControl.STANDARD:
         if run.run_purpose is not RunPurpose.QUALIFICATION:
             failures.append(FailureCode.CONFIG_INVALID.value)
 
@@ -239,6 +247,23 @@ def _preflight_identity(config: LabRunRequest) -> list[str]:
             failures.append(FailureCode.EVIDENCE_INCOMPLETE.value)
         if isinstance(release, SyntheticQualificationDatasetRelease):
             failures.append(FailureCode.DATA_SOURCE_INVALID.value)
+    if config.strategy_spec.parameters.get("m3_profile_qualification") == "true":
+        if run.run_purpose is not RunPurpose.QUALIFICATION or not isinstance(
+            release,
+            DatasetRelease,
+        ):
+            failures.append(FailureCode.CONFIG_INVALID.value)
+        if not config.source_revision.clean_worktree:
+            failures.append(FailureCode.EVIDENCE_INCOMPLETE.value)
+        actual = capture_source_revision(ROOT)
+        if (
+            not actual.clean_worktree
+            or actual.repository != config.source_revision.repository
+            or actual.branch_ref != config.source_revision.branch_ref
+            or actual.git_commit != config.source_revision.git_commit
+            or actual.git_tree != config.source_revision.git_tree
+        ):
+            failures.append(FailureCode.EVIDENCE_INCOMPLETE.value)
     return list(dict.fromkeys(failures))
 
 
@@ -437,6 +462,8 @@ def _capture_engine(
     engine: BacktestEngine,
     strategy: GuardedCausalStrategy,
     instrument_id: Any,
+    *,
+    preserved_funding_events: tuple[dict[str, Any], ...] = (),
 ) -> dict[str, Any]:
     orders_native = engine.cache.orders(instrument_id=instrument_id)
     order_rows: list[dict[str, Any]] = []
@@ -495,13 +522,19 @@ def _capture_engine(
 
     account = engine.cache.account_for_venue(instrument_id.venue)
     account_events = [] if account is None else [event.to_dict() for event in account.events]
-    funding_events: list[dict[str, Any]] = []
+    funding_events: list[dict[str, Any]] = [dict(item) for item in preserved_funding_events]
     for position in positions_native:
         funding_events.extend(
             adjustment.to_dict()
             for adjustment in position.adjustments()
             if str(adjustment.adjustment_type) == "FUNDING"
         )
+    funding_events = list(
+        {
+            str(event.get("event_id", canonical_sha256(event))): event
+            for event in funding_events
+        }.values(),
+    )
 
     native_result = engine.get_result()
     try:
@@ -553,6 +586,79 @@ def _capture_engine(
     }
 
 
+def _run_real_data_with_native_funding_checkpoints(
+    engine: BacktestEngine,
+    *,
+    data: tuple[Any, ...],
+    instrument_id: Any,
+) -> tuple[tuple[dict[str, Any], ...], tuple[dict[str, Any], ...]]:
+    """Run public streaming batches and preserve native adjustments before NETTING reuse.
+
+    The pinned runtime reuses a NETTING position identifier after close-to-flat and
+    opposite-side reopen.  Its final cache view therefore no longer carries an
+    earlier ``PositionAdjusted(FUNDING)``.  Public streaming mode lets the runner
+    take a read-only native checkpoint at each funding boundary, then resume the
+    exact same engine.  No account, position, or financial value is changed here.
+    """
+
+    boundaries = sorted(
+        {int(item.ts_init) for item in data if isinstance(item, FundingRateUpdate)},
+    )
+    if not boundaries:
+        engine.add_data(list(data))
+        engine.run()
+        return (), ()
+
+    remaining = list(data)
+    preserved: list[dict[str, Any]] = []
+    checkpoints: list[dict[str, Any]] = []
+    for boundary_ns in boundaries:
+        batch = [item for item in remaining if int(item.ts_init) <= boundary_ns]
+        remaining = [item for item in remaining if int(item.ts_init) > boundary_ns]
+        if not batch:
+            continue
+        engine.add_data(batch)
+        engine.run(streaming=True)
+        positions = engine.cache.positions(instrument_id=instrument_id)
+        native_adjustments = [
+            adjustment.to_dict()
+            for position in positions
+            for adjustment in position.adjustments()
+            if str(adjustment.adjustment_type) == "FUNDING"
+            and int(adjustment.ts_event) == boundary_ns
+        ]
+        preserved.extend(native_adjustments)
+        account = engine.cache.account_for_venue(instrument_id.venue)
+        account_events = [] if account is None else [event.to_dict() for event in account.events]
+        checkpoints.append(
+            {
+                "boundary_ns": boundary_ns,
+                "native_adjustments": native_adjustments,
+                "open_positions": [
+                    {
+                        "instrument_id": str(position.instrument_id),
+                        "position_id": str(position.id),
+                        "signed_qty": str(position.signed_qty),
+                        "ts_last": int(position.ts_last),
+                    }
+                    for position in engine.cache.positions_open(instrument_id=instrument_id)
+                ],
+                "account_events_at_boundary": [
+                    event for event in account_events if int(event["ts_event"]) == boundary_ns
+                ],
+                "capture_api": "nautilus_trader.backtest.BacktestEngine.run(streaming=True)",
+                "financial_state_mutated_by_project": False,
+            },
+        )
+        engine.clear_data()
+
+    if remaining:
+        engine.add_data(remaining)
+        engine.run(streaming=True)
+    engine.end()
+    return tuple(preserved), tuple(checkpoints)
+
+
 def _empty_capture() -> dict[str, Any]:
     semantic = {
         "orders": [],
@@ -593,6 +699,18 @@ def run_lab(config: LabRunRequest) -> RunResult:
     (run_dir / "source_revision.json").write_bytes(config.source_revision.to_json_bytes() + b"\n")
     (run_dir / "dataset_release.json").write_bytes(config.dataset_release.to_json_bytes() + b"\n")
     (run_dir / "strategy_spec.json").write_bytes(config.strategy_spec.to_json_bytes() + b"\n")
+    is_m3_qualification = (
+        config.strategy_spec.parameters.get("m3_profile_qualification") == "true"
+    )
+    if is_m3_qualification:
+        _write_json(
+            run_dir / "strategy_plan.json",
+            {
+                "schema": "strategy-plan-evidence-v1",
+                "strategy_plan_sha256": config.strategy_plan.strategy_plan_sha256,
+                "material_payload": config.strategy_plan.material_payload(),
+            },
+        )
 
     preflight = _preflight_identity(config)
     instrument = config.instrument
@@ -608,6 +726,21 @@ def run_lab(config: LabRunRequest) -> RunResult:
         else:
             instrument = resolved_release.instrument
             data = resolved_release.data
+            metadata_path = (
+                ROOT
+                / "data/releases"
+                / f"{config.dataset_release.instrument_metadata_identity}.metadata.json"
+            )
+            if metadata_path.is_file():
+                (run_dir / "instrument_metadata.json").write_bytes(metadata_path.read_bytes())
+            if config.dataset_release.funding_data_identity != "NOT_APPLICABLE":
+                funding_path = (
+                    ROOT
+                    / "data/releases"
+                    / f"{config.dataset_release.funding_data_identity}.funding.json"
+                )
+                if funding_path.is_file():
+                    (run_dir / "funding_source.json").write_bytes(funding_path.read_bytes())
     if not preflight:
         preflight.extend(
             _preflight_data(
@@ -631,58 +764,97 @@ def run_lab(config: LabRunRequest) -> RunResult:
     engine_error: str | None = None
     engine_started = False
     engine_completed = False
+    funding_checkpoints: tuple[dict[str, Any], ...] = ()
+    preserved_funding: tuple[dict[str, Any], ...] = ()
+    network_guard_evidence: dict[str, Any] = {
+        "required": config.strategy_spec.parameters.get("network_access") == "FORBIDDEN",
+        "enforced": False,
+        "attempts": [],
+    }
     if not preflight:
         engine: BacktestEngine | None = None
         strategy: GuardedCausalStrategy | None = None
         try:
-            engine = BacktestEngine(to_nautilus_engine_config(run.nautilus_engine_config))
-            latency_override = None
-            if config.qualification_control is QualificationControl.ZERO_LATENCY_NEGATIVE_CONTROL:
-                latency_override = StaticLatencyModel(0, 0, 0, 0)
-            add_venue_from_config(
-                engine,
-                run.nautilus_venue_config,
-                latency_model_override=latency_override,
-            )
-            assert instrument is not None
-            engine.add_instrument(instrument)
-            bars = [item for item in data if isinstance(item, Bar)]
-            strategy = GuardedCausalStrategy()
-            strategy.configure(
-                instrument_id=instrument.id,
-                bar_type=bars[0].bar_type,
-                profile=run.market_profile,
-                plan=config.strategy_plan,
-                scoring_start_ns=_timestamp_ns(run.scoring_start),
-                scoring_end_exclusive_ns=_timestamp_ns(run.scoring_end_exclusive),
-                effective_insert_latency_ns=(
-                    0
-                    if config.qualification_control
-                    is QualificationControl.ZERO_LATENCY_NEGATIVE_CONTROL
-                    else run.nautilus_venue_config.latency_model.effective_insert_latency_nanos
-                ),
-                size_precision=instrument.size_precision,
-                min_quantity=(
-                    None
-                    if instrument.min_quantity is None
-                    else instrument.min_quantity.as_decimal()
-                ),
-                max_quantity=(
-                    None
-                    if instrument.max_quantity is None
-                    else instrument.max_quantity.as_decimal()
-                ),
-                size_increment=instrument.size_increment.as_decimal(),
-                initial_capital_amount=run.initial_capital.amount,
-                initial_capital_currency=run.initial_capital.currency,
-            )
-            engine.add_strategy(strategy)
-            engine.add_data(list(data))
-            engine_started = True
-            engine.run()
+            with offline_network_guard() as network_evidence:
+                network_guard_evidence["enforced"] = True
+                engine = BacktestEngine(to_nautilus_engine_config(run.nautilus_engine_config))
+                latency_override = None
+                if config.qualification_control is QualificationControl.ZERO_LATENCY_NEGATIVE_CONTROL:
+                    latency_override = StaticLatencyModel(0, 0, 0, 0)
+                add_venue_from_config(
+                    engine,
+                    run.nautilus_venue_config,
+                    latency_model_override=latency_override,
+                )
+                assert instrument is not None
+                engine.add_instrument(instrument)
+                bars = [item for item in data if isinstance(item, Bar)]
+                strategy = GuardedCausalStrategy()
+                strategy.configure(
+                    instrument_id=instrument.id,
+                    bar_type=bars[0].bar_type,
+                    profile=run.market_profile,
+                    plan=config.strategy_plan,
+                    scoring_start_ns=_timestamp_ns(run.scoring_start),
+                    scoring_end_exclusive_ns=_timestamp_ns(run.scoring_end_exclusive),
+                    effective_insert_latency_ns=(
+                        0
+                        if config.qualification_control
+                        is QualificationControl.ZERO_LATENCY_NEGATIVE_CONTROL
+                        else run.nautilus_venue_config.latency_model.effective_insert_latency_nanos
+                    ),
+                    size_precision=instrument.size_precision,
+                    min_quantity=(
+                        None
+                        if instrument.min_quantity is None
+                        else instrument.min_quantity.as_decimal()
+                    ),
+                    max_quantity=(
+                        None
+                        if instrument.max_quantity is None
+                        else instrument.max_quantity.as_decimal()
+                    ),
+                    size_increment=instrument.size_increment.as_decimal(),
+                    initial_capital_amount=run.initial_capital.amount,
+                    initial_capital_currency=run.initial_capital.currency,
+                )
+                engine.add_strategy(strategy)
+                engine_started = True
+                if (
+                    config.qualification_control
+                    is QualificationControl.NETWORK_ATTEMPT_NEGATIVE_CONTROL
+                ):
+                    import socket
+
+                    socket.create_connection(("example.invalid", 443))
+                if (
+                    isinstance(config.dataset_release, DatasetRelease)
+                    and any(isinstance(item, FundingRateUpdate) for item in data)
+                ):
+                    preserved_funding, funding_checkpoints = (
+                        _run_real_data_with_native_funding_checkpoints(
+                            engine,
+                            data=data,
+                            instrument_id=instrument.id,
+                        )
+                    )
+                else:
+                    preserved_funding = ()
+                    engine.add_data(list(data))
+                    engine.run()
+                network_guard_evidence["attempts"] = list(network_evidence.attempts)
             engine_completed = True
             observations = json.loads(json.dumps(strategy.observations))
-            capture = _capture_engine(engine, strategy, instrument.id)
+            capture = _capture_engine(
+                engine,
+                strategy,
+                instrument.id,
+                preserved_funding_events=preserved_funding,
+            )
+        except NetworkAttemptBlocked as exc:
+            network_guard_evidence["attempts"] = list(network_evidence.attempts)
+            engine_error = f"{type(exc).__name__}: {exc}"
+            preflight.append(FailureCode.NETWORK_DURING_OFFICIAL_RUN.value)
         except Exception as exc:
             engine_error = f"{type(exc).__name__}: {exc}"
             preflight.append(FailureCode.UNSUPPORTED_RUNTIME.value)
@@ -829,15 +1001,18 @@ def run_lab(config: LabRunRequest) -> RunResult:
             "source_revision_sha256": sha256_file(run_dir / "source_revision.json"),
             "dataset_release_sha256": sha256_file(run_dir / "dataset_release.json"),
             "strategy_spec_sha256": sha256_file(run_dir / "strategy_spec.json"),
+            "strategy_plan_sha256": config.strategy_plan.strategy_plan_sha256,
         },
         "mark_price_count": capture["mark_price_count"],
         "funding_rate_count": capture["funding_rate_count"],
+        "native_funding_checkpoints": list(funding_checkpoints),
         "terminal_portfolio": capture["terminal_portfolio"],
         "mark_fallback_accepted": False,
         "fee_model": "nautilus_trader.execution:MakerTakerFeeModel",
         "project_fee_postings": 0,
         "project_funding_postings": 0,
         "project_financial_ledger": False,
+        "network_guard": network_guard_evidence,
         "terminal_policy": run.terminal_policy,
         "dataset_contract": {
             "type": type(config.dataset_release).__name__,
@@ -867,6 +1042,34 @@ def run_lab(config: LabRunRequest) -> RunResult:
                 None if resolved_release is None else str(resolved_release.catalog_path)
             ),
             "caller_side_conversion_used": False,
+            "instrument": (
+                None
+                if instrument is None
+                else {
+                    "native_class": f"{type(instrument).__module__}:{type(instrument).__name__}",
+                    "instrument_id": str(instrument.id),
+                    "maker_fee": str(instrument.maker_fee),
+                    "taker_fee": str(instrument.taker_fee),
+                    "min_quantity": (
+                        None if instrument.min_quantity is None else str(instrument.min_quantity)
+                    ),
+                    "max_quantity": (
+                        None if instrument.max_quantity is None else str(instrument.max_quantity)
+                    ),
+                    "size_increment": str(instrument.size_increment),
+                    "price_increment": str(instrument.price_increment),
+                    "project_financial_engine": False,
+                }
+            ),
+            "funding_native_binding": (
+                None if resolved_release is None else resolved_release.funding_native_binding
+            ),
+            "funding_source_event_count": (
+                0 if resolved_release is None else resolved_release.funding_source_event_count
+            ),
+            "funding_runtime_update_count": (
+                0 if resolved_release is None else resolved_release.funding_runtime_update_count
+            ),
         },
         "terminal_position_open": any(
             Decimal(str(row["signed_qty"])) != 0
@@ -879,6 +1082,8 @@ def run_lab(config: LabRunRequest) -> RunResult:
         "synthetic_terminal_close_order": False,
     }
     _write_json(run_dir / "nautilus_result.json", nautilus_result)
+    if is_m3_qualification:
+        _write_json(run_dir / "strategy_observations.json", observations)
 
     report = check_evidence_directory(run_dir)
     _write_json(run_dir / "checker.json", report.to_builtins())
@@ -899,6 +1104,22 @@ def run_lab(config: LabRunRequest) -> RunResult:
             "started_run_retained": True,
         },
     )
+    if is_m3_qualification:
+        manifest_entries = [
+            {"path": path.name, "sha256": sha256_file(path), "byte_size": path.stat().st_size}
+            for path in sorted(run_dir.iterdir())
+            if path.is_file() and path.name != "evidence_manifest.json"
+        ]
+        _write_json(
+            run_dir / "evidence_manifest.json",
+            {
+                "schema": "run-evidence-manifest-v1",
+                "run_id": run.run_id,
+                "entries": manifest_entries,
+                "inventory_content_sha256": canonical_sha256(manifest_entries),
+                "manifest_self_excluded": True,
+            },
+        )
     inventory = tuple(
         (path.name, sha256_file(path))
         for path in sorted(run_dir.iterdir())

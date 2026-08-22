@@ -134,6 +134,30 @@ class StrategyPlan:
             normalized[timestamp] = tuple(intents)
         object.__setattr__(self, "intents_by_bar_ns", MappingProxyType(normalized))
 
+    def material_payload(self) -> dict[str, Any]:
+        """Return the frozen signal schedule bound into an M3 StrategySpec."""
+
+        return {
+            "conflict_rule": self.conflict_rule,
+            "intents_by_bar_ns": {
+                str(timestamp): [
+                    {
+                        "order_type": intent.order_type,
+                        "quantity": intent.quantity,
+                        "reason": intent.reason,
+                        "side": intent.side,
+                    }
+                    for intent in intents
+                ]
+                for timestamp, intents in sorted(self.intents_by_bar_ns.items())
+            },
+            "qualification_attempt_all_intents": self.qualification_attempt_all_intents,
+        }
+
+    @property
+    def strategy_plan_sha256(self) -> str:
+        return canonical_sha256(self.material_payload())
+
 
 class GuardedCausalStrategy(Strategy):
     """Actual Nautilus Strategy with only the SSOT's pre-submit controls."""
@@ -157,6 +181,8 @@ class GuardedCausalStrategy(Strategy):
         self._live_client_order_id = None
         self.observations: dict[str, Any] = {
             "bars": [],
+            "mark_price_updates": [],
+            "funding_rate_updates": [],
             "intents": [],
             "suppressed_intents": [],
             "submitted_intents": [],
@@ -204,7 +230,36 @@ class GuardedCausalStrategy(Strategy):
         if not self._configured or self._bar_type is None:
             raise RuntimeError("strategy must be configured before registration")
         self.subscribe_bars(self._bar_type)
+        if (
+            self._profile
+            is MarketProfile.BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING
+        ):
+            assert self._instrument_id is not None
+            self.subscribe_mark_prices(self._instrument_id)
+            self.subscribe_funding_rates(self._instrument_id)
         self._boundary_snapshot(int(self.clock.timestamp_ns()))
+
+    def on_mark_price(self, event: Any) -> None:
+        self.observations["mark_price_updates"].append(
+            {
+                "instrument_id": str(event.instrument_id),
+                "value": str(event.value),
+                "ts_event": int(event.ts_event),
+                "ts_init": int(event.ts_init),
+            },
+        )
+
+    def on_funding_rate(self, event: Any) -> None:
+        self.observations["funding_rate_updates"].append(
+            {
+                "instrument_id": str(event.instrument_id),
+                "rate": str(event.rate),
+                "interval": event.interval,
+                "next_funding_ns": event.next_funding_ns,
+                "ts_event": int(event.ts_event),
+                "ts_init": int(event.ts_init),
+            },
+        )
 
     def _signed_position(self) -> Decimal:
         assert self._instrument_id is not None

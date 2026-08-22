@@ -1,0 +1,221 @@
+{
+  "run_id": "m0-downstream-contract-001",
+  "run_purpose": "QUALIFICATION",
+  "runtime_lock_sha256": "4032df9f355348c2a0cfa9f79f331f97c9a8d24ecc8490a573d2c7f788bafddd",
+  "market_profile": "BINANCE_SPOT_CASH_LONG_ONLY",
+  "instrument_id": "BTCUSDT.BINANCE",
+  "dataset_release_id": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "strategy_spec_id": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "initial_capital": {
+    "amount": "1000.00",
+    "currency": "USDT"
+  },
+  "warmup_start": "2024-01-01T00:00:00Z",
+  "scoring_start": "2024-01-01T01:00:00Z",
+  "scoring_end_exclusive": "2024-01-01T02:00:00Z",
+  "execution_bar_type": "BTCUSDT.BINANCE-1-MINUTE-LAST-EXTERNAL",
+  "signal_bar_types": [
+    "BTCUSDT.BINANCE-1-MINUTE-LAST-EXTERNAL"
+  ],
+  "nautilus_engine_config": {
+    "environment": "BACKTEST",
+    "trader_id": "BACKTESTER-001",
+    "instance_id_policy": "RUNTIME_GENERATED_NON_SEMANTIC",
+    "cache": {
+      "encoding": "json",
+      "timestamps_as_iso8601": false,
+      "persist_account_events": true,
+      "buffer_interval_ms": "DISABLED",
+      "bulk_read_batch_size": "DISABLED",
+      "use_trader_prefix": true,
+      "use_instance_id": false,
+      "flush_on_start": false,
+      "drop_instruments_on_reset": true,
+      "tick_capacity": 10000,
+      "bar_capacity": 10000,
+      "save_market_data": false
+    },
+    "msgbus": {
+      "encoding": "json",
+      "encoding_market_data": "DISABLED",
+      "encoding_builtin": "DISABLED",
+      "timestamps_as_iso8601": false,
+      "buffer_interval_ms": "DISABLED",
+      "autotrim_mins": "DISABLED",
+      "autotrim_maxlen": "DISABLED",
+      "use_trader_prefix": true,
+      "use_trader_id": true,
+      "use_instance_id": false,
+      "streams_prefix": "stream",
+      "stream_per_topic": true,
+      "external_streams": [],
+      "types_filter": "DISABLED",
+      "heartbeat_interval_secs": "DISABLED"
+    },
+    "data_engine": {
+      "time_bars_interval_type": "left-open",
+      "time_bars_timestamp_on_close": true,
+      "time_bars_skip_first_non_full_bar": true,
+      "time_bars_build_with_no_updates": false,
+      "time_bars_origin_offset": {},
+      "time_bars_build_delay": 0,
+      "validate_data_sequence": false,
+      "buffer_deltas": false,
+      "emit_quotes_from_book": false,
+      "emit_quotes_from_book_depths": false,
+      "external_clients": [],
+      "debug": false,
+      "disable_historical_cache": false
+    },
+    "risk_engine": {
+      "bypass": false,
+      "max_order_submit_rate": "100/00:00:01",
+      "max_order_modify_rate": "100/00:00:01",
+      "max_notional_per_order": {},
+      "debug": false
+    },
+    "exec_engine": {
+      "load_cache": true,
+      "manage_own_order_books": false,
+      "snapshot_orders": false,
+      "snapshot_positions": false,
+      "snapshot_positions_interval_secs": "DISABLED",
+      "external_clients": [],
+      "allow_overfills": false,
+      "carry_replay_events_on_reopen": false,
+      "purge_closed_orders_interval_mins": "DISABLED",
+      "purge_closed_orders_buffer_mins": "DISABLED",
+      "purge_closed_positions_interval_mins": "DISABLED",
+      "purge_closed_positions_buffer_mins": "DISABLED",
+      "purge_account_events_interval_mins": "DISABLED",
+      "purge_account_events_lookback_mins": "DISABLED",
+      "purge_from_database": false,
+      "debug": false
+    },
+    "portfolio": {
+      "use_mark_prices": false,
+      "use_mark_xrates": false,
+      "bar_updates": true,
+      "convert_to_account_base_currency": true,
+      "equity_curve": true,
+      "min_account_state_logging_interval_ms": "DISABLED",
+      "snapshot_interval_ms": "DISABLED",
+      "debug": false
+    },
+    "controller": "DISABLED",
+    "load_state": false,
+    "save_state": false,
+    "shutdown_on_error": false,
+    "bypass_logging": false,
+    "run_analysis": true,
+    "timeout_connection": 60,
+    "timeout_reconciliation": 30,
+    "timeout_portfolio": 10,
+    "timeout_disconnection": 10,
+    "delay_post_stop": 10,
+    "timeout_shutdown": 5
+  },
+  "nautilus_venue_config": {
+    "name": "BINANCE",
+    "oms_type": "NETTING",
+    "account_type": "CASH",
+    "starting_balances": [
+      {
+        "amount": "1000.00",
+        "currency": "USDT"
+      }
+    ],
+    "base_currency": "NONE_MULTI_CURRENCY",
+    "default_leverage": "1",
+    "instrument_leverages": [],
+    "margin_model": {
+      "model_type": "leveraged",
+      "config": {}
+    },
+    "modules": [],
+    "fill_model": {
+      "fill_model_path": "nautilus_trader.execution:DefaultFillModel",
+      "config_path": "NOT_APPLICABLE",
+      "prob_fill_on_limit": 1.0,
+      "prob_slippage": 1.0,
+      "random_seed": 0
+    },
+    "latency_model": {
+      "latency_model_path": "nautilus_trader.execution:StaticLatencyModel",
+      "config_path": "NOT_APPLICABLE",
+      "base_latency_nanos": 60000000000,
+      "insert_latency_nanos": 0,
+      "update_latency_nanos": 0,
+      "cancel_latency_nanos": 0,
+      "effective_insert_latency_nanos": 60000000000,
+      "effective_update_latency_nanos": 60000000000,
+      "effective_cancel_latency_nanos": 60000000000
+    },
+    "fee_model": "nautilus_trader.execution:MakerTakerFeeModel",
+    "effective_fee_model_path": "nautilus_trader.execution:MakerTakerFeeModel",
+    "book_type": "L1_MBP",
+    "routing": false,
+    "reject_stop_orders": true,
+    "support_gtd_orders": false,
+    "support_contingent_orders": false,
+    "oto_trigger_mode": "PARTIAL",
+    "use_position_ids": true,
+    "use_random_ids": false,
+    "use_reduce_only": true,
+    "use_message_queue": true,
+    "use_market_order_acks": false,
+    "bar_execution": true,
+    "bar_adaptive_high_low_ordering": false,
+    "trade_execution": false,
+    "liquidity_consumption": true,
+    "queue_position": false,
+    "allow_cash_borrowing": false,
+    "frozen_account": false,
+    "price_protection_points": 0,
+    "settlement_prices": [],
+    "liquidation_enabled": false,
+    "liquidation_trigger_ratio": 1.0,
+    "liquidation_cancel_open_orders": true
+  },
+  "nautilus_data_config": [
+    {
+      "catalog_path": "data/catalog/m0-next-phase-fixture",
+      "catalog_fs_protocol": "file",
+      "catalog_fs_storage_options": {},
+      "catalog_fs_rust_storage_options": {},
+      "data_type": "Bar",
+      "instrument_id": "BTCUSDT.BINANCE",
+      "start_time": "2024-01-01T00:00:00Z",
+      "end_time": "2024-01-01T02:00:00Z",
+      "filter_expr": "NOT_APPLICABLE",
+      "client_id": "NOT_APPLICABLE",
+      "metadata": {},
+      "bar_spec": "1-MINUTE-LAST",
+      "instrument_ids": [],
+      "bar_types": [],
+      "optimize_file_loading": false
+    }
+  ],
+  "fee_assumption": {
+    "maker_fee": "0.001",
+    "taker_fee": "0.001",
+    "explicit_zero_fee": false,
+    "reason": "SSOT Appendix A.1 synthetic qualification fee",
+    "claim_class": "ESTIMATED_FEE"
+  },
+  "funding_binding": "NOT_APPLICABLE",
+  "mark_binding": "NOT_APPLICABLE",
+  "random_seeds": [
+    {
+      "name": "fill_model",
+      "value": 0
+    }
+  ],
+  "research_protocol_id": "NOT_APPLICABLE",
+  "terminal_policy": "MARK_OPEN_POSITION_NO_SYNTHETIC_CLOSE",
+  "network_policy": "OFFLINE",
+  "execution_model": "BAR_BASED_ESTIMATED_EXECUTION",
+  "allowed_order_types": [
+    "MARKET"
+  ]
+}

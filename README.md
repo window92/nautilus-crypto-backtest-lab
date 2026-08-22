@@ -96,3 +96,24 @@ M2_SOURCE_DIR=/path/to/approved-binance-downloads \
 TZ=UTC LC_ALL=C.UTF-8 PYTHONPATH=src .venv/bin/python \
   scripts/run_m2_acceptance.py
 ```
+
+## M3 profile qualification
+
+M3 consumes the strict repaired M2 `DatasetRelease` objects directly and runs
+only deterministic `QUALIFICATION` profiles.  The mechanical signal schedules
+are frozen in `StrategySpec`; the public Nautilus engine remains the sole owner
+of orders, Fills, positions, accounts, fees, funding, PnL, and portfolio state.
+The bounded intervals are permanently disclosed as exposed qualification data,
+not future Holdout data, and no profitability conclusion is produced.
+
+After the M3 implementation commit is clean and pushed, run the two profiles,
+fresh-process replays, and negative controls offline:
+
+```bash
+TZ=UTC LC_ALL=C.UTF-8 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src \
+  .venv/bin/python scripts/run_m3_qualifications.py
+```
+
+The run starts only when `HEAD == origin/main` and the worktree is clean.  Its
+additive output is written under `evidence/m3/m3-acceptance-001/`; M3 never
+acquires data, starts research, performs an Official Run, or implements M4.

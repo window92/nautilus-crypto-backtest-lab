@@ -282,6 +282,42 @@ def check_evidence_directory(run_dir: Path) -> CheckerReport:
     checks.append({"name": "strategy_spec_binding", "pass": strategy_ok})
     if not strategy_ok:
         blocked.append(FailureCode.CONFIG_HASH_MISMATCH.value)
+    is_m3_qualification = (
+        strategy_spec.get("parameters", {}).get("m3_profile_qualification") == "true"
+    )
+    if is_m3_qualification:
+        plan_path = run_dir / "strategy_plan.json"
+        try:
+            plan_evidence = _read_json(plan_path)
+            plan_identity = canonical_sha256(plan_evidence["material_payload"])
+            plan_ok = (
+                plan_evidence.get("schema") == "strategy-plan-evidence-v1"
+                and plan_evidence.get("strategy_plan_sha256") == plan_identity
+                and strategy_spec["parameters"].get("strategy_plan_sha256") == plan_identity
+            )
+        except Exception as exc:
+            plan_ok = False
+            plan_identity = f"INVALID: {exc}"
+        checks.append(
+            {
+                "name": "m3_strategy_plan_binding",
+                "pass": plan_ok,
+                "strategy_plan_sha256": plan_identity,
+            },
+        )
+        if not plan_ok:
+            blocked.append(FailureCode.CONFIG_HASH_MISMATCH.value)
+        m3_source_ok = source.clean_worktree
+        checks.append(
+            {
+                "name": "m3_clean_source_revision",
+                "pass": m3_source_ok,
+                "git_commit": source.git_commit,
+                "git_tree": source.git_tree,
+            },
+        )
+        if not m3_source_ok:
+            blocked.append(FailureCode.EVIDENCE_INCOMPLETE.value)
 
     preflight_codes = [str(code) for code in result.get("preflight_failure_codes", [])]
     if preflight_codes:
@@ -453,6 +489,18 @@ def check_evidence_directory(run_dir: Path) -> CheckerReport:
         checks.append({"name": "spot_cash_no_short_or_borrow", "pass": spot_ok})
         if not spot_ok:
             failures.append(FailureCode.SPOT_SHORT_OR_BORROW_DETECTED.value)
+        if is_m3_qualification:
+            spot_profile_ok = (
+                config.nautilus_venue_config.account_type == "CASH"
+                and config.nautilus_venue_config.oms_type == "NETTING"
+                and config.nautilus_venue_config.allow_cash_borrowing is False
+                and config.nautilus_engine_config.portfolio.use_mark_prices is False
+                and config.mark_binding == "NOT_APPLICABLE"
+                and config.funding_binding == "NOT_APPLICABLE"
+            )
+            checks.append({"name": "m3_spot_profile_binding", "pass": spot_profile_ok})
+            if not spot_profile_ok:
+                failures.append(FailureCode.SPOT_SHORT_OR_BORROW_DETECTED.value)
     else:
         venue = config.nautilus_venue_config
         one_way_ok = (
@@ -478,6 +526,17 @@ def check_evidence_directory(run_dir: Path) -> CheckerReport:
         checks.append({"name": "no_submitted_cross_zero_order", "pass": cross_zero_ok})
         if not one_way_ok or not cross_zero_ok:
             failures.append(FailureCode.PERP_PROFILE_INVALID.value)
+        if is_m3_qualification:
+            perp_profile_ok = (
+                config.nautilus_engine_config.portfolio.use_mark_prices is True
+                and config.nautilus_venue_config.liquidation_enabled is False
+                and config.nautilus_venue_config.allow_cash_borrowing is False
+                and config.mark_binding == dataset.mark_data_identity
+                and config.funding_binding == dataset.funding_data_identity
+            )
+            checks.append({"name": "m3_perpetual_profile_binding", "pass": perp_profile_ok})
+            if not perp_profile_ok:
+                failures.append(FailureCode.PERP_PROFILE_INVALID.value)
 
     fee_rate = config.fee_assumption.taker_fee
     fee_ok = True
@@ -564,6 +623,91 @@ def check_evidence_directory(run_dir: Path) -> CheckerReport:
         )
         if not funding_ok:
             failures.append(FailureCode.FUNDING_DOUBLE_COUNT.value)
+        if is_m3_qualification and not isinstance(dataset, SyntheticQualificationDatasetRelease):
+            try:
+                funding_source = _read_json(run_dir / "funding_source.json")
+                checkpoints = result["native_funding_checkpoints"]
+                source_events = funding_source["events"]
+                source_event = source_events[0]
+                boundary_ns = int(source_event["calc_time_ns"])
+                checkpoint = next(
+                    item for item in checkpoints if int(item["boundary_ns"]) == boundary_ns
+                )
+                native = checkpoint["native_adjustments"]
+                open_positions = checkpoint["open_positions"]
+                mark_rows = [
+                    item
+                    for item in observations.get("mark_price_updates", [])
+                    if int(item["ts_event"]) == boundary_ns
+                ]
+                signed_qty = Decimal(open_positions[0]["signed_qty"])
+                mark = Decimal(mark_rows[0]["value"])
+                rate = Decimal(source_event["funding_rate"])
+                expected = (-signed_qty * mark * rate).quantize(Decimal("0.00000001"))
+                actual = _commission_amount(native[0]["pnl_change"])
+                account_before = max(
+                    (row for row in account_rows if int(row["ts_event"]) < boundary_ns),
+                    key=lambda row: int(row["ts_event"]),
+                )
+                boundary_totals = {
+                    Decimal(row["total"])
+                    for row in account_rows
+                    if int(row["ts_event"]) == boundary_ns
+                }
+                account_delta = next(iter(boundary_totals)) - Decimal(account_before["total"])
+                real_funding_ok = (
+                    len(source_events) == 1
+                    and len(checkpoints) == 1
+                    and len(native) == 1
+                    and len(open_positions) == 1
+                    and signed_qty > 0
+                    and len(mark_rows) == 1
+                    and len(boundary_totals) == 1
+                    and int(native[0]["ts_event"]) == boundary_ns
+                    and native[0]["adjustment_type"] == "FUNDING"
+                    and actual == expected
+                    and account_delta == expected
+                    and result["dataset_contract"]["funding_source_event_count"] == 1
+                    and result["dataset_contract"]["funding_runtime_update_count"] == 2
+                    and result["project_funding_postings"] == 0
+                    and result["project_financial_ledger"] is False
+                )
+                funding_detail = {
+                    "boundary_ns": boundary_ns,
+                    "position_before": str(signed_qty),
+                    "mark": str(mark),
+                    "rate": str(rate),
+                    "expected_native_cash_effect": str(expected),
+                    "actual_native_adjustment": str(actual),
+                    "actual_account_delta": str(account_delta),
+                    "source_events": len(source_events),
+                    "native_settlements": len(native),
+                }
+            except Exception as exc:
+                real_funding_ok = False
+                funding_detail = {"detail": str(exc)}
+            checks.append(
+                {"name": "m3_real_native_funding", "pass": real_funding_ok, **funding_detail},
+            )
+            if not real_funding_ok:
+                failures.append(FailureCode.FUNDING_DOUBLE_COUNT.value)
+
+            expected_lifecycle = [Decimal("0.004"), Decimal("0.003"), Decimal("0"), Decimal("-0.001")]
+            actual_lifecycle = [
+                Decimal(item["signed_position"])
+                for item in observations.get("position_sequence", [])
+            ]
+            lifecycle_ok = actual_lifecycle == expected_lifecycle
+            checks.append(
+                {
+                    "name": "m3_perpetual_netting_lifecycle",
+                    "pass": lifecycle_ok,
+                    "expected": [str(item) for item in expected_lifecycle],
+                    "actual": [str(item) for item in actual_lifecycle],
+                },
+            )
+            if not lifecycle_ok:
+                failures.append(FailureCode.PERP_PROFILE_INVALID.value)
 
     boundary = observations.get("scoring_boundary")
     boundary_ok = boundary is not None and (
