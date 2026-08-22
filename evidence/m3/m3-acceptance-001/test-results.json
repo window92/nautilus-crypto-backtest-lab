@@ -1,0 +1,1478 @@
+{
+  "additional_non_test_acceptance_check_count": 10,
+  "additional_non_test_acceptance_checks": [
+    {
+      "check_id": "RUNTIME_PREFLIGHT",
+      "result": {
+        "dependency_lock_sha256": "b2765c9e33b10566fc327b48920fd1d3a73618c19622baaceab1fe9dca61df47",
+        "dependency_versions": {
+          "nautilus-trader": "2.0.0rc2",
+          "pip": "24.0"
+        },
+        "effective_locale": "LC_CTYPE=C.UTF-8;LC_NUMERIC=C;LC_TIME=C;LC_COLLATE=C;LC_MONETARY=C;LC_MESSAGES=C;LC_PAPER=C;LC_NAME=C;LC_ADDRESS=C;LC_TELEPHONE=C;LC_MEASUREMENT=C;LC_IDENTIFICATION=C",
+        "effective_timezone": [
+          "UTC",
+          "UTC"
+        ],
+        "glibc_version": "2.39",
+        "installed_distributions": {
+          "nautilus-trader": "2.0.0rc2",
+          "pip": "24.0"
+        },
+        "installed_wheel_filename": "nautilus_trader-2.0.0rc2-cp312-cp312-manylinux_2_34_x86_64.whl",
+        "installed_wheel_sha256": "716169aca15bfb615a27610a9230e670dec5be3d4606fea591fe64eca145a5ac",
+        "installed_wheel_url": "file:///tmp/nautilus-v2-gate.UKpWnpmd/download/nautilus_trader-2.0.0rc2-cp312-cp312-manylinux_2_34_x86_64.whl",
+        "libc_name": "glibc",
+        "locale": "C.UTF-8",
+        "machine_architecture": "x86_64",
+        "nautilus_version": "2.0.0rc2",
+        "pip_version": "24.0",
+        "platform": "Linux-6.8.0-136-generic-x86_64-with-glibc2.39",
+        "python_abi": "cp312",
+        "python_implementation": "CPython",
+        "python_version": "3.12.3",
+        "timezone": "UTC",
+        "wheel_file_present": true,
+        "wheel_file_sha256": "716169aca15bfb615a27610a9230e670dec5be3d4606fea591fe64eca145a5ac",
+        "wheel_file_size_bytes": 66118782
+      },
+      "status": "PASS"
+    },
+    {
+      "check_id": "PIP_CHECK",
+      "command": [
+        "/home/builder/projects/nautilus-crypto-backtest-lab/.venv/bin/python",
+        "-m",
+        "pip",
+        "check"
+      ],
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "WARNING: The directory '/home/builder/.cache/pip' or its parent directory is not owned or is not writable by the current user. The cache has been disabled. Check the permissions and owner of that directory. If executing pip with sudo, you should use sudo's -H flag.\n",
+      "stdout": "No broken requirements found.\n"
+    },
+    {
+      "check_id": "PYTHON_COMPILATION",
+      "command": [
+        "/home/builder/projects/nautilus-crypto-backtest-lab/.venv/bin/python",
+        "-m",
+        "py_compile",
+        "/home/builder/projects/nautilus-crypto-backtest-lab/src/crypto_lab/__init__.py",
+        "/home/builder/projects/nautilus-crypto-backtest-lab/src/crypto_lab/checker.py",
+        "/home/builder/projects/nautilus-crypto-backtest-lab/src/crypto_lab/config.py",
+        "/home/builder/projects/nautilus-crypto-backtest-lab/src/crypto_lab/data.py",
+        "/home/builder/projects/nautilus-crypto-backtest-lab/src/crypto_lab/hashing.py",
+        "/home/builder/projects/nautilus-crypto-backtest-lab/src/crypto_lab/m1_qualification.py",
+        "/home/builder/projects/nautilus-crypto-backtest-lab/src/crypto_lab/m3.py",
+        "/home/builder/projects/nautilus-crypto-backtest-lab/src/crypto_lab/nautilus_config.py",
+        "/home/builder/projects/nautilus-crypto-backtest-lab/src/crypto_lab/offline.py",
+        "/home/builder/projects/nautilus-crypto-backtest-lab/src/crypto_lab/qualification.py",
+        "/home/builder/projects/nautilus-crypto-backtest-lab/src/crypto_lab/reporting.py",
+        "/home/builder/projects/nautilus-crypto-backtest-lab/src/crypto_lab/research.py",
+        "/home/builder/projects/nautilus-crypto-backtest-lab/src/crypto_lab/runner.py",
+        "/home/builder/projects/nautilus-crypto-backtest-lab/src/crypto_lab/runtime.py",
+        "/home/builder/projects/nautilus-crypto-backtest-lab/src/crypto_lab/status.py",
+        "/home/builder/projects/nautilus-crypto-backtest-lab/src/crypto_lab/strategies/__init__.py",
+        "/home/builder/projects/nautilus-crypto-backtest-lab/src/crypto_lab/strategies/base.py",
+        "/home/builder/projects/nautilus-crypto-backtest-lab/scripts/run_m3_child.py",
+        "/home/builder/projects/nautilus-crypto-backtest-lab/scripts/run_m3_qualifications.py",
+        "/home/builder/projects/nautilus-crypto-backtest-lab/scripts/validate_m3_evidence.py",
+        "/home/builder/projects/nautilus-crypto-backtest-lab/scripts/run_m3_acceptance.py"
+      ],
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": ""
+    },
+    {
+      "check_id": "GIT_DIFF_CHECK",
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": ""
+    },
+    {
+      "check_id": "M3_EVIDENCE_VALIDATION",
+      "result": {
+        "checks": {
+          "both_profiles_qualified": true,
+          "downstream_BINANCE_SPOT_CASH_LONG_ONLY": true,
+          "downstream_BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING": true,
+          "duplicate_funding_checker_control": true,
+          "fresh_process_replay": true,
+          "negative_controls_complete": true,
+          "qualification_manifest": true,
+          "qualification_only": true,
+          "registry_has_exact_profiles": true,
+          "run_manifest_perpetual-primary": true,
+          "run_manifest_perpetual-replay": true,
+          "run_manifest_spot-primary": true,
+          "run_manifest_spot-replay": true
+        },
+        "schema": "m3-evidence-validation-v1",
+        "status": "PASS"
+      },
+      "status": "PASS"
+    },
+    {
+      "check_id": "DETERMINISTIC_REPLAY",
+      "result": {
+        "perpetual": {
+          "fresh_processes": true,
+          "ignored_only_nonsemantic_occurrence_metadata": true,
+          "primary_run_id": "m3-perpetual-primary-001",
+          "replay_run_id": "m3-perpetual-replay-001",
+          "result": "PASS",
+          "schema": "m3-deterministic-replay-v1",
+          "semantic_digest_primary": "eaa32d971d3ba797f182cf829bc043028dcfce63bfedee13856734cefa08815d",
+          "semantic_digest_replay": "eaa32d971d3ba797f182cf829bc043028dcfce63bfedee13856734cefa08815d",
+          "semantic_sequence_compared": true
+        },
+        "spot": {
+          "fresh_processes": true,
+          "ignored_only_nonsemantic_occurrence_metadata": true,
+          "primary_run_id": "m3-spot-primary-001",
+          "replay_run_id": "m3-spot-replay-001",
+          "result": "PASS",
+          "schema": "m3-deterministic-replay-v1",
+          "semantic_digest_primary": "67a2c3e5ea51fae9ac5c76318efe99c1cdd4eaf70ca4dc41f3c3f17aeebff892",
+          "semantic_digest_replay": "67a2c3e5ea51fae9ac5c76318efe99c1cdd4eaf70ca4dc41f3c3f17aeebff892",
+          "semantic_sequence_compared": true
+        }
+      },
+      "status": "PASS"
+    },
+    {
+      "check_id": "CHECKER_TAMPER_CONTROL",
+      "status": "PASS"
+    },
+    {
+      "check_id": "DATASET_RELEASE_AND_CATALOG_VALIDATION",
+      "profiles": {
+        "perpetual": true,
+        "spot": true
+      },
+      "status": "PASS"
+    },
+    {
+      "check_id": "SSOT_RUNTIME_LOCK_INTEGRITY",
+      "status": "PASS"
+    },
+    {
+      "check_id": "NO_DISABLED_OR_XFAIL_TESTS",
+      "matches": [],
+      "status": "PASS"
+    }
+  ],
+  "baseline_unique_test_cases": 106,
+  "errors": 0,
+  "execution_occurrences": [
+    {
+      "phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_config.LabRunConfigTests.test_duplicate_field_fails"
+    },
+    {
+      "phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_config.LabRunConfigTests.test_frozen_config_rejects_nested_material_mutation"
+    },
+    {
+      "phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_config.LabRunConfigTests.test_missing_material_field_fails"
+    },
+    {
+      "phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_config.LabRunConfigTests.test_perpetual_profile_requires_mark_prices_funding_and_mark_bindings"
+    },
+    {
+      "phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_config.LabRunConfigTests.test_required_material_runtime_settings_are_explicit"
+    },
+    {
+      "phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_config.LabRunConfigTests.test_round_trip_preserves_decimal_strings_and_utc_timestamps"
+    },
+    {
+      "phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_config.LabRunConfigTests.test_unknown_or_missing_nested_material_field_fails"
+    },
+    {
+      "phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_config.LabRunConfigTests.test_unknown_top_level_field_fails"
+    },
+    {
+      "phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_hashing.CanonicalJSONTests.test_decimal_timestamp_and_key_order_match_independent_golden"
+    },
+    {
+      "phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_hashing.CanonicalJSONTests.test_nan_and_infinity_are_rejected"
+    },
+    {
+      "phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_hashing.CanonicalJSONTests.test_non_utc_or_naive_datetime_is_rejected"
+    },
+    {
+      "phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_runtime_lock.RuntimeLockSchemaTests.test_runtime_lock_rejects_missing_field"
+    },
+    {
+      "phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_runtime_lock.RuntimeLockSchemaTests.test_runtime_lock_rejects_obsolete_schema_version"
+    },
+    {
+      "phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_runtime_lock.RuntimeLockSchemaTests.test_runtime_lock_rejects_project_git_identity_as_unknown"
+    },
+    {
+      "phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_runtime_lock.RuntimeLockSchemaTests.test_runtime_lock_rejects_unknown_field"
+    },
+    {
+      "phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_runtime_lock.RuntimeLockSchemaTests.test_runtime_lock_v2_excludes_project_source_identity"
+    },
+    {
+      "phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_source_revision.SourceRevisionContractTests.test_source_revision_rejects_invalid_git_object_id"
+    },
+    {
+      "phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_source_revision.SourceRevisionContractTests.test_source_revision_rejects_missing_field"
+    },
+    {
+      "phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_source_revision.SourceRevisionContractTests.test_source_revision_rejects_non_utc_capture_time"
+    },
+    {
+      "phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_source_revision.SourceRevisionContractTests.test_source_revision_rejects_unknown_field"
+    },
+    {
+      "phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_source_revision.SourceRevisionContractTests.test_source_revision_round_trip_has_exact_separate_fields"
+    },
+    {
+      "phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_status.StatusContractTests.test_m0_failure_codes_are_stable"
+    },
+    {
+      "phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_status.StatusContractTests.test_run_terminal_states_match_ssot"
+    },
+    {
+      "phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.golden.test_g18_config_hash.G18ConfigHashTests.test_material_change_changes_config_sha256"
+    },
+    {
+      "phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.golden.test_g18_config_hash.G18ConfigHashTests.test_occurrence_id_and_physical_catalog_path_are_not_material"
+    },
+    {
+      "phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.golden.test_g20_runtime_lock_mismatch.G20RuntimeLockMismatchTests.test_dependency_lock_mismatch_blocks_before_data_loading"
+    },
+    {
+      "phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.golden.test_g20_runtime_lock_mismatch.G20RuntimeLockMismatchTests.test_wheel_mismatch_blocks_before_data_loading"
+    },
+    {
+      "phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.integration.test_m0_downstream_contract.M0DownstreamContractTests.test_m1_can_parse_and_bind_m0_config_without_defaults"
+    },
+    {
+      "phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.integration.test_m0_downstream_contract.M0DownstreamContractTests.test_m1_can_parse_separate_source_revision_without_defaults"
+    },
+    {
+      "phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.qualification.test_latency_contract.LatencyContractQualificationTests.test_pinned_backtest_venue_accepts_exact_constant_latency_contract"
+    },
+    {
+      "phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.qualification.test_runtime_identity.RuntimeIdentityQualificationTests.test_current_process_matches_complete_runtime_lock"
+    },
+    {
+      "phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.qualification.test_m1_native_funding.M1NativeFundingQualificationTests.test_g09_positive_funding_debits_long_exactly_once"
+    },
+    {
+      "phase": "M1_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m1_contracts.M1StrictContractTests.test_strategy_spec_identity_ignores_only_human_strategy_id"
+    },
+    {
+      "phase": "M1_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m1_contracts.M1StrictContractTests.test_strategy_spec_locks_market_order_tif_and_terminal_policy"
+    },
+    {
+      "phase": "M1_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m1_contracts.M1StrictContractTests.test_strategy_spec_rejects_unknown_and_missing_material_fields"
+    },
+    {
+      "phase": "M1_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.golden.test_m1_contracts.M1GoldenContractTests.test_g01_completed_bar_visibility_boundary"
+    },
+    {
+      "phase": "M1_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.golden.test_m1_contracts.M1GoldenContractTests.test_g02_no_same_bar_fill"
+    },
+    {
+      "phase": "M1_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.golden.test_m1_contracts.M1GoldenContractTests.test_g03_zero_latency_negative_control_fails_checker"
+    },
+    {
+      "phase": "M1_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.golden.test_m1_contracts.M1GoldenContractTests.test_g05_native_fill_bytes_are_immutable"
+    },
+    {
+      "phase": "M1_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.golden.test_m1_contracts.M1GoldenContractTests.test_g06_two_fresh_runs_have_identical_semantic_sequence"
+    },
+    {
+      "phase": "M1_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.golden.test_m1_contracts.M1GoldenContractTests.test_g07_spot_oversell_is_blocked_before_submission"
+    },
+    {
+      "phase": "M1_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.golden.test_m1_contracts.M1GoldenContractTests.test_g08_hedging_configuration_is_rejected"
+    },
+    {
+      "phase": "M1_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.golden.test_m1_contracts.M1GoldenContractTests.test_g08_perpetual_netting_lifecycle_and_guards"
+    },
+    {
+      "phase": "M1_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.golden.test_m1_contracts.M1GoldenContractTests.test_g10_maker_taker_fee_is_applied_exactly_once"
+    },
+    {
+      "phase": "M1_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.golden.test_m1_contracts.M1GoldenContractTests.test_g11_perpetual_mark_valuation_and_missing_mark_block"
+    },
+    {
+      "phase": "M1_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.golden.test_m1_contracts.M1GoldenContractTests.test_g13_warmup_bar_at_scoring_start_cannot_submit"
+    },
+    {
+      "phase": "M1_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.golden.test_m1_contracts.M1GoldenContractTests.test_g14_excluded_order_type_is_rejected_before_submission"
+    },
+    {
+      "phase": "M1_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.golden.test_m1_contracts.M1GoldenContractTests.test_g21_terminal_insert_boundary_suppresses_intent"
+    },
+    {
+      "phase": "M1_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.golden.test_m1_contracts.M1GoldenContractTests.test_invalid_price_and_quantity_precision_fail_explicitly"
+    },
+    {
+      "phase": "M1_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.golden.test_m1_contracts.M1GoldenContractTests.test_m1_public_runner_contract_exists"
+    },
+    {
+      "phase": "M1_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.golden.test_m1_contracts.M1GoldenContractTests.test_market_gtc_partial_fill_remainder_finishes_at_causal_arrival"
+    },
+    {
+      "phase": "M1_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.golden.test_m1_contracts.M1GoldenContractTests.test_profile_files_are_exact_cash_and_netting_contracts"
+    },
+    {
+      "phase": "M1_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.golden.test_m1_contracts.M1GoldenContractTests.test_terminal_shutdown_preserves_open_position_without_synthetic_close"
+    },
+    {
+      "phase": "M1_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.integration.test_m1_evidence_contract.M1EvidenceContractTests.test_checker_blocks_tampered_dataset_binding"
+    },
+    {
+      "phase": "M1_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.integration.test_m1_evidence_contract.M1EvidenceContractTests.test_checker_detects_native_fill_mutation"
+    },
+    {
+      "phase": "M1_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.integration.test_m1_evidence_contract.M1EvidenceContractTests.test_downstream_can_read_stable_run_result_and_bundle_without_strategy_edge"
+    },
+    {
+      "phase": "M1_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.integration.test_m1_evidence_contract.M1EvidenceContractTests.test_g06_funding_replay_ignores_only_native_instance_ids"
+    },
+    {
+      "phase": "M1_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.integration.test_m1_evidence_contract.M1EvidenceContractTests.test_g09_checker_requires_one_native_funding_settlement"
+    },
+    {
+      "phase": "M1_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.qualification.test_m1_native_funding.M1NativeFundingQualificationTests.test_g09_positive_funding_debits_long_exactly_once"
+    },
+    {
+      "phase": "M1_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.qualification.test_m1_native_profiles.M1NativeProfileQualificationTests.test_g07_native_cash_limitation_requires_project_pre_submit_guard"
+    },
+    {
+      "phase": "M1_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.qualification.test_m1_native_profiles.M1NativeProfileQualificationTests.test_g11_native_mark_path_and_fallback_negative_control"
+    },
+    {
+      "phase": "M2_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_raw_and_parsing.RawObjectTests.test_acquirer_stores_corrupted_download_before_failing_checksum"
+    },
+    {
+      "phase": "M2_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_raw_and_parsing.RawObjectTests.test_locator_replay_with_different_bytes_preserves_both_and_links_conflict"
+    },
+    {
+      "phase": "M2_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_raw_and_parsing.RawObjectTests.test_prohibited_archive_role_substitution_is_rejected"
+    },
+    {
+      "phase": "M2_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_raw_and_parsing.RawObjectTests.test_publisher_checksum_verification_and_corruption_failure"
+    },
+    {
+      "phase": "M2_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_raw_and_parsing.RawObjectTests.test_raw_byte_hash_stability_and_read_verification"
+    },
+    {
+      "phase": "M2_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_raw_and_parsing.RawObjectTests.test_raw_schema_rejects_unknown_missing_and_duplicate_fields"
+    },
+    {
+      "phase": "M2_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_raw_and_parsing.TimestampAndParsingTests.test_conflicting_duplicate_blocks"
+    },
+    {
+      "phase": "M2_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_raw_and_parsing.TimestampAndParsingTests.test_malformed_nonmonotonic_invalid_ohlc_and_negative_volume_block_without_repair"
+    },
+    {
+      "phase": "M2_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_raw_and_parsing.TimestampAndParsingTests.test_one_minute_completeness_passes_and_missing_minute_blocks"
+    },
+    {
+      "phase": "M2_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_raw_and_parsing.TimestampAndParsingTests.test_source_role_mismatch_blocks"
+    },
+    {
+      "phase": "M2_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_raw_and_parsing.TimestampAndParsingTests.test_usdm_does_not_inherit_spot_transition"
+    },
+    {
+      "phase": "M2_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_release_contract.DatasetReleaseTests.test_canonical_release_identity_round_trip_and_created_at_exclusion"
+    },
+    {
+      "phase": "M2_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_release_contract.DatasetReleaseTests.test_catalog_rebuild_semantic_stability_and_mutation_staleness"
+    },
+    {
+      "phase": "M2_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_release_contract.DatasetReleaseTests.test_material_source_change_changes_release_id"
+    },
+    {
+      "phase": "M2_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_release_contract.DatasetReleaseTests.test_perpetual_mark_grid_and_release_pass"
+    },
+    {
+      "phase": "M2_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_release_contract.DatasetReleaseTests.test_perpetual_requires_mark_and_funding_roles"
+    },
+    {
+      "phase": "M2_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_release_contract.DatasetReleaseTests.test_release_schema_rejects_unknown_missing_and_duplicate_fields"
+    },
+    {
+      "phase": "M2_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_release_contract.DatasetReleaseTests.test_spot_forbids_mark_and_funding_roles"
+    },
+    {
+      "phase": "M2_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_release_contract.FundingContractTests.test_conflicting_funding_duplicate_blocks"
+    },
+    {
+      "phase": "M2_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_release_contract.FundingContractTests.test_removed_required_event_is_funding_missing"
+    },
+    {
+      "phase": "M2_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_release_contract.FundingContractTests.test_schedule_uses_official_explicit_interval_and_validates"
+    },
+    {
+      "phase": "M2_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_release_contract.FundingContractTests.test_unproven_schedule_is_funding_ambiguous"
+    },
+    {
+      "phase": "M2_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_release_contract.MetadataTests.test_invalid_or_incomplete_metadata_blocks"
+    },
+    {
+      "phase": "M2_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_release_contract.MetadataTests.test_material_metadata_change_changes_identity_but_observation_time_does_not"
+    },
+    {
+      "phase": "M2_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_release_contract.MetadataTests.test_metadata_identity_observation_and_current_not_historical"
+    },
+    {
+      "phase": "M2_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.golden.test_m2_data_contract.M2GoldenDataContractTests.test_spot_timestamp_transition_is_explicit_and_bar_is_available_on_completion"
+    },
+    {
+      "phase": "M2_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.integration.test_m2_downstream_contract.M2DownstreamContractTests.test_m3_can_parse_dataset_release_without_defaults_or_internal_parser_exports"
+    },
+    {
+      "phase": "M2_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.integration.test_m2_downstream_contract.M2DownstreamContractTests.test_release_rows_are_already_native_catalog_compatible_for_m3"
+    },
+    {
+      "phase": "M2_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_repair_contracts.F01DatasetReleaseBoundaryTests.test_lab_run_request_accepts_the_typed_release_without_dict_conversion"
+    },
+    {
+      "phase": "M2_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_repair_contracts.F02PreserveBeforeParseTests.test_malformed_checksum_preserves_both_responses_and_retry_history"
+    },
+    {
+      "phase": "M2_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_repair_contracts.F03StrictSourceBindingTests.test_conflict_provenance_survives_binding_and_blocks_release"
+    },
+    {
+      "phase": "M2_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_repair_contracts.F03StrictSourceBindingTests.test_second_symbol_pipeline_has_no_btc_product_default"
+    },
+    {
+      "phase": "M2_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_repair_contracts.F03StrictSourceBindingTests.test_target_release_rejects_mismatched_symbol_profile_interval_range_and_filename"
+    },
+    {
+      "phase": "M2_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_repair_contracts.F04MarketOrderMetadataTests.test_frozen_filters_resolve_exact_market_intersections_and_native_limits"
+    },
+    {
+      "phase": "M2_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_repair_contracts.F04MarketOrderMetadataTests.test_market_quantity_max_above_max_and_grid_are_checked_before_fill"
+    },
+    {
+      "phase": "M2_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_repair_contracts.F04MarketOrderMetadataTests.test_quantity_precision_is_not_used_as_step_size"
+    },
+    {
+      "phase": "M2_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_repair_contracts.F05AcceptanceCountTests.test_reconciliation_deduplicates_shared_g09_and_discloses_occurrences"
+    },
+    {
+      "phase": "M2_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.integration.test_m2_repair_downstream_contract.M2RepairedDownstreamContractTests.test_interface_identity_mutation_blocks_with_downstream_contract_failure"
+    },
+    {
+      "phase": "M2_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.integration.test_m2_repair_downstream_contract.M2RepairedDownstreamContractTests.test_native_market_limits_are_enforced_before_nautilus_submission"
+    },
+    {
+      "phase": "M2_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.integration.test_m2_repair_downstream_contract.M2RepairedDownstreamContractTests.test_strict_datasetrelease_flows_directly_through_public_run_lab"
+    },
+    {
+      "phase": "M2_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.qualification.test_m2_official_samples.M2OfficialSampleQualificationTests.test_all_five_official_archives_match_publisher_checksums_and_local_blobs"
+    },
+    {
+      "phase": "M2_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.qualification.test_m2_official_samples.M2OfficialSampleQualificationTests.test_funding_mark_metadata_and_catalog_qualifications_pass"
+    },
+    {
+      "phase": "M2_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.qualification.test_m2_official_samples.M2OfficialSampleQualificationTests.test_locked_ssot_and_runtime_were_not_changed"
+    },
+    {
+      "phase": "M2_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.qualification.test_m2_official_samples.M2OfficialSampleQualificationTests.test_official_daily_completeness_and_no_repair"
+    },
+    {
+      "phase": "M2_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.qualification.test_m2_official_samples.M2OfficialSampleQualificationTests.test_official_source_and_timestamp_evidence_are_frozen"
+    },
+    {
+      "phase": "M2_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.qualification.test_m2_official_samples.M2OfficialSampleQualificationTests.test_spot_and_perpetual_release_evidence_matches_tracked_manifests"
+    },
+    {
+      "phase": "M3",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m3_contracts.M3ContractTests.test_mechanical_integrity_shape_cannot_report_pass_without_checker_and_replay"
+    },
+    {
+      "phase": "M3",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m3_contracts.M3ContractTests.test_negative_control_plans_are_frozen_pre_submit_contracts"
+    },
+    {
+      "phase": "M3",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m3_contracts.M3ContractTests.test_offline_guard_blocks_and_records_connection_attempt"
+    },
+    {
+      "phase": "M3",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m3_contracts.M3ContractTests.test_qualification_strategy_schedule_is_frozen_before_execution"
+    },
+    {
+      "phase": "M3",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m3_contracts.M3ContractTests.test_registry_is_strict_content_addressed_and_has_exactly_two_profiles"
+    },
+    {
+      "phase": "M3",
+      "status": "PASS",
+      "test_id": "tests.golden.test_m3_profile_contracts.M3ProfileGoldenTests.test_perpetual_repaired_release_funding_and_native_limits_are_exact"
+    },
+    {
+      "phase": "M3",
+      "status": "PASS",
+      "test_id": "tests.golden.test_m3_profile_contracts.M3ProfileGoldenTests.test_spot_repaired_release_and_native_market_limits_are_exact"
+    },
+    {
+      "phase": "M3",
+      "status": "PASS",
+      "test_id": "tests.golden.test_m3_real_values.M3RealGoldenValues.test_perpetual_fill_lifecycle_matches_frozen_real_data_expectation"
+    },
+    {
+      "phase": "M3",
+      "status": "PASS",
+      "test_id": "tests.golden.test_m3_real_values.M3RealGoldenValues.test_perpetual_funding_cash_effect_is_independent_decimal_expectation"
+    },
+    {
+      "phase": "M3",
+      "status": "PASS",
+      "test_id": "tests.golden.test_m3_real_values.M3RealGoldenValues.test_spot_fill_is_on_later_real_bar_and_native_fee_matches_hand_calculation"
+    },
+    {
+      "phase": "M3",
+      "status": "PASS",
+      "test_id": "tests.integration.test_m3_dataset_interface.M3DatasetInterfaceTests.test_profile_configs_bind_runtime_fee_mark_funding_and_limits_explicitly"
+    },
+    {
+      "phase": "M3",
+      "status": "PASS",
+      "test_id": "tests.integration.test_m3_dataset_interface.M3DatasetInterfaceTests.test_public_run_request_receives_strict_dataset_release_without_conversion"
+    },
+    {
+      "phase": "M3",
+      "status": "PASS",
+      "test_id": "tests.integration.test_m3_m4_downstream_contract.M3M4DownstreamContractTests.test_downstream_bundle_rejects_unknown_or_missing_fields"
+    },
+    {
+      "phase": "M3",
+      "status": "PASS",
+      "test_id": "tests.integration.test_m3_m4_downstream_contract.M3M4DownstreamContractTests.test_future_m4_can_parse_both_qualified_records_without_internal_imports"
+    },
+    {
+      "phase": "M3",
+      "status": "PASS",
+      "test_id": "tests.qualification.test_m3_real_profiles.M3RealProfileQualifications.test_accepted_runs_are_clean_committed_qualification_source_and_offline"
+    },
+    {
+      "phase": "M3",
+      "status": "PASS",
+      "test_id": "tests.qualification.test_m3_real_profiles.M3RealProfileQualifications.test_native_funding_sign_boundary_exactly_once_and_mark_binding"
+    },
+    {
+      "phase": "M3",
+      "status": "PASS",
+      "test_id": "tests.qualification.test_m3_real_profiles.M3RealProfileQualifications.test_perpetual_negative_controls_fail_for_their_intended_reason"
+    },
+    {
+      "phase": "M3",
+      "status": "PASS",
+      "test_id": "tests.qualification.test_m3_real_profiles.M3RealProfileQualifications.test_perpetual_real_path_is_causal_netting_and_uses_repaired_limits"
+    },
+    {
+      "phase": "M3",
+      "status": "PASS",
+      "test_id": "tests.qualification.test_m3_real_profiles.M3RealProfileQualifications.test_replays_registry_and_all_run_manifests_are_content_valid"
+    },
+    {
+      "phase": "M3",
+      "status": "PASS",
+      "test_id": "tests.qualification.test_m3_real_profiles.M3RealProfileQualifications.test_spot_real_path_is_causal_cash_long_only_and_fee_exactly_once"
+    },
+    {
+      "phase": "M3",
+      "status": "PASS",
+      "test_id": "tests.qualification.test_m3_real_profiles.M3RealProfileQualifications.test_spot_short_attempt_is_blocked_pre_submit_without_fill"
+    }
+  ],
+  "failures": 0,
+  "m3_unique_test_cases": 21,
+  "phase_execution_occurrences": {
+    "M0_REGRESSION": 32,
+    "M1_REGRESSION": 29,
+    "M2_REGRESSION": 46,
+    "M3": 21
+  },
+  "repeated_execution_count": 1,
+  "repeated_executions": [
+    {
+      "canonical_owner_phase": "M1_REGRESSION",
+      "execution_phases": [
+        "M0_REGRESSION",
+        "M1_REGRESSION"
+      ],
+      "occurrence_count": 2,
+      "test_id": "tests.qualification.test_m1_native_funding.M1NativeFundingQualificationTests.test_g09_positive_funding_debits_long_exactly_once"
+    }
+  ],
+  "schema": "m3-combined-acceptance-v1",
+  "skipped": 0,
+  "status": "PASS",
+  "test_execution_occurrences": 128,
+  "unique_executable_test_cases": 127,
+  "unique_tests": [
+    {
+      "canonical_owner_phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.golden.test_g18_config_hash.G18ConfigHashTests.test_material_change_changes_config_sha256"
+    },
+    {
+      "canonical_owner_phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.golden.test_g18_config_hash.G18ConfigHashTests.test_occurrence_id_and_physical_catalog_path_are_not_material"
+    },
+    {
+      "canonical_owner_phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.golden.test_g20_runtime_lock_mismatch.G20RuntimeLockMismatchTests.test_dependency_lock_mismatch_blocks_before_data_loading"
+    },
+    {
+      "canonical_owner_phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.golden.test_g20_runtime_lock_mismatch.G20RuntimeLockMismatchTests.test_wheel_mismatch_blocks_before_data_loading"
+    },
+    {
+      "canonical_owner_phase": "M1_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.golden.test_m1_contracts.M1GoldenContractTests.test_g01_completed_bar_visibility_boundary"
+    },
+    {
+      "canonical_owner_phase": "M1_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.golden.test_m1_contracts.M1GoldenContractTests.test_g02_no_same_bar_fill"
+    },
+    {
+      "canonical_owner_phase": "M1_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.golden.test_m1_contracts.M1GoldenContractTests.test_g03_zero_latency_negative_control_fails_checker"
+    },
+    {
+      "canonical_owner_phase": "M1_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.golden.test_m1_contracts.M1GoldenContractTests.test_g05_native_fill_bytes_are_immutable"
+    },
+    {
+      "canonical_owner_phase": "M1_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.golden.test_m1_contracts.M1GoldenContractTests.test_g06_two_fresh_runs_have_identical_semantic_sequence"
+    },
+    {
+      "canonical_owner_phase": "M1_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.golden.test_m1_contracts.M1GoldenContractTests.test_g07_spot_oversell_is_blocked_before_submission"
+    },
+    {
+      "canonical_owner_phase": "M1_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.golden.test_m1_contracts.M1GoldenContractTests.test_g08_hedging_configuration_is_rejected"
+    },
+    {
+      "canonical_owner_phase": "M1_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.golden.test_m1_contracts.M1GoldenContractTests.test_g08_perpetual_netting_lifecycle_and_guards"
+    },
+    {
+      "canonical_owner_phase": "M1_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.golden.test_m1_contracts.M1GoldenContractTests.test_g10_maker_taker_fee_is_applied_exactly_once"
+    },
+    {
+      "canonical_owner_phase": "M1_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.golden.test_m1_contracts.M1GoldenContractTests.test_g11_perpetual_mark_valuation_and_missing_mark_block"
+    },
+    {
+      "canonical_owner_phase": "M1_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.golden.test_m1_contracts.M1GoldenContractTests.test_g13_warmup_bar_at_scoring_start_cannot_submit"
+    },
+    {
+      "canonical_owner_phase": "M1_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.golden.test_m1_contracts.M1GoldenContractTests.test_g14_excluded_order_type_is_rejected_before_submission"
+    },
+    {
+      "canonical_owner_phase": "M1_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.golden.test_m1_contracts.M1GoldenContractTests.test_g21_terminal_insert_boundary_suppresses_intent"
+    },
+    {
+      "canonical_owner_phase": "M1_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.golden.test_m1_contracts.M1GoldenContractTests.test_invalid_price_and_quantity_precision_fail_explicitly"
+    },
+    {
+      "canonical_owner_phase": "M1_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.golden.test_m1_contracts.M1GoldenContractTests.test_m1_public_runner_contract_exists"
+    },
+    {
+      "canonical_owner_phase": "M1_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.golden.test_m1_contracts.M1GoldenContractTests.test_market_gtc_partial_fill_remainder_finishes_at_causal_arrival"
+    },
+    {
+      "canonical_owner_phase": "M1_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.golden.test_m1_contracts.M1GoldenContractTests.test_profile_files_are_exact_cash_and_netting_contracts"
+    },
+    {
+      "canonical_owner_phase": "M1_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.golden.test_m1_contracts.M1GoldenContractTests.test_terminal_shutdown_preserves_open_position_without_synthetic_close"
+    },
+    {
+      "canonical_owner_phase": "M2",
+      "status": "PASS",
+      "test_id": "tests.golden.test_m2_data_contract.M2GoldenDataContractTests.test_spot_timestamp_transition_is_explicit_and_bar_is_available_on_completion"
+    },
+    {
+      "canonical_owner_phase": "M3",
+      "status": "PASS",
+      "test_id": "tests.golden.test_m3_profile_contracts.M3ProfileGoldenTests.test_perpetual_repaired_release_funding_and_native_limits_are_exact"
+    },
+    {
+      "canonical_owner_phase": "M3",
+      "status": "PASS",
+      "test_id": "tests.golden.test_m3_profile_contracts.M3ProfileGoldenTests.test_spot_repaired_release_and_native_market_limits_are_exact"
+    },
+    {
+      "canonical_owner_phase": "M3",
+      "status": "PASS",
+      "test_id": "tests.golden.test_m3_real_values.M3RealGoldenValues.test_perpetual_fill_lifecycle_matches_frozen_real_data_expectation"
+    },
+    {
+      "canonical_owner_phase": "M3",
+      "status": "PASS",
+      "test_id": "tests.golden.test_m3_real_values.M3RealGoldenValues.test_perpetual_funding_cash_effect_is_independent_decimal_expectation"
+    },
+    {
+      "canonical_owner_phase": "M3",
+      "status": "PASS",
+      "test_id": "tests.golden.test_m3_real_values.M3RealGoldenValues.test_spot_fill_is_on_later_real_bar_and_native_fee_matches_hand_calculation"
+    },
+    {
+      "canonical_owner_phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.integration.test_m0_downstream_contract.M0DownstreamContractTests.test_m1_can_parse_and_bind_m0_config_without_defaults"
+    },
+    {
+      "canonical_owner_phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.integration.test_m0_downstream_contract.M0DownstreamContractTests.test_m1_can_parse_separate_source_revision_without_defaults"
+    },
+    {
+      "canonical_owner_phase": "M1_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.integration.test_m1_evidence_contract.M1EvidenceContractTests.test_checker_blocks_tampered_dataset_binding"
+    },
+    {
+      "canonical_owner_phase": "M1_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.integration.test_m1_evidence_contract.M1EvidenceContractTests.test_checker_detects_native_fill_mutation"
+    },
+    {
+      "canonical_owner_phase": "M1_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.integration.test_m1_evidence_contract.M1EvidenceContractTests.test_downstream_can_read_stable_run_result_and_bundle_without_strategy_edge"
+    },
+    {
+      "canonical_owner_phase": "M1_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.integration.test_m1_evidence_contract.M1EvidenceContractTests.test_g06_funding_replay_ignores_only_native_instance_ids"
+    },
+    {
+      "canonical_owner_phase": "M1_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.integration.test_m1_evidence_contract.M1EvidenceContractTests.test_g09_checker_requires_one_native_funding_settlement"
+    },
+    {
+      "canonical_owner_phase": "M2",
+      "status": "PASS",
+      "test_id": "tests.integration.test_m2_downstream_contract.M2DownstreamContractTests.test_m3_can_parse_dataset_release_without_defaults_or_internal_parser_exports"
+    },
+    {
+      "canonical_owner_phase": "M2",
+      "status": "PASS",
+      "test_id": "tests.integration.test_m2_downstream_contract.M2DownstreamContractTests.test_release_rows_are_already_native_catalog_compatible_for_m3"
+    },
+    {
+      "canonical_owner_phase": "M2",
+      "status": "PASS",
+      "test_id": "tests.integration.test_m2_repair_downstream_contract.M2RepairedDownstreamContractTests.test_interface_identity_mutation_blocks_with_downstream_contract_failure"
+    },
+    {
+      "canonical_owner_phase": "M2",
+      "status": "PASS",
+      "test_id": "tests.integration.test_m2_repair_downstream_contract.M2RepairedDownstreamContractTests.test_native_market_limits_are_enforced_before_nautilus_submission"
+    },
+    {
+      "canonical_owner_phase": "M2",
+      "status": "PASS",
+      "test_id": "tests.integration.test_m2_repair_downstream_contract.M2RepairedDownstreamContractTests.test_strict_datasetrelease_flows_directly_through_public_run_lab"
+    },
+    {
+      "canonical_owner_phase": "M3",
+      "status": "PASS",
+      "test_id": "tests.integration.test_m3_dataset_interface.M3DatasetInterfaceTests.test_profile_configs_bind_runtime_fee_mark_funding_and_limits_explicitly"
+    },
+    {
+      "canonical_owner_phase": "M3",
+      "status": "PASS",
+      "test_id": "tests.integration.test_m3_dataset_interface.M3DatasetInterfaceTests.test_public_run_request_receives_strict_dataset_release_without_conversion"
+    },
+    {
+      "canonical_owner_phase": "M3",
+      "status": "PASS",
+      "test_id": "tests.integration.test_m3_m4_downstream_contract.M3M4DownstreamContractTests.test_downstream_bundle_rejects_unknown_or_missing_fields"
+    },
+    {
+      "canonical_owner_phase": "M3",
+      "status": "PASS",
+      "test_id": "tests.integration.test_m3_m4_downstream_contract.M3M4DownstreamContractTests.test_future_m4_can_parse_both_qualified_records_without_internal_imports"
+    },
+    {
+      "canonical_owner_phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.qualification.test_latency_contract.LatencyContractQualificationTests.test_pinned_backtest_venue_accepts_exact_constant_latency_contract"
+    },
+    {
+      "canonical_owner_phase": "M1_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.qualification.test_m1_native_funding.M1NativeFundingQualificationTests.test_g09_positive_funding_debits_long_exactly_once"
+    },
+    {
+      "canonical_owner_phase": "M1_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.qualification.test_m1_native_profiles.M1NativeProfileQualificationTests.test_g07_native_cash_limitation_requires_project_pre_submit_guard"
+    },
+    {
+      "canonical_owner_phase": "M1_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.qualification.test_m1_native_profiles.M1NativeProfileQualificationTests.test_g11_native_mark_path_and_fallback_negative_control"
+    },
+    {
+      "canonical_owner_phase": "M2",
+      "status": "PASS",
+      "test_id": "tests.qualification.test_m2_official_samples.M2OfficialSampleQualificationTests.test_all_five_official_archives_match_publisher_checksums_and_local_blobs"
+    },
+    {
+      "canonical_owner_phase": "M2",
+      "status": "PASS",
+      "test_id": "tests.qualification.test_m2_official_samples.M2OfficialSampleQualificationTests.test_funding_mark_metadata_and_catalog_qualifications_pass"
+    },
+    {
+      "canonical_owner_phase": "M2",
+      "status": "PASS",
+      "test_id": "tests.qualification.test_m2_official_samples.M2OfficialSampleQualificationTests.test_locked_ssot_and_runtime_were_not_changed"
+    },
+    {
+      "canonical_owner_phase": "M2",
+      "status": "PASS",
+      "test_id": "tests.qualification.test_m2_official_samples.M2OfficialSampleQualificationTests.test_official_daily_completeness_and_no_repair"
+    },
+    {
+      "canonical_owner_phase": "M2",
+      "status": "PASS",
+      "test_id": "tests.qualification.test_m2_official_samples.M2OfficialSampleQualificationTests.test_official_source_and_timestamp_evidence_are_frozen"
+    },
+    {
+      "canonical_owner_phase": "M2",
+      "status": "PASS",
+      "test_id": "tests.qualification.test_m2_official_samples.M2OfficialSampleQualificationTests.test_spot_and_perpetual_release_evidence_matches_tracked_manifests"
+    },
+    {
+      "canonical_owner_phase": "M3",
+      "status": "PASS",
+      "test_id": "tests.qualification.test_m3_real_profiles.M3RealProfileQualifications.test_accepted_runs_are_clean_committed_qualification_source_and_offline"
+    },
+    {
+      "canonical_owner_phase": "M3",
+      "status": "PASS",
+      "test_id": "tests.qualification.test_m3_real_profiles.M3RealProfileQualifications.test_native_funding_sign_boundary_exactly_once_and_mark_binding"
+    },
+    {
+      "canonical_owner_phase": "M3",
+      "status": "PASS",
+      "test_id": "tests.qualification.test_m3_real_profiles.M3RealProfileQualifications.test_perpetual_negative_controls_fail_for_their_intended_reason"
+    },
+    {
+      "canonical_owner_phase": "M3",
+      "status": "PASS",
+      "test_id": "tests.qualification.test_m3_real_profiles.M3RealProfileQualifications.test_perpetual_real_path_is_causal_netting_and_uses_repaired_limits"
+    },
+    {
+      "canonical_owner_phase": "M3",
+      "status": "PASS",
+      "test_id": "tests.qualification.test_m3_real_profiles.M3RealProfileQualifications.test_replays_registry_and_all_run_manifests_are_content_valid"
+    },
+    {
+      "canonical_owner_phase": "M3",
+      "status": "PASS",
+      "test_id": "tests.qualification.test_m3_real_profiles.M3RealProfileQualifications.test_spot_real_path_is_causal_cash_long_only_and_fee_exactly_once"
+    },
+    {
+      "canonical_owner_phase": "M3",
+      "status": "PASS",
+      "test_id": "tests.qualification.test_m3_real_profiles.M3RealProfileQualifications.test_spot_short_attempt_is_blocked_pre_submit_without_fill"
+    },
+    {
+      "canonical_owner_phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.qualification.test_runtime_identity.RuntimeIdentityQualificationTests.test_current_process_matches_complete_runtime_lock"
+    },
+    {
+      "canonical_owner_phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_config.LabRunConfigTests.test_duplicate_field_fails"
+    },
+    {
+      "canonical_owner_phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_config.LabRunConfigTests.test_frozen_config_rejects_nested_material_mutation"
+    },
+    {
+      "canonical_owner_phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_config.LabRunConfigTests.test_missing_material_field_fails"
+    },
+    {
+      "canonical_owner_phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_config.LabRunConfigTests.test_perpetual_profile_requires_mark_prices_funding_and_mark_bindings"
+    },
+    {
+      "canonical_owner_phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_config.LabRunConfigTests.test_required_material_runtime_settings_are_explicit"
+    },
+    {
+      "canonical_owner_phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_config.LabRunConfigTests.test_round_trip_preserves_decimal_strings_and_utc_timestamps"
+    },
+    {
+      "canonical_owner_phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_config.LabRunConfigTests.test_unknown_or_missing_nested_material_field_fails"
+    },
+    {
+      "canonical_owner_phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_config.LabRunConfigTests.test_unknown_top_level_field_fails"
+    },
+    {
+      "canonical_owner_phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_hashing.CanonicalJSONTests.test_decimal_timestamp_and_key_order_match_independent_golden"
+    },
+    {
+      "canonical_owner_phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_hashing.CanonicalJSONTests.test_nan_and_infinity_are_rejected"
+    },
+    {
+      "canonical_owner_phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_hashing.CanonicalJSONTests.test_non_utc_or_naive_datetime_is_rejected"
+    },
+    {
+      "canonical_owner_phase": "M1_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m1_contracts.M1StrictContractTests.test_strategy_spec_identity_ignores_only_human_strategy_id"
+    },
+    {
+      "canonical_owner_phase": "M1_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m1_contracts.M1StrictContractTests.test_strategy_spec_locks_market_order_tif_and_terminal_policy"
+    },
+    {
+      "canonical_owner_phase": "M1_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m1_contracts.M1StrictContractTests.test_strategy_spec_rejects_unknown_and_missing_material_fields"
+    },
+    {
+      "canonical_owner_phase": "M2",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_raw_and_parsing.RawObjectTests.test_acquirer_stores_corrupted_download_before_failing_checksum"
+    },
+    {
+      "canonical_owner_phase": "M2",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_raw_and_parsing.RawObjectTests.test_locator_replay_with_different_bytes_preserves_both_and_links_conflict"
+    },
+    {
+      "canonical_owner_phase": "M2",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_raw_and_parsing.RawObjectTests.test_prohibited_archive_role_substitution_is_rejected"
+    },
+    {
+      "canonical_owner_phase": "M2",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_raw_and_parsing.RawObjectTests.test_publisher_checksum_verification_and_corruption_failure"
+    },
+    {
+      "canonical_owner_phase": "M2",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_raw_and_parsing.RawObjectTests.test_raw_byte_hash_stability_and_read_verification"
+    },
+    {
+      "canonical_owner_phase": "M2",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_raw_and_parsing.RawObjectTests.test_raw_schema_rejects_unknown_missing_and_duplicate_fields"
+    },
+    {
+      "canonical_owner_phase": "M2",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_raw_and_parsing.TimestampAndParsingTests.test_conflicting_duplicate_blocks"
+    },
+    {
+      "canonical_owner_phase": "M2",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_raw_and_parsing.TimestampAndParsingTests.test_malformed_nonmonotonic_invalid_ohlc_and_negative_volume_block_without_repair"
+    },
+    {
+      "canonical_owner_phase": "M2",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_raw_and_parsing.TimestampAndParsingTests.test_one_minute_completeness_passes_and_missing_minute_blocks"
+    },
+    {
+      "canonical_owner_phase": "M2",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_raw_and_parsing.TimestampAndParsingTests.test_source_role_mismatch_blocks"
+    },
+    {
+      "canonical_owner_phase": "M2",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_raw_and_parsing.TimestampAndParsingTests.test_usdm_does_not_inherit_spot_transition"
+    },
+    {
+      "canonical_owner_phase": "M2",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_release_contract.DatasetReleaseTests.test_canonical_release_identity_round_trip_and_created_at_exclusion"
+    },
+    {
+      "canonical_owner_phase": "M2",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_release_contract.DatasetReleaseTests.test_catalog_rebuild_semantic_stability_and_mutation_staleness"
+    },
+    {
+      "canonical_owner_phase": "M2",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_release_contract.DatasetReleaseTests.test_material_source_change_changes_release_id"
+    },
+    {
+      "canonical_owner_phase": "M2",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_release_contract.DatasetReleaseTests.test_perpetual_mark_grid_and_release_pass"
+    },
+    {
+      "canonical_owner_phase": "M2",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_release_contract.DatasetReleaseTests.test_perpetual_requires_mark_and_funding_roles"
+    },
+    {
+      "canonical_owner_phase": "M2",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_release_contract.DatasetReleaseTests.test_release_schema_rejects_unknown_missing_and_duplicate_fields"
+    },
+    {
+      "canonical_owner_phase": "M2",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_release_contract.DatasetReleaseTests.test_spot_forbids_mark_and_funding_roles"
+    },
+    {
+      "canonical_owner_phase": "M2",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_release_contract.FundingContractTests.test_conflicting_funding_duplicate_blocks"
+    },
+    {
+      "canonical_owner_phase": "M2",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_release_contract.FundingContractTests.test_removed_required_event_is_funding_missing"
+    },
+    {
+      "canonical_owner_phase": "M2",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_release_contract.FundingContractTests.test_schedule_uses_official_explicit_interval_and_validates"
+    },
+    {
+      "canonical_owner_phase": "M2",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_release_contract.FundingContractTests.test_unproven_schedule_is_funding_ambiguous"
+    },
+    {
+      "canonical_owner_phase": "M2",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_release_contract.MetadataTests.test_invalid_or_incomplete_metadata_blocks"
+    },
+    {
+      "canonical_owner_phase": "M2",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_release_contract.MetadataTests.test_material_metadata_change_changes_identity_but_observation_time_does_not"
+    },
+    {
+      "canonical_owner_phase": "M2",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_release_contract.MetadataTests.test_metadata_identity_observation_and_current_not_historical"
+    },
+    {
+      "canonical_owner_phase": "M2",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_repair_contracts.F01DatasetReleaseBoundaryTests.test_lab_run_request_accepts_the_typed_release_without_dict_conversion"
+    },
+    {
+      "canonical_owner_phase": "M2",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_repair_contracts.F02PreserveBeforeParseTests.test_malformed_checksum_preserves_both_responses_and_retry_history"
+    },
+    {
+      "canonical_owner_phase": "M2",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_repair_contracts.F03StrictSourceBindingTests.test_conflict_provenance_survives_binding_and_blocks_release"
+    },
+    {
+      "canonical_owner_phase": "M2",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_repair_contracts.F03StrictSourceBindingTests.test_second_symbol_pipeline_has_no_btc_product_default"
+    },
+    {
+      "canonical_owner_phase": "M2",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_repair_contracts.F03StrictSourceBindingTests.test_target_release_rejects_mismatched_symbol_profile_interval_range_and_filename"
+    },
+    {
+      "canonical_owner_phase": "M2",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_repair_contracts.F04MarketOrderMetadataTests.test_frozen_filters_resolve_exact_market_intersections_and_native_limits"
+    },
+    {
+      "canonical_owner_phase": "M2",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_repair_contracts.F04MarketOrderMetadataTests.test_market_quantity_max_above_max_and_grid_are_checked_before_fill"
+    },
+    {
+      "canonical_owner_phase": "M2",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_repair_contracts.F04MarketOrderMetadataTests.test_quantity_precision_is_not_used_as_step_size"
+    },
+    {
+      "canonical_owner_phase": "M2",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_repair_contracts.F05AcceptanceCountTests.test_reconciliation_deduplicates_shared_g09_and_discloses_occurrences"
+    },
+    {
+      "canonical_owner_phase": "M3",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m3_contracts.M3ContractTests.test_mechanical_integrity_shape_cannot_report_pass_without_checker_and_replay"
+    },
+    {
+      "canonical_owner_phase": "M3",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m3_contracts.M3ContractTests.test_negative_control_plans_are_frozen_pre_submit_contracts"
+    },
+    {
+      "canonical_owner_phase": "M3",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m3_contracts.M3ContractTests.test_offline_guard_blocks_and_records_connection_attempt"
+    },
+    {
+      "canonical_owner_phase": "M3",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m3_contracts.M3ContractTests.test_qualification_strategy_schedule_is_frozen_before_execution"
+    },
+    {
+      "canonical_owner_phase": "M3",
+      "status": "PASS",
+      "test_id": "tests.unit.test_m3_contracts.M3ContractTests.test_registry_is_strict_content_addressed_and_has_exactly_two_profiles"
+    },
+    {
+      "canonical_owner_phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_runtime_lock.RuntimeLockSchemaTests.test_runtime_lock_rejects_missing_field"
+    },
+    {
+      "canonical_owner_phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_runtime_lock.RuntimeLockSchemaTests.test_runtime_lock_rejects_obsolete_schema_version"
+    },
+    {
+      "canonical_owner_phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_runtime_lock.RuntimeLockSchemaTests.test_runtime_lock_rejects_project_git_identity_as_unknown"
+    },
+    {
+      "canonical_owner_phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_runtime_lock.RuntimeLockSchemaTests.test_runtime_lock_rejects_unknown_field"
+    },
+    {
+      "canonical_owner_phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_runtime_lock.RuntimeLockSchemaTests.test_runtime_lock_v2_excludes_project_source_identity"
+    },
+    {
+      "canonical_owner_phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_source_revision.SourceRevisionContractTests.test_source_revision_rejects_invalid_git_object_id"
+    },
+    {
+      "canonical_owner_phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_source_revision.SourceRevisionContractTests.test_source_revision_rejects_missing_field"
+    },
+    {
+      "canonical_owner_phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_source_revision.SourceRevisionContractTests.test_source_revision_rejects_non_utc_capture_time"
+    },
+    {
+      "canonical_owner_phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_source_revision.SourceRevisionContractTests.test_source_revision_rejects_unknown_field"
+    },
+    {
+      "canonical_owner_phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_source_revision.SourceRevisionContractTests.test_source_revision_round_trip_has_exact_separate_fields"
+    },
+    {
+      "canonical_owner_phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_status.StatusContractTests.test_m0_failure_codes_are_stable"
+    },
+    {
+      "canonical_owner_phase": "M0_REGRESSION",
+      "status": "PASS",
+      "test_id": "tests.unit.test_status.StatusContractTests.test_run_terminal_states_match_ssot"
+    }
+  ]
+}

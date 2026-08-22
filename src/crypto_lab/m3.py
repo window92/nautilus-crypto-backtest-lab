@@ -21,6 +21,7 @@ from crypto_lab.config import LabRunConfig
 from crypto_lab.config import MarketProfile
 from crypto_lab.config import SourceRevision
 from crypto_lab.config import StrictModel
+from crypto_lab.config import _freeze_field
 from crypto_lab.config import _require_equal
 from crypto_lab.config import _require_sha256
 from crypto_lab.hashing import canonical_sha256

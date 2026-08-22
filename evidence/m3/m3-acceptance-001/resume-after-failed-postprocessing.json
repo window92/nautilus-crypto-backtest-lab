@@ -1,0 +1,1 @@
+{"accepted_run_source_remained_clean":true,"accepted_runs_reexecuted":false,"failed_stage":"QualificationDownstreamBundle construction","failure":"NameError: _freeze_field was not imported","financial_evidence_modified":false,"repair":"import the existing strict-model freeze helper"}

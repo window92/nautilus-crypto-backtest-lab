@@ -1,0 +1,1 @@
+{"accepted_runs_reexecuted":false,"attempt":"M3_COMBINED_ACCEPTANCE_001","financial_evidence_modified":false,"repair":"insert repository root before importing the existing scripts namespace","result":"FAILED","root_cause":"acceptance script process path did not expose the repository scripts namespace"}

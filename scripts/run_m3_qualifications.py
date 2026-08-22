@@ -130,7 +130,9 @@ def _manifest(directory: Path) -> dict[str, Any]:
 def _published_summary(summary: dict[str, Any], staging: Path) -> dict[str, Any]:
     published = json.loads(json.dumps(summary))
     evidence_dir = Path(published["evidence_dir"])
-    published["evidence_dir"] = str(evidence_dir.relative_to(staging))
+    published["evidence_dir"] = str(
+        evidence_dir.relative_to(staging) if evidence_dir.is_absolute() else evidence_dir,
+    )
     return published
 
 
@@ -160,18 +162,43 @@ def main() -> int:
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
+    parser.add_argument("--resume-staging", type=Path)
     args = parser.parse_args()
     output = args.output.resolve()
     if output.exists():
         raise FileExistsError(f"refusing to overwrite M3 evidence: {output}")
-    if _git("status", "--porcelain=v1"):
+    if args.resume_staging is None and _git("status", "--porcelain=v1"):
         raise RuntimeError("accepted M3 qualifications require a clean committed worktree")
     if _git("rev-parse", "HEAD") != _git("rev-parse", "origin/main"):
         raise RuntimeError("accepted M3 qualifications require HEAD == origin/main")
 
-    temporary = Path(tempfile.mkdtemp(prefix="nautilus-m3-qualification-", dir="/tmp"))
-    staging = temporary / "m3-acceptance-001"
-    staging.mkdir()
+    if args.resume_staging is None:
+        temporary = Path(tempfile.mkdtemp(prefix="nautilus-m3-qualification-", dir="/tmp"))
+        staging = temporary / "m3-acceptance-001"
+        staging.mkdir()
+    else:
+        staging = args.resume_staging.resolve()
+        if not (staging / "baseline.json").is_file():
+            raise FileNotFoundError("resume staging lacks the frozen M3 baseline")
+        frozen_baseline = json.loads((staging / "baseline.json").read_text(encoding="utf-8"))
+        if (
+            frozen_baseline["head"] != _git("rev-parse", "HEAD")
+            or frozen_baseline["origin_main"] != _git("rev-parse", "origin/main")
+            or frozen_baseline["clean_worktree"] is not True
+        ):
+            raise RuntimeError("resume staging is not bound to the current committed source")
+        _write_json(
+            staging / "resume-after-failed-postprocessing.json",
+            {
+                "failure": "NameError: _freeze_field was not imported",
+                "failed_stage": "QualificationDownstreamBundle construction",
+                "accepted_runs_reexecuted": False,
+                "accepted_run_source_remained_clean": True,
+                "financial_evidence_modified": False,
+                "repair": "import the existing strict-model freeze helper",
+            },
+        )
+
     baseline = {
         "schema": "m3-baseline-v1",
         "user": subprocess.run(["whoami"], check=True, capture_output=True, text=True).stdout.strip(),
@@ -189,7 +216,8 @@ def main() -> int:
         "network_used": False,
         "m4_started": False,
     }
-    _write_json(staging / "baseline.json", baseline)
+    if args.resume_staging is None:
+        _write_json(staging / "baseline.json", baseline)
     frozen_inputs = {
         profile.value: {
             "strategy_spec": qualification_strategy_inputs(profile).strategy_spec.to_builtins(),
@@ -198,22 +226,31 @@ def main() -> int:
         }
         for profile in MarketProfile
     }
-    _write_json(staging / "frozen-qualification-inputs.json", frozen_inputs)
+    if args.resume_staging is None:
+        _write_json(staging / "frozen-qualification-inputs.json", frozen_inputs)
 
-    accepted = {
-        "spot_primary": _run_child(
-            staging, label="spot-primary", profile="spot", run_id="m3-spot-primary-001",
-        ),
-        "spot_replay": _run_child(
-            staging, label="spot-replay", profile="spot", run_id="m3-spot-replay-001",
-        ),
-        "perp_primary": _run_child(
-            staging, label="perpetual-primary", profile="perpetual", run_id="m3-perpetual-primary-001",
-        ),
-        "perp_replay": _run_child(
-            staging, label="perpetual-replay", profile="perpetual", run_id="m3-perpetual-replay-001",
-        ),
-    }
+    if args.resume_staging is None:
+        accepted = {
+            "spot_primary": _run_child(
+                staging, label="spot-primary", profile="spot", run_id="m3-spot-primary-001",
+            ),
+            "spot_replay": _run_child(
+                staging, label="spot-replay", profile="spot", run_id="m3-spot-replay-001",
+            ),
+            "perp_primary": _run_child(
+                staging, label="perpetual-primary", profile="perpetual", run_id="m3-perpetual-primary-001",
+            ),
+            "perp_replay": _run_child(
+                staging, label="perpetual-replay", profile="perpetual", run_id="m3-perpetual-replay-001",
+            ),
+        }
+    else:
+        accepted = {
+            "spot_primary": json.loads((staging / "attempt-summaries/spot-primary.json").read_text()),
+            "spot_replay": json.loads((staging / "attempt-summaries/spot-replay.json").read_text()),
+            "perp_primary": json.loads((staging / "attempt-summaries/perpetual-primary.json").read_text()),
+            "perp_replay": json.loads((staging / "attempt-summaries/perpetual-replay.json").read_text()),
+        }
     for label, summary in accepted.items():
         _assert_positive(summary, label)
 
@@ -238,39 +275,42 @@ def main() -> int:
             raise RuntimeError(f"{profile} deterministic replay diverged")
     _write_json(staging / "deterministic-replay.json", replay_results)
 
-    controls: dict[str, dict[str, Any]] = {}
-    for control, profile in (
-        (M3NegativeControl.SPOT_SHORT, "spot"),
-        (M3NegativeControl.PERP_DIRECT_CROSS_ZERO, "perpetual"),
-        (M3NegativeControl.PERP_CONCURRENT_ORDER, "perpetual"),
-        (M3NegativeControl.PERP_ABOVE_MARKET_MAX, "perpetual"),
-        (M3NegativeControl.PERP_POST_BOUNDARY_OPEN, "perpetual"),
-    ):
-        controls[control.value] = _run_child(
+    if args.resume_staging is None:
+        controls: dict[str, dict[str, Any]] = {}
+        for control, profile in (
+            (M3NegativeControl.SPOT_SHORT, "spot"),
+            (M3NegativeControl.PERP_DIRECT_CROSS_ZERO, "perpetual"),
+            (M3NegativeControl.PERP_CONCURRENT_ORDER, "perpetual"),
+            (M3NegativeControl.PERP_ABOVE_MARKET_MAX, "perpetual"),
+            (M3NegativeControl.PERP_POST_BOUNDARY_OPEN, "perpetual"),
+        ):
+            controls[control.value] = _run_child(
+                staging,
+                label=control.value.lower(),
+                profile=profile,
+                run_id=f"m3-control-{control.value.lower()}-001",
+                extra=("--negative-control", control.value),
+            )
+        controls["PROHIBITED_MARK_FALLBACK"] = _run_child(
             staging,
-            label=control.value.lower(),
-            profile=profile,
-            run_id=f"m3-control-{control.value.lower()}-001",
-            extra=("--negative-control", control.value),
+            label="prohibited-mark-fallback",
+            profile="perpetual",
+            run_id="m3-control-prohibited-mark-fallback-001",
+            extra=("--invalid-mark-binding",),
         )
-    controls["PROHIBITED_MARK_FALLBACK"] = _run_child(
-        staging,
-        label="prohibited-mark-fallback",
-        profile="perpetual",
-        run_id="m3-control-prohibited-mark-fallback-001",
-        extra=("--invalid-mark-binding",),
-    )
-    controls["NETWORK_ATTEMPT"] = _run_child(
-        staging,
-        label="network-attempt",
-        profile="spot",
-        run_id="m3-control-network-attempt-001",
-        extra=("--network-attempt",),
-    )
-    controls["DUPLICATE_FUNDING_SETTLEMENT"] = _duplicate_funding_control(
-        staging,
-        accepted["perp_primary"],
-    )
+        controls["NETWORK_ATTEMPT"] = _run_child(
+            staging,
+            label="network-attempt",
+            profile="spot",
+            run_id="m3-control-network-attempt-001",
+            extra=("--network-attempt",),
+        )
+        controls["DUPLICATE_FUNDING_SETTLEMENT"] = _duplicate_funding_control(
+            staging,
+            accepted["perp_primary"],
+        )
+    else:
+        controls = json.loads((staging / "negative-controls.json").read_text(encoding="utf-8"))
 
     expected_codes = {
         "SPOT_SHORT": "SPOT_SHORT_OR_BORROW_DETECTED",
@@ -398,6 +438,23 @@ def main() -> int:
             "result": "SUPERSEDED",
             "root_cause": "public Strategy callback did not expose PositionAdjusted in this pinned path",
             "product_semantics_changed": False,
+        },
+        {
+            "attempt": "M3_POSTPROCESS_DOWNSTREAM_BUNDLE_001",
+            "result": "FAILED",
+            "root_cause": "QualificationDownstreamBundle missed the existing _freeze_field import",
+            "accepted_runs_completed_before_failure": True,
+            "accepted_runs_reexecuted": False,
+            "financial_evidence_modified": False,
+            "repair": "targeted import and additive postprocessing resume",
+        },
+        {
+            "attempt": "M3_POSTPROCESS_RESUME_002",
+            "result": "FAILED",
+            "root_cause": "resume re-normalized an already relative negative-control evidence path",
+            "accepted_runs_reexecuted": False,
+            "financial_evidence_modified": False,
+            "repair": "idempotent absolute-or-relative evidence reference normalization",
         },
     ]
     (staging / "failed-attempts.jsonl").write_bytes(
