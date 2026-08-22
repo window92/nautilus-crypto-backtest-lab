@@ -197,6 +197,7 @@ class GuardedCausalStrategy(Strategy):
         *,
         instrument_id: InstrumentId,
         bar_type: Any,
+        execution_bar_type: Any,
         profile: MarketProfile,
         plan: StrategyPlan,
         scoring_start_ns: int,
@@ -214,6 +215,7 @@ class GuardedCausalStrategy(Strategy):
         self._configure_runtime(
             instrument_id=instrument_id,
             bar_type=bar_type,
+            execution_bar_type=execution_bar_type,
             profile=profile,
             plan=plan,
             scoring_start_ns=scoring_start_ns,
@@ -232,6 +234,7 @@ class GuardedCausalStrategy(Strategy):
         *,
         instrument_id: InstrumentId,
         bar_type: Any,
+        execution_bar_type: Any,
         profile: MarketProfile,
         plan: StrategyPlan | None,
         scoring_start_ns: int,
@@ -248,6 +251,7 @@ class GuardedCausalStrategy(Strategy):
             raise RuntimeError("strategy already configured")
         self._instrument_id = instrument_id
         self._bar_type = bar_type
+        self._execution_bar_type = execution_bar_type
         self._profile = profile
         self._plan = plan
         self._scoring_start_ns = scoring_start_ns
@@ -374,7 +378,7 @@ class GuardedCausalStrategy(Strategy):
         assert self._profile is not None
         now = int(self.clock.timestamp_ns())
         interval_end = int(bar.ts_init)
-        interval_start = interval_end - ONE_MINUTE_NS
+        interval_start = interval_end - int(bar.bar_type.spec.get_interval_ns())
         record = {
             "side": intent.side,
             "quantity": intent.quantity,
@@ -593,6 +597,7 @@ class FirstEligibleBarQualificationFixture(GuardedCausalStrategy):
         )
         self._configure_runtime(
             plan=None,
+            execution_bar_type=configuration.pop("execution_bar_type"),
             **configuration,
         )
 

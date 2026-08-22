@@ -20,6 +20,7 @@ from crypto_lab.data import parse_funding_csv
 from crypto_lab.data import parse_spot_instrument_metadata
 from crypto_lab.data import parse_usdm_instrument_metadata
 from crypto_lab.data import prove_funding_schedule
+from crypto_lab.data import prove_funding_schedule_from_official_objects
 from crypto_lab.data import validate_funding_schedule
 from crypto_lab.data import verify_catalog_identity
 from crypto_lab.hashing import canonical_sha256
@@ -103,6 +104,26 @@ def build_perp(root: Path, *, created: datetime = CREATED) -> DatasetRelease:
 
 
 class FundingContractTests(unittest.TestCase):
+    def test_multi_month_schedule_binds_every_official_source_object(self) -> None:
+        events = funding_events()
+        sources = ("7" * 64, "8" * 64)
+        schedule = prove_funding_schedule_from_official_objects(
+            events,
+            source_object_sha256s=sources,
+            time_range=perp_range(),
+        )
+        self.assertEqual(
+            schedule.source_object_sha256,
+            canonical_sha256(
+                {"ordered_official_funding_source_object_sha256s": sources},
+            ),
+        )
+        self.assertEqual(
+            schedule.proof_basis,
+            "OFFICIAL_BINANCE_FUNDING_ARCHIVE_SET_EXPLICIT_INTERVAL_ROWS",
+        )
+        self.assertEqual(len(validate_funding_schedule(events, schedule)), 64)
+
     def test_schedule_uses_official_explicit_interval_and_validates(self) -> None:
         events = funding_events()
         schedule = prove_funding_schedule(

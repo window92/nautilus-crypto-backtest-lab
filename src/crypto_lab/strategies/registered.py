@@ -16,6 +16,7 @@ from crypto_lab.hashing import sha256_file
 from crypto_lab.strategies.base import FirstEligibleBarQualificationFixture
 from crypto_lab.strategies.base import GuardedCausalStrategy
 from crypto_lab.strategies.base import StrategySpec
+from crypto_lab.strategies.daily_sma_trend import BtcusdtDailyPriceVsSma20Trend
 
 
 class RegisteredStrategyIdentity(StrictModel):
@@ -93,6 +94,14 @@ _REGISTRY = {
         implementation_source_filename="base.py",
         qualification_fixture_only=True,
         profitability_claim_eligible=False,
+    ),
+    BtcusdtDailyPriceVsSma20Trend.REGISTRATION_ID: _RegisteredDefinition(
+        registration_id=BtcusdtDailyPriceVsSma20Trend.REGISTRATION_ID,
+        implementation=BtcusdtDailyPriceVsSma20Trend,
+        implementation_revision=BtcusdtDailyPriceVsSma20Trend.IMPLEMENTATION_REVISION,
+        implementation_source_filename="daily_sma_trend.py",
+        qualification_fixture_only=False,
+        profitability_claim_eligible=True,
     ),
 }
 

@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -38,10 +39,13 @@ from crypto_lab.config import StrictModel
 from crypto_lab.data import DatasetRelease
 from crypto_lab.diagnostics import DiagnosticResolution
 from crypto_lab.diagnostics import derive_diagnostic_resolution
+from crypto_lab.diagnostics import derive_performance_diagnostics
 from crypto_lab.diagnostics import write_diagnostic_resolution
+from crypto_lab.diagnostics import write_performance_diagnostics
 from crypto_lab.exposure import AuthoritativeExposureResolver
 from crypto_lab.git_identity import capture_actual_source_revision
 from crypto_lab.git_identity import worktree_is_clean
+from crypto_lab.hashing import canonical_json_bytes
 from crypto_lab.hashing import canonical_sha256
 from crypto_lab.history import AuthoritativeResearchHistory
 from crypto_lab.history import HistoryAnchorStore
@@ -136,6 +140,8 @@ class OwnerWorkflowResult:
     report_id: str
     history_anchor_sha256: str
     final_holdout_used: bool
+    replay_result: str
+    replay_identity: str
     commits: tuple[str, ...]
 
     def to_builtins(self) -> dict[str, Any]:
@@ -150,8 +156,109 @@ class OwnerWorkflowResult:
             "report_id": self.report_id,
             "history_anchor_sha256": self.history_anchor_sha256,
             "final_holdout_used": self.final_holdout_used,
+            "replay_result": self.replay_result,
+            "replay_identity": self.replay_identity,
             "commits": list(self.commits),
         }
+
+
+def _load_terminal_run(path: Path) -> tuple[dict[str, Any], dict[str, Any]]:
+    status = json.loads((path / "status.json").read_text(encoding="utf-8"))
+    result = json.loads((path / "nautilus_result.json").read_text(encoding="utf-8"))
+    if not isinstance(status, dict) or not isinstance(result, dict):
+        raise ResearchError("EVIDENCE_INCOMPLETE", "terminal Run evidence must be JSON objects")
+    return status, result
+
+
+def _replay_material(
+    *,
+    trial_id: str,
+    primary_ref: str,
+    replay_ref: str,
+    primary_status: dict[str, Any],
+    replay_status: dict[str, Any],
+    primary_result: dict[str, Any],
+    replay_result: dict[str, Any],
+    read_only_checker_revalidated: bool,
+) -> dict[str, Any]:
+    primary_config = str(primary_result.get("config_sha256"))
+    replay_config = str(replay_result.get("config_sha256"))
+    primary_semantic = str(primary_result.get("semantic_digest"))
+    replay_semantic = str(replay_result.get("semantic_digest"))
+    matched = bool(
+        primary_status.get("state") == "COMPLETED"
+        and replay_status.get("state") == "COMPLETED"
+        and primary_status.get("checker_outcome") == "CHECK_PASS"
+        and replay_status.get("checker_outcome") == "CHECK_PASS"
+        and primary_config == replay_config
+        and primary_semantic == replay_semantic
+        and read_only_checker_revalidated
+    )
+    return {
+        "schema": "owner-deterministic-replay-v1",
+        "trial_id": trial_id,
+        "primary_run_ref": primary_ref,
+        "replay_run_ref": replay_ref,
+        "primary_config_sha256": primary_config,
+        "replay_config_sha256": replay_config,
+        "primary_semantic_digest": primary_semantic,
+        "replay_semantic_digest": replay_semantic,
+        "primary_state": str(primary_status.get("state")),
+        "replay_state": str(replay_status.get("state")),
+        "primary_checker": str(primary_status.get("checker_outcome")),
+        "replay_checker": str(replay_status.get("checker_outcome")),
+        "fresh_processes": True,
+        "read_only_checker_revalidated": read_only_checker_revalidated,
+        "result": "PASS" if matched else "FAIL",
+    }
+
+
+def _read_replay_evidence(repository: Path, trial_id: str) -> dict[str, Any]:
+    path = repository / "research/replays" / f"{trial_id}.json"
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    declared = payload.pop("replay_identity", None)
+    if declared != canonical_sha256(payload):
+        raise ResearchError("EVIDENCE_INCOMPLETE", "deterministic replay identity mismatch")
+    if payload.get("trial_id") != trial_id or payload.get("result") != "PASS":
+        raise ResearchError("EVIDENCE_INCOMPLETE", "deterministic replay did not pass")
+    primary_dir = (repository / str(payload["primary_run_ref"])).resolve(strict=True)
+    replay_dir = (repository / str(payload["replay_run_ref"])).resolve(strict=True)
+    for directory in (primary_dir, replay_dir):
+        try:
+            directory.relative_to(repository)
+        except ValueError as exc:
+            raise ResearchError("EVIDENCE_INCOMPLETE", "replay Run escapes repository") from exc
+    primary_status, primary_result = _load_terminal_run(primary_dir)
+    replay_status, replay_result = _load_terminal_run(replay_dir)
+    checker_revalidated = True
+    for directory in (primary_dir, replay_dir):
+        persisted = json.loads((directory / "checker.json").read_text(encoding="utf-8"))
+        regenerated = check_evidence_directory(
+            directory,
+            repository_root=repository,
+            official_source_required=True,
+            source_revision_current_head_required=False,
+        )
+        checker_revalidated = checker_revalidated and regenerated.to_builtins() == persisted
+    derived = _replay_material(
+        trial_id=trial_id,
+        primary_ref=str(payload["primary_run_ref"]),
+        replay_ref=str(payload["replay_run_ref"]),
+        primary_status=primary_status,
+        replay_status=replay_status,
+        primary_result=primary_result,
+        replay_result=replay_result,
+        read_only_checker_revalidated=checker_revalidated,
+    )
+    operational_fields = {
+        "primary_child_returncode",
+        "replay_child_returncode",
+        "primary_child_diagnostic",
+        "replay_child_diagnostic",
+    }
+    if derived != {key: item for key, item in payload.items() if key not in operational_fields}:
+        raise ResearchError("EVIDENCE_INCOMPLETE", "deterministic replay evidence is stale")
+    return {"replay_identity": declared, **payload}
 
 
 def _git(repository: Path, *args: str, check: bool = True) -> str:
@@ -471,10 +578,15 @@ def build_official_request(
     if template.market_profile is not profile.profile_id:
         raise ResearchError("DOWNSTREAM_CONTRACT_FAILURE", "Qualified config/profile mismatch")
     spec = value.strategy_spec
+    expected_signal_type = (
+        f"{release.instrument_id}-1-MINUTE-LAST-EXTERNAL"
+        if value.registered_strategy_id == "qualification_fixture_first_eligible_bar_v1"
+        else f"{release.instrument_id}-1-DAY-LAST-INTERNAL@1-MINUTE-EXTERNAL"
+    )
     if (
         spec.market_profile is not release.market_profile
         or spec.instrument_id != release.instrument_id
-        or spec.signal_bar_types != (f"{release.instrument_id}-1-MINUTE-LAST-EXTERNAL",)
+        or spec.signal_bar_types != (expected_signal_type,)
     ):
         raise ResearchError("RESEARCH_PROTOCOL_INVALID", "StrategySpec/Profile/Instrument mismatch")
     strategy_identity = resolve_registered_strategy_identity(
@@ -772,13 +884,30 @@ def qualification_workflow_fixture_input(
     )
 
 
-def _child_run(input_path: Path, repository: Path) -> int:
+def _child_run(
+    input_path: Path,
+    repository: Path,
+    *,
+    evidence_root: Path | None = None,
+) -> int:
     value = OwnerWorkflowInput.from_json_bytes(input_path.read_bytes())
     protocol_path = repository / "research/protocols" / f"{value.protocol.protocol_id}.json"
     if ResearchProtocol.from_json_bytes(protocol_path.read_bytes()) != value.protocol:
         raise ResearchError("RESEARCH_PROTOCOL_INVALID", "child protocol evidence mismatch")
     source = capture_actual_source_revision(repository)
     request = build_official_request(value, repository_root=repository, source_revision=source)
+    if evidence_root is not None:
+        resolved_root = Path(evidence_root).resolve(strict=False)
+        try:
+            relative_root = resolved_root.relative_to(repository)
+        except ValueError as exc:
+            raise ResearchError("EVIDENCE_INCOMPLETE", "child evidence root escapes repository") from exc
+        if not relative_root.parts or relative_root.parts[0] != ".owner-runtime":
+            raise ResearchError(
+                "EVIDENCE_INCOMPLETE",
+                "child staging evidence must remain under .owner-runtime",
+            )
+        request = replace(request, evidence_root=resolved_root)
     result = run_official_lab(request)
     return 0 if result.state is RunState.COMPLETED else 2
 
@@ -981,6 +1110,13 @@ def _resume_completed_workflow(
     )
     if checker.to_builtins() != persisted_checker:
         raise ResearchError("EVIDENCE_INCOMPLETE", "terminal Run checker is stale or forged")
+    replay = (
+        _read_replay_evidence(repository, value.trial_id)
+        if value.workflow_purpose is OwnerWorkflowPurpose.OWNER_STUDY
+        else None
+    )
+    if replay is not None and replay["primary_run_ref"] != terminal.result_ref:
+        raise ResearchError("EVIDENCE_INCOMPLETE", "replay primary reference differs from Journal")
 
     commits: list[str] = []
     if value.partition_role is PartitionRole.FINAL_HOLDOUT:
@@ -1022,6 +1158,7 @@ def _resume_completed_workflow(
         benchmark_directory=repository / "research/benchmarks",
     )
     diagnostic_path = repository / "research/diagnostics" / f"{value.run_id}.json"
+    performance_path = repository / "research/performance" / f"{value.run_id}.json"
     if diagnostic_path.exists():
         persisted_diagnostic = DiagnosticResolution.from_json_bytes(
             diagnostic_path.read_bytes(),
@@ -1037,6 +1174,20 @@ def _resume_completed_workflow(
                 message=f"research(owner): recover diagnostics for {value.trial_id}",
             ),
         )
+    if diagnostic.performance_diagnostics_status == "COMPLETE":
+        performance = derive_performance_diagnostics(run_dir=run_dir, protocol=value.protocol)
+        if performance_path.exists():
+            if performance_path.read_bytes().strip() != performance.to_json_bytes():
+                raise ResearchError("EVIDENCE_INCOMPLETE", "persisted performance is forged")
+        else:
+            write_performance_diagnostics(performance, performance_path)
+            commits.append(
+                _checkpoint(
+                    repository,
+                    paths=(performance_path,),
+                    message=f"research(owner): recover performance for {value.trial_id}",
+                ),
+            )
 
     anchor = history.anchors.reconcile_committed()
     locator = OfficialEvidenceLocator(
@@ -1088,6 +1239,8 @@ def _resume_completed_workflow(
         report_id=report.report_id,
         history_anchor_sha256=anchor.anchor_sha256,
         final_holdout_used=value.partition_role is PartitionRole.FINAL_HOLDOUT,
+        replay_result="NOT_APPLICABLE" if replay is None else str(replay["result"]),
+        replay_identity="NOT_APPLICABLE" if replay is None else str(replay["replay_identity"]),
         commits=tuple(commits),
     )
 
@@ -1176,8 +1329,122 @@ def execute_owner_workflow(
         "--repository",
         str(repository),
     ]
-    child = subprocess.run(command, cwd=repository, check=False, capture_output=True, text=True)
-    run_dir = repository / "runs" / f"{value.run_id}-{definition.config_sha256[:12]}"
+    replay_path: Path | None = None
+    replay_evidence: dict[str, Any] | None = None
+    run_name = f"{value.run_id}-{definition.config_sha256[:12]}"
+    if value.workflow_purpose is OwnerWorkflowPurpose.OWNER_STUDY:
+        staging = repository / ".owner-runtime" / value.trial_id
+        primary_root = staging / "primary"
+        replay_root = staging / "replay"
+        if staging.exists():
+            raise ResearchError(
+                "TRIAL_HISTORY_INCOMPLETE",
+                "immutable Owner runtime staging collision; recovery review is required",
+            )
+        primary_command = [*command, "--child-evidence-root", str(primary_root)]
+        replay_command = [*command, "--child-evidence-root", str(replay_root)]
+        primary_child = subprocess.run(
+            primary_command,
+            cwd=repository,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        replay_child = subprocess.run(
+            replay_command,
+            cwd=repository,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        staged_primary = primary_root / run_name
+        staged_replay = replay_root / run_name
+        read_only_checker_revalidated = (
+            primary_child.returncode == 0 and replay_child.returncode == 0
+        )
+        for staged_run in (staged_primary, staged_replay):
+            if not (staged_run / "checker.json").is_file():
+                read_only_checker_revalidated = False
+                continue
+            try:
+                persisted = json.loads(
+                    (staged_run / "checker.json").read_text(encoding="utf-8"),
+                )
+                regenerated = check_evidence_directory(
+                    staged_run,
+                    repository_root=repository,
+                    official_source_required=True,
+                )
+                read_only_checker_revalidated = bool(
+                    read_only_checker_revalidated
+                    and regenerated.to_builtins() == persisted
+                )
+            except Exception:
+                read_only_checker_revalidated = False
+        run_dir = repository / "runs" / run_name
+        replay_dir = repository / "runs/replays" / value.trial_id / run_name
+        if staged_primary.exists():
+            run_dir.parent.mkdir(parents=True, exist_ok=True)
+            if run_dir.exists():
+                raise ResearchError("EVIDENCE_INCOMPLETE", "primary Run evidence collision")
+            shutil.move(str(staged_primary), str(run_dir))
+        if staged_replay.exists():
+            replay_dir.parent.mkdir(parents=True, exist_ok=True)
+            if replay_dir.exists():
+                raise ResearchError("EVIDENCE_INCOMPLETE", "replay Run evidence collision")
+            shutil.move(str(staged_replay), str(replay_dir))
+        primary_ref = _relative(repository, run_dir) if run_dir.exists() else "NOT_APPLICABLE"
+        replay_ref = _relative(repository, replay_dir) if replay_dir.exists() else "NOT_APPLICABLE"
+        primary_status, primary_engine = (
+            _load_terminal_run(run_dir)
+            if run_dir.exists() and (run_dir / "status.json").is_file()
+            else (
+                {"state": "ABORTED", "checker_outcome": "CHECK_BLOCKED"},
+                {
+                    "config_sha256": definition.config_sha256,
+                    "semantic_digest": "UNAVAILABLE",
+                },
+            )
+        )
+        replay_status, replay_engine = (
+            _load_terminal_run(replay_dir)
+            if replay_dir.exists() and (replay_dir / "status.json").is_file()
+            else (
+                {"state": "ABORTED", "checker_outcome": "CHECK_BLOCKED"},
+                {
+                    "config_sha256": definition.config_sha256,
+                    "semantic_digest": "UNAVAILABLE",
+                },
+            )
+        )
+        replay_material = _replay_material(
+            trial_id=value.trial_id,
+            primary_ref=primary_ref,
+            replay_ref=replay_ref,
+            primary_status=primary_status,
+            replay_status=replay_status,
+            primary_result=primary_engine,
+            replay_result=replay_engine,
+            read_only_checker_revalidated=read_only_checker_revalidated,
+        )
+        replay_evidence = {
+            **replay_material,
+            "primary_child_returncode": primary_child.returncode,
+            "replay_child_returncode": replay_child.returncode,
+            "primary_child_diagnostic": (
+                primary_child.stderr.strip() or primary_child.stdout.strip() or "NOT_APPLICABLE"
+            )[:500],
+            "replay_child_diagnostic": (
+                replay_child.stderr.strip() or replay_child.stdout.strip() or "NOT_APPLICABLE"
+            )[:500],
+        }
+        replay_evidence["replay_identity"] = canonical_sha256(replay_evidence)
+        replay_path = repository / "research/replays" / f"{value.trial_id}.json"
+        _atomic_write(replay_path, canonical_json_bytes(replay_evidence) + b"\n")
+        child = primary_child
+    else:
+        child = subprocess.run(command, cwd=repository, check=False, capture_output=True, text=True)
+        run_dir = repository / "runs" / run_name
     status_path = run_dir / "status.json"
     if status_path.is_file():
         status = json.loads(status_path.read_text(encoding="utf-8"))
@@ -1188,6 +1455,9 @@ def execute_owner_workflow(
         if terminal_state not in TERMINAL_TRIAL_STATES:
             terminal_state = TrialState.ABORTED
         reason = ";".join(str(code) for code in status.get("failure_codes", ())) or "OFFICIAL_RUN_COMPLETED"
+        if replay_evidence is not None and replay_evidence["result"] != "PASS":
+            terminal_state = TrialState.FAILED
+            reason = "DETERMINISTIC_REPLAY_MISMATCH_OR_FAILURE"
         result_ref = _relative(repository, run_dir)
         exposed = True
     else:
@@ -1209,6 +1479,11 @@ def execute_owner_workflow(
     terminal_paths = [history.anchors.journal_path, history.anchors.anchor_path]
     if run_dir.exists():
         terminal_paths.append(run_dir)
+    if replay_path is not None:
+        terminal_paths.append(replay_path)
+        replay_ref = str(replay_evidence["replay_run_ref"])
+        if replay_ref != "NOT_APPLICABLE":
+            terminal_paths.append(repository / replay_ref)
     commits.append(
         _checkpoint(
             repository,
@@ -1221,6 +1496,11 @@ def execute_owner_workflow(
             "DOWNSTREAM_CONTRACT_FAILURE",
             f"Official Run terminal state is {terminal_state.value}; evidence was retained",
         )
+    replay = (
+        _read_replay_evidence(repository, value.trial_id)
+        if value.workflow_purpose is OwnerWorkflowPurpose.OWNER_STUDY
+        else None
+    )
 
     if value.partition_role is PartitionRole.FINAL_HOLDOUT:
         source = type(source_before).from_json_bytes((run_dir / "source_revision.json").read_bytes())
@@ -1262,10 +1542,16 @@ def execute_owner_workflow(
     )
     diagnostic_path = repository / "research/diagnostics" / f"{value.run_id}.json"
     write_diagnostic_resolution(diagnostic, diagnostic_path)
+    diagnostic_paths = [diagnostic_path]
+    if diagnostic.performance_diagnostics_status == "COMPLETE":
+        performance = derive_performance_diagnostics(run_dir=run_dir, protocol=protocol)
+        performance_path = repository / "research/performance" / f"{value.run_id}.json"
+        write_performance_diagnostics(performance, performance_path)
+        diagnostic_paths.append(performance_path)
     commits.append(
         _checkpoint(
             repository,
-            paths=(diagnostic_path,),
+            paths=tuple(diagnostic_paths),
             message=f"research(owner): derive diagnostics for {value.trial_id}",
         ),
     )
@@ -1308,6 +1594,8 @@ def execute_owner_workflow(
         report_id=report.report_id,
         history_anchor_sha256=anchor.anchor_sha256,
         final_holdout_used=value.partition_role is PartitionRole.FINAL_HOLDOUT,
+        replay_result="NOT_APPLICABLE" if replay is None else str(replay["result"]),
+        replay_identity="NOT_APPLICABLE" if replay is None else str(replay["replay_identity"]),
         commits=tuple(commits),
     )
 
@@ -1318,11 +1606,16 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--repository", type=Path, default=Path.cwd())
     parser.add_argument("--output", type=Path)
     parser.add_argument("--child", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--child-evidence-root", type=Path, help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
     repository = args.repository.resolve(strict=True)
     try:
         if args.child:
-            return _child_run(args.input, repository)
+            return _child_run(
+                args.input,
+                repository,
+                evidence_root=args.child_evidence_root,
+            )
         value = OwnerWorkflowInput.from_json_bytes(args.input.read_bytes())
         result = execute_owner_workflow(value, repository_root=repository).to_builtins()
         exit_code = 0

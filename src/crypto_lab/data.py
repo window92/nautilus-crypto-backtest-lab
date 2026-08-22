@@ -1237,6 +1237,59 @@ def prove_funding_schedule(
     return FundingScheduleEvidence(schedule_identity=canonical_sha256(material), **material)
 
 
+def prove_funding_schedule_from_official_objects(
+    events: tuple[FundingEvent, ...],
+    *,
+    source_object_sha256s: tuple[str, ...],
+    time_range: TimeRange,
+) -> FundingScheduleEvidence:
+    """Prove one interval from an ordered immutable set of official monthly objects.
+
+    ``FundingScheduleEvidence`` v1 has one SHA field.  For a multi-month
+    interval that field is the canonical collection identity below, while the
+    acquisition manifest preserves every constituent source SHA and publisher
+    checksum.  It is never presented as the hash of a downloaded byte object.
+    """
+
+    if len(source_object_sha256s) < 2 or len(set(source_object_sha256s)) != len(
+        source_object_sha256s,
+    ):
+        raise DataContractError(
+            FailureCode.FUNDING_AMBIGUOUS,
+            "multi-object funding proof needs at least two unique official source objects",
+        )
+    for digest in source_object_sha256s:
+        _require_sha256(digest, "funding_schedule.source_object_sha256s")
+    collection_identity = canonical_sha256(
+        {"ordered_official_funding_source_object_sha256s": source_object_sha256s},
+    )
+    expected = tuple(
+        FundingSlot(
+            event_key=item.event_key,
+            calc_time_ns=item.calc_time_ns,
+            funding_interval_hours=item.funding_interval_hours,
+        )
+        for item in events
+        if time_range.start_ns <= item.calc_time_ns < time_range.end_ns
+    )
+    if not expected:
+        raise DataContractError(
+            FailureCode.FUNDING_AMBIGUOUS,
+            "official funding evidence proves no event in the requested interval",
+        )
+    material = {
+        "schema_version": 1,
+        "instrument_id": events[0].instrument_id,
+        "source_object_sha256": collection_identity,
+        "normalized_time_range": time_range,
+        "timestamp_unit": TimestampUnit.MILLISECONDS,
+        "proof_basis": "OFFICIAL_BINANCE_FUNDING_ARCHIVE_SET_EXPLICIT_INTERVAL_ROWS",
+        "proven": True,
+        "expected_events": expected,
+    }
+    return FundingScheduleEvidence(schedule_identity=canonical_sha256(material), **material)
+
+
 def validate_funding_schedule(
     events: tuple[FundingEvent, ...] | list[FundingEvent],
     schedule: FundingScheduleEvidence | None,

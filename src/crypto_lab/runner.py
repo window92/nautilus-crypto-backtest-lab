@@ -5,6 +5,7 @@ from __future__ import annotations
 import csv
 import hashlib
 import json
+import math
 import subprocess
 from dataclasses import dataclass
 from datetime import UTC
@@ -17,6 +18,7 @@ from typing import Any
 from nautilus_trader.backtest import BacktestEngine
 from nautilus_trader.execution import StaticLatencyModel
 from nautilus_trader.model import Bar
+from nautilus_trader.model import BarType
 from nautilus_trader.model import FundingRateUpdate
 from nautilus_trader.model import MarkPriceUpdate
 
@@ -507,6 +509,80 @@ def _semantic_event(event: dict[str, Any]) -> dict[str, Any]:
     return result
 
 
+def _money_projection(value: Any) -> dict[str, str]:
+    return {
+        "amount": str(value.as_decimal()),
+        "currency": str(value.currency),
+    }
+
+
+def _native_statistic_value(value: Any) -> str:
+    if isinstance(value, float) and not math.isfinite(value):
+        return "UNDEFINED"
+    return str(value)
+
+
+def _native_statistics(result: Any) -> dict[str, Any]:
+    return {
+        "schema": "nautilus-native-statistics-v1",
+        "stats_pnls": {
+            str(currency): {
+                str(name): _native_statistic_value(value)
+                for name, value in statistics.items()
+            }
+            for currency, statistics in result.stats_pnls.items()
+        },
+        "stats_returns": {
+            str(name): _native_statistic_value(value)
+            for name, value in result.stats_returns.items()
+        },
+        "stats_general": {
+            str(name): _native_statistic_value(value)
+            for name, value in result.stats_general.items()
+        },
+        "returns_series": [
+            {
+                "ts_event": int(timestamp),
+                "return": _native_statistic_value(value),
+            }
+            for timestamp, value in sorted(result.returns_series.items())
+        ],
+        "undefined_native_values_preserved": True,
+    }
+
+
+def _native_portfolio_snapshots(engine: BacktestEngine, account: Any | None) -> list[dict[str, Any]]:
+    if account is None:
+        return []
+    rows: list[dict[str, Any]] = []
+    for index, snapshot in enumerate(engine.portfolio.snapshots(account.id)):
+        rows.append(
+            {
+                "snapshot_index": index,
+                "account_id": str(snapshot.account_id),
+                "account_type": str(snapshot.account_type),
+                "base_currency": (
+                    None if snapshot.base_currency is None else str(snapshot.base_currency)
+                ),
+                "base_currency_equity": (
+                    None
+                    if snapshot.base_currency_equity is None
+                    else _money_projection(snapshot.base_currency_equity)
+                ),
+                "total_equity": [_money_projection(item) for item in snapshot.total_equity],
+                "realized_pnls": [_money_projection(item) for item in snapshot.realized_pnls],
+                "unrealized_pnls": [_money_projection(item) for item in snapshot.unrealized_pnls],
+                "is_stale": bool(snapshot.is_stale),
+                "stale_instruments": [str(item) for item in snapshot.stale_instruments],
+                "stale_currencies": [str(item) for item in snapshot.stale_currencies],
+                "unpriced_instruments": [str(item) for item in snapshot.unpriced_instruments],
+                "ts_event": int(snapshot.ts_event),
+                "ts_init": int(snapshot.ts_init),
+            },
+        )
+    return rows
+
+
 def _capture_engine(
     engine: BacktestEngine,
     strategy: GuardedCausalStrategy,
@@ -571,6 +647,7 @@ def _capture_engine(
 
     account = engine.cache.account_for_venue(instrument_id.venue)
     account_events = [] if account is None else [event.to_dict() for event in account.events]
+    portfolio_snapshots = _native_portfolio_snapshots(engine, account)
     funding_events: list[dict[str, Any]] = [dict(item) for item in preserved_funding_events]
     for position in positions_native:
         funding_events.extend(
@@ -590,6 +667,21 @@ def _capture_engine(
         unrealized = str(engine.portfolio.unrealized_pnl(instrument_id))
     except Exception:
         unrealized = "UNAVAILABLE"
+    try:
+        realized = str(engine.portfolio.realized_pnl(instrument_id))
+    except Exception:
+        realized = "UNAVAILABLE"
+    try:
+        total = str(engine.portfolio.total_pnl(instrument_id))
+    except Exception:
+        total = "UNAVAILABLE"
+    try:
+        equity = {
+            str(currency): _money_projection(money)
+            for currency, money in engine.portfolio.equity(account_id=account.id).items()
+        } if account is not None else {}
+    except Exception:
+        equity = {}
     semantic = {
         "orders": [_semantic_event(event) for event in order_events],
         "fills": [_semantic_event(event) for event in fill_events],
@@ -619,6 +711,8 @@ def _capture_engine(
         "positions": position_rows,
         "account_events": account_events,
         "funding_events": funding_events,
+        "portfolio_snapshots": portfolio_snapshots,
+        "native_statistics": _native_statistics(native_result),
         "backtest_result": {
             "backtest_start": int(native_result.backtest_start),
             "backtest_end": int(native_result.backtest_end),
@@ -629,7 +723,13 @@ def _capture_engine(
         },
         "mark_price_count": engine.cache.mark_price_count(instrument_id),
         "funding_rate_count": engine.cache.funding_rate_count(instrument_id),
-        "terminal_portfolio": {"unrealized_pnl": unrealized},
+        "terminal_portfolio": {
+            "realized_pnl": realized,
+            "unrealized_pnl": unrealized,
+            "total_pnl": total,
+            "equity": equity,
+            "source": "nautilus_trader.portfolio.Portfolio public API",
+        },
         "semantic_sequence": semantic,
         "semantic_digest": canonical_sha256(semantic),
     }
@@ -640,6 +740,7 @@ def _run_real_data_with_native_funding_checkpoints(
     *,
     data: tuple[Any, ...],
     instrument_id: Any,
+    start_ns: int | None = None,
 ) -> tuple[tuple[dict[str, Any], ...], tuple[dict[str, Any], ...]]:
     """Run public streaming batches and preserve native adjustments before NETTING reuse.
 
@@ -655,19 +756,24 @@ def _run_real_data_with_native_funding_checkpoints(
     )
     if not boundaries:
         engine.add_data(list(data))
-        engine.run()
+        engine.run(start=start_ns)
         return (), ()
 
-    remaining = list(data)
+    ordered = list(data)
+    cursor = 0
     preserved: list[dict[str, Any]] = []
     checkpoints: list[dict[str, Any]] = []
+    first_batch = True
     for boundary_ns in boundaries:
-        batch = [item for item in remaining if int(item.ts_init) <= boundary_ns]
-        remaining = [item for item in remaining if int(item.ts_init) > boundary_ns]
+        batch_start = cursor
+        while cursor < len(ordered) and int(ordered[cursor].ts_init) <= boundary_ns:
+            cursor += 1
+        batch = ordered[batch_start:cursor]
         if not batch:
             continue
         engine.add_data(batch)
-        engine.run(streaming=True)
+        engine.run(start=start_ns if first_batch else None, streaming=True)
+        first_batch = False
         positions = engine.cache.positions(instrument_id=instrument_id)
         native_adjustments = [
             adjustment.to_dict()
@@ -679,9 +785,20 @@ def _run_real_data_with_native_funding_checkpoints(
         preserved.extend(native_adjustments)
         account = engine.cache.account_for_venue(instrument_id.venue)
         account_events = [] if account is None else [event.to_dict() for event in account.events]
+        native_mark = engine.cache.mark_price(instrument_id)
         checkpoints.append(
             {
                 "boundary_ns": boundary_ns,
+                "native_mark_price": (
+                    None
+                    if native_mark is None
+                    else {
+                        "instrument_id": str(native_mark.instrument_id),
+                        "value": str(native_mark.value),
+                        "ts_event": int(native_mark.ts_event),
+                        "ts_init": int(native_mark.ts_init),
+                    }
+                ),
                 "native_adjustments": native_adjustments,
                 "open_positions": [
                     {
@@ -701,9 +818,10 @@ def _run_real_data_with_native_funding_checkpoints(
         )
         engine.clear_data()
 
+    remaining = ordered[cursor:]
     if remaining:
         engine.add_data(remaining)
-        engine.run(streaming=True)
+        engine.run(start=start_ns if first_batch else None, streaming=True)
     engine.end()
     return tuple(preserved), tuple(checkpoints)
 
@@ -724,6 +842,15 @@ def _empty_capture() -> dict[str, Any]:
         "positions": [],
         "account_events": [],
         "funding_events": [],
+        "portfolio_snapshots": [],
+        "native_statistics": {
+            "schema": "nautilus-native-statistics-v1",
+            "stats_pnls": {},
+            "stats_returns": {},
+            "stats_general": {},
+            "returns_series": [],
+            "undefined_native_values_preserved": True,
+        },
         "backtest_result": None,
         "mark_price_count": 0,
         "funding_rate_count": 0,
@@ -871,7 +998,8 @@ def _run_bound(
                 bars = [item for item in data if isinstance(item, Bar)]
                 strategy_configuration = dict(
                     instrument_id=instrument.id,
-                    bar_type=bars[0].bar_type,
+                    bar_type=BarType.from_str(run.signal_bar_types[0]),
+                    execution_bar_type=bars[0].bar_type,
                     profile=run.market_profile,
                     scoring_start_ns=_timestamp_ns(run.scoring_start),
                     scoring_end_exclusive_ns=_timestamp_ns(run.scoring_end_exclusive),
@@ -910,6 +1038,12 @@ def _run_bound(
                     )
                 engine.add_strategy(strategy)
                 engine_started = True
+                signal_bar_type = BarType.from_str(run.signal_bar_types[0])
+                explicit_time_origin_ns = (
+                    _timestamp_ns(run.warmup_start)
+                    if signal_bar_type.is_composite()
+                    else None
+                )
                 if (
                     isinstance(config, LabRunRequest)
                     and config.qualification_control
@@ -927,12 +1061,13 @@ def _run_bound(
                             engine,
                             data=data,
                             instrument_id=instrument.id,
+                            start_ns=explicit_time_origin_ns,
                         )
                     )
                 else:
                     preserved_funding = ()
                     engine.add_data(list(data))
-                    engine.run()
+                    engine.run(start=explicit_time_origin_ns)
                 network_guard_evidence["attempts"] = list(network_evidence.attempts)
             engine_completed = True
             observations = json.loads(json.dumps(strategy.observations))
@@ -1092,6 +1227,12 @@ def _run_bound(
                 "project_trade_pairing_used": False,
             },
         )
+        snapshot_bytes = b"".join(
+            canonical_json_bytes(item) + b"\n"
+            for item in capture["portfolio_snapshots"]
+        )
+        (run_dir / "native_portfolio_snapshots.jsonl").write_bytes(snapshot_bytes)
+        _write_json(run_dir / "native_statistics.json", capture["native_statistics"])
 
     evidence_bindings = {
         "lab_run_config_sha256": sha256_file(run_dir / "lab_run_config.json"),
@@ -1110,6 +1251,15 @@ def _run_bound(
             None
             if strategy_identity is None
             else sha256_file(run_dir / "strategy_identity.json")
+        )
+        evidence_bindings["native_portfolio_snapshots_sha256"] = sha256_file(
+            run_dir / "native_portfolio_snapshots.jsonl",
+        )
+        evidence_bindings["native_statistics_sha256"] = sha256_file(
+            run_dir / "native_statistics.json",
+        )
+        evidence_bindings["native_completed_trades_sha256"] = sha256_file(
+            run_dir / "native_completed_trades.json",
         )
 
     nautilus_result = {

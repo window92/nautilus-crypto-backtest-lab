@@ -16,6 +16,7 @@ from crypto_lab.config import StrictModel
 from crypto_lab.config import _require_sha256
 from crypto_lab.data import DatasetRelease
 from crypto_lab.diagnostics import DiagnosticResolution
+from crypto_lab.diagnostics import derive_performance_diagnostics
 from crypto_lab.diagnostics import reconcile_diagnostic_resolution
 from crypto_lab.exposure import AuthoritativeExposureResolver
 from crypto_lab.git_identity import verify_source_revision
@@ -28,6 +29,7 @@ from crypto_lab.m3 import QualifiedProfileRegistry
 from crypto_lab.paths import validate_safe_component
 from crypto_lab.reporting import ReportInput
 from crypto_lab.reporting import ReportOutput
+from crypto_lab.reporting import PerformanceDiagnostics
 from crypto_lab.reporting import _build_report_from_resolved_evidence
 from crypto_lab.reporting import _write_resolved_report
 from crypto_lab.research import ClaimEvaluation
@@ -261,6 +263,55 @@ class OfficialEvidenceResolver:
             raise ResearchError("EVIDENCE_INCOMPLETE", "persisted checker is stale or forged")
         return run_dir, config, source, identity, manifest_sha
 
+    def _resolve_replay_evidence(
+        self,
+        *,
+        record: TrialRecord,
+        primary_run_dir: Path,
+    ) -> Path:
+        replay_path = self._contained(
+            self.repository_root / "research/replays" / f"{record.trial_id}.json",
+        )
+        payload = self._json(replay_path)
+        declared = payload.pop("replay_identity", None)
+        if (
+            declared != canonical_sha256(payload)
+            or payload.get("schema") != "owner-deterministic-replay-v1"
+            or payload.get("trial_id") != record.trial_id
+            or payload.get("primary_run_ref") != record.result_ref
+            or payload.get("result") != "PASS"
+            or payload.get("fresh_processes") is not True
+            or payload.get("read_only_checker_revalidated") is not True
+        ):
+            raise ResearchError("EVIDENCE_INCOMPLETE", "deterministic replay evidence is invalid")
+        replay_dir = self._contained(self.repository_root / str(payload["replay_run_ref"]))
+        if not replay_dir.is_dir():
+            raise ResearchError("EVIDENCE_INCOMPLETE", "deterministic replay Run is absent")
+        primary_result = self._json(primary_run_dir / "nautilus_result.json")
+        replay_result = self._json(replay_dir / "nautilus_result.json")
+        replay_status = self._json(replay_dir / "status.json")
+        persisted_checker = self._json(replay_dir / "checker.json")
+        regenerated = check_evidence_directory(
+            replay_dir,
+            repository_root=self.repository_root,
+            official_source_required=True,
+            source_revision_current_head_required=False,
+        )
+        self._verify_manifest(replay_dir, record.run_id)
+        if (
+            regenerated.to_builtins() != persisted_checker
+            or replay_status.get("state") != "COMPLETED"
+            or replay_status.get("checker_outcome") != "CHECK_PASS"
+            or replay_result.get("config_sha256") != primary_result.get("config_sha256")
+            or replay_result.get("semantic_digest") != primary_result.get("semantic_digest")
+            or payload.get("primary_config_sha256") != primary_result.get("config_sha256")
+            or payload.get("replay_config_sha256") != replay_result.get("config_sha256")
+            or payload.get("primary_semantic_digest") != primary_result.get("semantic_digest")
+            or payload.get("replay_semantic_digest") != replay_result.get("semantic_digest")
+        ):
+            raise ResearchError("EVIDENCE_INCOMPLETE", "deterministic replay no longer matches")
+        return replay_path
+
     def resolve(self, locator: OfficialEvidenceLocator) -> ResolvedOfficialEvidence:
         latest_anchor = self.history.anchors.reconcile_committed()
         if latest_anchor.anchor_sha256 != locator.expected_history_anchor_sha256:
@@ -296,6 +347,15 @@ class OfficialEvidenceResolver:
         if locator.selected_trial_id not in resolved_runs:
             raise ResearchError("EVIDENCE_INCOMPLETE", "selected trial has no resolved Run evidence")
         run_dir, config, source, strategy_identity, manifest_sha = resolved_runs[selected.trial_id]
+        replay_evidence_path: Path | None = None
+        if (
+            strategy_identity.strategy_spec.get("parameters", {}).get("strategy_family")
+            == "BTCUSDT_DAILY_PRICE_VS_SMA20_TREND"
+        ):
+            replay_evidence_path = self._resolve_replay_evidence(
+                record=selected,
+                primary_run_dir=run_dir,
+            )
         registry_path = self.repository_root / "evidence/m3/m3-acceptance-001/qualified-profile-registry.json"
         registry = QualifiedProfileRegistry.from_json_bytes(registry_path.read_bytes())
         qualified = next(
@@ -311,6 +371,14 @@ class OfficialEvidenceResolver:
             protocol=protocol,
             benchmark_directory=self.repository_root / "research/benchmarks",
         )
+        performance: PerformanceDiagnostics | None = None
+        performance_path = self.repository_root / "research/performance" / f"{config.run_id}.json"
+        if diagnostic.performance_diagnostics_status == "COMPLETE":
+            if not performance_path.is_file():
+                raise ResearchError("EVIDENCE_INCOMPLETE", "selected performance evidence is missing")
+            performance = PerformanceDiagnostics.from_json_bytes(performance_path.read_bytes())
+            if performance != derive_performance_diagnostics(run_dir=run_dir, protocol=protocol):
+                raise ResearchError("EVIDENCE_INCOMPLETE", "selected performance evidence is stale")
         holdout = self.history.holdout.read()
         matching_holdout = next(
             (
@@ -486,6 +554,12 @@ class OfficialEvidenceResolver:
             "selected_run_manifest": manifest_sha,
             "trials.jsonl": sha256_file(self.history.anchors.journal_path),
         }
+        if performance is not None:
+            source_hashes["selected_performance"] = sha256_file(performance_path)
+        if replay_evidence_path is not None:
+            source_hashes["selected_deterministic_replay"] = sha256_file(
+                replay_evidence_path,
+            )
         report_input = ReportInput(
             schema_version=1,
             protocol=protocol,
@@ -493,7 +567,7 @@ class OfficialEvidenceResolver:
             trial_records=family_records,
             included_trial_ids=started_ids,
             selected_trial_id=selected.trial_id,
-            performance_diagnostics=(),
+            performance_diagnostics=(() if performance is None else (performance,)),
             monte_carlo_results=(),
             sample_adequacy_by_instrument=sample_by_instrument,
             holdout_state={

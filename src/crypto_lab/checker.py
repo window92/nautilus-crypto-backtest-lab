@@ -65,6 +65,8 @@ _REQUIRED_COMMON = {
 
 ROOT = Path(__file__).resolve().parents[2]
 ONE_MINUTE_NS = 60_000_000_000
+DAY_NS = 86_400_000_000_000
+OWNER_SMOKE_STRATEGY_FAMILY = "BTCUSDT_DAILY_PRICE_VS_SMA20_TREND"
 
 
 def _read_json(path: Path) -> dict[str, Any]:
@@ -326,6 +328,10 @@ def check_evidence_directory(
         blocked.append(FailureCode.DOWNSTREAM_CONTRACT_FAILURE.value)
 
     strategy_spec = _read_json(run_dir / "strategy_spec.json")
+    is_owner_smoke_sma20 = (
+        strategy_spec.get("parameters", {}).get("strategy_family")
+        == OWNER_SMOKE_STRATEGY_FAMILY
+    )
     strategy_material = dict(strategy_spec)
     strategy_material.pop("strategy_id", None)
     strategy_ok = canonical_sha256(strategy_material) == config.strategy_spec_id
@@ -372,6 +378,29 @@ def check_evidence_directory(
         )
         if not official_identity_ok:
             blocked.append(FailureCode.CONFIG_HASH_MISMATCH.value)
+    if is_owner_smoke_sma20:
+        native_paths = {
+            "native_completed_trades.json": "native_completed_trades_sha256",
+            "native_portfolio_snapshots.jsonl": "native_portfolio_snapshots_sha256",
+            "native_statistics.json": "native_statistics_sha256",
+        }
+        native_missing = sorted(name for name in native_paths if name not in present)
+        native_mismatches = [
+            name
+            for name, binding in native_paths.items()
+            if name in present and bindings.get(binding) != sha256_file(run_dir / name)
+        ]
+        native_evidence_ok = not native_missing and not native_mismatches
+        checks.append(
+            {
+                "name": "owner_smoke_native_financial_evidence",
+                "pass": native_evidence_ok,
+                "missing": native_missing,
+                "binding_mismatches": native_mismatches,
+            },
+        )
+        if not native_evidence_ok:
+            blocked.append(FailureCode.EVIDENCE_INCOMPLETE.value)
     is_m3_qualification = (
         strategy_spec.get("parameters", {}).get("m3_profile_qualification") == "true"
     )
@@ -458,6 +487,76 @@ def check_evidence_directory(
     checks.append({"name": "completed_bar_visibility", "pass": visibility_ok})
     if not visibility_ok:
         failures.append(FailureCode.LOOKAHEAD_DETECTED.value)
+
+    if is_owner_smoke_sma20:
+        daily = observations.get("daily_signal_bars", [])
+        signals = observations.get("signals", [])
+        daily_ok = bool(daily) and all(
+            int(item["interval_end_exclusive_ns"]) % DAY_NS == 0
+            and int(item["interval_end_exclusive_ns"])
+            - int(item["interval_start_ns"])
+            == DAY_NS
+            and int(item["available_at_ns"]) == int(item["interval_end_exclusive_ns"])
+            and int(item["sma_count"]) == index
+            and bool(item["sma_initialized"]) == (index >= 20)
+            for index, item in enumerate(daily, start=1)
+        )
+        close_by_end = {
+            int(item["interval_end_exclusive_ns"]): Decimal(str(item["close"]))
+            for item in daily
+        }
+        ends = [int(item["interval_end_exclusive_ns"]) for item in daily]
+        signal_ok = daily_ok
+        expected_signals = 0
+        for index, end_ns in enumerate(ends):
+            start_ns = end_ns - DAY_NS
+            if index >= 19 and start_ns >= int(config.scoring_start.timestamp() * 1e9) and end_ns <= int(
+                config.scoring_end_exclusive.timestamp() * 1e9,
+            ):
+                expected_signals += 1
+        if len(signals) != expected_signals:
+            signal_ok = False
+        for signal in signals:
+            try:
+                end_ns = int(signal["signal_bar_interval_end_exclusive_ns"])
+                index = ends.index(end_ns)
+                exact_sma = sum(
+                    (close_by_end[item] for item in ends[index - 19 : index + 1]),
+                    Decimal(0),
+                ) / Decimal(20)
+                close = close_by_end[end_ns]
+                native_sma = Decimal(str(signal["sma20"]))
+                expected_target = (
+                    "LONG"
+                    if close > native_sma
+                    else (
+                        "FLAT"
+                        if close == native_sma
+                        or config.market_profile is MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY
+                        else "SHORT"
+                    )
+                )
+                signal_ok = signal_ok and bool(
+                    index >= 19
+                    and int(signal["completed_daily_bar_count"]) == index + 1
+                    and abs(native_sma - exact_sma) <= Decimal("0.0000000001")
+                    and signal["target"] == expected_target
+                    and int(signal["signal_timestamp_ns"]) >= end_ns
+                )
+            except Exception:
+                signal_ok = False
+        checks.append(
+            {
+                "name": "owner_smoke_sma20_daily_causality",
+                "pass": signal_ok,
+                "daily_completed_bars": len(daily),
+                "expected_scored_signals": expected_signals,
+                "actual_scored_signals": len(signals),
+                "first_signal_requires_at_least_completed_bars": 20,
+            },
+        )
+        if not signal_ok:
+            failures.append(FailureCode.LOOKAHEAD_DETECTED.value)
 
     submitted = {
         item["client_order_id"]: item
@@ -637,6 +736,41 @@ def check_evidence_directory(
         checks.append({"name": "no_submitted_cross_zero_order", "pass": cross_zero_ok})
         if not one_way_ok or not cross_zero_ok:
             failures.append(FailureCode.PERP_PROFILE_INVALID.value)
+        if is_owner_smoke_sma20:
+            reversal = observations.get("reversal_sequence", [])
+            triples_ok = len(reversal) % 3 == 0
+            for offset in range(0, len(reversal), 3):
+                group = reversal[offset : offset + 3]
+                if len(group) != 3:
+                    triples_ok = False
+                    continue
+                triples_ok = triples_ok and bool(
+                    [item.get("event") for item in group]
+                    == [
+                        "CLOSE_TO_FLAT_SUBMITTED",
+                        "NATIVE_FLAT_CONFIRMED",
+                        "SEPARATE_REOPEN_SUBMITTED",
+                    ]
+                    and group[0].get("client_order_id") != group[2].get("client_order_id")
+                    and Decimal(str(group[1].get("signed_position"))) == 0
+                    and int(group[0].get("observed_at_ns"))
+                    < int(group[2].get("observed_at_ns"))
+                )
+            expected_closes = sum(
+                str(item.get("reason", "")).startswith("SMA20_CLOSE_TO_FLAT_BEFORE_")
+                for item in observations.get("submitted_intents", [])
+            )
+            triples_ok = triples_ok and len(reversal) // 3 == expected_closes
+            checks.append(
+                {
+                    "name": "owner_smoke_separate_close_then_reverse",
+                    "pass": triples_ok,
+                    "reversal_count": len(reversal) // 3,
+                    "close_to_flat_orders": expected_closes,
+                },
+            )
+            if not triples_ok:
+                failures.append(FailureCode.PERP_PROFILE_INVALID.value)
         if is_m3_qualification:
             perp_profile_ok = (
                 config.nautilus_engine_config.portfolio.use_mark_prices is True
@@ -734,6 +868,106 @@ def check_evidence_directory(
         )
         if not funding_ok:
             failures.append(FailureCode.FUNDING_DOUBLE_COUNT.value)
+        if is_owner_smoke_sma20 and not isinstance(dataset, SyntheticQualificationDatasetRelease):
+            try:
+                funding_source = _read_json(run_dir / "funding_source.json")
+                source_events = funding_source["events"]
+                checkpoints = result["native_funding_checkpoints"]
+                source_by_boundary = {
+                    int(item["calc_time_ns"]): item for item in source_events
+                }
+                checkpoint_by_boundary = {
+                    int(item["boundary_ns"]): item for item in checkpoints
+                }
+                exact_funding_ok = bool(
+                    len(source_by_boundary) == len(source_events)
+                    and len(checkpoint_by_boundary) == len(checkpoints)
+                    and set(source_by_boundary) == set(checkpoint_by_boundary)
+                    and result["dataset_contract"]["funding_source_event_count"]
+                    == len(source_events)
+                    and result["dataset_contract"]["funding_runtime_update_count"]
+                    == 2 * len(source_events)
+                )
+                applicable_boundaries = 0
+                expected_adjustments: list[tuple[int, Decimal]] = []
+                for boundary_ns, source_event in source_by_boundary.items():
+                    checkpoint = checkpoint_by_boundary[boundary_ns]
+                    mark = checkpoint.get("native_mark_price")
+                    positions_at_boundary = checkpoint.get("open_positions", [])
+                    native = checkpoint.get("native_adjustments", [])
+                    exact_funding_ok = exact_funding_ok and bool(
+                        isinstance(mark, dict)
+                        and mark.get("instrument_id") == config.instrument_id
+                        and int(mark.get("ts_event", -1)) == boundary_ns
+                        and int(mark.get("ts_init", -1)) == boundary_ns
+                        and len(positions_at_boundary) <= 1
+                    )
+                    if positions_at_boundary:
+                        applicable_boundaries += 1
+                        signed_qty = Decimal(str(positions_at_boundary[0]["signed_qty"]))
+                        expected = (
+                            -signed_qty
+                            * Decimal(str(mark["value"]))
+                            * Decimal(str(source_event["funding_rate"]))
+                        ).quantize(Decimal("0.00000001"))
+                        exact_funding_ok = exact_funding_ok and bool(
+                            len(native) == 1
+                            and native[0]["adjustment_type"] == "FUNDING"
+                            and int(native[0]["ts_event"]) == boundary_ns
+                            and _commission_amount(native[0]["pnl_change"]) == expected
+                        )
+                        expected_adjustments.append((boundary_ns, expected))
+                    else:
+                        exact_funding_ok = exact_funding_ok and not native
+                actual_adjustments = sorted(
+                    (int(row["ts_event"]), _commission_amount(row["pnl_change"]))
+                    for row in funding_rows
+                )
+                exact_funding_ok = exact_funding_ok and actual_adjustments == sorted(
+                    expected_adjustments,
+                )
+                mark_role = next(
+                    item
+                    for item in dataset.completeness_result.role_results
+                    if item.source_role.value == "USDM_PERPETUAL_MARK_1M"
+                )
+                exact_mark_ok = bool(
+                    observations.get("mark_price_update_count") == mark_role.actual_count
+                    and mark_role.actual_count == mark_role.expected_count
+                    and config.nautilus_engine_config.portfolio.use_mark_prices is True
+                    and result.get("mark_fallback_accepted") is False
+                )
+                exact_detail = {
+                    "source_event_count": len(source_events),
+                    "processed_checkpoint_count": len(checkpoints),
+                    "applicable_open_position_boundaries": applicable_boundaries,
+                    "native_settlement_count": len(funding_rows),
+                    "runtime_update_count": result["dataset_contract"][
+                        "funding_runtime_update_count"
+                    ],
+                }
+            except Exception as exc:
+                exact_funding_ok = False
+                exact_mark_ok = False
+                exact_detail = {"detail": str(exc)}
+            checks.append(
+                {
+                    "name": "owner_smoke_all_official_funding_processed",
+                    "pass": exact_funding_ok,
+                    **exact_detail,
+                },
+            )
+            checks.append(
+                {
+                    "name": "owner_smoke_official_mark_valuation",
+                    "pass": exact_mark_ok,
+                    "mark_fallback_accepted": result.get("mark_fallback_accepted"),
+                },
+            )
+            if not exact_funding_ok:
+                failures.append(FailureCode.FUNDING_DOUBLE_COUNT.value)
+            if not exact_mark_ok:
+                blocked.append(FailureCode.MARK_ROLE_INVALID.value)
         if is_m3_qualification and not isinstance(dataset, SyntheticQualificationDatasetRelease):
             try:
                 funding_source = _read_json(run_dir / "funding_source.json")

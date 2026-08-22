@@ -28,6 +28,7 @@ from tests.m1_helpers import make_request
 
 
 REGISTRATION = "qualification_fixture_first_eligible_bar_v1"
+SMA20_REGISTRATION = "btcusdt_daily_price_vs_sma20_trend_v1"
 
 
 def source() -> SourceRevision:
@@ -124,7 +125,7 @@ class Aud001StrategyIdentityTests(unittest.TestCase):
             self.assertEqual(list(Path(temporary).iterdir()), [])
 
     def test_only_closed_registered_identifiers_are_accepted(self) -> None:
-        self.assertEqual(registered_strategy_ids(), (REGISTRATION,))
+        self.assertEqual(registered_strategy_ids(), (SMA20_REGISTRATION, REGISTRATION))
         with self.assertRaises(ValueError):
             resolve_registered_strategy_identity(
                 "module:dynamic_callable",
@@ -179,6 +180,9 @@ class Aud001StrategyIdentityTests(unittest.TestCase):
                 configuration={
                     "instrument_id": InstrumentId.from_str("BTCUSDT.BINANCE"),
                     "bar_type": BarType.from_str(
+                        "BTCUSDT.BINANCE-1-MINUTE-LAST-EXTERNAL",
+                    ),
+                    "execution_bar_type": BarType.from_str(
                         "BTCUSDT.BINANCE-1-MINUTE-LAST-EXTERNAL",
                     ),
                     "profile": MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY,

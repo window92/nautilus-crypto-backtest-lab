@@ -4,7 +4,11 @@ from __future__ import annotations
 
 import os
 import tempfile
+import json
 from dataclasses import fields
+from datetime import UTC
+from datetime import datetime
+from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
@@ -14,6 +18,10 @@ from crypto_lab.config import StrictModel
 from crypto_lab.config import _require_sha256
 from crypto_lab.hashing import canonical_sha256
 from crypto_lab.hashing import sha256_file
+from crypto_lab.reporting import EquityObservation
+from crypto_lab.reporting import PerformanceDiagnostics
+from crypto_lab.reporting import generate_performance_diagnostics
+from crypto_lab.research import CompletedTradeSeries
 from crypto_lab.research import MonteCarloStatus
 from crypto_lab.research import ResearchError
 from crypto_lab.research import ResearchProtocol
@@ -85,6 +93,148 @@ _RUN_DIAGNOSTIC_INPUTS = (
 )
 
 
+def _money_total(items: Any, currency: str) -> Decimal:
+    if not isinstance(items, list):
+        raise ResearchError("EVIDENCE_INCOMPLETE", "native snapshot money list is invalid")
+    total = Decimal(0)
+    for item in items:
+        if not isinstance(item, dict) or set(item) != {"amount", "currency"}:
+            raise ResearchError("EVIDENCE_INCOMPLETE", "native snapshot money value is invalid")
+        amount = Decimal(str(item["amount"]))
+        if not amount.is_finite():
+            raise ResearchError("EVIDENCE_INCOMPLETE", "native snapshot money is non-finite")
+        if item["currency"] == currency:
+            total += amount
+    return total
+
+
+def derive_performance_diagnostics(
+    *,
+    run_dir: Path,
+    protocol: ResearchProtocol,
+) -> PerformanceDiagnostics:
+    """Derive SSOT diagnostics from the finest persisted Nautilus Equity snapshots."""
+
+    run_dir = Path(run_dir)
+    config = LabRunConfig.from_json_bytes((run_dir / "lab_run_config.json").read_bytes())
+    if config.research_protocol_id != protocol.protocol_id:
+        raise ResearchError("EVIDENCE_INCOMPLETE", "performance protocol binding mismatch")
+    spec = json.loads((run_dir / "strategy_spec.json").read_text(encoding="utf-8"))
+    if spec.get("parameters", {}).get("strategy_family") != "BTCUSDT_DAILY_PRICE_VS_SMA20_TREND":
+        raise ResearchError(
+            "EVIDENCE_INCOMPLETE",
+            "performance resolver is qualified only for OWNER_SMOKE SMA20 evidence",
+        )
+    snapshot_path = run_dir / "native_portfolio_snapshots.jsonl"
+    statistics_path = run_dir / "native_statistics.json"
+    completed_path = run_dir / "native_completed_trades.json"
+    for path in (snapshot_path, statistics_path, completed_path):
+        if not path.is_file():
+            raise ResearchError("EVIDENCE_INCOMPLETE", f"missing {path.name}")
+    snapshots = [
+        json.loads(line)
+        for line in snapshot_path.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    by_timestamp: dict[int, Decimal] = {}
+    currency = config.initial_capital.currency
+    scored_start_ns = int(config.scoring_start.timestamp() * 1_000_000_000)
+    scoring_end_ns = int(config.scoring_end_exclusive.timestamp() * 1_000_000_000)
+    for row in snapshots:
+        if (
+            not isinstance(row, dict)
+            or int(row.get("ts_event", -1)) != int(row.get("ts_init", -2))
+            or row.get("is_stale") is not False
+            or row.get("stale_instruments")
+            or row.get("unpriced_instruments")
+        ):
+            raise ResearchError("EVIDENCE_INCOMPLETE", "native portfolio snapshot is stale or malformed")
+        timestamp = int(row["ts_event"])
+        if scored_start_ns <= timestamp <= scoring_end_ns:
+            # SSOT fallback Equity path: the frozen Initial Capital plus the
+            # native realized and native unrealized PnL values.  This is a
+            # read-only diagnostic; Nautilus remains the PnL owner.
+            by_timestamp[timestamp] = (
+                config.initial_capital.amount
+                + _money_total(row.get("realized_pnls"), currency)
+                + _money_total(row.get("unrealized_pnls"), currency)
+            )
+    if (
+        not by_timestamp
+        or min(by_timestamp) != scored_start_ns
+        or max(by_timestamp) != scoring_end_ns
+    ):
+        raise ResearchError(
+            "EVIDENCE_INCOMPLETE",
+            "native Equity snapshots do not cover both scoring boundaries",
+        )
+    observations = tuple(
+        EquityObservation(
+            timestamp=datetime.fromtimestamp(timestamp / 1_000_000_000, tz=UTC),
+            equity=equity,
+        )
+        for timestamp, equity in sorted(by_timestamp.items())
+    )
+    native_truth = json.loads(completed_path.read_text(encoding="utf-8"))
+    completed = CompletedTradeSeries(
+        source="NAUTILUS_NATIVE_COMPLETED_TRADES",
+        evidence_sha256=sha256_file(completed_path),
+        settlement_currency=currency,
+        unambiguous_net_after_cost=native_truth.get("status") == "AVAILABLE",
+        net_outcomes=tuple(Decimal(str(item)) for item in native_truth.get("net_outcomes", ())),
+    )
+    sample = (
+        SampleAdequacy.NOT_APPLICABLE
+        if protocol.sample_adequacy_rule.minimum_completed_trades == NOT_APPLICABLE
+        else SampleAdequacy.LOW_CONFIDENCE
+    )
+    monte_carlo = (
+        MonteCarloStatus.NOT_APPLICABLE
+        if protocol.monte_carlo_spec.resampling_method is ResamplingMethod.NOT_APPLICABLE
+        else MonteCarloStatus.MC_LOW_CONFIDENCE
+    )
+    return generate_performance_diagnostics(
+        run_id=config.run_id,
+        scored_start=config.scoring_start,
+        scoring_end_exclusive=config.scoring_end_exclusive,
+        initial_capital=config.initial_capital.amount,
+        settlement_currency=currency,
+        equity_observation_basis=(
+            "FINEST_PERSISTED_NAUTILUS_PORTFOLIO_SNAPSHOTS; "
+            "equity = frozen_initial_capital + native_realized_pnl + native_unrealized_pnl"
+        ),
+        equity_observations=observations,
+        native_metrics={},
+        completed_trades=completed,
+        benchmark_return=None,
+        sample_adequacy=sample,
+        monte_carlo_status=monte_carlo,
+        claim_scope=protocol.intended_claim_scope.value,
+        input_evidence_hashes={
+            snapshot_path.name: sha256_file(snapshot_path),
+            statistics_path.name: sha256_file(statistics_path),
+            completed_path.name: sha256_file(completed_path),
+        },
+    )
+
+
+def write_performance_diagnostics(value: PerformanceDiagnostics, path: Path) -> None:
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    handle = tempfile.NamedTemporaryFile(mode="wb", dir=path.parent, delete=False)
+    temporary = Path(handle.name)
+    try:
+        handle.write(value.to_json_bytes() + b"\n")
+        handle.flush()
+        os.fsync(handle.fileno())
+        handle.close()
+        os.replace(temporary, path)
+    finally:
+        if not handle.closed:
+            handle.close()
+        temporary.unlink(missing_ok=True)
+
+
 def derive_diagnostic_resolution(
     *,
     run_dir: Path,
@@ -101,7 +251,7 @@ def derive_diagnostic_resolution(
             "diagnostic Run inputs are incomplete: " + ",".join(missing),
         )
     config = LabRunConfig.from_json_bytes((run_dir / "lab_run_config.json").read_bytes())
-    native_truth = __import__("json").loads(
+    native_truth = json.loads(
         (run_dir / "native_completed_trades.json").read_text(encoding="utf-8"),
     )
     if (
@@ -137,10 +287,38 @@ def derive_diagnostic_resolution(
             "benchmark evidence requires a separately qualified typed resolver",
         )
     benchmark_status = "MISSING"
-    # The current runner preserves native account events but does not claim that
-    # they are a complete mark-valued Equity curve or native completed-trade
-    # sequence.  Reporting that limitation is safer than manufacturing metrics.
-    performance_status = "INCOMPLETE"
+    spec = json.loads((run_dir / "strategy_spec.json").read_text(encoding="utf-8"))
+    is_owner_smoke_sma20 = (
+        spec.get("parameters", {}).get("strategy_family")
+        == "BTCUSDT_DAILY_PRICE_VS_SMA20_TREND"
+    )
+    if is_owner_smoke_sma20:
+        # This also fails closed on stale/unpriced native snapshots or missing
+        # scoring boundaries.  The returned value is written separately by the
+        # public Owner workflow and never feeds back into Run state.
+        derive_performance_diagnostics(run_dir=run_dir, protocol=protocol)
+        performance_status = "COMPLETE"
+        extra_inputs = (
+            "native_portfolio_snapshots.jsonl",
+            "native_statistics.json",
+        )
+        limitations = (
+            "NATIVE_COMPLETED_TRADE_SEQUENCE_UNAVAILABLE",
+            "CURRENT_METADATA_NOT_EXACT_2020_2021_POINT_IN_TIME_METADATA",
+            "ACCOUNT_SPECIFIC_HISTORICAL_FEE_TIER_UNAVAILABLE_ESTIMATED_FEE_USED",
+            "DEVELOPMENT_EXPOSED_NOT_FINAL_HOLDOUT",
+            "EXPLORATORY_NO_REAL_PROFITABILITY_CLAIM",
+        )
+    else:
+        # The qualification fixture deliberately has no qualified Equity
+        # diagnostic path and cannot be promoted into research evidence.
+        performance_status = "INCOMPLETE"
+        extra_inputs = ()
+        limitations = (
+            "NATIVE_COMPLETED_TRADE_SEQUENCE_UNAVAILABLE",
+            "FULL_NATIVE_EQUITY_CURVE_UNAVAILABLE",
+            "QUALIFICATION_FIXTURE_NOT_PROFITABILITY_EVIDENCE",
+        )
     complete = bool(
         available
         and performance_status == "COMPLETE"
@@ -152,7 +330,8 @@ def derive_diagnostic_resolution(
         run_id=config.run_id,
         protocol_id=protocol.protocol_id,
         run_evidence_hashes={
-            name: sha256_file(run_dir / name) for name in _RUN_DIAGNOSTIC_INPUTS
+            name: sha256_file(run_dir / name)
+            for name in (*_RUN_DIAGNOSTIC_INPUTS, *extra_inputs)
         },
         native_completed_trades_status="AVAILABLE" if available else "UNAVAILABLE",
         native_completed_trade_count=(
@@ -165,11 +344,7 @@ def derive_diagnostic_resolution(
         benchmark_id=protocol.required_benchmark.benchmark_id,
         claim_scope=protocol.intended_claim_scope.value,
         complete_for_confirmatory_profitability_claim=complete,
-        limitations=(
-            "NATIVE_COMPLETED_TRADE_SEQUENCE_UNAVAILABLE",
-            "FULL_NATIVE_EQUITY_CURVE_UNAVAILABLE",
-            "QUALIFICATION_FIXTURE_NOT_PROFITABILITY_EVIDENCE",
-        ),
+        limitations=limitations,
     )
 
 
@@ -219,6 +394,8 @@ def reconcile_diagnostic_resolution(
 __all__ = [
     "DiagnosticResolution",
     "derive_diagnostic_resolution",
+    "derive_performance_diagnostics",
     "reconcile_diagnostic_resolution",
     "write_diagnostic_resolution",
+    "write_performance_diagnostics",
 ]

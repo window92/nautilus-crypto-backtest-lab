@@ -1,0 +1,37 @@
+{
+  "authorization_id": "OWNER_OPERATIONAL_SMOKE_001",
+  "attempts": [
+    {
+      "disposition": "FAILED_BEFORE_OFFICIAL_TRIAL",
+      "evidence": "The direct internal daily Bar subscription produced no delivered daily Bars in the pinned runtime.",
+      "id": "IMPLEMENTATION_ATTEMPT_001_DIRECT_INTERNAL_DAILY_SUBSCRIPTION",
+      "resolution": "Use the public composite 1-DAY-LAST-INTERNAL@1-MINUTE-EXTERNAL subscription."
+    },
+    {
+      "disposition": "FAILED_BEFORE_OFFICIAL_TRIAL",
+      "evidence": "The initial composite subscription compared callbacks against the composite subscription identity instead of the standard target BarType delivered by Nautilus, so no signal was emitted.",
+      "id": "IMPLEMENTATION_ATTEMPT_002_COMPOSITE_DELIVERED_TYPE_MISMATCH",
+      "resolution": "Bind the subscription identity and delivered target identity separately and test both."
+    },
+    {
+      "disposition": "FAILED_BEFORE_OFFICIAL_TRIAL",
+      "evidence": "Allowing the fixture engine to infer its start shifted the UTC aggregation origin by one minute.",
+      "id": "IMPLEMENTATION_ATTEMPT_003_IMPLICIT_AGGREGATION_ORIGIN",
+      "resolution": "Call the public BacktestEngine.run start boundary with the exact warmup UTC origin."
+    },
+    {
+      "disposition": "TOOL_UNAVAILABLE_NOT_A_TEST_FAILURE",
+      "evidence": ".venv/bin/python -m pytest returned No module named pytest.",
+      "id": "TOOL_ATTEMPT_004_PYTEST_NOT_INSTALLED",
+      "resolution": "Use the repository-authoritative unittest discovery command; the then-current 215 tests passed and the later complete 219-test discovery also passed."
+    },
+    {
+      "disposition": "FAILED_TEST_FIXTURE_BEFORE_OFFICIAL_TRIAL",
+      "evidence": "The first isolated Spot-short unit fixture invoked the Strategy clock before registering a Trader; the product guard itself was not reached.",
+      "id": "TEST_FIXTURE_ATTEMPT_005_UNREGISTERED_STRATEGY_CLOCK",
+      "resolution": "Provide a deterministic market-time clock in the isolated white-box guard fixture."
+    }
+  ],
+  "official_trial_attempts_started": 0,
+  "schema": "owner-smoke-development-attempts-v1"
+}

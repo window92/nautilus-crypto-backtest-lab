@@ -304,6 +304,22 @@ class AuthoritativeExposureResolver:
                 seed=record.seed,
                 result_bearing=True,
             )
+            # Results expose both their causal warmup observations and their
+            # scored observations.  Expanding only the Holdout-freshness view
+            # (not the Journal's scored partition) prevents a later protocol
+            # from relabeling the warmup market history as fresh evidence.
+            if (
+                config.warmup_start < release.normalized_time_range.start_inclusive
+                or config.scoring_end_exclusive > release.normalized_time_range.end_exclusive
+            ):
+                raise ResearchError(
+                    "HOLDOUT_HISTORY_VIOLATION",
+                    f"trial {trial_id} Run window escapes its Dataset Release",
+                )
+            full_run_interval = UtcInterval(
+                start_inclusive=config.warmup_start,
+                end_exclusive=config.scoring_end_exclusive,
+            )
             mapping[trial_id] = exposure
             resolved.append(
                 ResolvedExposure(
@@ -311,7 +327,7 @@ class AuthoritativeExposureResolver:
                     authority_id=record.journal_entry_sha256,
                     market_profile=record.market_profile,
                     instrument_id=record.instrument_id,
-                    exposed_interval=record.scored_interval,
+                    exposed_interval=full_run_interval,
                     dataset_lineage=(record.dataset_release_id,),
                     evidence_reference=record.result_ref,
                     evidence_sha256=sha256_file(run_dir / "status.json"),
