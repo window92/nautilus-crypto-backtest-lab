@@ -1,0 +1,21 @@
+{
+  "command": [
+    "/home/builder/projects/nautilus-crypto-backtest-lab/.venv/bin/python",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "tests",
+    "-t",
+    ".",
+    "-v"
+  ],
+  "executed_test_cases": 167,
+  "missing_from_discovery": [],
+  "output_sha256": "8e560c1f4381469a397aecaff7a659f6037c1ef99168a30cf21942d9de2cd902",
+  "returncode": 0,
+  "schema": "m4-independent-discovery-v1",
+  "status": "PASS",
+  "unexpected_in_discovery": [],
+  "unique_executable_test_cases": 167
+}

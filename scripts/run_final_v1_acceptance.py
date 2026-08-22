@@ -14,6 +14,7 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
 import time
 from dataclasses import replace
@@ -64,6 +65,8 @@ from crypto_lab.research import run_monte_carlo
 
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 DEFAULT_OUTPUT = ROOT / "evidence/m4/m4-acceptance-001"
 M3_EVIDENCE = ROOT / "evidence/m3/m3-acceptance-001"
 M3_REGISTRY_ID = "d6124dd7d225818f0de212d74f7d4aae5e3bf08c9f8ff342435baac6228ba6de"
@@ -733,8 +736,62 @@ def _manifest(staging: Path) -> dict[str, Any]:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
+    parser.add_argument("--resume-validation", action="store_true")
     args = parser.parse_args()
     output = args.output.resolve()
+    if args.resume_validation:
+        if not output.is_dir() or not (output / "final-acceptance-summary.json").is_file():
+            raise FileNotFoundError("validation resume requires completed Final V1 staging output")
+        failure = {
+            "attempt_id": "M4-FINAL-V1-POSTPROCESSING-001",
+            "state": "FAILED",
+            "cause": "validator import omitted the repository root from sys.path",
+            "affected_stage": "POST_ACCEPTANCE_EVIDENCE_VALIDATION_ONLY",
+            "result_bearing_runs_reexecuted": False,
+            "financial_evidence_modified": False,
+            "disposition": "IMPORT_PATH_REPAIRED; VALIDATION_AND_MANIFEST_RESUMED",
+        }
+        failed_path = output / "failed-attempts.jsonl"
+        if b"M4-FINAL-V1-POSTPROCESSING-001" not in failed_path.read_bytes():
+            with failed_path.open("ab") as stream:
+                stream.write(canonical_json_bytes(failure) + b"\n")
+                stream.flush()
+                os.fsync(stream.fileno())
+        manifest_path = output / "final-content-manifest.json"
+        if manifest_path.is_file():
+            prior_identity = sha256_file(manifest_path)
+            prior_path = output / f"final-content-manifest-pre-validation-resume-{prior_identity[:12]}.json"
+            if not prior_path.exists():
+                shutil.copyfile(manifest_path, prior_path)
+        _write_json(
+            output / "resume-after-validation-import-failure.json",
+            {
+                "schema": "m4-validation-resume-v1",
+                **failure,
+                "prior_manifest_preserved": True,
+            },
+        )
+        _write_json(manifest_path, _manifest(output))
+        from scripts.validate_m4_evidence import validate
+
+        validation = validate(output)
+        validation_path = Path(tempfile.mkdtemp(prefix="m4-validation-resume-", dir="/tmp"))
+        validation_path /= "m4-evidence-validation.json"
+        _write_json(validation_path, validation)
+        if validation["status"] != "PASS":
+            raise RuntimeError(f"resumed M4 evidence validation failed: {validation}")
+        print(
+            json.dumps(
+                {
+                    "status": "PASS",
+                    "output": str(output),
+                    "validation": str(validation_path),
+                    "result_bearing_runs_reexecuted": False,
+                },
+                sort_keys=True,
+            ),
+        )
+        return 0
     if output.exists():
         raise FileExistsError(f"refusing to overwrite M4 evidence: {output}")
     os.environ.update({"TZ": "UTC", "LANG": "C.UTF-8", "LC_ALL": "C.UTF-8"})
