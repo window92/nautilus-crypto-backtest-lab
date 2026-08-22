@@ -73,3 +73,26 @@ TZ=UTC LC_ALL=C.UTF-8 PYTHONPATH=src .venv/bin/python scripts/run_m1_acceptance.
 TZ=UTC LC_ALL=C.UTF-8 PYTHONPATH=src .venv/bin/python scripts/generate_m1_evidence.py
 TZ=UTC LC_ALL=C.UTF-8 PYTHONPATH=src .venv/bin/python scripts/validate_m1_evidence.py
 ```
+
+## M2 frozen Binance data
+
+M2 freezes exact official Binance Public Data archive bytes in the local
+content-addressed `data/raw/sha256/` store before parsing. Publisher checksums,
+strict source roles, explicit timestamp rules, exact one-minute grids,
+point-in-time metadata limitations, funding schedule evidence, and native
+Nautilus catalog semantic identities are bound into immutable
+`DatasetRelease` manifests. Raw archives and derived Parquet payloads are not
+committed; the small manifests, fixture extracts, identities, and acceptance
+evidence are committed.
+
+The bounded qualification uses BTCUSDT only and is not an Official Run or a
+research partition. Acquisition is an explicit network-enabled setup step;
+all parsing, catalog rebuild, and tests run offline afterward:
+
+```bash
+M2_SOURCE_DIR=/path/to/approved-binance-downloads \
+  TZ=UTC LC_ALL=C.UTF-8 PYTHONPATH=src .venv/bin/python \
+  scripts/generate_m2_evidence.py
+TZ=UTC LC_ALL=C.UTF-8 PYTHONPATH=src .venv/bin/python \
+  scripts/run_m2_acceptance.py
+```

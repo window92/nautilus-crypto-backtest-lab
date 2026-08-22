@@ -1,0 +1,19 @@
+command: TZ=UTC LC_ALL=C.UTF-8 PYTHONPATH=src .venv/bin/python -m unittest tests.unit.test_m2_release_contract -v
+tests_run: 14
+failures: 0
+errors: 2
+
+Root failure (both affected tests):
+
+OSError: Failed to write mark price updates: Cannot write
+nautilus_model_data_prices_mark_price_update data with mixed identities:
+element 1 has metadata {"instrument_id": "BTCUSDT-PERP.BINANCE",
+"price_precision": "0"} but the first element has
+{"instrument_id": "BTCUSDT-PERP.BINANCE", "price_precision": "8"};
+write each instrument or bar type separately
+
+Root cause: official markPriceKlines rows preserve variable textual Decimal
+scale. The public Rust Parquet catalog requires one precision identity per
+write batch. The repair normalizes representation to the maximum source scale
+in the frozen batch and rejects any numerical rounding; source values and raw
+bytes remain unchanged.

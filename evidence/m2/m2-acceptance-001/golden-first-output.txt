@@ -1,0 +1,21 @@
+command: TZ=UTC LC_ALL=C.UTF-8 PYTHONPATH=src .venv/bin/python -m unittest tests.golden.test_m2_data_contract -v
+exit_code: 1
+
+test_m2_data_contract (unittest.loader._FailedTest.test_m2_data_contract) ... ERROR
+
+======================================================================
+ERROR: test_m2_data_contract (unittest.loader._FailedTest.test_m2_data_contract)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_m2_data_contract
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/unittest/loader.py", line 137, in loadTestsFromName
+    module = __import__(module_name)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/builder/projects/nautilus-crypto-backtest-lab/tests/golden/test_m2_data_contract.py", line 9, in <module>
+    from crypto_lab.data import SourceRole
+ImportError: cannot import name 'SourceRole' from 'crypto_lab.data' (/home/builder/projects/nautilus-crypto-backtest-lab/src/crypto_lab/data.py)
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)
