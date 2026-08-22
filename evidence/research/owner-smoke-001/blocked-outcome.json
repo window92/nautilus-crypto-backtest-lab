@@ -1,0 +1,55 @@
+{
+  "authorization_id": "OWNER_OPERATIONAL_SMOKE_001",
+  "claim_eligibility": "INELIGIBLE",
+  "dataset_release_ids": {
+    "BINANCE_SPOT_CASH_LONG_ONLY": null,
+    "BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING": null
+  },
+  "final_holdout_used": false,
+  "mechanical_integrity": "BLOCKED",
+  "owner_workflow_completed": false,
+  "profiles": {
+    "BINANCE_SPOT_CASH_LONG_ONLY": {
+      "checker_result": null,
+      "completed": false,
+      "initial_balance": "10000 USDT",
+      "metrics": null,
+      "not_run_reason": "REQUIRED_OFFICIAL_BINANCE_DATA_MISSING_OR_AMBIGUOUS",
+      "quantity": "0.10000 BTC",
+      "replay_result": null,
+      "result_evidence_exists": false
+    },
+    "BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING": {
+      "checker_result": null,
+      "completed": false,
+      "initial_balance": "10000 USDT",
+      "metrics": null,
+      "not_run_reason": "NOT_ATTEMPTED_AFTER_MANDATORY_STOP_CONDITION",
+      "quantity": "0.100 BTC",
+      "replay_result": null,
+      "result_evidence_exists": false
+    }
+  },
+  "protocol_ids": {
+    "BINANCE_SPOT_CASH_LONG_ONLY": null,
+    "BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING": null
+  },
+  "real_profitability_claim": false,
+  "research_eligibility": "BLOCKED",
+  "research_intent": "EXPLORATORY",
+  "research_purpose": "EXPLORATORY_OPERATIONAL_VALIDATION",
+  "schema": "owner-smoke-blocked-outcome-v1",
+  "scoring_interval": {
+    "end_exclusive": "2021-07-01T00:00:00Z",
+    "start_inclusive": "2021-01-01T00:00:00Z"
+  },
+  "trial_ids": {
+    "BINANCE_SPOT_CASH_LONG_ONLY": null,
+    "BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING": null
+  },
+  "verdict": "OWNER_SMOKE_001_BLOCKED",
+  "warmup_interval": {
+    "end_exclusive": "2021-01-01T00:00:00Z",
+    "start_inclusive": "2020-12-01T00:00:00Z"
+  }
+}

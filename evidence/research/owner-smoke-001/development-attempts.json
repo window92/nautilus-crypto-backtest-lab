@@ -30,6 +30,12 @@
       "evidence": "The first isolated Spot-short unit fixture invoked the Strategy clock before registering a Trader; the product guard itself was not reached.",
       "id": "TEST_FIXTURE_ATTEMPT_005_UNREGISTERED_STRATEGY_CLOCK",
       "resolution": "Provide a deterministic market-time clock in the isolated white-box guard fixture."
+    },
+    {
+      "disposition": "TOOL_INVOCATION_FAILED_BEFORE_PREFLIGHT",
+      "evidence": ".venv/bin/python scripts/run_owner_smoke_preflight.py exited before writing evidence with ModuleNotFoundError: No module named 'crypto_lab'.",
+      "id": "TOOL_ATTEMPT_006_PREFLIGHT_LAUNCH_WITHOUT_REPOSITORY_PYTHONPATH",
+      "resolution": "Launch the repository script with PYTHONPATH=src:.; the complete immutable preflight then passed."
     }
   ],
   "official_trial_attempts_started": 0,

@@ -1,0 +1,72 @@
+{
+  "authorization_id": "OWNER_OPERATIONAL_SMOKE_001",
+  "external_bindings": {
+    "dependency_lock_sha256": "b2765c9e33b10566fc327b48920fd1d3a73618c19622baaceab1fe9dca61df47",
+    "history_anchors_sha256": "349baa2699a12f09ab0c9afe3cb86e6b2af8dcf3d7d693b580963ab64fbdc4e4",
+    "holdout_lock_sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+    "qualified_profile_registry_sha256": "e46a37abaf2989ae2c884044bd08df0257803a31347de7259ac5e73d55226b24",
+    "runtime_lock_sha256": "4032df9f355348c2a0cfa9f79f331f97c9a8d24ecc8490a573d2c7f788bafddd",
+    "ssot_sha256": "7bb2fc68d9b73b168a582d890a6f952fd0c4eb20fc0e31857903909f27dfaa8f",
+    "trial_journal_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "files": [
+    {
+      "path": "baseline-attestation.json",
+      "sha256": "9a2f50e4ac068f624809150d40c7d51fb6fb5e0a7060076351ed87044d773700"
+    },
+    {
+      "path": "blocked-outcome.json",
+      "sha256": "a0b4669e38abf15a0ebfc116a0c8641890f8ef1e29d616db43c36bb76b25e302"
+    },
+    {
+      "path": "data-acquisition-blocked.json",
+      "sha256": "f32ae352a34980d62f8f4e6dda1a754e831a22952e6360da88c3e0a73918dbe6"
+    },
+    {
+      "path": "data-acquisition-failures/09119e1d6be3e990edbe09b9b8c097f9f3f9678e498b4bb4d605e3c29bd4fedb.json",
+      "sha256": "3c6b2b87f01592a726dbd92b7e70cdf84e006d77841aba0aa3e530d8eae8e55b"
+    },
+    {
+      "path": "development-attempts.json",
+      "sha256": "d57a1be69382400c4ba1bd0bcc92f9410dc9d7c547ef831e46a2ed25923e3907"
+    },
+    {
+      "path": "exposure-status.json",
+      "sha256": "d2de6192aacca0f01bcefc01b47577de48454cb76d281ac143d39cc9a8811303"
+    },
+    {
+      "path": "owner-report/README.md",
+      "sha256": "150e0a6e626de5aaea80bd02d606969ac4f1b3c20cdce42da56866baad521df0"
+    },
+    {
+      "path": "preflight/gates.json",
+      "sha256": "71e6443e0fb9268eb419c9dce84f8aa086cd7d24ebd1e58de21c6a6fb7278c6c"
+    },
+    {
+      "path": "preflight/summary.json",
+      "sha256": "9143a5596a1226a343140b906ee421f76e9a72ea1ed4059633a71cb1218fcf76"
+    },
+    {
+      "path": "preflight/test-output.txt",
+      "sha256": "d5b1f591a3d61890a0f710eaaaa336420af35f4802d20507303902f12fd33123"
+    },
+    {
+      "path": "preflight/tests.json",
+      "sha256": "313c9a0b9ca7b15c15b04251c67845332228bc9efbc0fa656ac3ff578f32e0dc"
+    },
+    {
+      "path": "research-basis.json",
+      "sha256": "0b60f697cc99eaad593b42e26ea18acd2ba3a78f6ecb96e9dff58ac43d80ffb6"
+    },
+    {
+      "path": "strategy-implementation-status.json",
+      "sha256": "8f9f8fbff7c1be360bd8fd4783fc5614b199c9fc1345734e307c4c96543bdd7e"
+    }
+  ],
+  "inventory_self_excluded": true,
+  "preflight_source_commit": "de0b3fe38d25eb2d076e0d89e3364e89bcdd1597",
+  "raw_archives_committed": false,
+  "schema": "owner-smoke-evidence-inventory-v1",
+  "strategy_source_commit": "e4611169a81076d917caf76c885b23cab6421456",
+  "verdict": "OWNER_SMOKE_001_BLOCKED"
+}
