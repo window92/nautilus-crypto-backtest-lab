@@ -1,0 +1,105 @@
+{
+  "schema": "v2-native-funding-g09-qualification-v1",
+  "status": "PASS",
+  "executed": true,
+  "runtime": "nautilus_trader==2.0.0rc2",
+  "execution_command": "/tmp/nautilus-v2-gate.UKpWnpmd/venv/bin/python /tmp/nautilus-v2-gate.UKpWnpmd/v2_gate_probe.py /tmp/nautilus-v2-gate.UKpWnpmd/v2_gate_results.json",
+  "probe_sha256": "ce5b9b9cb54e2688ec470e076f6a8e52f26f670c693ad8d1c8488607bf446d08",
+  "raw_result_sha256": "2d81648bc852e6763f336af4b052dd4bbbf058807380a64ed1bb043988485654",
+  "api": {
+    "backtest_engine": "nautilus_trader.backtest.BacktestEngine",
+    "funding_update": "nautilus_trader.model.FundingRateUpdate",
+    "mark_update": "nautilus_trader.model.MarkPriceUpdate",
+    "native_public_settlement_evidence": [
+      "nautilus_trader.model.PositionAdjusted",
+      "nautilus_trader.model.AccountState"
+    ],
+    "public_funding_settlement_class_exported": false,
+    "private_pyo3_api_used": false
+  },
+  "fixed_inputs": {
+    "instrument": "BTCUSDT-PERP.BINANCE",
+    "multiplier": "1",
+    "mark_usdt": "100.00",
+    "funding_rate": "0.01",
+    "starting_account_total_usdt": "1000.00000000"
+  },
+  "cases": [
+    {
+      "name": "explicit_next_funding_long",
+      "boundary_mode": "next_funding_ns",
+      "boundary_ns": 4000000000,
+      "position_before_boundary": "+2",
+      "funding_updates_ingested": 2,
+      "native_settlement_count": 1,
+      "native_event": "PositionAdjusted",
+      "adjustment_type": "FUNDING",
+      "actual_cash_effect_usdt": "-2.00000000",
+      "expected_cash_effect_usdt": "-2",
+      "ending_account_total_usdt": "998.00000000",
+      "status": "PASS"
+    },
+    {
+      "name": "explicit_next_funding_short",
+      "boundary_mode": "next_funding_ns",
+      "boundary_ns": 4000000000,
+      "position_before_boundary": "-2",
+      "funding_updates_ingested": 2,
+      "native_settlement_count": 1,
+      "native_event": "PositionAdjusted",
+      "adjustment_type": "FUNDING",
+      "actual_cash_effect_usdt": "2.00000000",
+      "expected_cash_effect_usdt": "2",
+      "ending_account_total_usdt": "1002.00000000",
+      "status": "PASS"
+    },
+    {
+      "name": "interval_boundary_long",
+      "boundary_mode": "interval",
+      "verified_synthetic_interval_minutes": 1,
+      "boundary_ns": 60000000000,
+      "position_before_boundary": "+2",
+      "funding_updates_ingested": 2,
+      "native_settlement_count": 1,
+      "actual_cash_effect_usdt": "-2.00000000",
+      "expected_cash_effect_usdt": "-2",
+      "status": "PASS"
+    },
+    {
+      "name": "interval_boundary_short",
+      "boundary_mode": "interval",
+      "verified_synthetic_interval_minutes": 1,
+      "boundary_ns": 60000000000,
+      "position_before_boundary": "-2",
+      "funding_updates_ingested": 2,
+      "native_settlement_count": 1,
+      "actual_cash_effect_usdt": "2.00000000",
+      "expected_cash_effect_usdt": "2",
+      "status": "PASS"
+    },
+    {
+      "name": "post_boundary_position",
+      "prior_boundary_ns": 4000000000,
+      "position_opened_ns": 5000000000,
+      "position_after_open": "+2",
+      "native_settlement_count": 0,
+      "actual_cash_effect_usdt": "0E-8",
+      "expected_cash_effect_usdt": "0",
+      "status": "PASS"
+    }
+  ],
+  "proofs": {
+    "funding_rate_update_ingested_by_nautilus": true,
+    "required_boundary_timestamp_observed": true,
+    "native_position_adjusted_observed": true,
+    "native_account_state_observed_at_settlement": true,
+    "value_and_direction_correct": true,
+    "settlement_exactly_once_despite_duplicate_updates": true,
+    "settlement_bound_to_mark_and_funding_event": true,
+    "post_boundary_position_not_charged_for_prior_boundary": true,
+    "financial_effect_owned_by_nautilus": true,
+    "project_side_cash_posting": false,
+    "project_ledger": false
+  },
+  "m2_metadata_requirement": "The synthetic interval is explicitly one minute. A future M2 must derive each real Binance funding boundary and interval from frozen, verified, exact-instrument Binance metadata/data; it must not invent or hardcode an interval."
+}

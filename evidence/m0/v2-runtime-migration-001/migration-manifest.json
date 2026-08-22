@@ -1,0 +1,25 @@
+{
+  "adopted_dependency_lock_sha256": "b2765c9e33b10566fc327b48920fd1d3a73618c19622baaceab1fe9dca61df47",
+  "adopted_runtime_lock_sha256": "4032df9f355348c2a0cfa9f79f331f97c9a8d24ecc8490a573d2c7f788bafddd",
+  "adopted_ssot_sha256": "7bb2fc68d9b73b168a582d890a6f952fd0c4eb20fc0e31857903909f27dfaa8f",
+  "changed_contracts": [
+    "runtime identity and dependency set",
+    "public Rust/PyO3 import and binding paths",
+    "stdlib typed config decoding replacing unpinned msgspec dependency",
+    "StaticLatencyModel and DefaultFillModel bindings",
+    "explicit MakerTakerFeeModel binding",
+    "native FundingRateUpdate qualification",
+    "v2 BacktestEngine/BacktestVenueConfig/BacktestDataConfig construction",
+    "resolved configuration uses exact public v2 field names including msgbus, shutdown_on_error, bypass_logging, and delay_post_stop",
+    "v2-only material defaults explicitly record save_market_data, encoding_market_data, encoding_builtin, autotrim_maxlen, disable_historical_cache, carry_replay_events_on_reopen, and equity_curve"
+  ],
+  "historical_evidence_hash_inventory": "preserved-evidence-before.sha256",
+  "historical_evidence_reverified": true,
+  "market_data_acquired": false,
+  "m2_started": false,
+  "network_used": false,
+  "product_strategy_run": false,
+  "qualification_data": "synthetic only",
+  "schema": "m0-v2-runtime-migration-001",
+  "status": "PASS"
+}

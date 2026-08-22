@@ -1,0 +1,80 @@
+{
+  "schema": "v2-material-migration-capability-matrix-v1",
+  "runtime": "nautilus_trader==2.0.0rc2",
+  "overall_status": "BLOCKED",
+  "capabilities": [
+    {
+      "id": "STATIC_LATENCY_60S",
+      "status": "PASS",
+      "proof": "nautilus_trader.execution.StaticLatencyModel accepted components 60000000000/0/0/0 and produced an observed effective insert delay of 60000000000 ns."
+    },
+    {
+      "id": "NO_SAME_BAR_CAUSAL_FILL",
+      "status": "BLOCKED",
+      "proof": "The standard and zero-latency LAST-bar cases both ended in OrderRejected(No market); no later-state Fill and no same-bar negative-control violation could be observed."
+    },
+    {
+      "id": "DETERMINISTIC_FILL_MODEL",
+      "status": "PASS",
+      "proof": "nautilus_trader.execution.DefaultFillModel(1.0, 1.0, 0) reported prob_fill_on_limit=1.0, prob_slippage=1.0, random_seed=Some(0); two fresh semantic fee/fill probes matched."
+    },
+    {
+      "id": "MAKER_TAKER_FEE_EXACTLY_ONCE",
+      "status": "PASS",
+      "proof": "MakerTakerFeeModel used instrument taker_fee=0.001 on quantity 2 at 100.01: one OrderFilled carried 0.20002000 USDT, the native position carried the same single commission, and account total ended 999.79998000 USDT."
+    },
+    {
+      "id": "SPOT_CASH_NETTING",
+      "status": "PASS",
+      "proof": "Actual CASH+NETTING venue with borrowing=false denied SELL 2 from zero BTC as CUM_NOTIONAL_EXCEEDS_FREE_BALANCE; position_count=0, BTC=0, USDT=1000."
+    },
+    {
+      "id": "PERPETUAL_MARGIN_NETTING_LEVERAGE_1",
+      "status": "PASS",
+      "proof": "Actual linear USDT-settled MARGIN+NETTING venue with default_leverage=1 exercised native Account, Position, Fill, fee, mark and funding paths."
+    },
+    {
+      "id": "SPOT_MARK_VALUATION_DISABLED",
+      "status": "PASS",
+      "proof": "PortfolioConfig(use_mark_prices=False) is publicly expressible and the CASH Spot probe ran with it explicitly disabled."
+    },
+    {
+      "id": "PERPETUAL_MARK_VALUATION_ENABLED",
+      "status": "PASS",
+      "proof": "PortfolioConfig(use_mark_prices=True) bound an actual MarkPriceUpdate(80.00) and produced native unrealized PnL -40.02 versus +39.96 in the disabled control. Missing mark falls back at runtime and therefore still requires the existing fail-closed completeness control."
+    },
+    {
+      "id": "NATIVE_FUNDING_SETTLEMENT",
+      "status": "PASS",
+      "proof": "Actual FundingRateUpdate ingestion produced one native PositionAdjusted(FUNDING) and AccountState cash effect for long and short under both next_funding_ns and explicit interval modes; a post-boundary position was not charged."
+    },
+    {
+      "id": "BAR_EXECUTION_CONTROLS_EXPRESSIBLE",
+      "status": "PASS",
+      "proof": "The public venue path accepted explicit L1_MBP, bar_execution=true, trade_execution=false, adaptive ordering=false, liquidity consumption=true, queue_position=false, routing=false, stop/GTD/contingent controls, deterministic IDs, reduce-only, market acknowledgements=false, borrowing=false, frozen_account=false and price_protection_points=0."
+    },
+    {
+      "id": "MARKET_ORDER_LIFECYCLE_AND_TIF",
+      "status": "PASS",
+      "proof": "An actual default MARKET order exposed effective TimeInForce=GTC and lifecycle OrderInitialized -> OrderSubmitted -> OrderFilled; qualification funding orders also exposed explicit IOC."
+    },
+    {
+      "id": "NAUTILUS_OWNS_ALL_MATERIAL_FINANCIAL_BEHAVIOR",
+      "status": "BLOCKED",
+      "proof": "Native Account, Position, Fill, fee, funding, valuation and PnL paths exist, and no replacement was built. However, the mandatory external LAST-bar causal MARKET Fill path is not satisfiable as tested; resolving it by invented BID/ASK state or a project matcher would change semantics or introduce a forbidden replacement."
+    }
+  ],
+  "native_objects_observed": [
+    "Account",
+    "AccountState",
+    "Position",
+    "OrderFilled",
+    "PositionAdjusted",
+    "Portfolio unrealized PnL"
+  ],
+  "project_replacement_engine_added": false,
+  "blocking_capability_ids": [
+    "NO_SAME_BAR_CAUSAL_FILL",
+    "NAUTILUS_OWNS_ALL_MATERIAL_FINANCIAL_BEHAVIOR"
+  ]
+}

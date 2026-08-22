@@ -1,0 +1,89 @@
+{
+  "schema": "v2-migration-gate-artifact-identity-v1",
+  "status": "PASS",
+  "captured_at_utc": "2026-08-21T21:40:45Z",
+  "candidate": {
+    "distribution": "nautilus_trader",
+    "required_version": "2.0.0rc2",
+    "imported_version": "2.0.0rc2",
+    "metadata_version": "2.0.0rc2",
+    "wheel_filename": "nautilus_trader-2.0.0rc2-cp312-cp312-manylinux_2_34_x86_64.whl",
+    "wheel_size_bytes": 66118782,
+    "required_wheel_sha256": "716169aca15bfb615a27610a9230e670dec5be3d4606fea591fe64eca145a5ac",
+    "observed_wheel_sha256": "716169aca15bfb615a27610a9230e670dec5be3d4606fea591fe64eca145a5ac",
+    "wheel_sha256_match": true,
+    "wheel_tag": "cp312-cp312-manylinux_2_34_x86_64",
+    "wheel_generator": "maturin (1.14.0)",
+    "root_is_purelib": false,
+    "wheel_member_sha256": {
+      "nautilus_trader-2.0.0rc2.dist-info/METADATA": "af649c16512f61c429335d872e541e222218ff50ab9c3a45b30ec03788be3332",
+      "nautilus_trader-2.0.0rc2.dist-info/WHEEL": "0ec4684b72792fd0c35d311b79d8c8538f0fe3951a13dc3dc701dc9dcff6eb8b",
+      "nautilus_trader-2.0.0rc2.dist-info/RECORD": "d169a290403a4fcf8088fcf768c2fdcae4b87a31429e548ce29a2efa35be459f"
+    }
+  },
+  "qualification_environment": {
+    "kind": "mktemp project-independent virtual environment",
+    "path_at_execution": "/tmp/nautilus-v2-gate.UKpWnpmd/venv",
+    "project_venv_used_or_modified": false,
+    "python_implementation": "CPython",
+    "python_version": "3.12.3",
+    "python_abi": "cp312",
+    "platform": "Linux-6.8.0-136-generic-x86_64-with-glibc2.39",
+    "architecture": "x86_64",
+    "pip_version": "24.0",
+    "global_install": false,
+    "offline_install_command": "/tmp/nautilus-v2-gate.UKpWnpmd/venv/bin/python -m pip install --no-index --no-deps /tmp/nautilus-v2-gate.UKpWnpmd/download/nautilus_trader-2.0.0rc2-cp312-cp312-manylinux_2_34_x86_64.whl"
+  },
+  "dependencies": {
+    "mandatory_requires_dist": [],
+    "installed_candidate_environment": [
+      "nautilus-trader==2.0.0rc2",
+      "pip==24.0"
+    ],
+    "pip_check_command": "/tmp/nautilus-v2-gate.UKpWnpmd/venv/bin/python -m pip check",
+    "pip_check_result": "No broken requirements found.",
+    "optional_visualization_extra_not_installed": [
+      "pandas>=2.3.3,<4.0.0",
+      "plotly>=6.9.0,<7.0.0",
+      "kaleido>=1.3.0,<2.0.0",
+      "simplejson==3.20.2"
+    ],
+    "complete_base_dependency_set_verified": true,
+    "unpinned_material_dependency_used": false
+  },
+  "acquisition": {
+    "wheel_source": "https://pypi.org/simple",
+    "wheel_request": "nautilus_trader==2.0.0rc2 with cp312/cp312/manylinux_2_34_x86_64 and binary-only constraints",
+    "latest_or_nightly_used": false,
+    "hash_verified_before_install": true,
+    "source_archive_url": "https://github.com/nautechsystems/nautilus_trader/archive/27a8e54e7ac3c57d6cbf8891f0283dfbaee97317.tar.gz",
+    "source_archive_filename": "nautilus_trader-27a8e54e7ac3c57d6cbf8891f0283dfbaee97317.tar.gz",
+    "source_archive_size_bytes": 30070564,
+    "source_archive_sha256": "3953eefd58bcfded576d6802d847fa8caf7a4bb7d5def362c8bbb887a162006e"
+  },
+  "provenance": {
+    "repository": "https://github.com/nautechsystems/nautilus_trader",
+    "expected_source_commit": "27a8e54e7ac3c57d6cbf8891f0283dfbaee97317",
+    "verified_source_commit": "27a8e54e7ac3c57d6cbf8891f0283dfbaee97317",
+    "verification_command": "gh attestation verify <exact-wheel> --repo nautechsystems/nautilus_trader --source-digest 27a8e54e7ac3c57d6cbf8891f0283dfbaee97317 --format json",
+    "verification_result": "PASS",
+    "predicate_type": "https://slsa.dev/provenance/v1",
+    "signer_repository": "https://github.com/nautechsystems/nautilus_trader",
+    "build_workflow": ".github/workflows/build-v2.yml@refs/heads/master",
+    "runner_environment": "github-hosted",
+    "subject_filename_and_sha256_match": true,
+    "relationship": "The official GitHub attestation binds the exact v2 wheel subject and SHA-256 to the expected source commit. The commit archive was inspected separately; it was not built or installed. Its legacy version.json label is not used as the wheel identity."
+  },
+  "runtime_path": {
+    "implementation": "official Rust/PyO3 wheel",
+    "public_api_only_in_probe": true,
+    "public_modules_used": [
+      "nautilus_trader.backtest",
+      "nautilus_trader.execution",
+      "nautilus_trader.model",
+      "nautilus_trader.portfolio",
+      "nautilus_trader.trading"
+    ],
+    "private_pyo3_api_used": false
+  }
+}

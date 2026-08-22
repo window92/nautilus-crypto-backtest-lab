@@ -1,0 +1,54 @@
+{
+  "affected_phase": "M1",
+  "affected_profile": "BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING",
+  "artifact_source_sha256": {
+    "backtest/engine.pyx": "eb404e3558cf00ab9a13e3a1c67b05aab1d1d02647ac67409faa8350d33a1fbb",
+    "backtest/modules.pyx": "1dd94fa0b76110c9a0a4521384a19e052829525db2dbdde843a24663e16ce4c9",
+    "data/engine.pyx": "c26e3189860c1573c65099cd6aff07ab546a60a3d44e72482ca181f4cb8878f2",
+    "portfolio/portfolio.pyx": "3c331213d571699bb4f4e08224cdb7dcea624e08a6da2214b5dc9f3c289bf628"
+  },
+  "failure_code": "UNSUPPORTED_RUNTIME",
+  "forbidden_workaround_used": false,
+  "independent_expected_cash_effect_usdt": "-2",
+  "input": {
+    "funding_rate": "0.01",
+    "funding_ts_event": 1704067350000000000,
+    "mark_price": "100",
+    "multiplier": "1",
+    "position_side": "LONG",
+    "quantity": "2"
+  },
+  "instrument_id": "BTCUSDT-PERP.BINANCE",
+  "native_settlement_observed": false,
+  "observed": {
+    "account_event_count_after_open": 2,
+    "account_event_count_at_funding": 2,
+    "actual_cash_effect_at_event_usdt": "0.000000",
+    "actual_cash_effect_final_usdt": "0.000000",
+    "balance_after_position_open_usdt": "999.963964",
+    "balance_at_funding_callback_usdt": "999.963964",
+    "fills": [
+      {
+        "commission": "0.03603600 USDT",
+        "last_px": "100.1",
+        "last_qty": "2.000",
+        "ts_event": 1704067320000000000
+      }
+    ],
+    "final_account_event_count": 2,
+    "final_balance_usdt": "999.963964",
+    "funding_cache_count": 1,
+    "funding_callback_count": 1,
+    "mark_cache_count": 5
+  },
+  "runtime_version": "1.231.0",
+  "source_proofs": {
+    "backtest_engine_handles_funding_rate_update": false,
+    "data_engine_caches_and_publishes_funding_rate": true,
+    "fx_rollover_is_asset_class_fx_only": true,
+    "native_funding_simulation_module_present": false,
+    "only_native_account_adjustment_module": "FXRolloverInterestModule",
+    "portfolio_contains_funding_settlement": false
+  },
+  "status": "BLOCKED"
+}

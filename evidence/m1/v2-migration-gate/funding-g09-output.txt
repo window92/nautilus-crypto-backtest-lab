@@ -1,0 +1,47 @@
+V2_MIGRATION_GATE native funding G09 execution output
+captured_at_utc=2026-08-21T21:40:45Z
+runtime=nautilus_trader==2.0.0rc2
+wheel_sha256=716169aca15bfb615a27610a9230e670dec5be3d4606fea591fe64eca145a5ac
+command=/tmp/nautilus-v2-gate.UKpWnpmd/venv/bin/python /tmp/nautilus-v2-gate.UKpWnpmd/v2_gate_probe.py /tmp/nautilus-v2-gate.UKpWnpmd/v2_gate_results.json
+probe_sha256=ce5b9b9cb54e2688ec470e076f6a8e52f26f670c693ad8d1c8488607bf446d08
+raw_result_sha256=2d81648bc852e6763f336af4b052dd4bbbf058807380a64ed1bb043988485654
+public_api_only=true
+
+CASE explicit_next_funding_long PASS
+  position_before_boundary=+2 multiplier=1 mark=100.00_USDT rate=+0.01
+  FundingRateUpdate.count=2 next_funding_ns=4000000000
+  PositionAdjusted.count=1 adjustment_type=FUNDING ts_event=4000000000
+  pnl_change=-2.00000000_USDT expected=-2_USDT
+  ending_account_total=998.00000000_USDT
+
+CASE explicit_next_funding_short PASS
+  position_before_boundary=-2 multiplier=1 mark=100.00_USDT rate=+0.01
+  FundingRateUpdate.count=2 next_funding_ns=4000000000
+  PositionAdjusted.count=1 adjustment_type=FUNDING ts_event=4000000000
+  pnl_change=+2.00000000_USDT expected=+2_USDT
+  ending_account_total=1002.00000000_USDT
+
+CASE interval_boundary_long PASS
+  position_before_boundary=+2 multiplier=1 mark=100.00_USDT rate=+0.01
+  FundingRateUpdate.count=2 interval_minutes=1 ts_event=60000000000
+  PositionAdjusted.count=1 adjustment_type=FUNDING ts_event=60000000000
+  pnl_change=-2.00000000_USDT expected=-2_USDT
+  ending_account_total=998.00000000_USDT
+
+CASE interval_boundary_short PASS
+  position_before_boundary=-2 multiplier=1 mark=100.00_USDT rate=+0.01
+  FundingRateUpdate.count=2 interval_minutes=1 ts_event=60000000000
+  PositionAdjusted.count=1 adjustment_type=FUNDING ts_event=60000000000
+  pnl_change=+2.00000000_USDT expected=+2_USDT
+  ending_account_total=1002.00000000_USDT
+
+CASE post_boundary_position PASS
+  funding_boundary=4000000000 position_opened_at=5000000000
+  PositionAdjusted.count=0 realized_pnl=0E-8_USDT
+  ending_account_total=1000.00000000_USDT
+
+NATIVE_EVENTS=FundingRateUpdate,PositionAdjusted(adjustment_type=FUNDING),AccountState
+SETTLEMENT_EXACTLY_ONCE=true
+PROJECT_SIDE_CASH_POSTING=false
+PROJECT_LEDGER=false
+G09=PASS

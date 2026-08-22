@@ -17,7 +17,17 @@ class LatencyContractQualificationTests(unittest.TestCase):
         self.assertTrue(evidence["venue_accepted"])
         self.assertEqual(
             evidence["actual_class_path"],
-            "nautilus_trader.backtest.models.latency:LatencyModel",
+            "nautilus_trader.execution:StaticLatencyModel",
+        )
+        self.assertEqual(evidence["config_class_path"], "NOT_APPLICABLE")
+        self.assertTrue(all(evidence["native_repr_proofs"].values()))
+        self.assertEqual(
+            evidence["fill_model_class_path"],
+            "nautilus_trader.execution:DefaultFillModel",
+        )
+        self.assertEqual(
+            evidence["fee_model_class_path"],
+            "nautilus_trader.execution:MakerTakerFeeModel",
         )
         self.assertEqual(evidence["base_latency_nanos"], 60_000_000_000)
         self.assertEqual(evidence["configured_insert_latency_nanos"], 0)
@@ -30,4 +40,3 @@ class LatencyContractQualificationTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

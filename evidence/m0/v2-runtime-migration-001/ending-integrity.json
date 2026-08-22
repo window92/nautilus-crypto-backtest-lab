@@ -1,0 +1,27 @@
+{
+  "captured_at_utc": "2026-08-22T01:17:43Z",
+  "compileall": "PASS",
+  "dependency_lock_sha256": "b2765c9e33b10566fc327b48920fd1d3a73618c19622baaceab1fe9dca61df47",
+  "g02": "PASS",
+  "g03_negative_control": "PASS_EXPECTED_CHECK_FAIL",
+  "g09": "PASS",
+  "historical_evidence_hash_check": "PASS_31_OF_31_EVIDENCE_FILES_UNCHANGED",
+  "m0_regression": {
+    "errors": 0,
+    "failures": 0,
+    "passed": 32,
+    "skipped": 0,
+    "tests_run": 32
+  },
+  "m1_product_code_started": false,
+  "m2_started": false,
+  "market_data_acquired": false,
+  "network_used": false,
+  "pre_migration_commit_head": "92568b4efc2fd080adbecaec700240602a6a9adf",
+  "project_venv_pip_check": "PASS",
+  "project_venv_unexpected_distributions": [],
+  "runtime_lock_sha256": "4032df9f355348c2a0cfa9f79f331f97c9a8d24ecc8490a573d2c7f788bafddd",
+  "ssot_sha256": "7bb2fc68d9b73b168a582d890a6f952fd0c4eb20fc0e31857903909f27dfaa8f",
+  "status": "PASS",
+  "wheel_or_venv_tracked": false
+}

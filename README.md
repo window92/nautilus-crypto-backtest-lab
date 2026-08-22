@@ -8,7 +8,8 @@ A strict, reproducible cryptocurrency backtesting laboratory built on NautilusTr
 
 ## Locked Runtime
 
-NautilusTrader v1.231.0.
+NautilusTrader v2.0.0rc2, using the locked official Rust/PyO3 wheel and public
+Python API.
 
 ## Build Sequence
 
@@ -29,13 +30,13 @@ filename and archive digest in `direct_url.json` for runtime preflight:
 
 ```bash
 python3.12 -m pip download --no-deps --only-binary=:all: \
-  --dest /tmp/nautilus-m0-wheel nautilus_trader==1.231.0
-sha256sum /tmp/nautilus-m0-wheel/nautilus_trader-1.231.0-cp312-cp312-manylinux_2_35_x86_64.whl
-# Required digest: 8c438e95c275a13df0c0ddb7012c462708b5e99ff3612e36a1b7bd49ab39c216
+  --dest /tmp/nautilus-m0-wheel nautilus_trader==2.0.0rc2
+sha256sum /tmp/nautilus-m0-wheel/nautilus_trader-2.0.0rc2-cp312-cp312-manylinux_2_34_x86_64.whl
+# Required digest: 716169aca15bfb615a27610a9230e670dec5be3d4606fea591fe64eca145a5ac
 python3.12 -m venv .venv
 .venv/bin/python -m pip install --no-deps \
-  /tmp/nautilus-m0-wheel/nautilus_trader-1.231.0-cp312-cp312-manylinux_2_35_x86_64.whl
-.venv/bin/python -m pip install --require-hashes -r requirements.lock.txt
+  /tmp/nautilus-m0-wheel/nautilus_trader-2.0.0rc2-cp312-cp312-manylinux_2_34_x86_64.whl
+.venv/bin/python -m pip check
 ```
 
 Run the M0 suite and regenerate real-runtime evidence with the locked UTC and

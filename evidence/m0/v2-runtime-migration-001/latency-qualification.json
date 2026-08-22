@@ -1,0 +1,23 @@
+{
+  "actual_causal_behavior_evidence": "evidence/m0/v2-runtime-migration-001/causal-qualification.json",
+  "actual_class_path": "nautilus_trader.execution:StaticLatencyModel",
+  "base_latency_nanos": 60000000000,
+  "config_class_path": "NOT_APPLICABLE",
+  "configured_cancel_latency_nanos": 0,
+  "configured_insert_latency_nanos": 0,
+  "configured_update_latency_nanos": 0,
+  "effective_cancel_latency_nanos": 60000000000,
+  "effective_insert_latency_nanos": 60000000000,
+  "effective_update_latency_nanos": 60000000000,
+  "fee_model_class_path": "nautilus_trader.execution:MakerTakerFeeModel",
+  "fill_model_class_path": "nautilus_trader.execution:DefaultFillModel",
+  "native_model_repr": "StaticLatencyModel { base_latency_nanos: UnixNanos(60000000000), insert_latency_nanos: UnixNanos(60000000000), update_latency_nanos: UnixNanos(60000000000), delete_latency_nanos: UnixNanos(60000000000) }",
+  "native_repr_proofs": {
+    "base_latency_nanos_60000000000": true,
+    "effective_cancel_latency_nanos_60000000000": true,
+    "effective_insert_latency_nanos_60000000000": true,
+    "effective_update_latency_nanos_60000000000": true
+  },
+  "status": "VERIFIED",
+  "venue_accepted": true
+}

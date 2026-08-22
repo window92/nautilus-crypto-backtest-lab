@@ -60,6 +60,8 @@ def _locked_versions(path: Path) -> dict[str, str]:
 
     versions: dict[str, str] = {}
     for line in logical_lines:
+        if line.startswith("--"):
+            continue
         requirement = line.split(maxsplit=1)[0]
         if "==" not in requirement:
             raise RuntimeLockMismatch(
@@ -110,6 +112,10 @@ def collect_runtime_identity(
     libc_name, libc_version = platform_module.libc_ver()
     lock_versions = _locked_versions(dependency_lock_path)
     installed_versions = _installed_versions()
+    # The CPython venv bootstrap owns pip installation. Its exact version is
+    # independently locked by runtime.lock.json and included in the complete
+    # installed-distribution comparison here.
+    lock_versions["pip"] = importlib.metadata.version("pip")
     evidence: dict[str, Any] = {
         "nautilus_version": importlib.metadata.version("nautilus_trader"),
         "installed_wheel_filename": wheel_filename,
@@ -168,10 +174,10 @@ def verify_runtime_lock(
         "python_implementation": "CPython",
         "python_abi": "cp312",
         "machine_architecture": "x86_64",
-        "dependency_lock_filename": dependency_lock_path.name,
         "timezone": "UTC",
         "locale": "C.UTF-8",
         "nautilus_provenance_status": "VERIFIED_SLSA_SOURCE_COMMIT",
+        "runtime_implementation": "official Rust/PyO3 public Python API",
     }
     for field, expected in required_lock_values.items():
         actual = getattr(lock, field)
@@ -206,9 +212,9 @@ def verify_runtime_lock(
             } else mismatches
             target.append(f"current {field}={actual!r}, lock={expected!r}")
 
-    if current["libc_name"] != "glibc" or not _glibc_at_least(current["glibc_version"], (2, 35)):
+    if current["libc_name"] != "glibc" or not _glibc_at_least(current["glibc_version"], (2, 34)):
         mismatches.append(
-            f"host libc={current['libc_name']} {current['glibc_version']}, requires glibc >=2.35",
+            f"host libc={current['libc_name']} {current['glibc_version']}, requires glibc >=2.34",
         )
     if current["dependency_versions"] != current["installed_distributions"]:
         mismatches.append("installed distribution set differs from requirements.lock.txt")

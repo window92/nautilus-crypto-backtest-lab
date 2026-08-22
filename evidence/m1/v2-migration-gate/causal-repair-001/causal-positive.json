@@ -1,0 +1,129 @@
+{
+  "schema": "causal-fill-repair-001-case-v1",
+  "case": "G02_CAUSAL_POSITIVE",
+  "status": "PASS",
+  "checker_outcome": "CHECK_PASS",
+  "runtime": "nautilus_trader==2.0.0rc2",
+  "execution": {
+    "engine": "nautilus_trader.backtest.BacktestEngine",
+    "strategy": "nautilus_trader.trading.Strategy",
+    "exchange": "native SimulatedExchange owned by BacktestEngine",
+    "instrument_id": "BTCUSDT-PERP.BINANCE",
+    "bar_type": "BTCUSDT-PERP.BINANCE-1-MINUTE-LAST-EXTERNAL",
+    "book_type": "L1_MBP",
+    "bar_execution": true,
+    "bar_adaptive_high_low_ordering": false,
+    "trade_execution": false,
+    "liquidity_consumption": true,
+    "fill_model": "nautilus_trader.execution.DefaultFillModel",
+    "prob_fill_on_limit": 1.0,
+    "prob_slippage": 1.0,
+    "random_seed": 0,
+    "custom_fill_model": false,
+    "latency_model": "nautilus_trader.execution.StaticLatencyModel",
+    "base_latency_nanos": 60000000000,
+    "insert_latency_nanos": 0,
+    "update_latency_nanos": 0,
+    "cancel_latency_nanos": 0,
+    "effective_insert_latency_nanos": 60000000000,
+    "market_order_time_in_force": "GTC"
+  },
+  "bars": [
+    {
+      "interval_start_ns": 0,
+      "interval_end_exclusive_ns": 60000000000,
+      "ts_event": 60000000000,
+      "ts_init": 60000000000,
+      "open": "100.00",
+      "high": "101.00",
+      "low": "99.00",
+      "close": "100.00",
+      "volume": "1000"
+    },
+    {
+      "interval_start_ns": 60000000000,
+      "interval_end_exclusive_ns": 120000000000,
+      "ts_event": 120000000000,
+      "ts_init": 120000000000,
+      "open": "200.00",
+      "high": "201.00",
+      "low": "199.00",
+      "close": "200.00",
+      "volume": "1000"
+    },
+    {
+      "interval_start_ns": 120000000000,
+      "interval_end_exclusive_ns": 180000000000,
+      "ts_event": 180000000000,
+      "ts_init": 180000000000,
+      "open": "300.00",
+      "high": "301.00",
+      "low": "299.00",
+      "close": "300.00",
+      "volume": "1000"
+    }
+  ],
+  "signal": {
+    "callback": "actual Strategy.on_bar",
+    "callback_index": 1,
+    "bar_timestamp_ns": 60000000000,
+    "signal_timestamp_ns": 60000000000,
+    "signal_bar_available_at_ns": 60000000000,
+    "orders_sent": 1
+  },
+  "event_sequence": [
+    {
+      "type": "OrderInitialized",
+      "ts_event": 60000000000,
+      "instrument_id": "BTCUSDT-PERP.BINANCE",
+      "side": "BUY",
+      "order_type": "MARKET",
+      "time_in_force": "GTC",
+      "quantity": "1"
+    },
+    {
+      "type": "OrderSubmitted",
+      "ts_event": 60000000000,
+      "account_id": "BINANCE-001"
+    },
+    {
+      "type": "OrderFilled",
+      "ts_event": 120000000000,
+      "account_id": "BINANCE-001",
+      "instrument_id": "BTCUSDT-PERP.BINANCE",
+      "side": "BUY",
+      "order_type": "MARKET",
+      "last_px": "200.01",
+      "last_qty": "1",
+      "liquidity_side": "TAKER",
+      "commission": "0.00000000 USDT"
+    }
+  ],
+  "timestamps": {
+    "bar_n_available_at_ns": 60000000000,
+    "order_initialized_ns": 60000000000,
+    "order_submitted_ns": 60000000000,
+    "order_accepted_ns": null,
+    "command_arrival_ns": 120000000000,
+    "order_filled_ns": 120000000000,
+    "order_rejected_ns": null
+  },
+  "native_result": {
+    "fill_count": 1,
+    "fill_price": "200.01",
+    "fill_quantity": "1",
+    "position_signed_qty": 1.0,
+    "position_quantity": "1",
+    "position_average_open_price": "200.01",
+    "rejection_reasons": []
+  },
+  "assertions": {
+    "actual_native_fill": true,
+    "fill_time_gt_signal_bar_available_at": true,
+    "fill_price_not_in_signal_bar_range_99_to_101": true,
+    "only_one_order_submitted": true,
+    "no_order_from_on_start": true,
+    "native_order_position_account_fill_paths": true
+  },
+  "raw_result_sha256": "1982881fea5fafbc0f2d57f225bde7ea0e2554ae444f56eed2de2c1deee7ac35"
+}

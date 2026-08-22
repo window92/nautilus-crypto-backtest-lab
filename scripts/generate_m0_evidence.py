@@ -54,7 +54,7 @@ def main() -> int:
         "config_sha256": config.config_sha256,
         "market_profile": config.market_profile.value,
         "price_protection_points": config.nautilus_venue_config.price_protection_points,
-        "configured_fee_model": None,
+        "configured_fee_model": config.nautilus_venue_config.fee_model,
         "effective_fee_model": config.nautilus_venue_config.effective_fee_model_path,
         "portfolio_use_mark_prices": config.nautilus_engine_config.portfolio.use_mark_prices,
         "no_market_data_loaded": True,

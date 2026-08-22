@@ -1,0 +1,51 @@
+{
+  "schema": "v2-migration-gate-summary-v1",
+  "gate": "V2_MIGRATION_GATE",
+  "captured_at_utc": "2026-08-21T21:40:45Z",
+  "verdict": "V2_MIGRATION_GATE_BLOCKED",
+  "candidate_runtime": "nautilus_trader==2.0.0rc2",
+  "candidate_wheel_sha256": "716169aca15bfb615a27610a9230e670dec5be3d4606fea591fe64eca145a5ac",
+  "candidate_source_commit": "27a8e54e7ac3c57d6cbf8891f0283dfbaee97317",
+  "qualification_results": {
+    "artifact_identity": "PASS",
+    "native_funding_g09": "PASS",
+    "static_latency_binding": "PASS",
+    "causal_later_market_state_fill": "BLOCKED",
+    "zero_latency_same_bar_negative_control": "BLOCKED",
+    "mark_valuation_binding": "PASS",
+    "deterministic_fill_and_fee": "PASS",
+    "spot_cash_netting": "PASS",
+    "perpetual_margin_netting": "PASS",
+    "market_order_lifecycle_and_tif": "PASS",
+    "overall_material_capability": "BLOCKED"
+  },
+  "exact_blocker": {
+    "code": "CAUSAL_EXECUTION_UNRESOLVED",
+    "description": "The v2 matching path rejects MARKET orders as No market on the adopted external LAST one-minute bars, both at effective insert latency 60 seconds and in the zero-delay negative control. Consequently the required later-market-state Fill and negative same-bar violation cannot be proven without changing material data/Fill semantics.",
+    "runtime_event": "OrderRejected",
+    "runtime_reason": "No market for BTCUSDT-PERP.BINANCE"
+  },
+  "ssot_candidate": {
+    "created": false,
+    "reason": "The user authorized SSOT.v2.candidate.md and candidate lock artifacts only if the migration gate passed."
+  },
+  "scope": {
+    "current_ssot_modified": false,
+    "current_runtime_lock_modified": false,
+    "project_venv_modified": false,
+    "product_code_modified": false,
+    "m1_started": false,
+    "m2_started": false,
+    "project_funding_engine_added": false,
+    "project_ledger_added": false,
+    "private_pyo3_api_used": false,
+    "real_market_data_acquired": false,
+    "commit_created": false,
+    "push_performed": false
+  },
+  "temporary_execution_artifacts": {
+    "qualification_root_at_execution": "/tmp/nautilus-v2-gate.UKpWnpmd",
+    "probe_sha256": "ce5b9b9cb54e2688ec470e076f6a8e52f26f670c693ad8d1c8488607bf446d08",
+    "raw_result_sha256": "2d81648bc852e6763f336af4b052dd4bbbf058807380a64ed1bb043988485654"
+  }
+}

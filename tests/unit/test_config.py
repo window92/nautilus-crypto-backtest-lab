@@ -63,10 +63,13 @@ class LabRunConfigTests(unittest.TestCase):
         venue = config.nautilus_venue_config
 
         self.assertEqual(venue.price_protection_points, 0)
-        self.assertIsNone(venue.fee_model)
+        self.assertEqual(
+            venue.fee_model,
+            "nautilus_trader.execution:MakerTakerFeeModel",
+        )
         self.assertEqual(
             venue.effective_fee_model_path,
-            "nautilus_trader.backtest.models.fee:MakerTakerFeeModel",
+            "nautilus_trader.execution:MakerTakerFeeModel",
         )
         self.assertFalse(config.nautilus_engine_config.portfolio.use_mark_prices)
         self.assertEqual(venue.fill_model.prob_fill_on_limit, 1.0)
@@ -78,13 +81,11 @@ class LabRunConfigTests(unittest.TestCase):
         self.assertFalse(venue.queue_position)
         self.assertTrue(venue.use_message_queue)
         engine = config.nautilus_engine_config
-        self.assertEqual(engine.message_bus.types_filter, "DISABLED")
+        self.assertEqual(engine.msgbus.types_filter, "DISABLED")
         self.assertEqual(engine.portfolio.snapshot_interval_ms, "DISABLED")
-        self.assertEqual(engine.catalogs, ())
-        self.assertEqual(engine.strategies, ())
-        self.assertEqual(engine.timeout_connection, 60.0)
-        self.assertEqual(engine.timeout_shutdown, 5.0)
-        self.assertFalse(engine.logging_bypass)
+        self.assertEqual(engine.timeout_connection, 60)
+        self.assertEqual(engine.timeout_shutdown, 5)
+        self.assertFalse(engine.bypass_logging)
 
     def test_frozen_config_rejects_nested_material_mutation(self) -> None:
         config = LabRunConfig.from_json_bytes(encode_config(load_spot_config_dict()))

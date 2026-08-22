@@ -1,0 +1,16 @@
+{
+  "command_pip_check": ".venv/bin/python -m pip check",
+  "command_pip_list": ".venv/bin/python -m pip list --format=freeze",
+  "active_repository_path": "requirements.lock.txt",
+  "dependency_lock_sha256": "b2765c9e33b10566fc327b48920fd1d3a73618c19622baaceab1fe9dca61df47",
+  "identity_binding": "exact bytes and SHA-256; the candidate artifact filename is provenance metadata, not the active repository path",
+  "installed_distributions": {
+    "nautilus-trader": "2.0.0rc2",
+    "pip": "24.0"
+  },
+  "pip_check": "PASS_NO_BROKEN_REQUIREMENTS",
+  "runtime_lock_dependency_set_match": true,
+  "runtime_lock_declared_artifact_filename": "requirements.v2-candidate.lock.txt",
+  "status": "PASS",
+  "unexpected_distributions": []
+}

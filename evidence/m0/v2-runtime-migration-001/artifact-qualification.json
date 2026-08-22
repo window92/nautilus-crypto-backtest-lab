@@ -1,0 +1,18 @@
+{
+  "artifact": {
+    "filename": "nautilus_trader-2.0.0rc2-cp312-cp312-manylinux_2_34_x86_64.whl",
+    "installed_from_verified_local_file": true,
+    "sha256": "716169aca15bfb615a27610a9230e670dec5be3d4606fea591fe64eca145a5ac",
+    "size_bytes": 66118782
+  },
+  "candidate_artifact_reused_without_network": true,
+  "commands": [
+    "sha256sum /tmp/nautilus-v2-gate.UKpWnpmd/download/nautilus_trader-2.0.0rc2-cp312-cp312-manylinux_2_34_x86_64.whl",
+    ".venv/bin/python -m pip install --no-index --no-deps /tmp/nautilus-v2-gate.UKpWnpmd/download/nautilus_trader-2.0.0rc2-cp312-cp312-manylinux_2_34_x86_64.whl"
+  ],
+  "package_version": "2.0.0rc2",
+  "provenance_evidence": "evidence/m1/v2-migration-gate/artifact-identity.json",
+  "public_runtime_path": "official Rust/PyO3 public Python API",
+  "source_commit": "27a8e54e7ac3c57d6cbf8891f0283dfbaee97317",
+  "status": "PASS"
+}

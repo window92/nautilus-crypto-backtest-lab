@@ -1,0 +1,181 @@
+diff --git a/SSOT.md b/evidence/m1/v2-migration-gate/candidate/SSOT.v2-candidate.md
+index cc33776..369fce5 100644
+--- a/SSOT.md
++++ b/evidence/m1/v2-migration-gate/candidate/SSOT.v2-candidate.md
+@@ -4,6 +4,8 @@ Status: `OWNER_REVIEW_CANDIDATE`
+ 
+ Adoption: `PENDING_OWNER_ADOPTION`
+ 
++Candidate runtime: official Rust/PyO3 `nautilus_trader==2.0.0rc2`, pending Owner adoption and all required qualifications before any Official Run.
++
+ This document defines one strict, offline crypto backtesting laboratory built on NautilusTrader. It is the complete engineering specification for V1.
+ 
+ This document does not authorize implementation. Implementation starts only after the Owner adopts the exact document bytes and gives a separate implementation instruction.
+@@ -24,7 +26,7 @@ The laboratory MUST NOT rebuild functionality that the pinned NautilusTrader run
+ 
+ Use NautilusTrader first.
+ 
+-If NautilusTrader v1.231.0 already owns a behavior in the official backtest path, use that behavior. Do not create a second matching engine, order state machine, position engine, account ledger, PnL engine, margin engine, fee engine, funding engine, portfolio engine, or report engine.
++If NautilusTrader v2.0.0rc2 already owns a behavior in the official backtest path, use that behavior. Do not create a second matching engine, order state machine, position engine, account ledger, PnL engine, margin engine, fee engine, funding engine, portfolio engine, or report engine.
+ 
+ Add project code only when NautilusTrader does not provide the control that the laboratory needs for data integrity, causality, reproducibility, research governance, validation, or evidence.
+ 
+@@ -81,15 +83,17 @@ The V1 runtime is pinned to:
+ | Field             | Required value                                                     |
+ |-------------------|--------------------------------------------------------------------|
+ | Package           | `nautilus_trader`                                                  |
+-| Version           | `1.231.0`                                                          |
++| Version           | `2.0.0rc2`                                                         |
+ | Source repository | `nautechsystems/nautilus_trader`                                   |
+ | Source commit     | `27a8e54e7ac3c57d6cbf8891f0283dfbaee97317`                         |
+-| Linux wheel       | `nautilus_trader-1.231.0-cp312-cp312-manylinux_2_35_x86_64.whl`    |
+-| Wheel SHA-256     | `8c438e95c275a13df0c0ddb7012c462708b5e99ff3612e36a1b7bd49ab39c216` |
++| Linux wheel       | `nautilus_trader-2.0.0rc2-cp312-cp312-manylinux_2_34_x86_64.whl`   |
++| Wheel SHA-256     | `716169aca15bfb615a27610a9230e670dec5be3d4606fea591fe64eca145a5ac` |
+ | Python ABI        | CPython `3.12`                                                     |
+-| Host class        | Linux x86-64, glibc 2.35 or newer                                  |
++| Host class        | Linux x86-64, glibc 2.34 or newer                                  |
++
++The implementation MUST use the pinned official Rust/PyO3 wheel and public Python API. Do not build Nautilus from source for V1. The published SLSA wheel provenance binds the exact artifact to the pinned source commit. Private or internal PyO3 bindings are forbidden project dependencies.
+ 
+-The implementation MUST use the pinned official wheel. Do not build Nautilus from source for V1. The published wheel provenance binds the artifact to the pinned source commit.
++This package is a Release Candidate. Its hash lock does not waive qualification: M0 runtime identity and every M1 runtime-behavior qualification MUST pass on this exact wheel before an Official Run is permitted.
+ 
+ The implementation MUST verify the wheel SHA-256 before installation.
+ 
+@@ -328,7 +332,7 @@ portfolio valuation configuration
+ random seeds used by any enabled model
+ ```
+ 
+-If v1.231.0 exposes a material setting under a different exact name, use the v1.231.0 name and record it. Do not use a newer-version name as a substitute.
++Use the exact public v2.0.0rc2 setting name and record it. Do not use a legacy Cython name or a private PyO3 binding as a substitute.
+ 
+ ### 3.3 Required V1 execution settings
+ 
+@@ -358,15 +362,15 @@ Spot: PortfolioConfig.use_mark_prices = false
+ Perpetual: PortfolioConfig.use_mark_prices = true
+ ```
+ 
+-Any material v1.231.0 venue or engine field not listed above MUST still be serialized with its effective value. If this SSOT does not constrain that field, use the v1.231.0 default and record it explicitly. Do not choose a non-default value without a material requirement in this SSOT.
++Any material v2.0.0rc2 venue or engine field not listed above MUST still be serialized with its effective value. If this SSOT does not constrain that field, use the v2.0.0rc2 default and record it explicitly. Do not choose a non-default value without a material requirement in this SSOT.
+ 
+-The V1 exchange-fee path is singular. `BacktestVenueConfig.fee_model` MUST be serialized as `None` so the pinned v1.231.0 venue resolves its standard `MakerTakerFeeModel`, and the Instrument `maker_fee` and `taker_fee` MUST be populated from the frozen `fee_assumption`. The resolved Run evidence MUST record that the effective fee model is `MakerTakerFeeModel`. `FixedFeeModel`, another custom fee model, or a project-side exchange-fee debit is forbidden in an Official Run.
++The V1 exchange-fee path is singular. The public v2 venue path `BacktestEngine.add_venue` MUST receive `nautilus_trader.execution.MakerTakerFeeModel`; the Instrument `maker_fee` and `taker_fee` MUST be populated from the frozen `fee_assumption`. The resolved Run evidence MUST record that exact effective fee-model identity. Another fee model or a project-side exchange-fee debit is forbidden in an Official Run.
+ 
+ `price_protection_points=0` means price protection is disabled. Do not encode this value as `null`.
+ 
+ The Fill Model MUST be deterministic. Any probabilistic behavior MUST use a frozen seed and MUST be declared in the Run Configuration.
+ 
+-Use the pinned runtime's standard Fill Model with these effective values: `prob_fill_on_limit=1.0`, `prob_slippage=1.0`, and `random_seed=0`. For L1 execution this applies the runtime's deterministic one-tick adverse slippage behavior to every Fill. Record the exact v1.231.0 class name in the resolved Run Configuration.
++Use `nautilus_trader.execution.DefaultFillModel` with these effective values: `prob_fill_on_limit=1.0`, `prob_slippage=1.0`, and `random_seed=0`. For L1 execution this applies the runtime's deterministic one-tick adverse slippage behavior to every Fill. Record that exact public class identity in the resolved Run Configuration.
+ 
+ The project MUST NOT implement a second Fill Model outside Nautilus.
+ 
+@@ -376,7 +380,7 @@ A strategy may create an order only after the signal input is available.
+ 
+ An order created from completed bar `N` MUST NOT fill against the market state of bar `N`.
+ 
+-The V1 run configuration MUST use the latency-model implementation exposed by the pinned v1.231.0 wheel and accepted by the v1.231.0 backtest venue path. M0 MUST resolve and record the exact import path and class name from that pinned artifact; it MUST NOT copy a class name from another Nautilus release.
++The V1 run configuration MUST use `nautilus_trader.execution.StaticLatencyModel` exposed by the pinned v2.0.0rc2 wheel and accepted by the public `BacktestEngine.add_venue` path. M0 MUST resolve and record that exact import path and class name from the pinned artifact; it MUST NOT copy a class name from another Nautilus release.
+ 
+ The normative latency semantics are:
+ 
+@@ -399,6 +403,8 @@ fill_price is not a price from signal bar N
+ 
+ The test MUST include a negative control that removes the causal delay. The negative control MUST fail the invariant.
+ 
++Every synthetic qualification Bar MUST encode price and size precision valid for its Instrument. For Appendix A.4 with a price-precision-2 Instrument, the numerically unchanged values are encoded as `100.00`, `101.00`, and so on. A precision-rejected Bar is not a valid causal test result. `CAUSAL_FILL_REPAIR_001` qualifies the public v2 path with external one-minute LAST Bars, volume `1000`, order quantity `1`, and the locked standard Fill Model: the causal Fill is `BUY 1 @ 200.01` at `120_000_000_000` ns; the zero-latency control is `BUY 1 @ 100.01` at `60_000_000_000` ns and fails the invariant as required.
++
+ The exact later market state used by Nautilus is part of the pinned engine behavior. The project MUST NOT rewrite the Fill to force a preferred next-open or next-close price.
+ 
+ If the pinned Nautilus configuration cannot satisfy the invariant, implementation MUST stop with `CAUSAL_EXECUTION_UNRESOLVED`.
+@@ -665,7 +671,7 @@ market_order_time_in_force
+ 
+ Every material parameter MUST be explicit. Missing material parameters are invalid. The strategy MUST NOT invent defaults that are absent from the frozen `StrategySpec`.
+ 
+-`market_order_time_in_force` MUST record the exact effective Time-In-Force used by the pinned v1.231.0 MARKET-order path. Do not assume `IOC` or another value from a newer version. M1 MUST verify the effective value and prove that partial-fill or remainder behavior cannot create a Fill outside the causal or terminal contract; otherwise the affected profile is `BLOCKED`.
++`market_order_time_in_force` MUST be `GTC`, the effective value observed on the qualified public v2.0.0rc2 MARKET-order path. M1 MUST still prove that partial-fill or remainder behavior cannot create a Fill outside the causal or terminal contract; otherwise the affected profile is `BLOCKED`.
+ 
+ ### 5.2 Allowed inputs
+ 
+@@ -792,7 +798,7 @@ A reversal MUST be two separate Nautilus submissions. First submit an exact clos
+ 
+ If a strategy emits an order whose own quantity would cross zero, preserve the intent, submit no order to Nautilus, and mark the Run `BLOCKED` with `CROSS_ZERO_ORDER_REJECTED`. If a strategy attempts any second order while another strategy order is non-terminal, preserve the second intent, submit it to neither venue nor engine, and mark the Run `BLOCKED` with `CONCURRENT_STRATEGY_ORDER_REJECTED`.
+ 
+-This restriction exists because the pinned v1.231.0 Python/Cython position path retains the old-side entry price on a direct cross-zero fill. The project MUST NOT repair that behavior with a second position or PnL engine.
++This restriction remains a locked project safety contract across the runtime migration. The project MUST NOT relax it based on an unqualified runtime behavior and MUST NOT implement a second position or PnL engine.
+ 
+ ### 6.5 Fees
+ 
+@@ -822,6 +828,8 @@ A strategy whose edge materially depends on historical spread, queue position, o
+ 
+ Perpetual funding is owned by Nautilus.
+ 
++The qualified public v2 binding is `nautilus_trader.model.FundingRateUpdate` through `nautilus_trader.backtest.BacktestEngine`. Native settlement is observable through `nautilus_trader.model.PositionAdjusted` with `adjustment_type=FUNDING` and the resulting `nautilus_trader.model.AccountState`; the engine-internal FundingSettlement need not be reimplemented or accessed through a private API. Both explicit `next_funding_ns` and an explicit verified interval were qualified. Real intervals remain governed by the verified exact-Instrument schedule in Sections 4.5 and 4.9.
++
+ The project supplies the frozen funding data required by the pinned Nautilus path and preserves the resulting settlement evidence.
+ 
+ The project MUST NOT post a second funding cashflow.
+@@ -838,6 +846,8 @@ Use Nautilus portfolio and account valuation as the Official financial state.
+ 
+ For Perpetual runs, `PortfolioConfig.use_mark_prices` MUST be `true`. The configured valuation path MUST use the required `markPriceKlines` role. The Dataset Release completeness check MUST ensure the required mark is present before the Run can proceed, and the checker MUST fail with `MARK_ROLE_INVALID` if Official Perpetual valuation uses last price, contract-price bars, index price, or another fallback instead of the required mark.
+ 
++The qualified public v2 binding is `nautilus_trader.portfolio.PortfolioConfig(use_mark_prices=true)` with `nautilus_trader.model.MarkPriceUpdate`. Because the pinned runtime can fall back when a mark is missing, Dataset Release completeness preflight and the read-only invariant checker remain mandatory and MUST reject that fallback.
++
+ For Spot runs, `PortfolioConfig.use_mark_prices` MUST be `false`; derivative mark-price data are `NOT_APPLICABLE`.
+ 
+ If the pinned runtime cannot bind the required mark role to the Official Perpetual valuation path, the Perpetual profile is `BLOCKED` with `MARK_ROLE_INVALID`.
+@@ -916,7 +926,7 @@ OFFICIAL
+ 
+ Unknown fields and duplicate fields are invalid.
+ 
+-A material field MUST NOT be null unless this SSOT explicitly permits `NOT_APPLICABLE` or explicitly requires the pinned v1.231.0 `fee_model=None` sentinel in Section 3.3.
++A material field MUST NOT be null unless this SSOT explicitly permits `NOT_APPLICABLE`.
+ 
+ ### 7.2 Run identity
+ 
+@@ -1697,12 +1707,12 @@ Build:
+ Verify:
+ 
+ - wheel SHA-256 matches the pinned value;
+-- runtime imports `nautilus_trader==1.231.0`;
++- runtime imports `nautilus_trader==2.0.0rc2` through the official Rust/PyO3 wheel and public API;
+ - Python is CPython 3.12;
+ - config round-trip preserves Decimal strings and timestamps;
+ - unknown or missing material config fields fail;
+ - `price_protection_points=0`, the single Maker/Taker fee path, and the profile-specific `PortfolioConfig.use_mark_prices` value are explicit in resolved configuration;
+-- the exact v1.231.0 latency-model import path/class is resolved from the pinned wheel, and its effective insert latency is exactly `60_000_000_000` ns;
++- `nautilus_trader.execution.StaticLatencyModel` is resolved from the pinned wheel, and its effective insert latency is exactly `60_000_000_000` ns;
+ - Runtime Lock mismatch blocks before data loading;
+ - the separate Source Revision evidence contract exists for later Run execution and contains `repository`, `branch_ref`, `git_commit`, `git_tree`, `clean_worktree`, and `captured_at_utc` without putting project Git identity in Runtime Lock.
+ 
+@@ -2143,7 +2153,7 @@ The fixture fails if the fee is charged twice or if project code changes the Fil
+ 
+ ### A.2 Perpetual close-and-reverse fixture
+ 
+-The pinned v1.231.0 Python/Cython path MUST NOT be tested with a direct cross-zero Fill as an accepted V1 reversal.
++The pinned v2.0.0rc2 Rust/PyO3 path MUST NOT be tested with a direct cross-zero Fill as an accepted V1 reversal; the locked two-order safety contract remains unchanged.
+ 
+ #### A.2a Exact close to flat
+ 
+@@ -2341,15 +2351,15 @@ Current official source anchors used to write this SSOT:
+ 
+ - Git's official data-model, `git commit-tree`, and `git rev-parse` documentation for commit and tree object identity.
+ - SLSA v1.2 source requirements and provenance specification for separating source revision/provenance from runtime and build inputs.
+-- NautilusTrader package `1.231.0`.
++- NautilusTrader package `2.0.0rc2` using its official Rust/PyO3 wheel and public Python API.
+ - Source commit `27a8e54e7ac3c57d6cbf8891f0283dfbaee97317`.
+-- PyPI CPython 3.12 Linux x86-64 wheel SHA-256 `8c438e95c275a13df0c0ddb7012c462708b5e99ff3612e36a1b7bd49ab39c216`.
++- PyPI wheel `nautilus_trader-2.0.0rc2-cp312-cp312-manylinux_2_34_x86_64.whl` SHA-256 `716169aca15bfb615a27610a9230e670dec5be3d4606fea591fe64eca145a5ac`.
+ - Binance Public Data archives for Spot and USDⓈ-M historical market data.
+-- NautilusTrader v1/v2 migration notes only where they explicitly document a v1.231.0 behavior difference, including direct cross-zero position entry-price behavior and the v1 `PortfolioConfig.use_mark_prices=false` default.
++- NautilusTrader v2 migration notes only where they explicitly document the public v2.0.0rc2 API; the pinned artifact and completed runtime qualifications remain the final behavior authority.
+ - Binance Public Data README for the Spot timestamp-unit change at `2025-01-01T00:00:00Z`.
+-- Nautilus backtest execution-flow documentation for in-flight latency and shutdown semantics; the pinned v1.231.0 artifact remains the final runtime authority.
++- Nautilus backtest execution-flow documentation for in-flight latency and shutdown semantics; the pinned v2.0.0rc2 artifact remains the final runtime authority.
+ 
+-Latest or nightly Nautilus documentation MAY help locate concepts. It MUST NOT override v1.231.0 source behavior or exact v1.231.0 APIs.
++Latest or nightly Nautilus documentation MAY help locate concepts. It MUST NOT override v2.0.0rc2 source behavior or exact v2.0.0rc2 public APIs.
+ 
+ ------------------------------------------------------------------------
+ 

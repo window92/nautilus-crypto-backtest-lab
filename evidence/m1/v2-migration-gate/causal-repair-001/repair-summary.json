@@ -1,0 +1,64 @@
+{
+  "schema": "causal-fill-repair-001-summary-v1",
+  "captured_at_utc": "2026-08-21T22:09:24Z",
+  "verdict": "V2_MIGRATION_GATE_PASS_AFTER_CAUSAL_REPAIR",
+  "prior_gate_verdict": "V2_MIGRATION_GATE_BLOCKED",
+  "prior_evidence_modified": false,
+  "prior_capability_matrix_status": "SUPERSEDED_FOR_CAUSAL_FILL_BY_THIS_ADDITIVE_REPAIR_EVIDENCE",
+  "root_cause": "The prior probe encoded Bar prices at precision 0 for a precision-2 Instrument. Nautilus rejected each Bar before synthetic matching state initialization; the later No market event was a downstream symptom.",
+  "root_cause_type": "PROBE_DEFECT",
+  "qualifications": {
+    "G02": {
+      "status": "PASS",
+      "checker": "CHECK_PASS",
+      "fill_time_ns": 120000000000,
+      "fill_price": "200.01"
+    },
+    "G03": {
+      "status": "PASS",
+      "checker": "CHECK_FAIL_EXPECTED",
+      "fill_time_ns": 60000000000,
+      "fill_price": "100.01"
+    },
+    "conditional_prob_slippage_zero_diagnostic": {
+      "executed": false,
+      "reason": "The locked Standard FillModel contract passed."
+    }
+  },
+  "test_counts": {
+    "acceptance_executed": 2,
+    "acceptance_passed": 2,
+    "acceptance_failed": 0,
+    "acceptance_blocked": 0,
+    "diagnostic_executed": 0
+  },
+  "runtime_contract": {
+    "version": "2.0.0rc2",
+    "public_api_only": true,
+    "native_default_fill_model": "nautilus_trader.execution.DefaultFillModel",
+    "fill_model_values": "1.0/1.0/0",
+    "latency_model": "nautilus_trader.execution.StaticLatencyModel",
+    "effective_insert_latency_nanos": 60000000000,
+    "custom_matching_engine": false,
+    "custom_fill": false,
+    "custom_ledger": false,
+    "synthetic_bid_ask_or_quote_data": false
+  },
+  "scope": {
+    "funding_rerun": false,
+    "artifact_identity_rerun": false,
+    "m1_product_code_started": false,
+    "m2_started": false,
+    "root_ssot_modified": false,
+    "root_runtime_lock_modified": false,
+    "project_venv_modified": false,
+    "product_code_modified": false,
+    "commit": false,
+    "push": false
+  },
+  "candidate_authorized": true,
+  "candidate_created": true,
+  "candidate_directory": "evidence/m1/v2-migration-gate/candidate",
+  "candidate_ssot_sha256": "7bb2fc68d9b73b168a582d890a6f952fd0c4eb20fc0e31857903909f27dfaa8f",
+  "candidate_adoption_state": "PENDING_OWNER_ADOPTION"
+}

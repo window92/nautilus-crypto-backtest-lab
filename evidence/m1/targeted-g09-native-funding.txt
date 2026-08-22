@@ -1,0 +1,20 @@
+command: TZ=UTC LC_ALL=C.UTF-8 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src .venv/bin/python -m unittest -v tests.qualification.test_m1_native_funding
+exit_code: 1
+
+test_g09_positive_funding_debits_long_exactly_once (tests.qualification.test_m1_native_funding.M1NativeFundingQualificationTests.test_g09_positive_funding_debits_long_exactly_once) ... /home/builder/projects/nautilus-crypto-backtest-lab/src/crypto_lab/m1_qualification.py:194: Pandas4Warning: Timestamp.utcnow is deprecated and will be removed in a future version. Use Timestamp.now('UTC') instead.
+  engine.run(
+FAIL
+
+======================================================================
+FAIL: test_g09_positive_funding_debits_long_exactly_once (tests.qualification.test_m1_native_funding.M1NativeFundingQualificationTests.test_g09_positive_funding_debits_long_exactly_once)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/builder/projects/nautilus-crypto-backtest-lab/tests/qualification/test_m1_native_funding.py", line 18, in test_g09_positive_funding_debits_long_exactly_once
+    self.assertEqual(
+AssertionError: Decimal('0.000000') != Decimal('-2') : pinned Nautilus did not debit the long at the funding boundary
+
+----------------------------------------------------------------------
+Ran 1 test in 0.015s
+
+FAILED (failures=1)
+

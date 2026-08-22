@@ -1,0 +1,30 @@
+{
+  "adopted_at_utc": "2026-08-22T00:58:12Z",
+  "authorization": "Owner explicitly adopted the exact v2 candidate SSOT and lock bytes and authorized Runtime Migration, M0 requalification, M1 implementation, normal commits, and normal pushes.",
+  "candidate_manifest": "evidence/m1/v2-migration-gate/candidate/candidate-manifest.json",
+  "candidate_runtime_lock": {
+    "path": "evidence/m1/v2-migration-gate/candidate/runtime.lock.v2-candidate.json",
+    "sha256": "4032df9f355348c2a0cfa9f79f331f97c9a8d24ecc8490a573d2c7f788bafddd"
+  },
+  "candidate_ssot": {
+    "path": "evidence/m1/v2-migration-gate/candidate/SSOT.v2-candidate.md",
+    "sha256": "7bb2fc68d9b73b168a582d890a6f952fd0c4eb20fc0e31857903909f27dfaa8f"
+  },
+  "candidate_dependency_lock": {
+    "path": "evidence/m1/v2-migration-gate/candidate/requirements.v2-candidate.lock.txt",
+    "sha256": "b2765c9e33b10566fc327b48920fd1d3a73618c19622baaceab1fe9dca61df47"
+  },
+  "effective_adoption": "OWNER_AUTHORIZATION_RECORDED_OUTSIDE_UNCHANGED_CANDIDATE_BYTES",
+  "implementation_scope": [
+    "RUNTIME_MIGRATION",
+    "M0_REQUALIFICATION",
+    "M1"
+  ],
+  "owner_adoption_status": "ADOPTED",
+  "root_replacements_byte_identical": true,
+  "unauthorized_phases": [
+    "M2",
+    "M3",
+    "M4"
+  ]
+}

@@ -6,24 +6,22 @@ import hashlib
 import json
 import math
 from collections.abc import Mapping, Sequence
+from dataclasses import fields, is_dataclass
 from datetime import datetime, timezone
 from decimal import Decimal
 from enum import Enum
 from pathlib import Path
 from typing import Any
 
-import msgspec
-
-
 class CanonicalJSONError(ValueError):
     """Raised when a value cannot enter an SSOT canonical JSON payload."""
 
 
 def _normalize(value: Any, path: str = "$") -> Any:
-    if isinstance(value, msgspec.Struct):
+    if is_dataclass(value) and not isinstance(value, type):
         return {
             field.name: _normalize(getattr(value, field.name), f"{path}.{field.name}")
-            for field in msgspec.structs.fields(type(value))
+            for field in fields(value)
         }
     if isinstance(value, Enum):
         return _normalize(value.value, path)

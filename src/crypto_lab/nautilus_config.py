@@ -1,25 +1,41 @@
-"""Mechanical bindings from frozen M0 models to NautilusTrader v1.231.0 configs."""
+"""Mechanical bindings from frozen project models to public NautilusTrader v2 APIs."""
 
 from __future__ import annotations
 
-from nautilus_trader.backtest.config import BacktestDataConfig
-from nautilus_trader.backtest.config import BacktestEngineConfig
-from nautilus_trader.backtest.config import BacktestVenueConfig
-from nautilus_trader.backtest.config import FillModelConfig as NativeFillModelConfig
-from nautilus_trader.backtest.config import ImportableFillModelConfig
-from nautilus_trader.backtest.config import ImportableLatencyModelConfig
-from nautilus_trader.backtest.config import LatencyModelConfig as NativeLatencyModelConfig
-from nautilus_trader.backtest.config import MarginModelConfig as NativeMarginModelConfig
-from nautilus_trader.cache.config import CacheConfig as NativeCacheConfig
-from nautilus_trader.common import Environment
-from nautilus_trader.common.config import ImportableActorConfig
-from nautilus_trader.common.config import LoggingConfig
-from nautilus_trader.common.config import MessageBusConfig as NativeMessageBusConfig
-from nautilus_trader.data.config import DataEngineConfig as NativeDataEngineConfig
-from nautilus_trader.execution.config import ExecEngineConfig as NativeExecEngineConfig
-from nautilus_trader.model.identifiers import InstrumentId
-from nautilus_trader.portfolio.config import PortfolioConfig as NativePortfolioConfig
-from nautilus_trader.risk.config import RiskEngineConfig as NativeRiskEngineConfig
+from decimal import Decimal
+
+from nautilus_trader.backtest import BacktestDataConfig
+from nautilus_trader.backtest import BacktestEngine
+from nautilus_trader.backtest import BacktestEngineConfig
+from nautilus_trader.backtest import BacktestVenueConfig
+from nautilus_trader.common import CacheConfig as NativeCacheConfig
+from nautilus_trader.common import ImportableActorConfig
+from nautilus_trader.common import LoggerConfig
+from nautilus_trader.common import MessageBusConfig as NativeMessageBusConfig
+from nautilus_trader.common import SerializationEncoding
+from nautilus_trader.core import dt_to_unix_nanos
+from nautilus_trader.data import DataEngineConfig as NativeDataEngineConfig
+from nautilus_trader.execution import DefaultFillModel
+from nautilus_trader.execution import ExecutionEngineConfig as NativeExecEngineConfig
+from nautilus_trader.execution import MakerTakerFeeModel
+from nautilus_trader.execution import StaticLatencyModel
+from nautilus_trader.model import AccountType
+from nautilus_trader.model import BarIntervalType
+from nautilus_trader.model import BarSpecification
+from nautilus_trader.model import BarType
+from nautilus_trader.model import ClientId
+from nautilus_trader.model import BookType
+from nautilus_trader.model import Currency
+from nautilus_trader.model import InstrumentId
+from nautilus_trader.model import LeveragedMarginModel
+from nautilus_trader.model import Money
+from nautilus_trader.model import OmsType
+from nautilus_trader.model import OtoTriggerMode
+from nautilus_trader.model import Price
+from nautilus_trader.model import TraderId
+from nautilus_trader.model import Venue
+from nautilus_trader.portfolio import PortfolioConfig as NativePortfolioConfig
+from nautilus_trader.risk import RiskEngineConfig as NativeRiskEngineConfig
 
 from crypto_lab.config import DISABLED
 from crypto_lab.config import NONE_MULTI_CURRENCY
@@ -31,9 +47,46 @@ from crypto_lab.hashing import to_canonical_builtins
 
 
 def _disabled_to_none(value: str):
-    if value != DISABLED:  # Models reject this earlier; keep the binding fail-closed.
+    if value != DISABLED:
         raise ValueError(f"expected explicit DISABLED sentinel, received {value!r}")
     return None
+
+
+def _serialization_encoding(value: str) -> SerializationEncoding:
+    mapping = {
+        "json": SerializationEncoding.JSON,
+        "msgpack": SerializationEncoding.MSG_PACK,
+    }
+    try:
+        return mapping[value]
+    except KeyError as exc:
+        raise ValueError(f"unsupported serialization encoding {value!r}") from exc
+
+
+def make_fill_model(config: NautilusVenueConfig) -> DefaultFillModel:
+    binding = config.fill_model
+    return DefaultFillModel(
+        prob_fill_on_limit=binding.prob_fill_on_limit,
+        prob_slippage=binding.prob_slippage,
+        random_seed=binding.random_seed,
+    )
+
+
+def make_latency_model(config: NautilusVenueConfig) -> StaticLatencyModel:
+    binding = config.latency_model
+    return StaticLatencyModel(
+        base_latency_nanos=binding.base_latency_nanos,
+        insert_latency_nanos=binding.insert_latency_nanos,
+        update_latency_nanos=binding.update_latency_nanos,
+        cancel_latency_nanos=binding.cancel_latency_nanos,
+    )
+
+
+def make_fee_model(config: NautilusVenueConfig) -> MakerTakerFeeModel:
+    # The strict model verifies both fee identity fields before this point.
+    if config.fee_model != config.effective_fee_model_path:
+        raise ValueError("configured and effective fee model identities differ")
+    return MakerTakerFeeModel()
 
 
 def to_nautilus_venue_config(config: NautilusVenueConfig) -> BacktestVenueConfig:
@@ -45,55 +98,87 @@ def to_nautilus_venue_config(config: NautilusVenueConfig) -> BacktestVenueConfig
         )
         for item in config.modules
     ]
-    fill_model = ImportableFillModelConfig(
-        fill_model_path=config.fill_model.fill_model_path,
-        config_path=config.fill_model.config_path,
-        config={
-            "prob_fill_on_limit": config.fill_model.prob_fill_on_limit,
-            "prob_slippage": config.fill_model.prob_slippage,
-            "random_seed": config.fill_model.random_seed,
-        },
-    )
-    latency_model = ImportableLatencyModelConfig(
-        latency_model_path=config.latency_model.latency_model_path,
-        config_path=config.latency_model.config_path,
-        config={
-            "base_latency_nanos": config.latency_model.base_latency_nanos,
-            "insert_latency_nanos": config.latency_model.insert_latency_nanos,
-            "update_latency_nanos": config.latency_model.update_latency_nanos,
-            "cancel_latency_nanos": config.latency_model.cancel_latency_nanos,
-        },
-    )
-    # Constructing these native configs exercises their strict v1.231.0 schemas now,
-    # rather than allowing M1 to discover a renamed field after M0 is frozen.
-    NativeFillModelConfig(**fill_model.config)
-    NativeLatencyModelConfig(**latency_model.config)
-
     return BacktestVenueConfig(
         name=config.name,
-        oms_type=config.oms_type,
-        account_type=config.account_type,
+        oms_type=getattr(OmsType, config.oms_type),
+        account_type=getattr(AccountType, config.account_type),
+        book_type=getattr(BookType, config.book_type),
         starting_balances=[f"{item.amount} {item.currency}" for item in config.starting_balances],
-        base_currency=None if config.base_currency == NONE_MULTI_CURRENCY else config.base_currency,
-        default_leverage=float(config.default_leverage),
-        leverages={item.instrument_id: float(item.leverage) for item in config.instrument_leverages},
-        margin_model=NativeMarginModelConfig(
-            model_type=config.margin_model.model_type,
-            config=dict(config.margin_model.config),
+        routing=config.routing,
+        frozen_account=config.frozen_account,
+        reject_stop_orders=config.reject_stop_orders,
+        support_gtd_orders=config.support_gtd_orders,
+        support_contingent_orders=config.support_contingent_orders,
+        use_position_ids=config.use_position_ids,
+        use_random_ids=config.use_random_ids,
+        use_reduce_only=config.use_reduce_only,
+        bar_execution=config.bar_execution,
+        bar_adaptive_high_low_ordering=config.bar_adaptive_high_low_ordering,
+        trade_execution=config.trade_execution,
+        use_market_order_acks=config.use_market_order_acks,
+        liquidity_consumption=config.liquidity_consumption,
+        allow_cash_borrowing=config.allow_cash_borrowing,
+        queue_position=config.queue_position,
+        oto_trigger_mode=getattr(OtoTriggerMode, config.oto_trigger_mode),
+        base_currency=(
+            None
+            if config.base_currency == NONE_MULTI_CURRENCY
+            else Currency.from_str(config.base_currency)
         ),
+        default_leverage=config.default_leverage,
+        leverages={
+            InstrumentId.from_str(item.instrument_id): item.leverage
+            for item in config.instrument_leverages
+        },
+        margin_model=LeveragedMarginModel(),
         modules=modules,
-        fill_model=fill_model,
-        latency_model=latency_model,
-        fee_model=None,
-        book_type=config.book_type,
+        fill_model=make_fill_model(config),
+        latency_model=make_latency_model(config),
+        fee_model=make_fee_model(config),
+        price_protection_points=config.price_protection_points,
+        settlement_prices={
+            InstrumentId.from_str(item.instrument_id): Price.from_str(str(item.price))
+            for item in config.settlement_prices
+        },
+        liquidation_enabled=config.liquidation_enabled,
+        liquidation_trigger_ratio=config.liquidation_trigger_ratio,
+        liquidation_cancel_open_orders=config.liquidation_cancel_open_orders,
+    )
+
+
+def add_venue_from_config(engine: BacktestEngine, config: NautilusVenueConfig) -> None:
+    engine.add_venue(
+        venue=Venue(config.name),
+        oms_type=getattr(OmsType, config.oms_type),
+        account_type=getattr(AccountType, config.account_type),
+        starting_balances=[
+            Money.from_str(f"{item.amount} {item.currency}")
+            for item in config.starting_balances
+        ],
+        base_currency=(
+            None
+            if config.base_currency == NONE_MULTI_CURRENCY
+            else Currency.from_str(config.base_currency)
+        ),
+        default_leverage=config.default_leverage,
+        leverages={
+            InstrumentId.from_str(item.instrument_id): item.leverage
+            for item in config.instrument_leverages
+        },
+        margin_model=LeveragedMarginModel(),
+        fill_model=make_fill_model(config),
+        fee_model=make_fee_model(config),
+        latency_model=make_latency_model(config),
+        modules=[],
+        book_type=getattr(BookType, config.book_type),
         routing=config.routing,
         reject_stop_orders=config.reject_stop_orders,
         support_gtd_orders=config.support_gtd_orders,
         support_contingent_orders=config.support_contingent_orders,
-        oto_trigger_mode=config.oto_trigger_mode,
         use_position_ids=config.use_position_ids,
         use_random_ids=config.use_random_ids,
         use_reduce_only=config.use_reduce_only,
+        use_message_queue=config.use_message_queue,
         use_market_order_acks=config.use_market_order_acks,
         bar_execution=config.bar_execution,
         bar_adaptive_high_low_ordering=config.bar_adaptive_high_low_ordering,
@@ -102,9 +187,10 @@ def to_nautilus_venue_config(config: NautilusVenueConfig) -> BacktestVenueConfig
         queue_position=config.queue_position,
         allow_cash_borrowing=config.allow_cash_borrowing,
         frozen_account=config.frozen_account,
+        oto_trigger_mode=getattr(OtoTriggerMode, config.oto_trigger_mode),
         price_protection_points=config.price_protection_points,
         settlement_prices={
-            InstrumentId.from_str(item.instrument_id): float(item.price)
+            InstrumentId.from_str(item.instrument_id): Price.from_str(str(item.price))
             for item in config.settlement_prices
         },
         liquidation_enabled=config.liquidation_enabled,
@@ -115,19 +201,16 @@ def to_nautilus_venue_config(config: NautilusVenueConfig) -> BacktestVenueConfig
 
 def to_nautilus_engine_config(config: NautilusEngineConfig) -> BacktestEngineConfig:
     cache = config.cache
-    message_bus = config.message_bus
+    msgbus = config.msgbus
     data_engine = config.data_engine
     risk_engine = config.risk_engine
     exec_engine = config.exec_engine
     portfolio = config.portfolio
-
     return BacktestEngineConfig(
-        environment=Environment.BACKTEST,
-        trader_id=config.trader_id,
+        trader_id=TraderId.from_str(config.trader_id),
         instance_id=None,
         cache=NativeCacheConfig(
-            database=_disabled_to_none(cache.database),
-            encoding=cache.encoding,
+            encoding=_serialization_encoding(cache.encoding),
             timestamps_as_iso8601=cache.timestamps_as_iso8601,
             persist_account_events=cache.persist_account_events,
             buffer_interval_ms=_disabled_to_none(cache.buffer_interval_ms),
@@ -138,24 +221,31 @@ def to_nautilus_engine_config(config: NautilusEngineConfig) -> BacktestEngineCon
             drop_instruments_on_reset=cache.drop_instruments_on_reset,
             tick_capacity=cache.tick_capacity,
             bar_capacity=cache.bar_capacity,
+            save_market_data=cache.save_market_data,
         ),
-        message_bus=NativeMessageBusConfig(
-            database=_disabled_to_none(message_bus.database),
-            encoding=message_bus.encoding,
-            timestamps_as_iso8601=message_bus.timestamps_as_iso8601,
-            buffer_interval_ms=_disabled_to_none(message_bus.buffer_interval_ms),
-            autotrim_mins=_disabled_to_none(message_bus.autotrim_mins),
-            use_trader_prefix=message_bus.use_trader_prefix,
-            use_trader_id=message_bus.use_trader_id,
-            use_instance_id=message_bus.use_instance_id,
-            streams_prefix=message_bus.streams_prefix,
-            stream_per_topic=message_bus.stream_per_topic,
-            external_streams=list(message_bus.external_streams),
-            types_filter=_disabled_to_none(message_bus.types_filter),
-            heartbeat_interval_secs=_disabled_to_none(message_bus.heartbeat_interval_secs),
+        msgbus=NativeMessageBusConfig(
+            encoding=_serialization_encoding(msgbus.encoding),
+            encoding_market_data=_disabled_to_none(msgbus.encoding_market_data),
+            encoding_builtin=_disabled_to_none(msgbus.encoding_builtin),
+            timestamps_as_iso8601=msgbus.timestamps_as_iso8601,
+            buffer_interval_ms=_disabled_to_none(msgbus.buffer_interval_ms),
+            autotrim_mins=_disabled_to_none(msgbus.autotrim_mins),
+            autotrim_maxlen=_disabled_to_none(msgbus.autotrim_maxlen),
+            use_trader_prefix=msgbus.use_trader_prefix,
+            use_trader_id=msgbus.use_trader_id,
+            use_instance_id=msgbus.use_instance_id,
+            streams_prefix=msgbus.streams_prefix,
+            stream_per_topic=msgbus.stream_per_topic,
+            external_streams=list(msgbus.external_streams),
+            types_filter=_disabled_to_none(msgbus.types_filter),
+            heartbeat_interval_secs=_disabled_to_none(msgbus.heartbeat_interval_secs),
         ),
         data_engine=NativeDataEngineConfig(
-            time_bars_interval_type=data_engine.time_bars_interval_type,
+            time_bars_interval_type=(
+                BarIntervalType.LEFT_OPEN
+                if data_engine.time_bars_interval_type == "left-open"
+                else BarIntervalType.RIGHT_OPEN
+            ),
             time_bars_timestamp_on_close=data_engine.time_bars_timestamp_on_close,
             time_bars_skip_first_non_full_bar=data_engine.time_bars_skip_first_non_full_bar,
             time_bars_build_with_no_updates=data_engine.time_bars_build_with_no_updates,
@@ -167,6 +257,7 @@ def to_nautilus_engine_config(config: NautilusEngineConfig) -> BacktestEngineCon
             emit_quotes_from_book_depths=data_engine.emit_quotes_from_book_depths,
             external_clients=list(data_engine.external_clients),
             debug=data_engine.debug,
+            disable_historical_cache=data_engine.disable_historical_cache,
         ),
         risk_engine=NativeRiskEngineConfig(
             bypass=risk_engine.bypass,
@@ -185,6 +276,7 @@ def to_nautilus_engine_config(config: NautilusEngineConfig) -> BacktestEngineCon
             ),
             external_clients=list(exec_engine.external_clients),
             allow_overfills=exec_engine.allow_overfills,
+            carry_replay_events_on_reopen=exec_engine.carry_replay_events_on_reopen,
             purge_closed_orders_interval_mins=_disabled_to_none(
                 exec_engine.purge_closed_orders_interval_mins,
             ),
@@ -211,30 +303,30 @@ def to_nautilus_engine_config(config: NautilusEngineConfig) -> BacktestEngineCon
             use_mark_xrates=portfolio.use_mark_xrates,
             bar_updates=portfolio.bar_updates,
             convert_to_account_base_currency=portfolio.convert_to_account_base_currency,
+            equity_curve=portfolio.equity_curve,
             min_account_state_logging_interval_ms=_disabled_to_none(
                 portfolio.min_account_state_logging_interval_ms,
             ),
             snapshot_interval_ms=_disabled_to_none(portfolio.snapshot_interval_ms),
             debug=portfolio.debug,
         ),
-        emulator=None,
-        streaming=None,
-        catalogs=list(config.catalogs),
-        actors=list(config.actors),
-        strategies=list(config.strategies),
-        exec_algorithms=list(config.exec_algorithms),
         controller=None,
         load_state=config.load_state,
         save_state=config.save_state,
-        loop_debug=config.loop_debug,
-        logging=LoggingConfig(bypass_logging=config.logging_bypass),
+        shutdown_on_error=config.shutdown_on_error,
+        bypass_logging=config.bypass_logging,
+        logging=LoggerConfig(
+            bypass_logging=config.bypass_logging,
+            print_config=False,
+            is_colored=False,
+        ),
+        run_analysis=config.run_analysis,
         timeout_connection=config.timeout_connection,
         timeout_reconciliation=config.timeout_reconciliation,
         timeout_portfolio=config.timeout_portfolio,
         timeout_disconnection=config.timeout_disconnection,
-        timeout_post_stop=config.timeout_post_stop,
+        delay_post_stop=config.delay_post_stop,
         timeout_shutdown=config.timeout_shutdown,
-        run_analysis=config.run_analysis,
     )
 
 
@@ -243,24 +335,30 @@ def to_nautilus_data_configs(
 ) -> list[BacktestDataConfig]:
     native: list[BacktestDataConfig] = []
     for config in configs:
-        start_time = to_canonical_builtins(config.start_time)
-        end_time = to_canonical_builtins(config.end_time)
         native.append(
             BacktestDataConfig(
+                data_type=config.data_type,
                 catalog_path=config.catalog_path,
-                data_cls=config.data_cls,
                 catalog_fs_protocol=config.catalog_fs_protocol,
                 catalog_fs_storage_options=dict(config.catalog_fs_storage_options),
                 catalog_fs_rust_storage_options=dict(config.catalog_fs_rust_storage_options),
-                instrument_id=config.instrument_id,
-                start_time=start_time,
-                end_time=end_time,
-                filter_expr=None if config.filter_expr == NOT_APPLICABLE else config.filter_expr,
-                client_id=None if config.client_id == NOT_APPLICABLE else config.client_id,
+                instrument_id=InstrumentId.from_str(config.instrument_id),
+                start_time=dt_to_unix_nanos(config.start_time),
+                end_time=dt_to_unix_nanos(config.end_time),
+                filter_expr=(
+                    None if config.filter_expr == NOT_APPLICABLE else config.filter_expr
+                ),
+                client_id=(
+                    None
+                    if config.client_id == NOT_APPLICABLE
+                    else ClientId.from_str(config.client_id)
+                ),
                 metadata=dict(config.metadata),
-                bar_spec=config.bar_spec,
-                instrument_ids=list(config.instrument_ids),
-                bar_types=list(config.bar_types),
+                bar_spec=BarSpecification.from_str(config.bar_spec),
+                instrument_ids=[
+                    InstrumentId.from_str(value) for value in config.instrument_ids
+                ],
+                bar_types=[BarType.from_str(value) for value in config.bar_types],
                 optimize_file_loading=config.optimize_file_loading,
             ),
         )

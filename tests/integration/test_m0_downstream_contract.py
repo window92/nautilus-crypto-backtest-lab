@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import unittest
 
-from nautilus_trader.backtest.config import BacktestDataConfig
-from nautilus_trader.backtest.config import BacktestEngineConfig
-from nautilus_trader.backtest.config import BacktestVenueConfig
+from nautilus_trader.backtest import BacktestDataConfig
+from nautilus_trader.backtest import BacktestEngineConfig
+from nautilus_trader.backtest import BacktestVenueConfig
+from nautilus_trader.execution import MakerTakerFeeModel
+from nautilus_trader.execution import StaticLatencyModel
 
 from crypto_lab.config import LabRunConfig
 from crypto_lab.config import SourceRevision
@@ -29,21 +31,22 @@ class M0DownstreamContractTests(unittest.TestCase):
         self.assertTrue(all(isinstance(item, BacktestDataConfig) for item in data))
         self.assertIsNone(engine.instance_id)
         self.assertEqual(venue.price_protection_points, 0)
-        self.assertIsNone(venue.fee_model)
+        self.assertIsInstance(venue.fee_model, MakerTakerFeeModel)
         self.assertFalse(engine.portfolio.use_mark_prices)
-        self.assertIsNone(engine.message_bus.types_filter)
+        self.assertIsNone(engine.msgbus.types_filter)
         self.assertIsNone(engine.portfolio.snapshot_interval_ms)
-        self.assertEqual(engine.catalogs, [])
-        self.assertEqual(engine.strategies, [])
-        self.assertEqual(engine.timeout_connection, 60.0)
-        self.assertEqual(engine.timeout_shutdown, 5.0)
+        self.assertFalse(config.nautilus_engine_config.shutdown_on_error)
+        self.assertEqual(config.nautilus_engine_config.delay_post_stop, 10)
+        self.assertEqual(engine.timeout_connection, 60)
+        self.assertEqual(engine.timeout_shutdown, 5)
         self.assertFalse(engine.logging.bypass_logging)
         self.assertTrue(engine.data_engine.time_bars_timestamp_on_close)
         self.assertTrue(engine.data_engine.time_bars_skip_first_non_full_bar)
         self.assertFalse(engine.data_engine.time_bars_build_with_no_updates)
+        self.assertIsInstance(venue.latency_model, StaticLatencyModel)
         self.assertEqual(
-            venue.latency_model.latency_model_path,
-            "nautilus_trader.backtest.models.latency:LatencyModel",
+            config.nautilus_venue_config.latency_model.latency_model_path,
+            "nautilus_trader.execution:StaticLatencyModel",
         )
 
     def test_m1_can_parse_separate_source_revision_without_defaults(self) -> None:

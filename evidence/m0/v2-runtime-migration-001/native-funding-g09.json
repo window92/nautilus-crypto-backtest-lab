@@ -1,0 +1,893 @@
+{
+  "command": "TZ=UTC LC_ALL=C.UTF-8 PYTHONPATH=src .venv/bin/python scripts/run_m1_funding_qualification.py --output evidence/m0/v2-runtime-migration-001/native-funding-g09.json",
+  "cases": [
+    {
+      "account_states_at_boundary": [
+        {
+          "account_id": "BINANCE-001",
+          "account_type": "MARGIN",
+          "balances": [
+            {
+              "currency": "USDT",
+              "free": "797.98000000",
+              "locked": "200.02000000",
+              "total": "998.00000000",
+              "type": "AccountBalance"
+            }
+          ],
+          "base_currency": "USDT",
+          "event_id": "3d23303e-c501-4c04-8072-596822576379",
+          "info": {},
+          "margins": [
+            {
+              "currency": "USDT",
+              "initial": "0.00000000",
+              "instrument_id": "BTCUSDT-PERP.BINANCE",
+              "maintenance": "200.02000000",
+              "type": "MarginBalance"
+            }
+          ],
+          "reported": true,
+          "ts_event": 4000000000,
+          "ts_init": 4000000000,
+          "type": "AccountState"
+        },
+        {
+          "account_id": "BINANCE-001",
+          "account_type": "MARGIN",
+          "balances": [
+            {
+              "currency": "USDT",
+              "free": "797.98000000",
+              "locked": "200.02000000",
+              "total": "998.00000000",
+              "type": "AccountBalance"
+            }
+          ],
+          "base_currency": "USDT",
+          "event_id": "4e66d8b9-ad0a-46b1-a051-cc35e15c8177",
+          "info": {},
+          "margins": [
+            {
+              "currency": "USDT",
+              "initial": "0.00000000",
+              "instrument_id": "BTCUSDT-PERP.BINANCE",
+              "maintenance": "200.02000000",
+              "type": "MarginBalance"
+            }
+          ],
+          "reported": false,
+          "ts_event": 4000000000,
+          "ts_init": 4000000000,
+          "type": "AccountState"
+        }
+      ],
+      "actual_cash_effect_usdt": "-2.00000000",
+      "boundary_mode": "next_funding_ns",
+      "boundary_ns": 4000000000,
+      "conditions": {
+        "account_cash_effect": true,
+        "account_state_boundary_evidence": true,
+        "boundary_timestamp": true,
+        "funding_rate_updates_ingested": true,
+        "mark_bound": true,
+        "native_funding_reason": true,
+        "native_value_and_direction": true,
+        "post_boundary_position_not_charged": true,
+        "settled_exactly_once": true
+      },
+      "ending_account_total_usdt": "998.00000000",
+      "expected_cash_effect_usdt": "-2",
+      "funding_updates": [
+        {
+          "interval": 480,
+          "next_funding_ns": 4000000000,
+          "rate": "0.01",
+          "ts_event": 3000000000,
+          "type": "FundingRateUpdate"
+        },
+        {
+          "interval": 480,
+          "next_funding_ns": 4000000000,
+          "rate": "0.01",
+          "ts_event": 3100000000,
+          "type": "FundingRateUpdate"
+        }
+      ],
+      "name": "long_next_funding_ns",
+      "order_events": [
+        {
+          "activation_price": null,
+          "causation_id": null,
+          "client_order_id": "O-19700101-000001-001-140721782703264-1",
+          "contingency_type": "NO_CONTINGENCY",
+          "display_qty": null,
+          "emulation_trigger": null,
+          "event_id": "52890ab0-dca8-4188-9dd6-8407f55918f8",
+          "exec_algorithm_id": null,
+          "exec_algorithm_params": null,
+          "exec_spawn_id": null,
+          "expire_time": null,
+          "instrument_id": "BTCUSDT-PERP.BINANCE",
+          "limit_offset": null,
+          "linked_order_ids": null,
+          "options": {},
+          "order_list_id": null,
+          "order_side": "BUY",
+          "order_type": "MARKET",
+          "parent_order_id": null,
+          "post_only": false,
+          "price": null,
+          "quantity": "2",
+          "quote_quantity": false,
+          "reconciliation": false,
+          "reduce_only": false,
+          "strategy_id": "DataActor-140721782703264",
+          "tags": null,
+          "time_in_force": "IOC",
+          "trader_id": "TRADER-001",
+          "trailing_offset": null,
+          "trailing_offset_type": null,
+          "trigger_instrument_id": null,
+          "trigger_price": null,
+          "trigger_type": "NO_TRIGGER",
+          "ts_event": 1000000000,
+          "ts_init": 1000000000,
+          "type": "OrderInitialized"
+        },
+        {
+          "account_id": "BINANCE-001",
+          "causation_id": null,
+          "client_order_id": "O-19700101-000001-001-140721782703264-1",
+          "event_id": "050c25eb-3bfa-4b75-b415-5f33449cd7b4",
+          "instrument_id": "BTCUSDT-PERP.BINANCE",
+          "strategy_id": "DataActor-140721782703264",
+          "trader_id": "TRADER-001",
+          "ts_event": 1000000000,
+          "ts_init": 1000000000,
+          "type": "OrderSubmitted"
+        },
+        {
+          "account_id": "BINANCE-001",
+          "causation_id": null,
+          "client_order_id": "O-19700101-000001-001-140721782703264-1",
+          "commission": "0.00000000 USDT",
+          "currency": "USDT",
+          "event_id": "1a42820c-686c-487d-a33e-023523ffcab5",
+          "info": null,
+          "instrument_id": "BTCUSDT-PERP.BINANCE",
+          "last_px": "100.01",
+          "last_qty": "2",
+          "liquidity_side": "TAKER",
+          "order_side": "BUY",
+          "order_type": "MARKET",
+          "position_id": "BTCUSDT-PERP.BINANCE-DataActor-140721782703264",
+          "reconciliation": false,
+          "strategy_id": "DataActor-140721782703264",
+          "trade_id": "T-da16b27c1d564be1-001",
+          "trader_id": "TRADER-001",
+          "ts_event": 1000000000,
+          "ts_init": 1000000000,
+          "type": "OrderFilled",
+          "venue_order_id": "BINANCE-1-1"
+        }
+      ],
+      "position_adjustments": [
+        {
+          "account_id": "BINANCE-001",
+          "adjustment_type": "FUNDING",
+          "event_id": "85a0271e-0fa1-43d9-a98e-af546b5f6241",
+          "instrument_id": "BTCUSDT-PERP.BINANCE",
+          "pnl_change": "-2.00000000 USDT",
+          "position_id": "BTCUSDT-PERP.BINANCE-DataActor-140721782703264",
+          "quantity_change": null,
+          "reason": "funding_settlement:03e6d052-671e-4b36-a3e9-27118c5944af",
+          "strategy_id": "DataActor-140721782703264",
+          "trader_id": "TRADER-001",
+          "ts_event": 4000000000,
+          "ts_init": 4000000000,
+          "type": "PositionAdjusted"
+        }
+      ],
+      "side": "BUY",
+      "status": "PASS"
+    },
+    {
+      "account_states_at_boundary": [
+        {
+          "account_id": "BINANCE-001",
+          "account_type": "MARGIN",
+          "balances": [
+            {
+              "currency": "USDT",
+              "free": "802.04000000",
+              "locked": "199.96000000",
+              "total": "1002.00000000",
+              "type": "AccountBalance"
+            }
+          ],
+          "base_currency": "USDT",
+          "event_id": "cb504735-1349-45c8-8f07-b436bf0a02a2",
+          "info": {},
+          "margins": [
+            {
+              "currency": "USDT",
+              "initial": "0.00000000",
+              "instrument_id": "BTCUSDT-PERP.BINANCE",
+              "maintenance": "199.96000000",
+              "type": "MarginBalance"
+            }
+          ],
+          "reported": true,
+          "ts_event": 4000000000,
+          "ts_init": 4000000000,
+          "type": "AccountState"
+        },
+        {
+          "account_id": "BINANCE-001",
+          "account_type": "MARGIN",
+          "balances": [
+            {
+              "currency": "USDT",
+              "free": "802.04000000",
+              "locked": "199.96000000",
+              "total": "1002.00000000",
+              "type": "AccountBalance"
+            }
+          ],
+          "base_currency": "USDT",
+          "event_id": "3bc6c0cf-22b1-4f19-b5ca-378292d1458c",
+          "info": {},
+          "margins": [
+            {
+              "currency": "USDT",
+              "initial": "0.00000000",
+              "instrument_id": "BTCUSDT-PERP.BINANCE",
+              "maintenance": "199.96000000",
+              "type": "MarginBalance"
+            }
+          ],
+          "reported": false,
+          "ts_event": 4000000000,
+          "ts_init": 4000000000,
+          "type": "AccountState"
+        }
+      ],
+      "actual_cash_effect_usdt": "2.00000000",
+      "boundary_mode": "next_funding_ns",
+      "boundary_ns": 4000000000,
+      "conditions": {
+        "account_cash_effect": true,
+        "account_state_boundary_evidence": true,
+        "boundary_timestamp": true,
+        "funding_rate_updates_ingested": true,
+        "mark_bound": true,
+        "native_funding_reason": true,
+        "native_value_and_direction": true,
+        "post_boundary_position_not_charged": true,
+        "settled_exactly_once": true
+      },
+      "ending_account_total_usdt": "1002.00000000",
+      "expected_cash_effect_usdt": "2",
+      "funding_updates": [
+        {
+          "interval": 480,
+          "next_funding_ns": 4000000000,
+          "rate": "0.01",
+          "ts_event": 3000000000,
+          "type": "FundingRateUpdate"
+        },
+        {
+          "interval": 480,
+          "next_funding_ns": 4000000000,
+          "rate": "0.01",
+          "ts_event": 3100000000,
+          "type": "FundingRateUpdate"
+        }
+      ],
+      "name": "short_next_funding_ns",
+      "order_events": [
+        {
+          "activation_price": null,
+          "causation_id": null,
+          "client_order_id": "O-19700101-000001-001-140721782703264-1",
+          "contingency_type": "NO_CONTINGENCY",
+          "display_qty": null,
+          "emulation_trigger": null,
+          "event_id": "6684fc38-6fcf-47d0-b4b8-c23d0b1dc56c",
+          "exec_algorithm_id": null,
+          "exec_algorithm_params": null,
+          "exec_spawn_id": null,
+          "expire_time": null,
+          "instrument_id": "BTCUSDT-PERP.BINANCE",
+          "limit_offset": null,
+          "linked_order_ids": null,
+          "options": {},
+          "order_list_id": null,
+          "order_side": "SELL",
+          "order_type": "MARKET",
+          "parent_order_id": null,
+          "post_only": false,
+          "price": null,
+          "quantity": "2",
+          "quote_quantity": false,
+          "reconciliation": false,
+          "reduce_only": false,
+          "strategy_id": "DataActor-140721782703264",
+          "tags": null,
+          "time_in_force": "IOC",
+          "trader_id": "TRADER-001",
+          "trailing_offset": null,
+          "trailing_offset_type": null,
+          "trigger_instrument_id": null,
+          "trigger_price": null,
+          "trigger_type": "NO_TRIGGER",
+          "ts_event": 1000000000,
+          "ts_init": 1000000000,
+          "type": "OrderInitialized"
+        },
+        {
+          "account_id": "BINANCE-001",
+          "causation_id": null,
+          "client_order_id": "O-19700101-000001-001-140721782703264-1",
+          "event_id": "f2f3e5aa-2640-428f-be28-9d5fef9a8e92",
+          "instrument_id": "BTCUSDT-PERP.BINANCE",
+          "strategy_id": "DataActor-140721782703264",
+          "trader_id": "TRADER-001",
+          "ts_event": 1000000000,
+          "ts_init": 1000000000,
+          "type": "OrderSubmitted"
+        },
+        {
+          "account_id": "BINANCE-001",
+          "causation_id": null,
+          "client_order_id": "O-19700101-000001-001-140721782703264-1",
+          "commission": "0.00000000 USDT",
+          "currency": "USDT",
+          "event_id": "73fde955-9ac4-4279-bfae-201c6e3bb266",
+          "info": null,
+          "instrument_id": "BTCUSDT-PERP.BINANCE",
+          "last_px": "99.98",
+          "last_qty": "2",
+          "liquidity_side": "TAKER",
+          "order_side": "SELL",
+          "order_type": "MARKET",
+          "position_id": "BTCUSDT-PERP.BINANCE-DataActor-140721782703264",
+          "reconciliation": false,
+          "strategy_id": "DataActor-140721782703264",
+          "trade_id": "T-da16b27c1d564be1-001",
+          "trader_id": "TRADER-001",
+          "ts_event": 1000000000,
+          "ts_init": 1000000000,
+          "type": "OrderFilled",
+          "venue_order_id": "BINANCE-1-1"
+        }
+      ],
+      "position_adjustments": [
+        {
+          "account_id": "BINANCE-001",
+          "adjustment_type": "FUNDING",
+          "event_id": "e1441a48-3c09-4851-bb85-0eee0ab5572d",
+          "instrument_id": "BTCUSDT-PERP.BINANCE",
+          "pnl_change": "2.00000000 USDT",
+          "position_id": "BTCUSDT-PERP.BINANCE-DataActor-140721782703264",
+          "quantity_change": null,
+          "reason": "funding_settlement:649ddb4c-35b0-491c-b642-7590e6fab62d",
+          "strategy_id": "DataActor-140721782703264",
+          "trader_id": "TRADER-001",
+          "ts_event": 4000000000,
+          "ts_init": 4000000000,
+          "type": "PositionAdjusted"
+        }
+      ],
+      "side": "SELL",
+      "status": "PASS"
+    },
+    {
+      "account_states_at_boundary": [
+        {
+          "account_id": "BINANCE-001",
+          "account_type": "MARGIN",
+          "balances": [
+            {
+              "currency": "USDT",
+              "free": "797.98000000",
+              "locked": "200.02000000",
+              "total": "998.00000000",
+              "type": "AccountBalance"
+            }
+          ],
+          "base_currency": "USDT",
+          "event_id": "97b8aa5c-8202-41a2-9ed5-7a94398b4bb6",
+          "info": {},
+          "margins": [
+            {
+              "currency": "USDT",
+              "initial": "0.00000000",
+              "instrument_id": "BTCUSDT-PERP.BINANCE",
+              "maintenance": "200.02000000",
+              "type": "MarginBalance"
+            }
+          ],
+          "reported": true,
+          "ts_event": 60000000000,
+          "ts_init": 60000000000,
+          "type": "AccountState"
+        },
+        {
+          "account_id": "BINANCE-001",
+          "account_type": "MARGIN",
+          "balances": [
+            {
+              "currency": "USDT",
+              "free": "797.98000000",
+              "locked": "200.02000000",
+              "total": "998.00000000",
+              "type": "AccountBalance"
+            }
+          ],
+          "base_currency": "USDT",
+          "event_id": "c285e093-9dd8-4a69-b6f6-78f5afbb4236",
+          "info": {},
+          "margins": [
+            {
+              "currency": "USDT",
+              "initial": "0.00000000",
+              "instrument_id": "BTCUSDT-PERP.BINANCE",
+              "maintenance": "200.02000000",
+              "type": "MarginBalance"
+            }
+          ],
+          "reported": false,
+          "ts_event": 60000000000,
+          "ts_init": 60000000000,
+          "type": "AccountState"
+        }
+      ],
+      "actual_cash_effect_usdt": "-2.00000000",
+      "boundary_mode": "interval",
+      "boundary_ns": 60000000000,
+      "conditions": {
+        "account_cash_effect": true,
+        "account_state_boundary_evidence": true,
+        "boundary_timestamp": true,
+        "funding_rate_updates_ingested": true,
+        "mark_bound": true,
+        "native_funding_reason": true,
+        "native_value_and_direction": true,
+        "post_boundary_position_not_charged": true,
+        "settled_exactly_once": true
+      },
+      "ending_account_total_usdt": "998.00000000",
+      "expected_cash_effect_usdt": "-2",
+      "funding_updates": [
+        {
+          "interval": 1,
+          "next_funding_ns": null,
+          "rate": "0.01",
+          "ts_event": 60000000000,
+          "type": "FundingRateUpdate"
+        },
+        {
+          "interval": 1,
+          "next_funding_ns": null,
+          "rate": "0.01",
+          "ts_event": 60000000000,
+          "type": "FundingRateUpdate"
+        }
+      ],
+      "name": "long_interval",
+      "order_events": [
+        {
+          "activation_price": null,
+          "causation_id": null,
+          "client_order_id": "O-19700101-000001-001-140721782703264-1",
+          "contingency_type": "NO_CONTINGENCY",
+          "display_qty": null,
+          "emulation_trigger": null,
+          "event_id": "c12c6393-8bb5-4e8e-bbcf-125b09214b15",
+          "exec_algorithm_id": null,
+          "exec_algorithm_params": null,
+          "exec_spawn_id": null,
+          "expire_time": null,
+          "instrument_id": "BTCUSDT-PERP.BINANCE",
+          "limit_offset": null,
+          "linked_order_ids": null,
+          "options": {},
+          "order_list_id": null,
+          "order_side": "BUY",
+          "order_type": "MARKET",
+          "parent_order_id": null,
+          "post_only": false,
+          "price": null,
+          "quantity": "2",
+          "quote_quantity": false,
+          "reconciliation": false,
+          "reduce_only": false,
+          "strategy_id": "DataActor-140721782703264",
+          "tags": null,
+          "time_in_force": "IOC",
+          "trader_id": "TRADER-001",
+          "trailing_offset": null,
+          "trailing_offset_type": null,
+          "trigger_instrument_id": null,
+          "trigger_price": null,
+          "trigger_type": "NO_TRIGGER",
+          "ts_event": 1000000000,
+          "ts_init": 1000000000,
+          "type": "OrderInitialized"
+        },
+        {
+          "account_id": "BINANCE-001",
+          "causation_id": null,
+          "client_order_id": "O-19700101-000001-001-140721782703264-1",
+          "event_id": "218b2af3-19bb-40e3-a464-3e559ab9958e",
+          "instrument_id": "BTCUSDT-PERP.BINANCE",
+          "strategy_id": "DataActor-140721782703264",
+          "trader_id": "TRADER-001",
+          "ts_event": 1000000000,
+          "ts_init": 1000000000,
+          "type": "OrderSubmitted"
+        },
+        {
+          "account_id": "BINANCE-001",
+          "causation_id": null,
+          "client_order_id": "O-19700101-000001-001-140721782703264-1",
+          "commission": "0.00000000 USDT",
+          "currency": "USDT",
+          "event_id": "4c09d9ef-e25a-45f2-87e5-7b1cbce95c2e",
+          "info": null,
+          "instrument_id": "BTCUSDT-PERP.BINANCE",
+          "last_px": "100.01",
+          "last_qty": "2",
+          "liquidity_side": "TAKER",
+          "order_side": "BUY",
+          "order_type": "MARKET",
+          "position_id": "BTCUSDT-PERP.BINANCE-DataActor-140721782703264",
+          "reconciliation": false,
+          "strategy_id": "DataActor-140721782703264",
+          "trade_id": "T-da16b27c1d564be1-001",
+          "trader_id": "TRADER-001",
+          "ts_event": 1000000000,
+          "ts_init": 1000000000,
+          "type": "OrderFilled",
+          "venue_order_id": "BINANCE-1-1"
+        }
+      ],
+      "position_adjustments": [
+        {
+          "account_id": "BINANCE-001",
+          "adjustment_type": "FUNDING",
+          "event_id": "90db8032-e89c-4bf2-81db-9669eedc24db",
+          "instrument_id": "BTCUSDT-PERP.BINANCE",
+          "pnl_change": "-2.00000000 USDT",
+          "position_id": "BTCUSDT-PERP.BINANCE-DataActor-140721782703264",
+          "quantity_change": null,
+          "reason": "funding_settlement:3c71429b-b44c-48dd-b010-d95da6fbc982",
+          "strategy_id": "DataActor-140721782703264",
+          "trader_id": "TRADER-001",
+          "ts_event": 60000000000,
+          "ts_init": 60000000000,
+          "type": "PositionAdjusted"
+        }
+      ],
+      "side": "BUY",
+      "status": "PASS"
+    },
+    {
+      "account_states_at_boundary": [
+        {
+          "account_id": "BINANCE-001",
+          "account_type": "MARGIN",
+          "balances": [
+            {
+              "currency": "USDT",
+              "free": "802.04000000",
+              "locked": "199.96000000",
+              "total": "1002.00000000",
+              "type": "AccountBalance"
+            }
+          ],
+          "base_currency": "USDT",
+          "event_id": "d8091b89-3d5e-4b28-b5c6-a872254f1e2b",
+          "info": {},
+          "margins": [
+            {
+              "currency": "USDT",
+              "initial": "0.00000000",
+              "instrument_id": "BTCUSDT-PERP.BINANCE",
+              "maintenance": "199.96000000",
+              "type": "MarginBalance"
+            }
+          ],
+          "reported": true,
+          "ts_event": 60000000000,
+          "ts_init": 60000000000,
+          "type": "AccountState"
+        },
+        {
+          "account_id": "BINANCE-001",
+          "account_type": "MARGIN",
+          "balances": [
+            {
+              "currency": "USDT",
+              "free": "802.04000000",
+              "locked": "199.96000000",
+              "total": "1002.00000000",
+              "type": "AccountBalance"
+            }
+          ],
+          "base_currency": "USDT",
+          "event_id": "bc6dbf84-ae84-492d-8aed-f07cbc08f510",
+          "info": {},
+          "margins": [
+            {
+              "currency": "USDT",
+              "initial": "0.00000000",
+              "instrument_id": "BTCUSDT-PERP.BINANCE",
+              "maintenance": "199.96000000",
+              "type": "MarginBalance"
+            }
+          ],
+          "reported": false,
+          "ts_event": 60000000000,
+          "ts_init": 60000000000,
+          "type": "AccountState"
+        }
+      ],
+      "actual_cash_effect_usdt": "2.00000000",
+      "boundary_mode": "interval",
+      "boundary_ns": 60000000000,
+      "conditions": {
+        "account_cash_effect": true,
+        "account_state_boundary_evidence": true,
+        "boundary_timestamp": true,
+        "funding_rate_updates_ingested": true,
+        "mark_bound": true,
+        "native_funding_reason": true,
+        "native_value_and_direction": true,
+        "post_boundary_position_not_charged": true,
+        "settled_exactly_once": true
+      },
+      "ending_account_total_usdt": "1002.00000000",
+      "expected_cash_effect_usdt": "2",
+      "funding_updates": [
+        {
+          "interval": 1,
+          "next_funding_ns": null,
+          "rate": "0.01",
+          "ts_event": 60000000000,
+          "type": "FundingRateUpdate"
+        },
+        {
+          "interval": 1,
+          "next_funding_ns": null,
+          "rate": "0.01",
+          "ts_event": 60000000000,
+          "type": "FundingRateUpdate"
+        }
+      ],
+      "name": "short_interval",
+      "order_events": [
+        {
+          "activation_price": null,
+          "causation_id": null,
+          "client_order_id": "O-19700101-000001-001-140721782703264-1",
+          "contingency_type": "NO_CONTINGENCY",
+          "display_qty": null,
+          "emulation_trigger": null,
+          "event_id": "0b30cced-0774-4d47-8c0d-1e39b21dd4c2",
+          "exec_algorithm_id": null,
+          "exec_algorithm_params": null,
+          "exec_spawn_id": null,
+          "expire_time": null,
+          "instrument_id": "BTCUSDT-PERP.BINANCE",
+          "limit_offset": null,
+          "linked_order_ids": null,
+          "options": {},
+          "order_list_id": null,
+          "order_side": "SELL",
+          "order_type": "MARKET",
+          "parent_order_id": null,
+          "post_only": false,
+          "price": null,
+          "quantity": "2",
+          "quote_quantity": false,
+          "reconciliation": false,
+          "reduce_only": false,
+          "strategy_id": "DataActor-140721782703264",
+          "tags": null,
+          "time_in_force": "IOC",
+          "trader_id": "TRADER-001",
+          "trailing_offset": null,
+          "trailing_offset_type": null,
+          "trigger_instrument_id": null,
+          "trigger_price": null,
+          "trigger_type": "NO_TRIGGER",
+          "ts_event": 1000000000,
+          "ts_init": 1000000000,
+          "type": "OrderInitialized"
+        },
+        {
+          "account_id": "BINANCE-001",
+          "causation_id": null,
+          "client_order_id": "O-19700101-000001-001-140721782703264-1",
+          "event_id": "b111bf5d-4df4-485a-a05a-b751c6a860af",
+          "instrument_id": "BTCUSDT-PERP.BINANCE",
+          "strategy_id": "DataActor-140721782703264",
+          "trader_id": "TRADER-001",
+          "ts_event": 1000000000,
+          "ts_init": 1000000000,
+          "type": "OrderSubmitted"
+        },
+        {
+          "account_id": "BINANCE-001",
+          "causation_id": null,
+          "client_order_id": "O-19700101-000001-001-140721782703264-1",
+          "commission": "0.00000000 USDT",
+          "currency": "USDT",
+          "event_id": "29e22ba8-e7a7-4e66-bdfd-ae50bee36183",
+          "info": null,
+          "instrument_id": "BTCUSDT-PERP.BINANCE",
+          "last_px": "99.98",
+          "last_qty": "2",
+          "liquidity_side": "TAKER",
+          "order_side": "SELL",
+          "order_type": "MARKET",
+          "position_id": "BTCUSDT-PERP.BINANCE-DataActor-140721782703264",
+          "reconciliation": false,
+          "strategy_id": "DataActor-140721782703264",
+          "trade_id": "T-da16b27c1d564be1-001",
+          "trader_id": "TRADER-001",
+          "ts_event": 1000000000,
+          "ts_init": 1000000000,
+          "type": "OrderFilled",
+          "venue_order_id": "BINANCE-1-1"
+        }
+      ],
+      "position_adjustments": [
+        {
+          "account_id": "BINANCE-001",
+          "adjustment_type": "FUNDING",
+          "event_id": "5c57f321-4f30-4c1d-9532-e1c05554a4f6",
+          "instrument_id": "BTCUSDT-PERP.BINANCE",
+          "pnl_change": "2.00000000 USDT",
+          "position_id": "BTCUSDT-PERP.BINANCE-DataActor-140721782703264",
+          "quantity_change": null,
+          "reason": "funding_settlement:78a47ad2-04f0-49fe-a6cf-0cd989d44ccc",
+          "strategy_id": "DataActor-140721782703264",
+          "trader_id": "TRADER-001",
+          "ts_event": 60000000000,
+          "ts_init": 60000000000,
+          "type": "PositionAdjusted"
+        }
+      ],
+      "side": "SELL",
+      "status": "PASS"
+    },
+    {
+      "account_states_at_boundary": [],
+      "actual_cash_effect_usdt": "0E-8",
+      "boundary_mode": "next_funding_ns",
+      "boundary_ns": 4000000000,
+      "conditions": {
+        "account_cash_effect": true,
+        "account_state_boundary_evidence": true,
+        "boundary_timestamp": true,
+        "funding_rate_updates_ingested": true,
+        "mark_bound": true,
+        "native_funding_reason": true,
+        "native_value_and_direction": true,
+        "post_boundary_position_not_charged": true,
+        "settled_exactly_once": true
+      },
+      "ending_account_total_usdt": "1000.00000000",
+      "expected_cash_effect_usdt": "0",
+      "funding_updates": [
+        {
+          "interval": 480,
+          "next_funding_ns": 4000000000,
+          "rate": "0.01",
+          "ts_event": 3000000000,
+          "type": "FundingRateUpdate"
+        },
+        {
+          "interval": 480,
+          "next_funding_ns": 4000000000,
+          "rate": "0.01",
+          "ts_event": 3100000000,
+          "type": "FundingRateUpdate"
+        }
+      ],
+      "name": "post_boundary_not_charged",
+      "order_events": [
+        {
+          "activation_price": null,
+          "causation_id": null,
+          "client_order_id": "O-19700101-000005-001-140721782703264-1",
+          "contingency_type": "NO_CONTINGENCY",
+          "display_qty": null,
+          "emulation_trigger": null,
+          "event_id": "2685766f-b478-4662-8c6a-3ebb7a338bef",
+          "exec_algorithm_id": null,
+          "exec_algorithm_params": null,
+          "exec_spawn_id": null,
+          "expire_time": null,
+          "instrument_id": "BTCUSDT-PERP.BINANCE",
+          "limit_offset": null,
+          "linked_order_ids": null,
+          "options": {},
+          "order_list_id": null,
+          "order_side": "BUY",
+          "order_type": "MARKET",
+          "parent_order_id": null,
+          "post_only": false,
+          "price": null,
+          "quantity": "2",
+          "quote_quantity": false,
+          "reconciliation": false,
+          "reduce_only": false,
+          "strategy_id": "DataActor-140721782703264",
+          "tags": null,
+          "time_in_force": "IOC",
+          "trader_id": "TRADER-001",
+          "trailing_offset": null,
+          "trailing_offset_type": null,
+          "trigger_instrument_id": null,
+          "trigger_price": null,
+          "trigger_type": "NO_TRIGGER",
+          "ts_event": 5000000000,
+          "ts_init": 5000000000,
+          "type": "OrderInitialized"
+        },
+        {
+          "account_id": "BINANCE-001",
+          "causation_id": null,
+          "client_order_id": "O-19700101-000005-001-140721782703264-1",
+          "event_id": "0741c231-0088-4996-8175-77c3e6629f0f",
+          "instrument_id": "BTCUSDT-PERP.BINANCE",
+          "strategy_id": "DataActor-140721782703264",
+          "trader_id": "TRADER-001",
+          "ts_event": 5000000000,
+          "ts_init": 5000000000,
+          "type": "OrderSubmitted"
+        },
+        {
+          "account_id": "BINANCE-001",
+          "causation_id": null,
+          "client_order_id": "O-19700101-000005-001-140721782703264-1",
+          "commission": "0.00000000 USDT",
+          "currency": "USDT",
+          "event_id": "3d3a6399-05bc-47f7-a1ad-89d829729978",
+          "info": null,
+          "instrument_id": "BTCUSDT-PERP.BINANCE",
+          "last_px": "100.01",
+          "last_qty": "2",
+          "liquidity_side": "TAKER",
+          "order_side": "BUY",
+          "order_type": "MARKET",
+          "position_id": "BTCUSDT-PERP.BINANCE-DataActor-140721782703264",
+          "reconciliation": false,
+          "strategy_id": "DataActor-140721782703264",
+          "trade_id": "T-50d7434f8c1723dc-001",
+          "trader_id": "TRADER-001",
+          "ts_event": 5000000000,
+          "ts_init": 5000000000,
+          "type": "OrderFilled",
+          "venue_order_id": "BINANCE-1-1"
+        }
+      ],
+      "position_adjustments": [],
+      "side": "BUY",
+      "status": "PASS"
+    }
+  ],
+  "project_cash_posting": false,
+  "public_bindings": {
+    "account_state": "nautilus_trader.model:AccountState",
+    "funding_update": "nautilus_trader.model:FundingRateUpdate",
+    "position_adjustment": "nautilus_trader.model:PositionAdjusted(FUNDING)"
+  },
+  "runtime_version": "2.0.0rc2",
+  "status": "PASS"
+}

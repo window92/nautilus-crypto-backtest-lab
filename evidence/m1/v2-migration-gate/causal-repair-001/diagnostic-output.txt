@@ -1,0 +1,46 @@
+CAUSAL_FILL_REPAIR_001 diagnostic output
+captured_at_utc=2026-08-21T22:09:24Z
+
+PREVIOUS NO-MARKET ROOT CAUSE
+instrument_id=BTCUSDT-PERP.BINANCE
+bar_instrument_id=BTCUSDT-PERP.BINANCE
+venue=BINANCE
+book_type=L1_MBP
+bar_execution=true
+trade_execution=false
+aggregation_source=EXTERNAL
+price_type=LAST
+instrument_price_precision=2
+previous_bar_price_precision=0
+previous_bar_expression=Price.from_str(str(integer_center))
+native_bar_result=returned_at_price_precision_check
+native_rejection_branch=MARKET BUY with core.ask=None
+native_rejection_source=crates/execution/src/matching_engine/engine.rs:3527-3535
+simulate_fills_reached=false
+
+CORRECTED LIQUIDITY AND PRECISION
+bar_price_precision=2
+bar_volume=1000
+bar_volume_precision=0
+instrument_size_increment=1
+order_quantity=1
+order_quantity_precision=0
+source_derived_OHLC_leg_quantities=250,250,250,250
+every_leg_greater_than_order=true
+fill_model=nautilus_trader.execution.DefaultFillModel(1.0,1.0,0)
+custom_fill_model=false
+
+PUBLIC CACHE OBSERVATION BEFORE SUBMISSION
+best_bid=None
+best_ask=None
+last_price=None
+order_book_present=false
+scope=shared public cache, not SimulatedExchange private matching book
+
+SOURCE-DERIVED MATCHING STATE, CORROBORATED BY NATIVE FILLS
+zero_latency_arrival: bid=100.00 ask=100.00 last=100.00 quantity=250 fill=100.01
+60s_latency_arrival: bid=200.00 ask=200.00 last=200.00 quantity=250 fill=200.01
+
+CONDITIONAL prob_slippage=0.0 DIAGNOSTIC
+executed=false
+reason=locked Standard FillModel 1.0/1.0/0 passed both G02 and G03

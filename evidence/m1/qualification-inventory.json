@@ -1,0 +1,94 @@
+{
+  "phase": "M1",
+  "status": "BLOCKED",
+  "stop_rule": "SSOT Sections 0.3, 6.7, and 12 M1",
+  "qualifications": [
+    {
+      "id": "M1-Q01-G01",
+      "name": "completed-bar visibility",
+      "result": "NOT_EXECUTED_AFTER_TERMINAL_RUNTIME_BLOCKER"
+    },
+    {
+      "id": "M1-Q02-G02",
+      "name": "later-than-signal Fill timing and later market state",
+      "result": "NOT_EXECUTED_AFTER_TERMINAL_RUNTIME_BLOCKER"
+    },
+    {
+      "id": "M1-Q03-G03",
+      "name": "negative same-bar control",
+      "result": "NOT_EXECUTED_AFTER_TERMINAL_RUNTIME_BLOCKER"
+    },
+    {
+      "id": "M1-Q04-G06",
+      "name": "deterministic replay",
+      "result": "NOT_EXECUTED_AFTER_TERMINAL_RUNTIME_BLOCKER"
+    },
+    {
+      "id": "M1-Q05-G05",
+      "name": "Nautilus Fill immutability",
+      "result": "NOT_EXECUTED_AFTER_TERMINAL_RUNTIME_BLOCKER"
+    },
+    {
+      "id": "M1-Q06-G14",
+      "name": "excluded order rejection",
+      "result": "NOT_EXECUTED_AFTER_TERMINAL_RUNTIME_BLOCKER"
+    },
+    {
+      "id": "M1-Q07-G07",
+      "name": "Spot CASH borrowing and short-inventory rejection",
+      "result": "NOT_EXECUTED_AFTER_TERMINAL_RUNTIME_BLOCKER"
+    },
+    {
+      "id": "M1-Q08-PERP-PROFILE",
+      "name": "Perpetual NETTING and Hedge-semantics rejection",
+      "result": "NOT_EXECUTED_AFTER_TERMINAL_RUNTIME_BLOCKER"
+    },
+    {
+      "id": "M1-Q09-G08",
+      "name": "close-to-flat, separate reopen, cross-zero and concurrent-order guards",
+      "result": "NOT_EXECUTED_AFTER_TERMINAL_RUNTIME_BLOCKER"
+    },
+    {
+      "id": "M1-Q10-G13",
+      "name": "warmup-to-scoring boundary",
+      "result": "NOT_EXECUTED_AFTER_TERMINAL_RUNTIME_BLOCKER"
+    },
+    {
+      "evidence": "evidence/m1/native-funding-capability.json",
+      "id": "M1-Q11-G09",
+      "name": "native funding sign, timing, and exactly-once settlement",
+      "result": "BLOCKED",
+      "failure_code": "UNSUPPORTED_RUNTIME"
+    },
+    {
+      "id": "M1-Q12-G11",
+      "name": "Perpetual mark valuation and forbidden-fallback rejection",
+      "result": "NOT_EXECUTED_AFTER_TERMINAL_RUNTIME_BLOCKER"
+    },
+    {
+      "id": "M1-Q13-G10",
+      "name": "exactly-once Maker/Taker fee",
+      "result": "NOT_EXECUTED_AFTER_TERMINAL_RUNTIME_BLOCKER"
+    },
+    {
+      "id": "M1-Q14-G21",
+      "name": "terminal scoring boundary and shutdown",
+      "result": "NOT_EXECUTED_AFTER_TERMINAL_RUNTIME_BLOCKER"
+    },
+    {
+      "id": "M1-Q15-MARKET-LIFECYCLE",
+      "name": "MARKET Time-In-Force, partial Fill, and remainder lifecycle",
+      "result": "NOT_EXECUTED_AFTER_TERMINAL_RUNTIME_BLOCKER"
+    },
+    {
+      "id": "M1-Q16-CHECKER",
+      "name": "Run evidence and invariant-checker contracts",
+      "result": "NOT_EXECUTED_AFTER_TERMINAL_RUNTIME_BLOCKER"
+    },
+    {
+      "id": "M1-Q17-DOWNSTREAM",
+      "name": "run_lab to RunResult downstream contract fixture",
+      "result": "NOT_EXECUTED_AFTER_TERMINAL_RUNTIME_BLOCKER"
+    }
+  ]
+}

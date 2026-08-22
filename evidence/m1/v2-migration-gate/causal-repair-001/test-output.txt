@@ -1,0 +1,31 @@
+CAUSAL_FILL_REPAIR_001 actual test output
+captured_at_utc=2026-08-21T22:09:24Z
+command=/tmp/nautilus-v2-gate.UKpWnpmd/venv/bin/python evidence/m1/v2-migration-gate/causal-repair-001/run_causal_probe.py --output /tmp/nautilus-v2-gate.UKpWnpmd/causal-repair-001-results.json
+runtime=nautilus_trader==2.0.0rc2
+probe_sha256=7063ca266e0f4c2fc6f1b46e488eac643a2e2361513aa9b326cd14448d9c380e
+raw_result_sha256=1982881fea5fafbc0f2d57f225bde7ea0e2554ae444f56eed2de2c1deee7ac35
+
+G02_CAUSAL_POSITIVE=PASS
+event_sequence=OrderInitialized@60000000000,OrderSubmitted@60000000000,OrderFilled@120000000000
+command_arrival_ns=120000000000
+fill_price=200.01
+fill_quantity=1
+position_after=+1@200.01
+fill_time_gt_signal_available_at=true
+fill_price_outside_signal_bar_99_to_101=true
+checker=CHECK_PASS
+
+G03_ZERO_LATENCY_NEGATIVE_CONTROL=PASS
+event_sequence=OrderInitialized@60000000000,OrderSubmitted@60000000000,OrderFilled@60000000000
+command_arrival_ns=60000000000
+fill_price=100.01
+fill_quantity=1
+position_after=+1@100.01
+fill_time_equals_signal_available_at=true
+fill_price_inside_signal_bar_99_to_101=true
+checker=CHECK_FAIL_EXPECTED
+
+acceptance_cases_executed=2
+acceptance_cases_passed=2
+diagnostic_cases_executed=0
+result=V2_MIGRATION_GATE_PASS_AFTER_CAUSAL_REPAIR

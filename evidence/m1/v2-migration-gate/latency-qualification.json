@@ -1,0 +1,87 @@
+{
+  "schema": "v2-latency-causality-qualification-v1",
+  "status": "BLOCKED",
+  "executed": true,
+  "runtime": "nautilus_trader==2.0.0rc2",
+  "execution_command": "/tmp/nautilus-v2-gate.UKpWnpmd/venv/bin/python /tmp/nautilus-v2-gate.UKpWnpmd/v2_gate_probe.py /tmp/nautilus-v2-gate.UKpWnpmd/v2_gate_results.json",
+  "public_api": {
+    "module": "nautilus_trader.execution",
+    "class": "StaticLatencyModel"
+  },
+  "latency_model": {
+    "status": "PASS",
+    "constructor_arguments": {
+      "base_latency_nanos": 60000000000,
+      "insert_latency_nanos": 0,
+      "update_latency_nanos": 0,
+      "cancel_latency_nanos": 0
+    },
+    "repr": "StaticLatencyModel { base_latency_nanos: UnixNanos(60000000000), insert_latency_nanos: UnixNanos(60000000000), update_latency_nanos: UnixNanos(60000000000), delete_latency_nanos: UnixNanos(60000000000) }",
+    "effective_insert_latency_nanos": 60000000000,
+    "observed_submit_to_terminal_delay_nanos": 60000000000,
+    "interpretation": "The v2 repr exposes each effective action latency after adding base latency; the standard four-argument constructor accepted the SSOT components and the observed command delay was exactly 60 seconds."
+  },
+  "synthetic_bars": {
+    "bar_type": "BTCUSDT-PERP.BINANCE-1-MINUTE-LAST-EXTERNAL",
+    "warmup": {
+      "ts_event": 60000000000,
+      "low": "49",
+      "high": "51"
+    },
+    "signal_bar_n": {
+      "ts_event": 120000000000,
+      "low": "99",
+      "high": "101"
+    },
+    "later_bar": {
+      "ts_event": 180000000000,
+      "low": "199",
+      "high": "201"
+    }
+  },
+  "standard_case": {
+    "status": "BLOCKED",
+    "base_latency_nanos": 60000000000,
+    "submitted_ts": 120000000000,
+    "terminal_ts": 180000000000,
+    "event_sequence": [
+      "OrderInitialized",
+      "OrderSubmitted",
+      "OrderRejected"
+    ],
+    "terminal_reason": "No market for BTCUSDT-PERP.BINANCE",
+    "fill_count": 0,
+    "same_bar_fill_observed": false,
+    "later_market_state_fill_proven": false
+  },
+  "zero_latency_negative_control": {
+    "status": "BLOCKED",
+    "base_latency_nanos": 0,
+    "submitted_ts": 120000000000,
+    "terminal_ts": 120000000000,
+    "event_sequence": [
+      "OrderInitialized",
+      "OrderSubmitted",
+      "OrderRejected"
+    ],
+    "terminal_reason": "No market for BTCUSDT-PERP.BINANCE",
+    "fill_count": 0,
+    "required_same_bar_violation_proven": false
+  },
+  "source_relationship": {
+    "commit": "27a8e54e7ac3c57d6cbf8891f0283dfbaee97317",
+    "bar_processing": "crates/execution/src/matching_engine/engine.rs:1570 processes LAST/MID bars as synthetic trade ticks",
+    "market_order_check": "crates/execution/src/matching_engine/engine.rs:3519 requires ask for BUY or bid for SELL and otherwise emits No market",
+    "official_runtime_probe_required_and_executed": true,
+    "source_inspection_only": false
+  },
+  "blocking_reason": "The adopted SSOT requires external one-minute LAST bars. With that exact data meaning, a delayed MARKET IOC reaches the v2 exchange without a bid/ask market and is rejected. The zero-delay control is rejected for the same reason. Therefore neither the required later-state Fill nor the required failing same-bar negative control can be proven.",
+  "forbidden_workarounds_not_used": [
+    "inventing BID/ASK bars",
+    "deriving quote ticks from LAST bars",
+    "project-side matching or Fill",
+    "changing the required latency",
+    "changing Fill expectations"
+  ],
+  "failure_code": "CAUSAL_EXECUTION_UNRESOLVED"
+}

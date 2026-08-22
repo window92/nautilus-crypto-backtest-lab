@@ -1,0 +1,16 @@
+{
+  "branch": "main",
+  "captured_at_utc": "2026-08-22T00:58:12Z",
+  "head": "92568b4efc2fd080adbecaec700240602a6a9adf",
+  "head_tree": "52390c1d57541e4af9110a3279db99590c15dc4e",
+  "origin_main": "92568b4efc2fd080adbecaec700240602a6a9adf",
+  "previous_dependency_lock_sha256": "c18ccd41f4623fff0960b5f6270d35b8468cc309ce59dddf3007bc0130e5d7bd",
+  "previous_runtime_lock_sha256": "b4f8d9904fdba4984f60874e846053bf8f3ab5d597ee935e418f5b15972f67ea",
+  "previous_ssot_sha256": "a2171d55ca1f01ad69d586e216c55b1227801851c21761c4cc299b7c99c30e6f",
+  "repository": "https://github.com/window92/nautilus-crypto-backtest-lab.git",
+  "repository_path": "/home/builder/projects/nautilus-crypto-backtest-lab",
+  "staged_files": [],
+  "tracked_diff": false,
+  "untracked_file_count": 34,
+  "user": "builder"
+}

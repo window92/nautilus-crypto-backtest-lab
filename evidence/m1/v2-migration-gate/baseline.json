@@ -1,0 +1,57 @@
+{
+  "schema": "v2-migration-gate-baseline-v1",
+  "captured_at_utc": "2026-08-21T21:40:45Z",
+  "user": "builder",
+  "repository": "/home/builder/projects/nautilus-crypto-backtest-lab",
+  "repository_remote": "https://github.com/window92/nautilus-crypto-backtest-lab.git",
+  "branch": "main",
+  "head": "92568b4efc2fd080adbecaec700240602a6a9adf",
+  "head_tree": "52390c1d57541e4af9110a3279db99590c15dc4e",
+  "origin_main": "92568b4efc2fd080adbecaec700240602a6a9adf",
+  "adopted_ssot_sha256": "a2171d55ca1f01ad69d586e216c55b1227801851c21761c4cc299b7c99c30e6f",
+  "agents_md_sha256": "c4c1fc1be47236b2df5380575d8fcbdc10ceebfcadc4543d48c9d3f2236cfda6",
+  "agents_md_read_completely": true,
+  "ssot_md_read_completely": true,
+  "runtime_lock_v1_sha256": "b4f8d9904fdba4984f60874e846053bf8f3ab5d597ee935e418f5b15972f67ea",
+  "tracked_worktree_clean": true,
+  "preexisting_untracked_inventory": [
+    {
+      "path": "evidence/m1/README.md",
+      "sha256": "b44e4be088bc977a6a8b436b444f00de526850be243a3b31bfd20a78e548fdfe"
+    },
+    {
+      "path": "evidence/m1/failed-attempts.jsonl",
+      "sha256": "d34485d14334f2c154aa915d27e844152ac0aff89c84c8970cdfc03c35877697"
+    },
+    {
+      "path": "evidence/m1/m1-blocker.json",
+      "sha256": "774ba7db7254cdee0ba89195fc4c8adacbb7979749b346d9299a96a3b4b1affd"
+    },
+    {
+      "path": "evidence/m1/native-funding-capability.json",
+      "sha256": "ba84c731dbab662e48562a9d653004fbb814bde8797b94d81d4e54d6a054961f"
+    },
+    {
+      "path": "evidence/m1/qualification-inventory.json",
+      "sha256": "3494d8505d40c7e73291f5d91a901d2354db520d76cbfdcea9c2831a27fef114"
+    },
+    {
+      "path": "evidence/m1/targeted-g09-native-funding.txt",
+      "sha256": "a1210ee1f2d3014cbb57fec085ec32df01fd13efbc513ca6f35b7d5572714b85"
+    },
+    {
+      "path": "scripts/run_m1_funding_qualification.py",
+      "sha256": "74384805a1a5d4282a7c0e67b1d625f0ec61ebf7ba43b7fba6ce44fc4dc41e64"
+    },
+    {
+      "path": "src/crypto_lab/m1_qualification.py",
+      "sha256": "d6545455071c9e2d9b82ddfcaa717d273b5e0956df459c41a1c210cf38c5bf53"
+    },
+    {
+      "path": "tests/qualification/test_m1_native_funding.py",
+      "sha256": "d4107d96f97e0e48e1fc4b2236ea5994d4a2833ab5e2d4383ec1f43c6516f010"
+    }
+  ],
+  "protection_result": "PASS",
+  "unexpected_starting_change": false
+}

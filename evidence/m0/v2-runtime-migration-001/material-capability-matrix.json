@@ -1,0 +1,20 @@
+{
+  "capabilities": [
+    {"capability":"StaticLatencyModel effective insert latency 60000000000 ns","evidence":"latency-qualification.json and causal-qualification.json","status":"PASS"},
+    {"capability":"No same-bar Fill and zero-latency negative control","evidence":"causal-qualification.json","status":"PASS"},
+    {"capability":"DefaultFillModel 1.0/1.0/0","evidence":"latency-qualification.json and causal-qualification.json","status":"PASS"},
+    {"capability":"MakerTakerFeeModel exactly once","evidence":"mark-fee-spot-qualification.json","status":"PASS"},
+    {"capability":"CASH plus NETTING Spot and no borrowing/short inventory","evidence":"mark-fee-spot-qualification.json","status":"PASS"},
+    {"capability":"MARGIN plus NETTING Perpetual with leverage 1","evidence":"native-funding-g09.json","status":"PASS"},
+    {"capability":"Spot mark valuation disabled","evidence":"downstream-contract.json and mark-fee-spot-qualification.json","status":"PASS"},
+    {"capability":"Perpetual mark valuation enabled and bound to MarkPriceUpdate","evidence":"mark-fee-spot-qualification.json","status":"PASS"},
+    {"capability":"FundingRateUpdate native settlement","evidence":"native-funding-g09.json","status":"PASS"},
+    {"capability":"Required bar execution controls","evidence":"causal-qualification.json","status":"PASS"},
+    {"capability":"MARKET order lifecycle and effective GTC observable","evidence":"causal-qualification.json and mark-fee-spot-qualification.json","status":"PASS"},
+    {"capability":"No replacement financial engine required","evidence":"migration source diff and native qualifications","status":"PASS"}
+  ],
+  "prior_gate_matrix": "evidence/m1/v2-migration-gate/capability-matrix.json",
+  "prior_gate_superseded_for_causality_by": "evidence/m1/v2-migration-gate/causal-repair-001/repair-summary.json",
+  "project_venv_runtime_identity": "runtime-qualification.json",
+  "status": "PASS"
+}

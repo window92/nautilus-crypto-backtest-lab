@@ -9,8 +9,7 @@ description = "Strict, reproducible crypto backtesting laboratory built on Nauti
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
 dependencies = [
-  "msgspec==0.21.1",
-  "nautilus_trader==1.231.0",
+  "nautilus_trader==2.0.0rc2",
 ]
 
 [tool.setuptools.packages.find]

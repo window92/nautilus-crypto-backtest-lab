@@ -1,0 +1,32 @@
+{
+  "dependency_lock_sha256": "b2765c9e33b10566fc327b48920fd1d3a73618c19622baaceab1fe9dca61df47",
+  "dependency_versions": {
+    "nautilus-trader": "2.0.0rc2",
+    "pip": "24.0"
+  },
+  "effective_locale": "LC_CTYPE=C.UTF-8;LC_NUMERIC=C;LC_TIME=C;LC_COLLATE=C;LC_MONETARY=C;LC_MESSAGES=C;LC_PAPER=C;LC_NAME=C;LC_ADDRESS=C;LC_TELEPHONE=C;LC_MEASUREMENT=C;LC_IDENTIFICATION=C",
+  "effective_timezone": [
+    "UTC",
+    "UTC"
+  ],
+  "glibc_version": "2.39",
+  "installed_wheel_filename": "nautilus_trader-2.0.0rc2-cp312-cp312-manylinux_2_34_x86_64.whl",
+  "installed_wheel_sha256": "716169aca15bfb615a27610a9230e670dec5be3d4606fea591fe64eca145a5ac",
+  "libc_name": "glibc",
+  "locale": "C.UTF-8",
+  "machine_architecture": "x86_64",
+  "nautilus_source_commit": "27a8e54e7ac3c57d6cbf8891f0283dfbaee97317",
+  "nautilus_source_repository": "nautechsystems/nautilus_trader",
+  "nautilus_version": "2.0.0rc2",
+  "pip_version": "24.0",
+  "platform": "Linux-6.8.0-136-generic-x86_64-with-glibc2.39",
+  "python_abi": "cp312",
+  "python_implementation": "CPython",
+  "python_version": "3.12.3",
+  "qualification_scope": "M0_RUNTIME_ONLY_NO_DATA_LOADING",
+  "source_artifact_relationship": "VERIFIED_SLSA_SOURCE_COMMIT",
+  "status": "VERIFIED",
+  "timezone": "UTC",
+  "wheel_file_present_during_qualification": true,
+  "wheel_file_size_bytes": 66118782
+}

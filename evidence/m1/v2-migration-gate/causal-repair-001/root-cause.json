@@ -1,0 +1,105 @@
+{
+  "schema": "causal-fill-repair-001-root-cause-v1",
+  "captured_at_utc": "2026-08-21T22:09:24Z",
+  "status": "ROOT_CAUSE_PROVEN",
+  "classification": "QUALIFICATION_PROBE_DEFECT",
+  "runtime": "nautilus_trader==2.0.0rc2",
+  "source_commit": "27a8e54e7ac3c57d6cbf8891f0283dfbaee97317",
+  "previous_probe": {
+    "sha256": "ce5b9b9cb54e2688ec470e076f6a8e52f26f670c693ad8d1c8488607bf446d08",
+    "instrument_price_precision": 2,
+    "bar_constructor_expression": "Price.from_str(str(center)) and Price.from_str(str(center +/- 1))",
+    "resulting_bar_price_precision": 0,
+    "bar_volume": "100",
+    "bar_volume_precision": 0,
+    "order_quantity": "2",
+    "order_quantity_precision": 0,
+    "terminal_event": "OrderRejected",
+    "terminal_reason": "No market for BTCUSDT-PERP.BINANCE"
+  },
+  "actual_native_path": [
+    {
+      "location": "crates/backtest/src/engine.rs:860-864",
+      "behavior": "The BacktestEngine routes each data item to the SimulatedExchange before delivering it through the data engine and then drains deferred commands."
+    },
+    {
+      "location": "crates/backtest/src/engine.rs:1278-1299",
+      "behavior": "Venue routing uses data.instrument_id().venue and dispatches Data::Bar to SimulatedExchange.process_bar."
+    },
+    {
+      "location": "crates/execution/src/matching_engine/engine.rs:1570-1615",
+      "behavior": "OrderMatchingEngine.process_bar accepts only valid price and size precision; the previous Bar returned at the first price-precision mismatch."
+    },
+    {
+      "location": "crates/execution/src/matching_engine/engine.rs:1658-1675",
+      "behavior": "A valid external LAST Bar is processed as synthetic trade ticks and receives BarTickSizes derived from volume and size increment."
+    },
+    {
+      "location": "crates/execution/src/matching_engine/engine.rs:6633-6692",
+      "behavior": "Volume 1000 with size increment 1 yields four synthetic OHLC leg quantities of 250, each greater than order quantity 1."
+    },
+    {
+      "location": "crates/execution/src/matching_engine/engine.rs:3512-3535",
+      "behavior": "For a MARKET BUY, the exact No market branch tests core.ask.is_none and emits the rejection before any Fill simulation."
+    }
+  ],
+  "rejection_branch": {
+    "side": "BUY",
+    "condition": "self.core.ask.is_none()",
+    "emission_location": "crates/execution/src/matching_engine/engine.rs:3527-3535",
+    "simulate_fills_reached": false,
+    "empty_simulated_fill_list_was_cause": false
+  },
+  "cause_elimination": {
+    "required_market_side_uninitialized": true,
+    "why_market_side_was_uninitialized": "The invalid-precision LAST Bar returned before synthetic trade ticks initialized the matching book.",
+    "bar_routed_to_exchange": true,
+    "instrument_id_match": true,
+    "bar_instrument_id_match": true,
+    "venue_match": true,
+    "aggregation_source": "EXTERNAL",
+    "price_type": "LAST",
+    "book_type": "L1_MBP",
+    "bar_execution": true,
+    "trade_execution": false,
+    "custom_fill_model_used": false,
+    "previous_volume_or_size_precision_was_root_cause": false,
+    "insufficient_liquidity_was_root_cause": false
+  },
+  "corrected_probe": {
+    "instrument_id": "BTCUSDT-PERP.BINANCE",
+    "bar_instrument_id": "BTCUSDT-PERP.BINANCE",
+    "instrument_price_precision": 2,
+    "bar_price_precision": 2,
+    "instrument_size_precision": 0,
+    "bar_volume_precision": 0,
+    "order_quantity_precision": 0,
+    "bar_volume": "1000",
+    "source_derived_each_ohlc_leg_quantity": "250",
+    "order_quantity": "1",
+    "fill_model": "nautilus_trader.execution.DefaultFillModel(1.0, 1.0, 0)",
+    "liquidity_consumption": true,
+    "public_shared_cache_before_submission": {
+      "best_bid": null,
+      "best_ask": null,
+      "last_price": null,
+      "order_book_present": false,
+      "interpretation": "The public shared cache does not expose the SimulatedExchange's private matching book for synthesized bar ticks; these nulls are not matching-book nulls."
+    },
+    "source_derived_matching_state_at_zero_latency_arrival": {
+      "best_bid": "100.00",
+      "best_ask": "100.00",
+      "last_price": "100.00",
+      "available_quantity": "250",
+      "corroborating_native_fill": "BUY 1 @ 100.01"
+    },
+    "source_derived_matching_state_at_60s_arrival": {
+      "best_bid": "200.00",
+      "best_ask": "200.00",
+      "last_price": "200.00",
+      "available_quantity": "250",
+      "corroborating_native_fill": "BUY 1 @ 200.01"
+    }
+  },
+  "conclusion": "The prior No market result was caused by invalid Bar price precision in the qualification probe. It was not a Nautilus v2 inability to execute causal external LAST bars under the locked native Fill Model."
+}

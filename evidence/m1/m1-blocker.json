@@ -1,0 +1,23 @@
+{
+  "affected_phase": "M1",
+  "affected_profile": "BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING",
+  "captured_at_utc": "2026-08-21T21:08:03Z",
+  "failure_code": "UNSUPPORTED_RUNTIME",
+  "m0_commit": "92568b4efc2fd080adbecaec700240602a6a9adf",
+  "m1_terminal_state": "BLOCKED",
+  "m2_started": false,
+  "native_funding_evidence": "evidence/m1/native-funding-capability.json",
+  "native_funding_evidence_sha256": "ba84c731dbab662e48562a9d653004fbb814bde8797b94d81d4e54d6a054961f",
+  "prohibited_replacement_funding_path_added": false,
+  "reason": "The pinned NautilusTrader v1.231.0 Python/Cython backtest path caches and publishes FundingRateUpdate but does not settle it into the margin account. The required long funding effect was 0 USDT instead of -2 USDT and no additional AccountState was emitted.",
+  "runtime_lock_sha256": "b4f8d9904fdba4984f60874e846053bf8f3ab5d597ee935e418f5b15972f67ea",
+  "ssot_sha256": "a2171d55ca1f01ad69d586e216c55b1227801851c21761c4cc299b7c99c30e6f",
+  "targeted_test_evidence": "evidence/m1/targeted-g09-native-funding.txt",
+  "tests": {
+    "errors": 0,
+    "failures": 1,
+    "skipped": 0,
+    "tests_run": 1
+  }
+}
+

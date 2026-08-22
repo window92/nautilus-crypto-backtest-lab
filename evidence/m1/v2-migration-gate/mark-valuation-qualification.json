@@ -1,0 +1,44 @@
+{
+  "schema": "v2-mark-valuation-qualification-v1",
+  "status": "PASS",
+  "executed": true,
+  "runtime": "nautilus_trader==2.0.0rc2",
+  "public_api": {
+    "portfolio_config": "nautilus_trader.portfolio.PortfolioConfig",
+    "mark_update": "nautilus_trader.model.MarkPriceUpdate",
+    "backtest_engine": "nautilus_trader.backtest.BacktestEngine"
+  },
+  "fixed_position": {
+    "signed_quantity": "+2",
+    "entry_price": "100.01",
+    "quote_bid": "119.99",
+    "mark_price": "80.00"
+  },
+  "perpetual_mark_enabled": {
+    "use_mark_prices": true,
+    "mark_update_ingested": true,
+    "cached_mark": "80.00",
+    "unrealized_pnl_usdt": "-40.02000000",
+    "expected_unrealized_pnl_usdt": "-40.02",
+    "status": "PASS"
+  },
+  "mark_disabled_control": {
+    "use_mark_prices": false,
+    "mark_update_ingested": true,
+    "cached_mark": "80.00",
+    "unrealized_pnl_usdt": "39.96000000",
+    "expected_quote_based_unrealized_pnl_usdt": "39.96",
+    "status": "PASS"
+  },
+  "missing_mark_probe": {
+    "use_mark_prices": true,
+    "mark_update_ingested": false,
+    "cached_mark": null,
+    "quote_bid": "119.99",
+    "unrealized_pnl_usdt": "39.96000000",
+    "runtime_fallback_observed": true,
+    "missing_price_instruments": [],
+    "qualification_result": "RUNTIME_FALLBACK_REQUIRES_EXISTING_FAIL_CLOSED_PROJECT_PREFLIGHT_AND_CHECKER"
+  },
+  "conclusion": "The public v2 mark path is bindable and materially affects native portfolio valuation. The runtime itself falls back to quote valuation when a mark is absent, so an Official Perpetual Run would still require the adopted SSOT's completeness preflight and read-only invariant checker to block forbidden fallback. No project valuation engine was implemented."
+}

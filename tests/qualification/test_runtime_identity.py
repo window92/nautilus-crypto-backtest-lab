@@ -16,13 +16,13 @@ class RuntimeIdentityQualificationTests(unittest.TestCase):
         )
 
         self.assertEqual(evidence["status"], "VERIFIED")
-        self.assertEqual(evidence["nautilus_version"], "1.231.0")
+        self.assertEqual(evidence["nautilus_version"], "2.0.0rc2")
         self.assertEqual(evidence["python_implementation"], "CPython")
         self.assertEqual(evidence["python_version"], "3.12.3")
         self.assertEqual(evidence["machine_architecture"], "x86_64")
         self.assertEqual(
             evidence["installed_wheel_sha256"],
-            "8c438e95c275a13df0c0ddb7012c462708b5e99ff3612e36a1b7bd49ab39c216",
+            "716169aca15bfb615a27610a9230e670dec5be3d4606fea591fe64eca145a5ac",
         )
 
 

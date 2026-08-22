@@ -4,13 +4,15 @@ from __future__ import annotations
 
 import json
 import re
+import types
+from dataclasses import MISSING
+from dataclasses import dataclass
+from dataclasses import fields
 from datetime import datetime
 from decimal import Decimal
 from enum import StrEnum
 from types import MappingProxyType
-from typing import Any, Self
-
-import msgspec
+from typing import Any, Self, get_args, get_origin, get_type_hints
 
 from crypto_lab.hashing import canonical_json_bytes
 from crypto_lab.hashing import canonical_sha256
@@ -21,19 +23,19 @@ NOT_APPLICABLE = "NOT_APPLICABLE"
 DISABLED = "DISABLED"
 NONE_MULTI_CURRENCY = "NONE_MULTI_CURRENCY"
 
-NAUTILUS_VERSION = "1.231.0"
+NAUTILUS_VERSION = "2.0.0rc2"
 NAUTILUS_SOURCE_REPOSITORY = "nautechsystems/nautilus_trader"
 NAUTILUS_SOURCE_COMMIT = "27a8e54e7ac3c57d6cbf8891f0283dfbaee97317"
 NAUTILUS_WHEEL_FILENAME = (
-    "nautilus_trader-1.231.0-cp312-cp312-manylinux_2_35_x86_64.whl"
+    "nautilus_trader-2.0.0rc2-cp312-cp312-manylinux_2_34_x86_64.whl"
 )
-NAUTILUS_WHEEL_SHA256 = "8c438e95c275a13df0c0ddb7012c462708b5e99ff3612e36a1b7bd49ab39c216"
+NAUTILUS_WHEEL_SHA256 = "716169aca15bfb615a27610a9230e670dec5be3d4606fea591fe64eca145a5ac"
 
-LATENCY_MODEL_PATH = "nautilus_trader.backtest.models.latency:LatencyModel"
-LATENCY_CONFIG_PATH = "nautilus_trader.backtest.config:LatencyModelConfig"
-FILL_MODEL_PATH = "nautilus_trader.backtest.models.fill:FillModel"
-FILL_CONFIG_PATH = "nautilus_trader.backtest.config:FillModelConfig"
-MAKER_TAKER_FEE_MODEL_PATH = "nautilus_trader.backtest.models.fee:MakerTakerFeeModel"
+LATENCY_MODEL_PATH = "nautilus_trader.execution:StaticLatencyModel"
+LATENCY_CONFIG_PATH = NOT_APPLICABLE
+FILL_MODEL_PATH = "nautilus_trader.execution:DefaultFillModel"
+FILL_CONFIG_PATH = NOT_APPLICABLE
+MAKER_TAKER_FEE_MODEL_PATH = "nautilus_trader.execution:MakerTakerFeeModel"
 
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 _GIT_SHA = re.compile(r"[0-9a-f]{40}\Z")
@@ -95,11 +97,11 @@ def _deep_freeze(value: Any) -> Any:
     return value
 
 
-def _freeze_field(instance: msgspec.Struct, name: str) -> None:
-    msgspec.structs.force_setattr(instance, name, _deep_freeze(getattr(instance, name)))
+def _freeze_field(instance: object, name: str) -> None:
+    object.__setattr__(instance, name, _deep_freeze(getattr(instance, name)))
 
 
-def _reject_duplicate_fields(payload: bytes) -> None:
+def _decode_json(payload: bytes) -> Any:
     def object_pairs(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
         result: dict[str, Any] = {}
         for key, value in pairs:
@@ -112,23 +114,127 @@ def _reject_duplicate_fields(payload: bytes) -> None:
         raise ConfigError(f"invalid JSON numeric constant {value!r}")
 
     try:
-        json.loads(payload, object_pairs_hook=object_pairs, parse_constant=invalid_constant)
+        return json.loads(
+            payload,
+            object_pairs_hook=object_pairs,
+            parse_constant=invalid_constant,
+        )
     except ConfigError:
         raise
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:
         raise ConfigError(str(exc)) from exc
 
 
-class StrictModel(msgspec.Struct, kw_only=True, frozen=True, forbid_unknown_fields=True):
-    @classmethod
-    def from_json_bytes(cls, payload: bytes) -> Self:
-        _reject_duplicate_fields(payload)
+def _decode_typed(value: Any, expected: Any, path: str) -> Any:
+    if expected is Any:
+        return value
+    if expected is type(None):
+        if value is not None:
+            raise ConfigError(f"{path}: expected null")
+        return None
+    if expected is Decimal:
+        if not isinstance(value, str):
+            raise ConfigError(f"{path}: Decimal values must be JSON strings")
         try:
-            return msgspec.json.decode(payload, type=cls, strict=True)
+            return Decimal(value)
+        except Exception as exc:
+            raise ConfigError(f"{path}: invalid Decimal string") from exc
+    if expected is datetime:
+        if not isinstance(value, str) or not value.endswith("Z"):
+            raise ConfigError(f"{path}: timestamp must be an explicit UTC string")
+        try:
+            return datetime.fromisoformat(value[:-1] + "+00:00")
+        except ValueError as exc:
+            raise ConfigError(f"{path}: invalid UTC timestamp") from exc
+    if isinstance(expected, type) and issubclass(expected, StrEnum):
+        if not isinstance(value, str):
+            raise ConfigError(f"{path}: enum value must be a string")
+        try:
+            return expected(value)
+        except ValueError as exc:
+            raise ConfigError(f"{path}: unknown {expected.__name__} value {value!r}") from exc
+    if isinstance(expected, type) and issubclass(expected, StrictModel):
+        if not isinstance(value, dict):
+            raise ConfigError(f"{path}: expected object")
+        type_hints = get_type_hints(expected)
+        model_fields = {field.name: field for field in fields(expected)}
+        unknown = sorted(set(value) - set(model_fields))
+        missing = sorted(
+            name
+            for name, field in model_fields.items()
+            if name not in value and field.default is MISSING and field.default_factory is MISSING
+        )
+        if unknown:
+            raise ConfigError(f"{path}: unknown fields {unknown}")
+        if missing:
+            raise ConfigError(f"{path}: missing fields {missing}")
+        decoded = {
+            name: _decode_typed(value[name], type_hints[name], f"{path}.{name}")
+            for name in value
+        }
+        try:
+            return expected(**decoded)
         except ConfigError:
             raise
-        except (msgspec.DecodeError, TypeError, ValueError) as exc:
+        except (TypeError, ValueError) as exc:
             raise ConfigError(str(exc)) from exc
+
+    origin = get_origin(expected)
+    args = get_args(expected)
+    if origin is tuple:
+        if not isinstance(value, list):
+            raise ConfigError(f"{path}: expected array")
+        item_type = args[0]
+        return tuple(
+            _decode_typed(item, item_type, f"{path}[{index}]")
+            for index, item in enumerate(value)
+        )
+    if origin is dict:
+        if not isinstance(value, dict):
+            raise ConfigError(f"{path}: expected object")
+        key_type, item_type = args
+        if key_type is not str or any(not isinstance(key, str) for key in value):
+            raise ConfigError(f"{path}: object keys must be strings")
+        return {
+            key: _decode_typed(item, item_type, f"{path}.{key}")
+            for key, item in value.items()
+        }
+    if origin in (types.UnionType,):
+        errors: list[str] = []
+        for option in args:
+            try:
+                return _decode_typed(value, option, path)
+            except ConfigError as exc:
+                errors.append(str(exc))
+        raise ConfigError(f"{path}: does not match allowed union: {errors}")
+    if expected is bool:
+        if type(value) is not bool:
+            raise ConfigError(f"{path}: expected boolean")
+        return value
+    if expected is int:
+        if type(value) is not int:
+            raise ConfigError(f"{path}: expected integer")
+        return value
+    if expected is float:
+        if type(value) is not float:
+            raise ConfigError(f"{path}: expected float")
+        return value
+    if expected is str:
+        if not isinstance(value, str):
+            raise ConfigError(f"{path}: expected string")
+        return value
+    raise ConfigError(f"{path}: unsupported schema type {expected!r}")
+
+
+class StrictModel:
+    def __init_subclass__(cls, **kwargs: Any) -> None:
+        super().__init_subclass__(**kwargs)
+        dataclass(cls, frozen=True, kw_only=True)
+
+    @classmethod
+    def from_json_bytes(cls, payload: bytes) -> Self:
+        value = _decode_json(payload)
+        return _decode_typed(value, cls, "$")
 
     def to_json_bytes(self) -> bytes:
         return canonical_json_bytes(self)
@@ -153,6 +259,7 @@ class RuntimeLock(StrictModel):
     nautilus_wheel_sha256: str
     nautilus_wheel_size_bytes: int
     nautilus_provenance_status: str
+    runtime_implementation: str
     python_implementation: str
     python_version: str
     python_abi: str
@@ -184,6 +291,7 @@ class RuntimeLock(StrictModel):
             "nautilus_source_repository",
             "nautilus_wheel_filename",
             "nautilus_provenance_status",
+            "runtime_implementation",
             "python_implementation",
             "python_version",
             "python_abi",
@@ -322,7 +430,7 @@ class NautilusVenueConfig(StrictModel):
     modules: tuple[ImportableActorBinding, ...]
     fill_model: FillModelConfig
     latency_model: LatencyModelConfig
-    fee_model: None
+    fee_model: str
     effective_fee_model_path: str
     book_type: str
     routing: bool
@@ -356,6 +464,7 @@ class NautilusVenueConfig(StrictModel):
             "base_currency": NONE_MULTI_CURRENCY,
             "default_leverage": Decimal("1"),
             "effective_fee_model_path": MAKER_TAKER_FEE_MODEL_PATH,
+            "fee_model": MAKER_TAKER_FEE_MODEL_PATH,
             "book_type": "L1_MBP",
             "routing": False,
             "reject_stop_orders": True,
@@ -392,7 +501,6 @@ class NautilusVenueConfig(StrictModel):
 
 
 class CacheConfig(StrictModel):
-    database: str
     encoding: str
     timestamps_as_iso8601: bool
     persist_account_events: bool
@@ -404,11 +512,11 @@ class CacheConfig(StrictModel):
     drop_instruments_on_reset: bool
     tick_capacity: int
     bar_capacity: int
+    save_market_data: bool
 
     def __post_init__(self) -> None:
         expected = {
-            "database": DISABLED,
-            "encoding": "msgpack",
+            "encoding": "json",
             "timestamps_as_iso8601": False,
             "persist_account_events": True,
             "buffer_interval_ms": DISABLED,
@@ -416,20 +524,23 @@ class CacheConfig(StrictModel):
             "use_trader_prefix": True,
             "use_instance_id": False,
             "flush_on_start": False,
-            "drop_instruments_on_reset": False,
+            "drop_instruments_on_reset": True,
             "tick_capacity": 10_000,
             "bar_capacity": 10_000,
+            "save_market_data": False,
         }
         for name, value in expected.items():
             _require_equal(getattr(self, name), value, f"cache.{name}")
 
 
 class MessageBusConfig(StrictModel):
-    database: str
     encoding: str
+    encoding_market_data: str
+    encoding_builtin: str
     timestamps_as_iso8601: bool
     buffer_interval_ms: str
     autotrim_mins: str
+    autotrim_maxlen: str
     use_trader_prefix: bool
     use_trader_id: bool
     use_instance_id: bool
@@ -441,11 +552,13 @@ class MessageBusConfig(StrictModel):
 
     def __post_init__(self) -> None:
         expected = {
-            "database": DISABLED,
             "encoding": "json",
+            "encoding_market_data": DISABLED,
+            "encoding_builtin": DISABLED,
             "timestamps_as_iso8601": False,
             "buffer_interval_ms": DISABLED,
             "autotrim_mins": DISABLED,
+            "autotrim_maxlen": DISABLED,
             "use_trader_prefix": True,
             "use_trader_id": True,
             "use_instance_id": False,
@@ -456,7 +569,7 @@ class MessageBusConfig(StrictModel):
             "heartbeat_interval_secs": DISABLED,
         }
         for name, value in expected.items():
-            _require_equal(getattr(self, name), value, f"message_bus.{name}")
+            _require_equal(getattr(self, name), value, f"msgbus.{name}")
 
 
 class DataEngineConfig(StrictModel):
@@ -472,6 +585,7 @@ class DataEngineConfig(StrictModel):
     emit_quotes_from_book_depths: bool
     external_clients: tuple[str, ...]
     debug: bool
+    disable_historical_cache: bool
 
     def __post_init__(self) -> None:
         expected = {
@@ -487,6 +601,7 @@ class DataEngineConfig(StrictModel):
             "emit_quotes_from_book_depths": False,
             "external_clients": (),
             "debug": False,
+            "disable_historical_cache": False,
         }
         for name, value in expected.items():
             _require_equal(getattr(self, name), value, f"data_engine.{name}")
@@ -521,6 +636,7 @@ class ExecEngineConfig(StrictModel):
     snapshot_positions_interval_secs: str
     external_clients: tuple[str, ...]
     allow_overfills: bool
+    carry_replay_events_on_reopen: bool
     purge_closed_orders_interval_mins: str
     purge_closed_orders_buffer_mins: str
     purge_closed_positions_interval_mins: str
@@ -539,6 +655,7 @@ class ExecEngineConfig(StrictModel):
             "snapshot_positions_interval_secs": DISABLED,
             "external_clients": (),
             "allow_overfills": False,
+            "carry_replay_events_on_reopen": False,
             "purge_closed_orders_interval_mins": DISABLED,
             "purge_closed_orders_buffer_mins": DISABLED,
             "purge_closed_positions_interval_mins": DISABLED,
@@ -557,6 +674,7 @@ class PortfolioConfig(StrictModel):
     use_mark_xrates: bool
     bar_updates: bool
     convert_to_account_base_currency: bool
+    equity_curve: bool
     min_account_state_logging_interval_ms: str
     snapshot_interval_ms: str
     debug: bool
@@ -566,6 +684,7 @@ class PortfolioConfig(StrictModel):
             "use_mark_xrates": False,
             "bar_updates": True,
             "convert_to_account_base_currency": True,
+            "equity_curve": True,
             "min_account_state_logging_interval_ms": DISABLED,
             "snapshot_interval_ms": DISABLED,
             "debug": False,
@@ -579,63 +698,41 @@ class NautilusEngineConfig(StrictModel):
     trader_id: str
     instance_id_policy: str
     cache: CacheConfig
-    message_bus: MessageBusConfig
+    msgbus: MessageBusConfig
     data_engine: DataEngineConfig
     risk_engine: RiskEngineConfig
     exec_engine: ExecEngineConfig
     portfolio: PortfolioConfig
-    order_emulator: str
-    streaming: str
-    catalogs: tuple[str, ...]
-    actors: tuple[str, ...]
-    strategies: tuple[str, ...]
-    exec_algorithms: tuple[str, ...]
     controller: str
-    strategy_loading: str
     load_state: bool
     save_state: bool
-    loop_debug: bool
+    shutdown_on_error: bool
+    bypass_logging: bool
     run_analysis: bool
-    logging_bypass: bool
-    timeout_connection: float
-    timeout_reconciliation: float
-    timeout_portfolio: float
-    timeout_disconnection: float
-    timeout_post_stop: float
-    timeout_shutdown: float
-    chunk_size: str
-    raise_exception: bool
-    dispose_on_completion: bool
-    data_clients: str
+    timeout_connection: int
+    timeout_reconciliation: int
+    timeout_portfolio: int
+    timeout_disconnection: int
+    delay_post_stop: int
+    timeout_shutdown: int
 
     def __post_init__(self) -> None:
         _require_nonempty(self.trader_id, "nautilus_engine_config.trader_id")
         expected = {
             "environment": "BACKTEST",
             "instance_id_policy": "RUNTIME_GENERATED_NON_SEMANTIC",
-            "order_emulator": DISABLED,
-            "streaming": DISABLED,
-            "catalogs": (),
-            "actors": (),
-            "strategies": (),
-            "exec_algorithms": (),
             "controller": DISABLED,
-            "strategy_loading": "FROZEN_STRATEGY_SPEC",
             "load_state": False,
             "save_state": False,
-            "loop_debug": False,
+            "shutdown_on_error": False,
+            "bypass_logging": False,
             "run_analysis": True,
-            "logging_bypass": False,
-            "timeout_connection": 60.0,
-            "timeout_reconciliation": 30.0,
-            "timeout_portfolio": 10.0,
-            "timeout_disconnection": 10.0,
-            "timeout_post_stop": 10.0,
-            "timeout_shutdown": 5.0,
-            "chunk_size": DISABLED,
-            "raise_exception": False,
-            "dispose_on_completion": True,
-            "data_clients": DISABLED,
+            "timeout_connection": 60,
+            "timeout_reconciliation": 30,
+            "timeout_portfolio": 10,
+            "timeout_disconnection": 10,
+            "delay_post_stop": 10,
+            "timeout_shutdown": 5,
         }
         for name, value in expected.items():
             _require_equal(getattr(self, name), value, f"nautilus_engine_config.{name}")
@@ -646,7 +743,7 @@ class NautilusDataConfig(StrictModel):
     catalog_fs_protocol: str
     catalog_fs_storage_options: dict[str, str]
     catalog_fs_rust_storage_options: dict[str, str]
-    data_cls: str
+    data_type: str
     instrument_id: str
     start_time: datetime
     end_time: datetime
@@ -659,8 +756,9 @@ class NautilusDataConfig(StrictModel):
     optimize_file_loading: bool
 
     def __post_init__(self) -> None:
-        for name in ("catalog_path", "data_cls", "instrument_id", "bar_spec"):
+        for name in ("catalog_path", "data_type", "instrument_id", "bar_spec"):
             _require_nonempty(getattr(self, name), f"nautilus_data_config.{name}")
+        _require_equal(self.data_type, "Bar", "nautilus_data_config.data_type")
         _require_equal(self.catalog_fs_protocol, "file", "nautilus_data_config.catalog_fs_protocol")
         _require_equal(self.filter_expr, NOT_APPLICABLE, "nautilus_data_config.filter_expr")
         _require_equal(self.client_id, NOT_APPLICABLE, "nautilus_data_config.client_id")
@@ -764,7 +862,7 @@ class LabRunConfig(StrictModel):
             _fail("lab_run_config.nautilus_data_config", "must not be empty")
         if not any(
             item.instrument_id == self.instrument_id
-            and item.data_cls == "nautilus_trader.model.data:Bar"
+            and item.data_type == "Bar"
             and item.bar_spec == "1-MINUTE-LAST"
             and item.start_time <= self.warmup_start
             and item.end_time >= self.scoring_end_exclusive

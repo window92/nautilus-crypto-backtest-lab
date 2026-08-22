@@ -1,0 +1,36 @@
+{
+  "command": "TZ=UTC LC_ALL=C.UTF-8 PYTHONPATH=src .venv/bin/python (public v2 gate functions run_mark_case, run_fee_case, run_spot_short_rejection)",
+  "fee": {
+    "actual_commission": "0.20002000 USDT",
+    "expected_commission": "0.20002 USDT",
+    "fee_model": "nautilus_trader.execution:MakerTakerFeeModel",
+    "fill_price": "100.01",
+    "fill_quantity": "2",
+    "order_commission_count": 1,
+    "status": "PASS"
+  },
+  "mark_missing_negative": {
+    "cached_mark": null,
+    "native_fallback_observed": true,
+    "required_project_response": "G11 preflight/checker must reject missing required mark without replacing Nautilus valuation",
+    "runtime_unrealized_pnl_usdt": "39.96000000",
+    "status": "EXPECTED_NATIVE_FALLBACK_REQUIRES_G11_REJECTION"
+  },
+  "mark_positive": {
+    "cached_mark": "80.00",
+    "entry_price": "100.01",
+    "runtime_unrealized_pnl_usdt": "-40.02000000",
+    "use_mark_prices": true,
+    "status": "PASS"
+  },
+  "spot_cash": {
+    "account_type": "CASH",
+    "allow_cash_borrowing": false,
+    "negative_inventory": false,
+    "order_outcome": "OrderDenied",
+    "position_count": 0,
+    "status": "PASS"
+  },
+  "status": "PASS",
+  "synthetic_qualification_only": true
+}
