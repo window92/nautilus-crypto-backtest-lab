@@ -1,0 +1,27 @@
+{
+  "authorization_id": "OWNER_OPERATIONAL_SMOKE_001",
+  "authoritative_history": {
+    "anchor_sha256": "c34eac683efaaab0eb40f1db7c742ffcee6490d86d2c7b6ceb4fa1d4bd8692ce",
+    "history_anchors_sha256": "349baa2699a12f09ab0c9afe3cb86e6b2af8dcf3d7d693b580963ab64fbdc4e4",
+    "holdout_entry_count": 0,
+    "holdout_lock_sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+    "trial_journal_record_count": 0,
+    "trial_journal_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "classification": [
+    "DEVELOPMENT",
+    "EXPOSED",
+    "NOT_FINAL_HOLDOUT"
+  ],
+  "final_holdout_used": false,
+  "owner_directive_permanent_no_future_final_holdout": true,
+  "protocol_frozen": false,
+  "reason_protocol_not_frozen": "Mandatory official Spot data failed before DatasetRelease creation",
+  "resolver_relabel_proof": "NOT_RUN_NO_DATASET_RELEASE_OR_RESULT_BEARING_TRIAL",
+  "result_bearing_trial_started": false,
+  "schema": "owner-smoke-blocked-exposure-status-v1",
+  "window": {
+    "end_exclusive": "2021-07-01T00:00:00Z",
+    "start_inclusive": "2020-12-01T00:00:00Z"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "authorization_id": "OWNER_OPERATIONAL_SMOKE_001",
+  "baseline_verified_before_modification": true,
+  "branch": "main",
+  "dependency_lock_sha256": "b2765c9e33b10566fc327b48920fd1d3a73618c19622baaceab1fe9dca61df47",
+  "expected_and_observed_head": "de316063154372ca27351c3e5c65c5d29e9d1ff6",
+  "expected_and_observed_origin_main": "de316063154372ca27351c3e5c65c5d29e9d1ff6",
+  "git_status": "CLEAN",
+  "public_boundaries_present": {
+    "history_and_exposure": true,
+    "official_process_level_offline_execution": true,
+    "owner_api_and_cli": true,
+    "registered_strategy_only_official_path": true
+  },
+  "repair_commits_are_ancestors": {
+    "0ac4b47e50f20e3ae46585adb21b6c3d9fc192c9": true,
+    "de316063154372ca27351c3e5c65c5d29e9d1ff6": true
+  },
+  "required_user": "builder",
+  "runtime_lock_sha256": "4032df9f355348c2a0cfa9f79f331f97c9a8d24ecc8490a573d2c7f788bafddd",
+  "schema": "owner-smoke-baseline-attestation-v1",
+  "ssot_read_completely_before_modification": true,
+  "ssot_sha256": "7bb2fc68d9b73b168a582d890a6f952fd0c4eb20fc0e31857903909f27dfaa8f"
+}

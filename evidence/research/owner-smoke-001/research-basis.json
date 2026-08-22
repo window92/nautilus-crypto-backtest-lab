@@ -1,0 +1,24 @@
+{
+  "authorization_id": "OWNER_OPERATIONAL_SMOKE_001",
+  "development_exposed_not_final_holdout": true,
+  "hypothesis": "A simple pre-registered price-versus-SMA trend rule can be executed causally and reproducibly through the complete repaired laboratory workflow on both locked Market Profiles.",
+  "hypothesis_is_strategy_profitable": false,
+  "primary_references": [
+    {
+      "title": "Liu and Tsyvinski, Risks and Returns of Cryptocurrency",
+      "url": "https://www.nber.org/papers/w24877"
+    },
+    {
+      "title": "Detzel et al., Learning and Predictability via Technical Analysis",
+      "url": "https://onlinelibrary.wiley.com/doi/10.1111/fima.12310"
+    },
+    {
+      "title": "Hudson and Urquhart, Technical Trading and Cryptocurrencies",
+      "url": "https://link.springer.com/article/10.1007/s10479-019-03357-1"
+    }
+  ],
+  "published_evidence": "MIXED; prior literature includes negative Bitcoin out-of-sample performance in some samples",
+  "real_profitability_claim": false,
+  "research_purpose": "EXPLORATORY_OPERATIONAL_VALIDATION",
+  "schema": "owner-smoke-research-basis-v1"
+}

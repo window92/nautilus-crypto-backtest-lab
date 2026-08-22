@@ -1,0 +1,38 @@
+{
+  "authorization_id": "OWNER_OPERATIONAL_SMOKE_001",
+  "implementation": {
+    "commit": "e4611169a81076d917caf76c885b23cab6421456",
+    "commit_tree": "cede8aefb38fece56d1843fd48209dd51a513f6d",
+    "daily_strategy_module_sha256": "4c9ecf27f583e12e19d04b19f7565829c4c62f47fe1ae831908ee92e6e46ef90",
+    "registration_id": "btcusdt_daily_price_vs_sma20_trend_v1",
+    "registration_module_sha256": "c01dc043abf7734896bb75e5ce52e888156bb54275b5428f65dd6ee6dcecd2aa"
+  },
+  "official_registered_strategy_identity": "NOT_CREATED_NO_OFFICIAL_RUN",
+  "profiles": {
+    "BINANCE_SPOT_CASH_LONG_ONLY": {
+      "instrument_id": "BTCUSDT.BINANCE",
+      "qualified_profile_record_id": "7d4106378809369edadaebde5b4433c083fc012fd2a2b23c091c67b4695c2303",
+      "strategy_spec_id": "1deb9ec868b8d59be33c5444923da4fa43e8ac172367192444feba41d891711f"
+    },
+    "BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING": {
+      "instrument_id": "BTCUSDT-PERP.BINANCE",
+      "qualified_profile_record_id": "28474f3f632d8e14f87bce745edc40078b2821e55bb392e2b659b93b8b481657",
+      "strategy_spec_id": "1709ba857dc22ca970d34075490141e004182d2bec7ac2c40b1bfb426f347503"
+    }
+  },
+  "public_owner_workflow_only": true,
+  "qualification_strategy_plan_in_official_path": false,
+  "schema": "owner-smoke-strategy-implementation-status-v1",
+  "source_commit_was_normally_pushed_and_clean_before_acquisition": true,
+  "strategy_contract": {
+    "completed_daily_bars_only": true,
+    "daily_boundaries": "UTC",
+    "equality_target": "FLAT",
+    "lookback_completed_daily_bars": 20,
+    "market_order_only": true,
+    "nautilus_native_sma": "nautilus_trader.indicators.SimpleMovingAverage",
+    "perpetual_reversal": "CLOSE_TO_FLAT_NATIVE_CONFIRMATION_THEN_SEPARATE_REOPEN",
+    "signal_source": "DETERMINISTIC_DAILY_RESAMPLE_FROM_CANONICAL_OFFICIAL_1M_EXECUTION_BARS",
+    "submission_latency_ns": 60000000000
+  }
+}
