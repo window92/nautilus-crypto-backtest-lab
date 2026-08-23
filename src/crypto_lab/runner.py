@@ -32,6 +32,7 @@ from crypto_lab.config import SourceRevision
 from crypto_lab.data import DataContractError
 from crypto_lab.data import DatasetRelease
 from crypto_lab.data import ResolvedDatasetRelease
+from crypto_lab.data import SourceRole
 from crypto_lab.data import SyntheticQualificationDatasetRelease
 from crypto_lab.hashing import canonical_json_bytes
 from crypto_lab.hashing import canonical_sha256
@@ -347,13 +348,32 @@ def _preflight_data(
     bar_timestamps: list[int] = []
     for bar in bars:
         bar_timestamps.append(int(bar.ts_init))
-        precision_ok = all(
-            price.precision == instrument.price_precision
-            for price in (bar.open, bar.high, bar.low, bar.close)
-        ) and bar.volume.precision == instrument.size_precision
+        if isinstance(release, SyntheticQualificationDatasetRelease):
+            precision_ok = all(
+                price.precision == instrument.price_precision
+                for price in (bar.open, bar.high, bar.low, bar.close)
+            ) and bar.volume.precision == instrument.size_precision
+        else:
+            # A current instrument definition is explicitly not presented as
+            # historical point-in-time tick/lot metadata.  Canonical Binance
+            # Bars retain their exact source Decimal representation, which can
+            # be finer than today's order increment (notably 2021 USD-M prices
+            # and Spot base volume).  Rounding those values to current metadata
+            # would mutate official data.  Order quantities remain guarded
+            # separately against the native Instrument precision/increments.
+            precision_ok = all(
+                Decimal(str(value)).is_finite()
+                for value in (bar.open, bar.high, bar.low, bar.close, bar.volume)
+            )
         identity_ok = (
             str(bar.bar_type.instrument_id) == run.instrument_id
             and str(bar.bar_type) == run.execution_bar_type
+        )
+        volume = bar.volume.as_decimal()
+        volume_ok = (
+            volume > 0
+            if isinstance(release, SyntheticQualificationDatasetRelease)
+            else volume >= 0
         )
         ohlc_ok = (
             bar.high >= bar.open
@@ -361,7 +381,7 @@ def _preflight_data(
             and bar.low <= bar.open
             and bar.low <= bar.close
             and bar.high >= bar.low
-            and bar.volume.as_decimal() > 0
+            and volume_ok
         )
         timestamp_ok = int(bar.ts_init) == int(bar.ts_event)
         if not (precision_ok and identity_ok and ohlc_ok and timestamp_ok):
@@ -402,10 +422,63 @@ def _preflight_data(
                 ONE_MINUTE_NS,
             ),
         )
-        if bar_timestamps != expected:
-            failures.append(FailureCode.DATA_GAP.value)
-        if resolved is None or canonical_sha256(resolved.semantic_inventory) != release.catalog_identity:
+        catalog_bound = bool(
+            resolved is not None
+            and canonical_sha256(resolved.semantic_inventory) == release.catalog_identity
+        )
+        if not catalog_bound:
             failures.append(FailureCode.DATASET_RELEASE_STALE.value)
+        if run.market_profile is MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY:
+            # The adopted Spot contract has a complete minute-disposition grid,
+            # not a synthetic Bar grid.  A VERIFIED_NO_TRADE_INTERVAL therefore
+            # appears as an intentional gap in canonical Bars.  Accept that
+            # sparse projection only when the exact catalog identity binds the
+            # complete coverage identity and all observed Bars remain aligned
+            # inside the frozen release window.
+            role_results = tuple(release.completeness_result.role_results)
+            spot_roles = tuple(
+                item
+                for item in role_results
+                if item.source_role is SourceRole.SPOT_EXECUTION_1M
+            )
+            release_binding = (
+                resolved.semantic_inventory.get("release_binding")
+                if resolved is not None
+                else None
+            )
+            expected_binding = {
+                "data_window_identity": release.data_window_identity,
+                "partition_geometry_identity": release.partition_geometry_identity,
+                "minute_coverage_identity": release.minute_coverage_identity,
+                "normalized_time_range": release.normalized_time_range.to_builtins(),
+            }
+            sparse_grid_ok = bool(
+                catalog_bound
+                and release.completeness_result.status == "PASS"
+                and release.completeness_result.no_repairs is True
+                and len(spot_roles) == 1
+                and spot_roles[0].expected_count == len(expected)
+                and spot_roles[0].actual_count == len(expected)
+                and release_binding == expected_binding
+                and bar_timestamps
+                and len(bar_timestamps) <= len(expected)
+                and all(
+                    release.normalized_time_range.start_ns < timestamp
+                    <= release.normalized_time_range.end_ns
+                    and (
+                        timestamp - release.normalized_time_range.start_ns
+                    )
+                    % ONE_MINUTE_NS
+                    == 0
+                    for timestamp in bar_timestamps
+                )
+            )
+            if not sparse_grid_ok:
+                failures.append(FailureCode.DATA_GAP.value)
+        elif bar_timestamps != expected:
+            # Perpetual execution retains an exact 1m Bar grid; the Spot
+            # verified-no-trade exception never applies to this profile.
+            failures.append(FailureCode.DATA_GAP.value)
     if isinstance(config, LabRunRequest) and not set(
         config.strategy_plan.intents_by_bar_ns,
     ).issubset(set(bar_timestamps)):
