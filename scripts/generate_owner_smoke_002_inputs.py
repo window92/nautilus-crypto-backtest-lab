@@ -70,6 +70,7 @@ def _workflow(
     frozen_at_utc: datetime,
     profile: MarketProfile,
     release_id: str,
+    retry_sequence: int,
 ) -> OwnerWorkflowInput:
     release = DatasetRelease.from_json_bytes(
         (ROOT / "data/releases" / f"{release_id}.json").read_bytes(),
@@ -84,6 +85,7 @@ def _workflow(
         raise RuntimeError("DatasetRelease window mismatch")
 
     suffix = "spot" if profile is MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY else "perpetual"
+    retry_suffix = "" if retry_sequence == 0 else f"-retry-{retry_sequence:03d}"
     spec = locked_sma20_strategy_spec(profile)
     candidate = CandidateSpec.create(
         candidate_label="SMA20_ONLY_PRE_REGISTERED_CANDIDATE",
@@ -165,6 +167,12 @@ def _workflow(
             "EXPLORATORY_OPERATIONAL_VALIDATION_ONLY; "
             "DATA_QUALITY_INSPECTED_NOT_FINAL_HOLDOUT; NO_FINAL_HOLDOUT; "
             "NO_REAL_PROFITABILITY_CLAIM"
+            + (
+                ""
+                if retry_sequence == 0
+                else "; MECHANICAL_RETRY_AFTER_RETAINED_PRODUCT_DEFECT_"
+                f"{retry_sequence:03d}; NO_PARAMETER_OR_DATA_CHANGE"
+            )
         ),
         kill_criteria=(
             "MECHANICAL_INTEGRITY_NOT_PASS",
@@ -178,9 +186,9 @@ def _workflow(
         schema_version=1,
         workflow_purpose=OwnerWorkflowPurpose.OWNER_STUDY,
         protocol=protocol,
-        trial_id=f"owner-smoke-002-{suffix}-sma20-development",
+        trial_id=f"owner-smoke-002-{suffix}-sma20-development{retry_suffix}",
         candidate_id=candidate.candidate_id,
-        run_id=f"owner-smoke-002-{suffix}-run",
+        run_id=f"owner-smoke-002-{suffix}-run{retry_suffix}",
         registered_strategy_id=REGISTRATION_ID,
         strategy_spec=spec,
         dataset_release_id=release.dataset_release_id,
@@ -217,10 +225,13 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--frozen-at-utc", required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument("--retry-sequence", type=int, default=0)
     args = parser.parse_args()
     frozen = datetime.fromisoformat(args.frozen_at_utc.replace("Z", "+00:00"))
     if frozen.tzinfo is None or frozen.utcoffset() != UTC.utcoffset(frozen):
         raise ValueError("frozen-at-utc must be explicit UTC")
+    if args.retry_sequence < 0:
+        raise ValueError("retry-sequence cannot be negative")
     output = args.output_dir.resolve()
     output.mkdir(parents=True, exist_ok=False)
     values = (
@@ -228,11 +239,13 @@ def main() -> int:
             frozen_at_utc=frozen,
             profile=MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY,
             release_id=SPOT_RELEASE_ID,
+            retry_sequence=args.retry_sequence,
         ),
         _workflow(
             frozen_at_utc=frozen,
             profile=MarketProfile.BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING,
             release_id=PERPETUAL_RELEASE_ID,
+            retry_sequence=args.retry_sequence,
         ),
     )
     for value in values:
