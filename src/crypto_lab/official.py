@@ -61,6 +61,32 @@ def _candidate_schedule_complete(
     return observed == expected
 
 
+def _historical_failed_checker_is_retained(
+    state: TrialState,
+    status: dict[str, Any],
+    persisted_checker: dict[str, Any],
+) -> bool:
+    """Validate immutable failed evidence without rewriting its historical verdict.
+
+    A later checker repair can legitimately disagree with a checker result
+    captured by an older SourceRevision.  Such an attempt must stay disclosed,
+    not be reclassified under newer code.  Completed evidence and every Trial
+    governed by the selected protocol still require live read-only
+    revalidation.
+    """
+
+    return bool(
+        state in {TrialState.FAILED, TrialState.BLOCKED, TrialState.ABORTED}
+        and status.get("state") == state.value
+        and status.get("checker_outcome")
+        in {CheckerOutcome.CHECK_FAIL.value, CheckerOutcome.CHECK_BLOCKED.value}
+        and persisted_checker.get("outcome") == status.get("checker_outcome")
+        and persisted_checker.get("mutated_run_evidence") is False
+        and persisted_checker.get("failure_codes")
+        and status.get("failure_codes") == persisted_checker.get("failure_codes")
+    )
+
+
 class OfficialEvidenceLocator(StrictModel):
     """Only caller-controlled Official claim/report input: immutable identities."""
 
@@ -205,6 +231,8 @@ class OfficialEvidenceResolver:
         self,
         record: TrialRecord,
         protocol: ResearchProtocol,
+        *,
+        revalidate_current_checker: bool = True,
     ) -> tuple[Path, LabRunConfig, SourceRevision, RegisteredStrategyIdentity, str]:
         run_dir = self._run_dir(record)
         required = {
@@ -253,14 +281,24 @@ class OfficialEvidenceResolver:
             source_revision=source,
         ) != identity:
             raise ResearchError("EVIDENCE_INCOMPLETE", "registered strategy identity is forged")
-        regenerated = check_evidence_directory(
-            run_dir,
-            repository_root=self.repository_root,
-            official_source_required=True,
-            source_revision_current_head_required=False,
-        )
-        if regenerated.to_builtins() != persisted_checker:
-            raise ResearchError("EVIDENCE_INCOMPLETE", "persisted checker is stale or forged")
+        if revalidate_current_checker:
+            regenerated = check_evidence_directory(
+                run_dir,
+                repository_root=self.repository_root,
+                official_source_required=True,
+                source_revision_current_head_required=False,
+            )
+            if regenerated.to_builtins() != persisted_checker:
+                raise ResearchError("EVIDENCE_INCOMPLETE", "persisted checker is stale or forged")
+        elif not _historical_failed_checker_is_retained(
+            record.state,
+            status,
+            persisted_checker,
+        ):
+            raise ResearchError(
+                "EVIDENCE_INCOMPLETE",
+                "historical failed checker evidence is inconsistent",
+            )
         return run_dir, config, source, identity, manifest_sha
 
     def _resolve_replay_evidence(
@@ -343,7 +381,14 @@ class OfficialEvidenceResolver:
             if record.result_ref == NOT_APPLICABLE:
                 continue
             record_protocol, _record_protocol_path = self._protocol(record.protocol_id)
-            resolved_runs[trial_id] = self._resolve_selected_run(record, record_protocol)
+            resolved_runs[trial_id] = self._resolve_selected_run(
+                record,
+                record_protocol,
+                revalidate_current_checker=(
+                    record.protocol_id == protocol.protocol_id
+                    or record.state is TrialState.COMPLETED
+                ),
+            )
         if locator.selected_trial_id not in resolved_runs:
             raise ResearchError("EVIDENCE_INCOMPLETE", "selected trial has no resolved Run evidence")
         run_dir, config, source, strategy_identity, manifest_sha = resolved_runs[selected.trial_id]

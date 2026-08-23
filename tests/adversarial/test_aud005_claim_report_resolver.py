@@ -16,6 +16,7 @@ from crypto_lab.hashing import sha256_file
 from crypto_lab.official import OfficialEvidenceLocator
 from crypto_lab.official import OfficialEvidenceResolver
 from crypto_lab.official import _candidate_schedule_complete
+from crypto_lab.official import _historical_failed_checker_is_retained
 from crypto_lab.reporting import ReportInput
 from crypto_lab.reporting import build_report
 from crypto_lab.research import ClaimEvaluationInput
@@ -24,6 +25,7 @@ from crypto_lab.research import ResearchError
 from crypto_lab.research import SampleAdequacy
 from crypto_lab.research import TrialDefinition
 from crypto_lab.research import TrialJournal
+from crypto_lab.research import TrialState
 from crypto_lab.research import evaluate_claim
 from tests.adversarial.test_aud003_004_authoritative_history import HistoryAttackFixture
 from tests.m4_helpers import valid_protocol
@@ -75,6 +77,35 @@ def _diagnostic(*, run_hash: str) -> DiagnosticResolution:
 
 
 class Aud005ClaimReportResolverTests(unittest.TestCase):
+    def test_historical_failed_checker_is_preserved_but_cannot_pose_as_pass(self) -> None:
+        status = {
+            "state": "FAILED",
+            "checker_outcome": "CHECK_FAIL",
+            "failure_codes": ["LOOKAHEAD_DETECTED"],
+        }
+        checker = {
+            "outcome": "CHECK_FAIL",
+            "failure_codes": ["LOOKAHEAD_DETECTED"],
+            "mutated_run_evidence": False,
+        }
+        self.assertTrue(
+            _historical_failed_checker_is_retained(TrialState.FAILED, status, checker),
+        )
+        self.assertFalse(
+            _historical_failed_checker_is_retained(
+                TrialState.FAILED,
+                {**status, "checker_outcome": "CHECK_PASS", "failure_codes": []},
+                {**checker, "outcome": "CHECK_PASS", "failure_codes": []},
+            ),
+        )
+        self.assertFalse(
+            _historical_failed_checker_is_retained(
+                TrialState.COMPLETED,
+                {**status, "state": "COMPLETED"},
+                checker,
+            ),
+        )
+
     def test_official_locator_rejects_assertions_subsets_metrics_and_trades(self) -> None:
         base = {
             "schema_version": 1,
