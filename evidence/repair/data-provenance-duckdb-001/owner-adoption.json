@@ -1,0 +1,41 @@
+{
+  "adoption_id": "DATA_PROVENANCE_SSOT_CANDIDATE_002_OWNER_ADOPTION",
+  "adoption_timestamp_utc": "2026-08-23T03:48:04Z",
+  "adopted_sections": [
+    "1.4 V1 execution-data class",
+    "4.1 Source",
+    "4.3 Dataset Release",
+    "4.5 Completeness and 4.5.1 through 4.5.3",
+    "4.6 Higher timeframes",
+    "4.8 Spot data roles",
+    "4.9 Perpetual data roles",
+    "4.11 Catalog is derived data",
+    "4.12 DuckDB derived validation store",
+    "8.3 G04, G12, and G22",
+    "8.4 Invariant checker",
+    "M2 Frozen Binance data",
+    "Appendix A.5 and A.6"
+  ],
+  "adopted_ssot_sha256": "f51971ed7a09b172c82ff5965f2899d2a302dd71a2af60eb7c920133567b4354",
+  "base_ssot_sha256": "7bb2fc68d9b73b168a582d890a6f952fd0c4eb20fc0e31857903909f27dfaa8f",
+  "candidate_001": {
+    "manifest_sha256": "ae68c43928e46a8cea122d724e97ac14b77d26bed5167609fbe980dfcf7ca591",
+    "patch_sha256": "7fcd919364e6bccf35fcf80c6ad6e1884adeb6b6b0a74ef738748b5bbd8b4fc6",
+    "status": "SUPERSEDED_INVALID_PATCH"
+  },
+  "candidate_002": {
+    "candidate_id": "DATA_PROVENANCE_SSOT_CANDIDATE_002",
+    "manifest_path": "evidence/repair/data-provenance-duckdb-001/ssot-candidate-002/manifest.json",
+    "manifest_sha256": "0a4ad0e829dea6e40294e02d839a89103bdecf68b3fac7fcbf6c9081afed56b7",
+    "patch_path": "evidence/repair/data-provenance-duckdb-001/ssot-candidate-002/SSOT.data-provenance-candidate.patch",
+    "patch_sha256": "513e2c6ca3ce4047af469593911cf46979d83c38c0b7fa2a6f722bce752d73d8"
+  },
+  "dependency_lock_sha256": "b2765c9e33b10566fc327b48920fd1d3a73618c19622baaceab1fe9dca61df47",
+  "duckdb_role_limitation": "DuckDB is an offline derived validation, query, audit, release, and deterministic-export store only. It is not raw truth, a matching or order engine, an account, position, ledger, fee, funding, PnL, or portfolio engine, and it is not a substitute for Nautilus financial truth.",
+  "exact_owner_directive": "I adopt the exact amended SSOT.md bytes whose SHA-256 is:\n\nf51971ed7a09b172c82ff5965f2899d2a302dd71a2af60eb7c920133567b4354\n\nI authorize applying only:\n\nevidence/repair/data-provenance-duckdb-001/ssot-candidate-002/SSOT.data-provenance-candidate.patch\n\nto the exact base SSOT.md whose SHA-256 is:\n\n7bb2fc68d9b73b168a582d890a6f952fd0c4eb20fc0e31857903909f27dfaa8f\n\nNo other SSOT changes are authorized.",
+  "owner_role": "Owner",
+  "runtime_lock_sha256": "4032df9f355348c2a0cfa9f79f331f97c9a8d24ecc8490a573d2c7f788bafddd",
+  "schema": "ssot-owner-adoption-v1",
+  "scope_statement": "Only the exact Candidate 002 patch is adopted for the official Binance data-provenance, source-reconciliation, verified-no-trade, deterministic official-trade derivation, DuckDB validation-store, and accepted-bar export contracts.",
+  "synthetic_ohlc_prohibition": "No interpolation, forward fill, backward fill, previous-close bar, nearest value, zero-volume synthetic OHLC, cross-venue substitution, unofficial data, or other fabricated price is authorized."
+}
