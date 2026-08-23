@@ -1,0 +1,35 @@
+{
+  "branch": "main",
+  "cold_start_at_utc": "2026-08-23T17:43:46.916044132Z",
+  "dependency_lock_sha256": "b2765c9e33b10566fc327b48920fd1d3a73618c19622baaceab1fe9dca61df47",
+  "duckdb": {
+    "blocking_minute_count": 0,
+    "database_file_sha256": "965dea1cfb4dadf189448e1cb34a58dedbba111727d075fd633a6d41c4400fc6",
+    "database_size_bytes": 1757949952,
+    "path": "data/duckdb/free-official-binance-data-duckdb-001/primary-v4.duckdb",
+    "read_only_reopen": "PASS",
+    "schema_identity": "3ca976671f80d429da1ec30db348968999b04deb4dca87e60ed9650a9fc05cee",
+    "semantic_identity": "c363294d7c00373904c970beddb25c87f5e68d53178510e03312f4423da3914d",
+    "source_binding_orphan_count": 0
+  },
+  "expected_starting_head": "92803f0f3e22b3d51b0e43c093a1860e5d12238f",
+  "expected_starting_origin_main": "92803f0f3e22b3d51b0e43c093a1860e5d12238f",
+  "git_status_at_cold_start": "CLEAN",
+  "material_identity_gate": "PASS",
+  "nautilus_catalog_identities": {
+    "perpetual": "0b5a7e8abaf1af06dc375ef638037df7ee007d2382d9df7c8fe2e1a29cf64f4c",
+    "spot": "d91ee22e04e823a5fa45dc7cfe7f5d6246e65c5a53a2722665643f2dca269ea0"
+  },
+  "owner_authorization": "OWNER_SMOKE_002_VERIFIED_DATA_EXECUTION",
+  "repository": "/home/builder/projects/nautilus-crypto-backtest-lab",
+  "required_dataset_releases": {
+    "perpetual": "9c8a5f679f38852119d1d2054b0711965f0a6d89d5dd0e0ebedaa8d8df66b503",
+    "spot": "95e04adb076be05eba0a970aa0978f1a4d1f41ad3caf04e9cd5859dd408ac099"
+  },
+  "runtime_lock_preflight": "PASS",
+  "runtime_lock_sha256": "4032df9f355348c2a0cfa9f79f331f97c9a8d24ecc8490a573d2c7f788bafddd",
+  "schema": "owner-smoke-002-baseline-attestation-v1",
+  "ssot_sha256": "b4deb7048242239234de7eaa353b623b3e45247eb42f1021dbc26ffd910edb99",
+  "strategy_run_before_protocol_freeze": false,
+  "user": "builder"
+}

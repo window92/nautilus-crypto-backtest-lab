@@ -1,0 +1,26 @@
+{
+  "authorized_official_exploratory_trials": [
+    "BINANCE_SPOT_CASH_LONG_ONLY",
+    "BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING"
+  ],
+  "dataset_and_warmup": {
+    "end_exclusive": "2021-02-01T00:00:00Z",
+    "start_inclusive": "2021-01-01T00:00:00Z"
+  },
+  "final_holdout": {
+    "protocol_field_requirement": "ResearchProtocol strict schema requires a declaration",
+    "structural_declaration": "[2099-01-03T00:00:00Z, 2099-01-04T00:00:00Z)",
+    "structural_declaration_inside_dataset_release": false,
+    "trial_partition_role": "DEVELOPMENT",
+    "used": false
+  },
+  "locked_scoring": {
+    "end_exclusive": "2021-08-01T00:00:00Z",
+    "start_inclusive": "2021-02-01T00:00:00Z"
+  },
+  "optimization_authorized": false,
+  "profitability_claim_authorized": false,
+  "research_purpose": "EXPLORATORY_OPERATIONAL_VALIDATION",
+  "schema": "owner-smoke-002-owner-authorization-v1",
+  "strategy_comparison_authorized": false
+}
