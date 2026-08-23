@@ -1,0 +1,120 @@
+{
+  "headers": [
+    [
+      "Date",
+      "Sun, 23 Aug 2026 10:37:28 GMT"
+    ],
+    [
+      "Content-Type",
+      "text/html; charset=UTF-8"
+    ],
+    [
+      "Transfer-Encoding",
+      "chunked"
+    ],
+    [
+      "Connection",
+      "close"
+    ],
+    [
+      "set-cookie",
+      "__cf_bm=5lXMzi9wbyH3eSgyHdBCJt2iVxDy2KMqM0mNoXq7BNE-1787481448.8995757-1.0.1.1-yx6.kjdFtFVcIR5Tc5ZmfieKH5s5QY.48ez.lA2Ow4paF6dmQ0K.Xwe5poHr_W8ie8BMT2UhjQsOZ8NE_YTjIeONJ7LyEkbh56IKCkfa.qbv72AmfYz4EMA0ogirmBkN; HttpOnly; SameSite=None; Secure; Path=/; Domain=www.amberdata.io; Expires=Sun, 23 Aug 2026 11:07:28 GMT"
+    ],
+    [
+      "set-cookie",
+      "_cfuvid=wWDwHEEGTx2v2sFiHY_341KfTaCdpqJuYcR42PVxkh4-1787481448.8995757-1.0.1.1-iZCgnyTI_enJEK1pEefd52z9fyNGKuiXAfVkCYaWqa4; HttpOnly; SameSite=None; Secure; Path=/; Domain=www.amberdata.io"
+    ],
+    [
+      "Cache-Control",
+      "s-maxage=36000, max-age=5"
+    ],
+    [
+      "Nel",
+      "{\"report_to\":\"cf-nel\",\"success_fraction\":0.01,\"max_age\":604800}"
+    ],
+    [
+      "Last-Modified",
+      "Mon, 03 Aug 2026 11:27:04 GMT"
+    ],
+    [
+      "Link",
+      "<https://www.amberdata.io/hubfs/hub_generated/template_assets/1/66970015266/1785755392870/template_styles.min.css>; rel=preload; as=style,<https://www.amberdata.io/hubfs/hub_generated/template_assets/1/67759945235/1785755392692/template_code-block-styles.min.css>; rel=preload; as=style,<https://www.amberdata.io/hubfs/hub_generated/template_assets/1/190698237236/1785755395687/template_tailwind.min.css>; rel=preload; as=style,<https://www.amberdata.io/hubfs/hub_generated/module_assets/1/66970015111/1743727555998/module_u4m-hero.min.css>; rel=preload; as=style,<https://www.amberdata.io/hubfs/hub_generated/module_assets/1/66970015145/1743727558408/module_u4m-rich-text.min.css>; rel=preload; as=style,<https://www.amberdata.io/hubfs/hub_generated/module_assets/1/66970015101/1743727553385/module_u4m-footer.min.css>; rel=preload; as=style"
+    ],
+    [
+      "Strict-Transport-Security",
+      "max-age=31536000"
+    ],
+    [
+      "Content-Security-Policy",
+      "upgrade-insecure-requests"
+    ],
+    [
+      "Edge-Cache-Tag",
+      "CT-129603625273,CG-20854245,P-20854245,W-1647372282653,W-1647372369403,W-67042586402,CW-190659867269,CW-66970015101,CW-66970015111,CW-66970015145,E-190698237236,E-66970015266,E-66970015273,E-66970015275,E-66970015291,E-67759945235,MENU-67042586402,PGS-ALL,SW-4,B-58412322945,GC-191068397088,GC-67054574218,TS-66970015334"
+    ],
+    [
+      "Referrer-Policy",
+      "same-origin"
+    ],
+    [
+      "X-Content-Type-Options",
+      "nosniff"
+    ],
+    [
+      "X-Frame-Options",
+      "SAMEORIGIN"
+    ],
+    [
+      "X-HS-CF-Cache-Status",
+      "HIT"
+    ],
+    [
+      "X-HS-Cache-Config",
+      "BrowserCache-5s-EdgeCache-180s"
+    ],
+    [
+      "X-HS-Cache-Control",
+      "s-maxage=36000, max-age=0"
+    ],
+    [
+      "X-HS-Content-Id",
+      "129603625273"
+    ],
+    [
+      "X-HS-Hub-Id",
+      "20854245"
+    ],
+    [
+      "X-Hs-Prerendered",
+      "Mon, 03 Aug 2026 11:27:04 GMT"
+    ],
+    [
+      "x-hs-cfworker-meta",
+      "{\"contentType\":\"SITE_PAGE\",\"resolver\":\"PreRenderedContentResolver\"}"
+    ],
+    [
+      "x-hs-portal-id",
+      "20854245"
+    ],
+    [
+      "Vary",
+      "accept-encoding"
+    ],
+    [
+      "Report-To",
+      "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=VX94E7ZMBSrHiHhjpcAhla3sQgh1zBc%2BX1KrQfPAZ9KVcDwKOXhTu%2F6hMKBRGoBLr9ejOscbj2A1%2Be6wzo65FRre3gQdvbDT%2FUzp9N7A3Wisn9XrO7yQcvnkhiquYIM%2FFm1PlBWCUgC3InszakM%3D\"}]}"
+    ],
+    [
+      "Server",
+      "cloudflare"
+    ],
+    [
+      "CF-RAY",
+      "a2f97b6f9ed45d8e-FRA"
+    ],
+    [
+      "alt-svc",
+      "h3=\":443\"; ma=86400"
+    ]
+  ]
+}

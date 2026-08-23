@@ -1,0 +1,237 @@
+{
+  "candidate_004": {
+    "adoption_status": "PENDING_OWNER_BYTE_ADOPTION",
+    "candidate_sha256": "b4deb7048242239234de7eaa353b623b3e45247eb42f1021dbc26ffd910edb99",
+    "diff_sha256": "19ff0232d938c320ee9d9cf549a754f244ae00f357be1d3d738b4f303ff74577",
+    "forward_apply_verified": true,
+    "fuzz_used": false,
+    "manifest_sha256": "10788f3dd425cf2f94563034b44959b3f5b64a7b76a5fce86ea6cb0e44cf2ccc",
+    "offset_used": false,
+    "reverse_apply_verified": true
+  },
+  "canonical_file_inventory_sha256": "5bb6a71618c6a2eb2c18bf2b0fe3cb6ff103dd2d744f30982dce65d4b6b5665a",
+  "created_at_utc": "2026-08-23T13:23:32.447573Z",
+  "epoch": "FREE_OFFICIAL_BINANCE_DATA_AND_DUCKDB_REPAIR_001",
+  "file_count_excluding_inventory": 28,
+  "files": [
+    {
+      "line_count": 50,
+      "path": "baseline-attestation.json",
+      "sha256": "db048c7a27b326230ad8fb8692b2e8316fdfe106e7f26b7119ca8df804484944",
+      "size_bytes": 2111
+    },
+    {
+      "line_count": 41,
+      "path": "candidate-window-scan.json",
+      "sha256": "5a675c0923e9408fe98908883441f3940e0db2a76df4aeef0eb4741679fab931",
+      "size_bytes": 1726
+    },
+    {
+      "line_count": 7,
+      "path": "failed-attempts.jsonl",
+      "sha256": "1bf6c041ab710d53a59d58a2304b2b5584adb3ef3268228bc0db05e9ec31751c",
+      "size_bytes": 3147
+    },
+    {
+      "line_count": 113,
+      "path": "official-source-contracts.json",
+      "sha256": "b3e23f1656d16704a48860423b011af9adc8d51d9329d89e661706aefc5d06b2",
+      "size_bytes": 5677
+    },
+    {
+      "line_count": 18,
+      "path": "owner-decisions.json",
+      "sha256": "4eb7ae0ee151c7b196884156f413b963c8f30d9bc3af3d516910e7c063bd5143",
+      "size_bytes": 770
+    },
+    {
+      "line_count": 54,
+      "path": "owner-report/README.md",
+      "sha256": "017a715be497a97cec7f5083a3591250286a87d84c98f38fff3782461be17ac4",
+      "size_bytes": 4449
+    },
+    {
+      "line_count": 5,
+      "path": "perpetual-data-report.md",
+      "sha256": "260b8acdbd29c0c2372481b8c76eff50cee859be5b47a1a035928415c87b0f3e",
+      "size_bytes": 330
+    },
+    {
+      "line_count": 1184,
+      "path": "perpetual-mark-gap-disposition.json",
+      "sha256": "2407d36c7a41383a5ab57fe31cfc668ef1529ad76cf19e71d716139923f76f96",
+      "size_bytes": 67790
+    },
+    {
+      "line_count": 31430,
+      "path": "raw-object-inventory.json",
+      "sha256": "715311e0a44d4abf0a84431146a2049bbf4032119d10220290e63e5ed24ea819",
+      "size_bytes": 1219818
+    },
+    {
+      "line_count": 17,
+      "path": "rejected-candidate-003.json",
+      "sha256": "11cd715c8a9f3171bfa04b0c76cede75406899e9258fc4bf23d26da2e4902a59",
+      "size_bytes": 910
+    },
+    {
+      "line_count": 23,
+      "path": "selected-window.json",
+      "sha256": "5731b420db4b5f8a741ae0e79cdd36c297b12f670b2ef1ffb50a9b8713040208",
+      "size_bytes": 950
+    },
+    {
+      "line_count": 171885,
+      "path": "source-observations.json",
+      "sha256": "ab53a910b4f68021caf5be62f5acb960a515d5b720391468facc52d529dc1449",
+      "size_bytes": 5427518
+    },
+    {
+      "line_count": 63835,
+      "path": "spot-conflict-reconciliation.json",
+      "sha256": "152a224af2cf5f8644c8063393dbb4de4dc7c33ef950ce193c9ad237d9313133",
+      "size_bytes": 2440774
+    },
+    {
+      "line_count": 5,
+      "path": "spot-data-report.md",
+      "sha256": "61499825805b8431a0dba96fbc34d4070367fe1cedf1b28a1bedac90d8d99707",
+      "size_bytes": 419
+    },
+    {
+      "line_count": 337,
+      "path": "spot-trade-continuity.json",
+      "sha256": "1309d06919535e6b6da2af879e42d6eda03d50a0f019205666daf6c54b16d9fe",
+      "size_bytes": 11864
+    },
+    {
+      "line_count": 318,
+      "path": "ssot-candidate-004/SSOT.candidate-004.diff",
+      "sha256": "19ff0232d938c320ee9d9cf549a754f244ae00f357be1d3d738b4f303ff74577",
+      "size_bytes": 35506
+    },
+    {
+      "line_count": 2583,
+      "path": "ssot-candidate-004/SSOT.candidate-004.md",
+      "sha256": "b4deb7048242239234de7eaa353b623b3e45247eb42f1021dbc26ffd910edb99",
+      "size_bytes": 134376
+    },
+    {
+      "line_count": 1,
+      "path": "ssot-candidate-004/SSOT.candidate-004.sha256",
+      "sha256": "697c8e916c297801c64fa5264cfacd48fc456d1970314dabcbce8ccc4316897e",
+      "size_bytes": 88
+    },
+    {
+      "line_count": 75,
+      "path": "ssot-candidate-004/candidate-004-manifest.json",
+      "sha256": "10788f3dd425cf2f94563034b44959b3f5b64a7b76a5fce86ea6cb0e44cf2ccc",
+      "size_bytes": 4228
+    },
+    {
+      "line_count": 380,
+      "path": "ssot-candidate-004/forward-reverse-patch-verification.json",
+      "sha256": "a2bbeffdc45914512245bf99950ee33df6555afaf02f32d2fb10175d0e68eeb1",
+      "size_bytes": 12428
+    },
+    {
+      "line_count": 28,
+      "path": "ssot-candidate-004/owner-review-report.md",
+      "sha256": "38bc492f1bfa93085f8ee55931e8f0a4d6279199bbad678f38d31389a118e0d4",
+      "size_bytes": 1849
+    },
+    {
+      "line_count": 889,
+      "path": "ssot-candidate-004/semantic-audit.json",
+      "sha256": "03f86d912136037ec8a8a03b7b5155fe46d9decb4b72fe41f5e5170f3deef509",
+      "size_bytes": 51788
+    },
+    {
+      "line_count": 749,
+      "path": "tools/acquire_phase_a.py",
+      "sha256": "c743fa01e458bb7929643914588d60efc6d4ee38f3161d4b046cb089ebe0a0f1",
+      "size_bytes": 27507
+    },
+    {
+      "line_count": 1501,
+      "path": "tools/analyze_phase_a.py",
+      "sha256": "b9fd2e8660f96e6622710975c58da6e5be09602348b40bdce0b7fe95f31d7186",
+      "size_bytes": 65893
+    },
+    {
+      "line_count": 695,
+      "path": "tools/build_phase_a_evidence.py",
+      "sha256": "0ddc680d145878625d06d5f81582fc06739ba079d75524b47313d0006809df6b",
+      "size_bytes": 33899
+    },
+    {
+      "line_count": 252,
+      "path": "tools/finalize_phase_a_evidence.py",
+      "sha256": "e3b4b6f321076f5349d2fbe87e1fa8f8498707f9d802571d0b09a0204de3518d",
+      "size_bytes": 10914
+    },
+    {
+      "line_count": 493,
+      "path": "tools/verify_candidate_004.py",
+      "sha256": "583782ec4ca7fcbef677eec54573a8c8b303334e495db183672964e974891f78",
+      "size_bytes": 24097
+    },
+    {
+      "line_count": 54622,
+      "path": "verified-no-trade-intervals.json",
+      "sha256": "58ec1749f7ccf57a6d4de903ee6c27fb04fb082f0b77105eab0d5b1ff12747e9",
+      "size_bytes": 2096934
+    }
+  ],
+  "integrity": {
+    "commit_performed": false,
+    "current_duckdb_modified": false,
+    "current_duckdb_sha256": "932e97c446c713e8525f43b8111aced2e914b9579eba10823df7c6b0b51887b6",
+    "current_duckdb_size_bytes": 1236807680,
+    "dataset_release_created": false,
+    "dependency_lock_sha256": "b2765c9e33b10566fc327b48920fd1d3a73618c19622baaceab1fe9dca61df47",
+    "head": "f379a411bfd45ee566fd99d72ea402776ed48a85",
+    "historical_candidate_003": {
+      "inventory_sha256": "0bcf40dc3d51d44cf9e0f0619698d003de348c5c6789829f20cf95f25828aaf5",
+      "status": "UNCHANGED",
+      "validated_file_count": 282,
+      "validation_failure_count": 0
+    },
+    "origin_main": "f379a411bfd45ee566fd99d72ea402776ed48a85",
+    "push_performed": false,
+    "root_ssot_modified": false,
+    "root_ssot_sha256": "f51971ed7a09b172c82ff5965f2899d2a302dd71a2af60eb7c920133567b4354",
+    "runtime_lock_sha256": "4032df9f355348c2a0cfa9f79f331f97c9a8d24ecc8490a573d2c7f788bafddd",
+    "staged_diff_empty": true,
+    "strategy_or_official_trial_run": false,
+    "tracked_diff_empty": true
+  },
+  "inventory_excludes_itself": true,
+  "inventory_self_path": "final-content-manifest.json",
+  "json_validation_failure_count": 0,
+  "phase_scope": "PHASE_A_OFFICIAL_SOURCE_QUALIFICATION_AND_SSOT_CANDIDATE_004_ONLY",
+  "raw_local_artifacts": {
+    "phase_a_acquisition_file_sha256": "ac8a15108e3028e0cc0d5042c16d8cbd2a835d66b3f368e5324428316289dde7",
+    "phase_a_acquisition_identity": "6031d1f37a7e2687ba07988c6d2c9c74d241da368fd3baa4bfd5ffd31f1d8b40",
+    "phase_a_acquisition_path": "data/raw/free-official-binance-data-duckdb-001/phase-a-acquisition.json",
+    "phase_a_analysis_file_sha256": "9f14d07ebe67f452fc8c4a5363f76b1dbeaef4ba66d32c3691464d06ffbcaf58",
+    "phase_a_analysis_identity": "bf7c4d476702a6438e2940d85548943ca1b2b926f74ba64380e20bd0490c654d",
+    "phase_a_analysis_path": "data/raw/free-official-binance-data-duckdb-001/phase-a-analysis.json"
+  },
+  "required_files_missing": [],
+  "schema": "free-official-binance-phase-a-final-content-manifest-v1",
+  "secret_marker_hits": [],
+  "selected_window": {
+    "classification": "DATA_QUALITY_INSPECTED_NOT_FINAL_HOLDOUT",
+    "dataset_end_exclusive": "2021-08-01T00:00:00Z",
+    "dataset_start_inclusive": "2021-01-01T00:00:00Z",
+    "scoring_end_exclusive": "2021-08-01T00:00:00Z",
+    "scoring_start_inclusive": "2021-02-01T00:00:00Z",
+    "shift_months": 1,
+    "warmup_start_inclusive": "2021-01-01T00:00:00Z"
+  },
+  "status": "PASS_PENDING_OWNER_BYTE_ADOPTION",
+  "terminal_verdict": "SSOT_CANDIDATE_004_READY_FOR_OWNER_BYTE_ADOPTION",
+  "total_size_bytes_excluding_inventory": 11687760,
+  "utf8_or_lf_failure_count": 0
+}

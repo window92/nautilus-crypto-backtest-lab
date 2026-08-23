@@ -1,0 +1,7 @@
+# Captured raw response bytes and byte-exact audit transcripts are immutable
+# payloads. Treat them as binary so Git never normalizes them or applies
+# whitespace policy intended for authored source files.
+evidence/repair/binance-origin-archive-recovery-001/raw/** binary
+evidence/repair/binance-origin-archive-recovery-001/ssot-candidate-003/*.diff binary
+evidence/repair/free-official-binance-data-duckdb-001/ssot-candidate-004/*.diff binary
+evidence/repair/free-official-binance-data-duckdb-001/test-output.txt binary

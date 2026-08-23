@@ -1,0 +1,84 @@
+{
+  "headers": [
+    [
+      "Cache-Control",
+      "public, max-age=0, must-revalidate"
+    ],
+    [
+      "Cf-Cache-Status",
+      "EXPIRED"
+    ],
+    [
+      "Cf-Ray",
+      "a2f97bf05d0c364b-FRA"
+    ],
+    [
+      "Content-Disposition",
+      "inline"
+    ],
+    [
+      "Content-Security-Policy",
+      "default-src 'none'"
+    ],
+    [
+      "Content-Type",
+      "text/markdown; charset=utf-8"
+    ],
+    [
+      "Date",
+      "Sun, 23 Aug 2026 10:37:49 GMT"
+    ],
+    [
+      "Last-Modified",
+      "Sun, 23 Aug 2026 10:37:49 GMT"
+    ],
+    [
+      "Server",
+      "Vercel"
+    ],
+    [
+      "Server-Timing",
+      "cfCacheStatus;desc=\"EXPIRED\""
+    ],
+    [
+      "Server-Timing",
+      "cfEdge;dur=3,cfOrigin;dur=0,cfWorker;dur=188"
+    ],
+    [
+      "Strict-Transport-Security",
+      "max-age=63072000"
+    ],
+    [
+      "Vary",
+      "rsc, accept-encoding"
+    ],
+    [
+      "X-Frame-Options",
+      "DENY"
+    ],
+    [
+      "X-Matched-Path",
+      "/_mintlify/_markdown/_sites/[subdomain]/[[...slug]]"
+    ],
+    [
+      "X-Robots-Tag",
+      "noindex, nofollow"
+    ],
+    [
+      "X-Vercel-Cache",
+      "HIT"
+    ],
+    [
+      "X-Vercel-Id",
+      "fra1:fra1:iad1::iad1::7dpz8-1787481469468-6664013d17bc"
+    ],
+    [
+      "Connection",
+      "close"
+    ],
+    [
+      "Transfer-Encoding",
+      "chunked"
+    ]
+  ]
+}

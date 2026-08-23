@@ -1,0 +1,14 @@
+{
+  "capture_timestamp_utc": "2026-08-23T10:35:00.061099Z",
+  "request_method": "GET",
+  "request_url": "https://raw.githubusercontent.com/binance/binance-skills-hub/main/skills/binance/binance/references/futures-usds-streams.md",
+  "request_accept_encoding": "identity",
+  "final_url": "https://raw.githubusercontent.com/binance/binance-skills-hub/main/skills/binance/binance/references/futures-usds-streams.md",
+  "status_code": 200,
+  "body_path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/binance-skills-futures-streams.body",
+  "body_size_bytes": 2254,
+  "body_sha256": "95612311e1d7f3c988acc3f8458ac8be61e8c2695aa8f3c03908a1f388c02b9b",
+  "headers_path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/binance-skills-futures-streams.headers.json",
+  "credentials_used": false,
+  "parsed_before_body_saved": false
+}

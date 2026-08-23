@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Error><Code>PermanentRedirect</Code><Message>The bucket you are attempting to access must be addressed using the specified endpoint. Please send all future requests to this endpoint.</Message><Endpoint>sample.crypto.lake.s3.amazonaws.com</Endpoint><Bucket>sample.crypto.lake</Bucket><RequestId>HF7MFAXH5Q6DWYC8</RequestId><HostId>PbFg7zdMUsSCzwglzn4BqOGmgMauasc4Vk+hwYq4WM+xFVky1OFZz5iBEWailHJhSnQ5Up98Vcg=</HostId></Error>

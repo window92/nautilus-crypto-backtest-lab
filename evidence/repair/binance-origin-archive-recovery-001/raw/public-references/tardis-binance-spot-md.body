@@ -1,0 +1,148 @@
+> For the complete documentation index, see [llms.txt](https://docs.tardis.dev/llms.txt). Markdown versions of documentation pages are available by appending `.md` to page URLs; this page is available as [Markdown](https://docs.tardis.dev/historical-data-details/binance.md).
+
+# Binance Spot
+
+Binance historical data for **high caps currency pairs** is available since **2019-03-30**, data for all currency pairs is available since **2021-03-05**.
+
+{% embed url="<https://api.tardis.dev/v1/exchanges/binance>" %}
+See Binance historical data coverage: available symbols, channels, date ranges and incidents
+{% endembed %}
+
+### Downloadable **CSV** files
+
+Historical CSV datasets for the first day of each month are **available to download without API key**. See [downloadable CSV files documentation](/downloadable-csv-files/overview.md).
+
+| data type             | symbol  | date       |                                                                                                         |
+| --------------------- | ------- | ---------- | ------------------------------------------------------------------------------------------------------- |
+| incremental\_book\_L2 | BTCUSDT | 2019-12-01 | [Download sample](https://datasets.tardis.dev/v1/binance/incremental_book_L2/2019/12/01/BTCUSDT.csv.gz) |
+| trades                | BTCUSDT | 2019-12-01 | [Download sample](https://datasets.tardis.dev/v1/binance/trades/2019/12/01/BTCUSDT.csv.gz)              |
+| quotes                | BTCUSDT | 2019-12-01 | [Download sample](https://datasets.tardis.dev/v1/binance/quotes/2019/12/01/BTCUSDT.csv.gz)              |
+
+### API Access and data format
+
+Historical data format is the same as provided by real-time Binance WebSocket API with addition of local timestamps. If you'd like to work with **normalized data format** instead (same format for each exchange) see [downloadable CSV files](/downloadable-csv-files/overview.md) or official [client libs](/api/quickstart.md) that can perform data normalization client-side.
+
+{% tabs %}
+{% tab title="Python" %}
+
+```python
+# pip install tardis-dev
+import asyncio
+from tardis_dev import Channel, replay
+
+async def main():
+    async for local_timestamp, message in replay(
+        exchange="binance",
+        from_date="2023-03-01",
+        to_date="2023-03-02",
+        filters=[Channel(name="depth", symbols=["btcusdt"])],
+        api_key="YOUR_API_KEY",
+    ):
+        # messages as provided by Binance real-time stream
+        print(message)
+
+asyncio.run(main())
+```
+
+See [Python client docs](/python-client/quickstart.md).
+{% endtab %}
+
+{% tab title="Node.js" %}
+
+```javascript
+// npm install tardis-dev
+import { replay } from 'tardis-dev';
+
+const messages = replay({
+  exchange: 'binance',
+  from: '2023-03-01',
+  to: '2023-03-02',
+  filters: [{ channel: 'depth', symbols: ['btcusdt'] }],
+  apiKey: 'YOUR_API_KEY'
+});
+
+// messages as provided by Binance real-time stream
+for await (const { localTimestamp, message } of messages) {
+  console.log(localTimestamp, message);
+}
+```
+
+See [Node.js client docs](/node-client/quickstart.md).
+{% endtab %}
+
+{% tab title="cURL & HTTP API" %}
+
+```bash
+curl --compressed -g 'https://api.tardis.dev/v1/data-feeds/binance?from=2023-03-01&filters=[{"channel":"depth","symbols":["btcusdt"]}]&offset=0'
+```
+
+{% embed url="<https://api.tardis.dev/v1/data-feeds/binance?from=2023-03-01&filters=[{%22channel%22:%22depth%22,%22symbols%22:[%22btcusdt%22]}]&offset=0>" %}
+Example API response for Binance historical market data request
+{% endembed %}
+
+See [HTTP API docs](/api/http-api-reference.md).
+{% endtab %}
+
+{% tab title="cURL & tardis-machine" %}
+
+```bash
+curl -g 'localhost:8000/replay?options={"exchange":"binance","filters":[{"channel":"depth","symbols":["btcusdt"]}],"from":"2023-03-01","to":"2023-03-02"}'
+```
+
+[Tardis-machine](/tardis-machine/quickstart.md) is a locally runnable server that exposes API allowing efficiently requesting historical market data for whole time periods in contrast to [HTTP API](/api/http-api-reference.md) that provides data only in minute by minute slices.
+
+See [tardis-machine](/tardis-machine/quickstart.md) docs.
+{% endtab %}
+{% endtabs %}
+
+### Captured real-time channels
+
+{% embed url="<https://binance-docs.github.io/apidocs/spot/en/#websocket-market-streams>" %}
+See Binance WebSocket API docs providing documentation for each captured channel's format
+{% endembed %}
+
+{% hint style="info" %}
+Click any channel below to see [HTTP API](/api/http-api-reference.md#data-feeds-exchange) response with historical data recorded for it.
+{% endhint %}
+
+* [trade](https://api.tardis.dev/v1/data-feeds/binance?from=2024-01-01\&filters=\[{%22channel%22:%22trade%22}]) Public spot trade executions stream
+* [depth](https://api.tardis.dev/v1/data-feeds/binance?from=2024-01-01\&filters=\[{%22channel%22:%22depth%22,%22symbols%22:\[%22btcusdt%22]}]) Incremental order book updates stream. Recorded with the fastest API cadence available at the time: until 2019-08-30 it was subscribed as `depth` (1000ms updates), after that as `depth@100ms` (100ms updates).
+* [depthSnapshot](https://api.tardis.dev/v1/data-feeds/binance?from=2024-01-01\&filters=\[{%22channel%22:%22depthSnapshot%22,%22symbols%22:\[%22btcusdt%22]}]) — generated channel Binance real-time WebSocket API **does not provide initial order book snapshots**. To overcome this issue we fetch initial order book snapshots from REST API and store them together with the rest of the WebSocket messages — top 1000 levels. Such snapshot messages are marked with `"stream":"<symbol>@depthSnapshot"` and `"generated":true` fields.
+
+  During data collection integrity of order book incremental updates is being **validated** using [sequence numbers](https://binance-docs.github.io/apidocs/spot/en/#how-to-manage-a-local-order-book-correctly) provided by real-time feed (`U` and `u` fields) — in case of detecting missed message WebSocket connection is being restarted. We also validate if initial book snapshot fetched from REST API overlaps with received `depth` messages.
+* [bookTicker](https://api.tardis.dev/v1/data-feeds/binance?from=2024-01-01\&filters=\[{%22channel%22:%22bookTicker%22,%22symbols%22:\[%22btcusdt%22]}]) — available since **2019-09-21** Best bid and best ask updates stream
+* [aggTrade](https://api.tardis.dev/v1/data-feeds/binance?from=2024-01-01\&filters=\[{%22channel%22:%22aggTrade%22}]) — available since **2019-11-19** Aggregated spot trade executions stream
+* [ticker](https://api.tardis.dev/v1/data-feeds/binance?from=2024-01-01\&filters=\[{%22channel%22:%22ticker%22,%22symbols%22:\[%22btcusdt%22]}]) 24h spot ticker updates stream
+* [borrowInterest](https://api.tardis.dev/v1/data-feeds/binance?from=2024-01-01\&filters=\[{%22channel%22:%22borrowInterest%22}]) — generated channel, available since **2021-02-23** Margin borrow interest snapshots stream. Polled from Binance margin REST endpoint about every minute. Messages are marked as `"stream":"<asset>@borrowInterest"` and `"generated":true`.
+
+### Market data collection details
+
+[Market data collection infrastructure](/faq/general.md#what-is-your-infrastructure-setup) for Binance **since 2020-05-18** is located in GCP asia-northeast1 region (Tokyo, Japan), before that it was located in GCP europe-west2 region (London, UK).
+
+Real-time market data is captured via **multiple WebSocket connections** to `wss://stream.binance.com/stream?timeUnit=microsecond`.
+
+{% hint style="info" %}
+Binance servers are located in AWS ap-northeast-1 region (Tokyo, Japan).
+{% endhint %}
+
+
+---
+
+# Agent Instructions
+This documentation is published with GitBook. GitBook is the documentation platform designed so that both humans and AI agents can read, navigate, and reason over technical content effectively. Learn more at gitbook.com.
+
+## Querying This Documentation
+If you need additional information that is not directly available in this page, you can query the documentation dynamically by asking a question.
+
+Perform an HTTP GET request on the current page URL with the `ask` query parameter, and the optional `goal` query parameter:
+
+```
+GET https://docs.tardis.dev/historical-data-details/binance.md?ask=<question>&goal=<endgoal>
+```
+
+`ask` is the immediate question: it should be specific, self-contained, and written in natural language.
+`goal` is optional and describes the broader end goal you are ultimately trying to accomplish on behalf of the user. GitBook uses it to tailor the answer towards what is most useful for that goal.
+
+The response will contain a direct answer to the question and relevant excerpts and sources from the documentation.
+
+Use this mechanism when the answer is not explicitly present in the current page, you need clarification or additional context, or you want to retrieve related documentation sections.

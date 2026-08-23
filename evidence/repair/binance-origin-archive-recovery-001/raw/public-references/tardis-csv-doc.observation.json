@@ -1,0 +1,13 @@
+{
+  "capture_timestamp_utc": "2026-08-23T10:27:56.326202Z",
+  "request_method": "GET",
+  "request_url": "https://docs.tardis.dev/downloadable-csv-files",
+  "final_url": "https://docs.tardis.dev/downloadable-csv-files/overview",
+  "status_code": 200,
+  "body_path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/tardis-csv-doc.body",
+  "body_size_bytes": 903861,
+  "body_sha256": "828777912d524549c978152d88dfdc7ea4a99ae490e14cb1a11f0031dfb1e1d1",
+  "headers_path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/tardis-csv-doc.headers.json",
+  "credentials_used": false,
+  "parsed_before_body_saved": false
+}

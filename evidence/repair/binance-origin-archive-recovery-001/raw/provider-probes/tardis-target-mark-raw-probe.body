@@ -1,0 +1,4 @@
+{
+  "code": 10,
+  "message": "For unauthorized requests, only historical market data for the first day of each month is available (data for '2020-12-17T07:30:00.000Z' has been requested)."
+}

@@ -1,0 +1,403 @@
+> For the complete documentation index, see [llms.txt](https://docs.tardis.dev/llms.txt). Markdown versions of documentation pages are available by appending `.md` to page URLs; this page is available as [Markdown](https://docs.tardis.dev/faq/billing-and-subscriptions.md).
+
+# Billing and Subscriptions
+
+<details>
+
+<summary><strong>What is the order process?</strong></summary>
+
+1. Choose a data plan and subscription type in the [order form](https://tardis.dev/#order).
+   * available data plans
+     * [Perpetuals](#what-is-included-in-perpetuals-data-plan)
+     * [Options](#what-is-included-in-options-data-plan)
+     * [Spot](#what-is-included-in-spot-data-plan)
+     * [Derivatives](#what-is-included-in-derivatives-data-plan)
+     * [All Exchanges](#what-is-included-in-all-exchanges-data-plan)
+   * available subscription types
+     * [Solo](#what-are-the-differences-between-subscription-types)
+     * [Academic](#what-are-the-differences-between-subscription-types)
+     * [Pro](#what-are-the-differences-between-subscription-types)
+     * [Business](#what-are-the-differences-between-subscription-types)
+2. Proceed to checkout where you provide your email address and payment details. [See accepted payment methods](https://paddle.com/support/which-payment-methods-do-you-support/).
+   * accepted payment methods
+     * Credit Cards (Mastercard Visa Maestro American Express Discover Diners Club JCB UnionPay)
+     * PayPal
+3. Successfully complete your payment and receive an API key via email that allows you to [download CSV datasets](/downloadable-csv-files/overview.md) and [access historical data via API](/api/quickstart.md). The API key is valid while your account has an active subscription.
+
+{% hint style="info" %}
+For larger orders we also accept [pay through invoicing](#can-i-pay-through-invoicing).
+{% endhint %}
+
+</details>
+
+<details>
+
+<summary><strong>Do you provide discounts?</strong></summary>
+
+No. We do not provide discounts, but we offer [different subscription types](#what-are-the-differences-between-subscription-types) for solo traders, academic users, professionals and businesses.
+
+</details>
+
+<details>
+
+<summary><strong>How does subscription-based access work?</strong></summary>
+
+Subscription-based access uses monthly, quarterly or yearly billing. An active subscription gives access to newly collected market data as it [becomes available](/faq/data.md#what-is-the-historical-market-data-delay-in-relation-to-real-time), plus [existing historical market data](#do-subscriptions-include-access-to-historical-data-as-well). The historical range depends on the billing interval.
+
+When ordering a subscription, you choose:
+
+* Subscription type — [Academic, Solo, Pro, or Business](#what-are-the-differences-between-subscription-types)
+* Data plan — [Perpetuals](#what-is-included-in-perpetuals-data-plan), [Options](#what-is-included-in-options-data-plan), [Spot](#what-is-included-in-spot-data-plan), [Derivatives](#what-is-included-in-derivatives-data-plan) or [All Exchanges](#what-is-included-in-all-exchanges-data-plan)
+* Billing interval — [monthly, quarterly or yearly](#do-subscriptions-include-access-to-historical-data-as-well)
+
+For example, an "[All Exchanges](#what-is-included-in-all-exchanges-data-plan)" Business subscription with [yearly billing](#do-subscriptions-include-access-to-historical-data-as-well) gives access to **all available existing historical data via API and CSV files**, plus new data as it becomes available during the yearly billing interval.
+
+The product access scope depends on your subscription type:
+
+* **Academic and Solo** — [downloadable CSV files](/downloadable-csv-files/overview.md) only
+* **Pro and Business** — [downloadable CSV files](/downloadable-csv-files/overview.md), [raw data replay API](/api/quickstart.md), [tardis-machine](/tardis-machine/quickstart.md), and [instruments metadata API](/api/instruments-metadata-api.md)
+
+</details>
+
+<details>
+
+<summary><strong>What are the differences between subscription types?</strong></summary>
+
+{% hint style="info" %}
+Academic subscriptions are available with quarterly or yearly billing and require confirmation of eligibility, for example using a university email address.
+{% endhint %}
+
+|                                                                                                                       | Academic | Solo    | Professional | Business          |
+| --------------------------------------------------------------------------------------------------------------------- | -------- | ------- | ------------ | ----------------- |
+| [Full history access (yearly billing)](#do-subscriptions-include-access-to-historical-data-as-well)                   | 4 years  | 4 years | 4 years      | ✓ (all available) |
+| [Professional support level](/faq/general.md#what-does-professional-support-mean)                                     | none     | none    | email        | priority email    |
+| [Downloadable CSV files](/downloadable-csv-files/overview.md)                                                         | ✓        | ✓       | ✓            | ✓                 |
+| [Raw data replay API](/api/quickstart.md) (HTTP API `/data-feeds`)                                                    | —        | —       | ✓            | ✓                 |
+| [Tardis Machine replay APIs](/tardis-machine/replaying-historical-data.md#http-get-replay-normalized-options-options) | —        | —       | ✓            | ✓                 |
+| [Instrument metadata API](/api/instruments-metadata-api.md)                                                           | —        | —       | ✓            | ✓                 |
+| [Premium connectivity](/faq/general.md#what-is-premium-connectivity)                                                  | —        | —       | ✓            | ✓                 |
+| Integration assistance                                                                                                | —        | —       | —            | ✓                 |
+| Vendor onboarding                                                                                                     | —        | —       | —            | ✓                 |
+| Active API keys                                                                                                       | 1        | 1       | 1            | up to 10          |
+
+{% hint style="info" %}
+Academic, Solo and Professional include one active API key; Business includes up to 10. All API keys share the account's [API request and data transfer limits](/api/rate-limits.md).
+
+Each API key can be used from one IP address at a time. [Real-time market data streaming](/faq/general.md#do-you-support-consolidated-real-time-market-data-streaming) does not require an API key.
+{% endhint %}
+
+</details>
+
+<details>
+
+<summary><strong>Do subscriptions include access to historical data as well?</strong></summary>
+
+Yes, **depending on the billing interval**, subscriptions include access to existing historical market data as well:
+
+* **Yearly billing:**
+  * **Business subscriptions:** access to **all available historical data** since **2019-03-30** for majority of the supported exchanges ([see exchange details page](/historical-data-details/overview.md#per-exchange-historical-data-details) for exact date for particular exchange)
+  * **Academic, Solo, and Pro subscriptions:** access to **4 years of historical data**, e.g., subscription that has started at 2026-01-01 includes access to historical data since 2022-01-01
+* **Quarterly billing:** access to **12 months of historical data**, e.g., subscription that has started at 2026-01-01 includes access to historical data since 2025-01-01
+* **Monthly billing (Solo, Pro, and Business only):** access to **4 months of historical data**, e.g., subscription that has started at 2026-01-01 includes access to historical data since 2025-09-01
+
+Historical data access is not a rolling time window, but a fixed starting date since when historical data is available for your subscription.
+
+</details>
+
+<details>
+
+<summary><strong>What is included in "Perpetuals" data plan?</strong></summary>
+
+"Perpetuals" data plan provides access to the following perpetual swaps instruments' market data:
+
+* [Binance USDS-M Futures](/historical-data-details/binance-futures.md): all perpetual swaps instruments
+* [Binance COIN Futures](/historical-data-details/binance-delivery.md): all perpetual swaps instruments
+* [OKX Swap](/historical-data-details/okex-swap.md): all perpetual swaps instruments
+* [BitMEX](/historical-data-details/bitmex.md): all perpetual swaps instruments
+* [Deribit](/historical-data-details/deribit.md): all perpetual swaps instruments
+* [Bybit Derivatives](/historical-data-details/bybit.md): all perpetual swaps instruments
+* [Kraken Futures](/historical-data-details/cryptofacilities.md): all perpetual swaps instruments
+* [Bitfinex Derivatives](/historical-data-details/bitfinex-derivatives.md): all perpetual swaps instruments
+* [KuCoin Futures](/historical-data-details/kucoin-futures.md): all perpetual swaps instruments
+* [Aster Futures](/historical-data-details/aster-futures.md): all perpetual swaps instruments
+* [MEXC Futures](/historical-data-details/mexc-futures.md): all perpetual swaps instruments
+* [Crypto.com](/historical-data-details/crypto-com.md): all perpetual swaps instruments
+* [Bitget Futures](/historical-data-details/bitget-futures.md): all perpetual swaps instruments
+* [Gate.io Futures](/historical-data-details/gate-io-futures.md): all perpetual swaps instruments
+* [HTX Coin-M Perpetual](/historical-data-details/huobi-dm-swap.md): all perpetual swaps instruments
+* [HTX USDT-M Contracts](/historical-data-details/huobi-dm-linear-swap.md): all perpetual swaps instruments
+* [WOO X](/historical-data-details/woo-x.md): all perpetual swaps instruments
+* [Phemex](/historical-data-details/phemex.md): all perpetual swaps instruments
+* [Delta Exchange](/historical-data-details/delta.md): all perpetual swaps instruments
+* [bitFlyer](/historical-data-details/bitflyer.md): FX\_BTC\_JPY
+* [Hyperliquid](/historical-data-details/hyperliquid.md): all perpetual swaps instruments
+* [Lighter](/historical-data-details/lighter.md): all perpetual swaps instruments
+* [Bullish](/historical-data-details/bullish.md): all perpetual swaps instruments
+* [dYdX v4](/historical-data-details/dydx-v4.md): all perpetual swaps instruments
+* [FTX](/historical-data-details/ftx.md) (delisted): all perpetual swaps instruments
+* [AscendEX](/historical-data-details/ascendex.md) (delisted): all perpetual swaps instruments
+* [CoinFLEX](/historical-data-details/coinflex.md) (delisted): all perpetual swaps instruments
+* [dYdX](/historical-data-details/dydx.md) (delisted): all perpetual swaps instruments
+
+"Perpetuals" data plan allows access to [**all available data types**](/faq/data.md#what-data-types-do-you-support) (trades, order book data, funding, etc.) via [downloadable CSV files](/downloadable-csv-files/overview.md) and [raw data replay API](/api/quickstart.md) (for Pro and Business subscription types).
+
+Range of historical data access for "Perpetuals" data plan depends on [billing interval and subscription type](#do-subscriptions-include-access-to-historical-data-as-well).
+
+</details>
+
+<details>
+
+<summary><strong>What is included in "Options" data plan?</strong></summary>
+
+"Options" data plan provides access to the following options exchanges' market data:
+
+* [Binance European Options](/historical-data-details/binance-european-options.md): all options instruments
+* [OKX Options](/historical-data-details/okex-options.md): all options instruments
+* [Deribit](/historical-data-details/deribit.md): all options instruments
+* [Bybit Options](/historical-data-details/bybit-options.md): all options instruments
+* [Bullish](/historical-data-details/bullish.md): all options instruments
+* [HTX Options](/historical-data-details/huobi-dm-options.md) (delisted): all options instruments
+
+"Options" data plan allows access to [**all available data types**](/faq/data.md#what-data-types-do-you-support) (trades, order book data, quotes, etc.) via [downloadable CSV files](/downloadable-csv-files/overview.md) and [raw data replay API](/api/quickstart.md) (for Pro and Business subscription types).
+
+Range of historical data access for "Options" data plan depends on [billing interval and subscription type](#do-subscriptions-include-access-to-historical-data-as-well).
+
+</details>
+
+<details>
+
+<summary><strong>What is included in "Spot" data plan?</strong></summary>
+
+"Spot" data plan provides access to the following spot exchanges' market data:
+
+* [Binance Spot](/historical-data-details/binance.md): all spot instruments
+* [Binance US](/historical-data-details/binance-us.md): all spot instruments
+* [OKX Spot](/historical-data-details/okex.md): all spot instruments
+* [Bybit Spot](/historical-data-details/bybit-spot.md): all spot instruments
+* [Kraken](/historical-data-details/kraken.md): all spot instruments
+* [Bitfinex](/historical-data-details/bitfinex.md): all spot instruments
+* [KuCoin Spot](/historical-data-details/kucoin.md): all spot instruments
+* [Aster Spot](/historical-data-details/aster.md): all spot instruments
+* [MEXC Spot](/historical-data-details/mexc.md): all spot instruments
+* [Crypto.com](/historical-data-details/crypto-com.md): all spot instruments
+* [Bitstamp](/historical-data-details/bitstamp.md): all spot instruments
+* [Bitget Spot](/historical-data-details/bitget.md): all spot instruments
+* [Gate.io](/historical-data-details/gate-io.md): all spot instruments
+* [HTX Spot](/historical-data-details/huobi.md): all spot instruments
+* [Gemini](/historical-data-details/gemini.md): all spot instruments
+* [WOO X](/historical-data-details/woo-x.md): all spot instruments
+* [Upbit](/historical-data-details/upbit.md): all spot instruments
+* [Blockchain.com](/historical-data-details/blockchain-com.md): all spot instruments
+* [HitBTC](/historical-data-details/hitbtc.md): all spot instruments
+* [Poloniex](/historical-data-details/poloniex.md): all spot instruments
+* [Lighter](/historical-data-details/lighter.md): all spot instruments
+* [Bullish](/historical-data-details/bullish.md): all spot instruments
+* [FTX](/historical-data-details/ftx.md) (delisted): all spot instruments
+* [FTX US](/historical-data-details/ftx-us.md) (delisted): all spot instruments
+* [OKCoin](/historical-data-details/okcoin.md) (delisted): all spot instruments
+* [AscendEX](/historical-data-details/ascendex.md) (delisted): all spot instruments
+* [CoinFLEX](/historical-data-details/coinflex.md) (delisted): all spot instruments
+* [Binance Jersey](/historical-data-details/binance-jersey.md) (delisted): all spot instruments
+* [Binance DEX](/historical-data-details/binance-dex.md) (delisted): all spot instruments
+* [Serum](/historical-data-details/serum.md) (delisted): all spot instruments
+* [Star Atlas](/historical-data-details/star-atlas.md) (delisted): all spot instruments
+
+"Spot" data plan allows access to [**all available data types**](/faq/data.md#what-data-types-do-you-support) (trades, order book data, quotes, etc.) via [downloadable CSV files](/downloadable-csv-files/overview.md) and [raw data replay API](/api/quickstart.md) (for Pro and Business subscription types).
+
+Range of historical data access for "Spot" data plan depends on [billing interval and subscription type](#do-subscriptions-include-access-to-historical-data-as-well).
+
+{% hint style="info" %}
+[Coinbase Exchange](/historical-data-details/coinbase.md) and [Coinbase International](/historical-data-details/coinbase-international.md) market data are available only in the ["All Exchanges" data plan](#what-is-included-in-all-exchanges-data-plan).
+{% endhint %}
+
+</details>
+
+<details>
+
+<summary><strong>What is included in "Derivatives" data plan?</strong></summary>
+
+"Derivatives" data plan provides access to the following derivatives exchanges' market data:
+
+* [Binance USDS-M Futures](/historical-data-details/binance-futures.md): all exchange's instruments
+* [Binance COIN Futures](/historical-data-details/binance-delivery.md): all exchange's instruments
+* [Binance European Options](/historical-data-details/binance-european-options.md): all exchange's instruments
+* [OKX Futures](/historical-data-details/okex-futures.md): all exchange's instruments
+* [OKX Swap](/historical-data-details/okex-swap.md): all exchange's instruments
+* [OKX Options](/historical-data-details/okex-options.md): all exchange's instruments
+* [OKX Nitro Spreads](/historical-data-details/okex-spreads.md): all exchange's instruments
+* [BitMEX](/historical-data-details/bitmex.md): all exchange's instruments
+* [Deribit](/historical-data-details/deribit.md): all exchange's instruments
+* [Bybit Derivatives](/historical-data-details/bybit.md): all exchange's instruments
+* [Bybit Options](/historical-data-details/bybit-options.md): all exchange's instruments
+* [Kraken Futures](/historical-data-details/cryptofacilities.md): all exchange's instruments
+* [Bitfinex Derivatives](/historical-data-details/bitfinex-derivatives.md): all exchange's instruments
+* [KuCoin Futures](/historical-data-details/kucoin-futures.md): all exchange's instruments
+* [Aster Futures](/historical-data-details/aster-futures.md): all exchange's instruments
+* [MEXC Futures](/historical-data-details/mexc-futures.md): all exchange's instruments
+* [Crypto.com](/historical-data-details/crypto-com.md): all exchange's instruments
+* [Bitget Futures](/historical-data-details/bitget-futures.md): all exchange's instruments
+* [Gate.io Futures](/historical-data-details/gate-io-futures.md): all exchange's instruments
+* [HTX Coin-M Futures](/historical-data-details/huobi-dm.md): all exchange's instruments
+* [HTX Coin-M Perpetual](/historical-data-details/huobi-dm-swap.md): all exchange's instruments
+* [HTX USDT-M Contracts](/historical-data-details/huobi-dm-linear-swap.md): all exchange's instruments
+* [WOO X](/historical-data-details/woo-x.md): all exchange's instruments
+* [Phemex](/historical-data-details/phemex.md): all exchange's instruments
+* [Delta Exchange](/historical-data-details/delta.md): all exchange's instruments
+* [Bitnomial](/historical-data-details/bitnomial.md): all exchange's instruments
+* [bitFlyer](/historical-data-details/bitflyer.md): all exchange's instruments
+* [Hyperliquid](/historical-data-details/hyperliquid.md): all exchange's instruments
+* [Lighter](/historical-data-details/lighter.md): all exchange's instruments
+* [Bullish](/historical-data-details/bullish.md): all exchange's instruments
+* [dYdX v4](/historical-data-details/dydx-v4.md): all exchange's instruments
+* [FTX](/historical-data-details/ftx.md) (delisted): all exchange's instruments
+* [AscendEX](/historical-data-details/ascendex.md) (delisted): all exchange's instruments
+* [CoinFLEX](/historical-data-details/coinflex.md) (delisted): all exchange's instruments
+* [HTX Options](/historical-data-details/huobi-dm-options.md) (delisted): all exchange's instruments
+* [dYdX](/historical-data-details/dydx.md) (delisted): all exchange's instruments
+* [Mango](/historical-data-details/mango.md) (delisted): all exchange's instruments
+
+"Derivatives" data plan allows access to [**all available data types**](/faq/data.md#what-data-types-do-you-support) (trades, order book data, quotes, funding, etc.) via [downloadable CSV files](/downloadable-csv-files/overview.md) and [raw data replay API](/api/quickstart.md) (for Pro and Business subscription types).
+
+Range of historical data access for "Derivatives" data plan depends on [billing interval and subscription type](#do-subscriptions-include-access-to-historical-data-as-well).
+
+</details>
+
+<details>
+
+<summary><strong>What is included in "All Exchanges" data plan?</strong></summary>
+
+"All Exchanges" data plan provides access to market data of [**all supported exchanges**](/faq/general.md#which-exchanges-instruments-and-currency-pairs-are-supported) (**50+ leading spot and derivatives exchanges**, [see full list](/faq/general.md#which-exchanges-instruments-and-currency-pairs-are-supported)).
+
+"All Exchanges" data plan allows access to [**all available data types**](/faq/data.md#what-data-types-do-you-support) (trades, order book data, quotes, funding, liquidations, etc.) for [all supported exchanges](/faq/general.md#which-exchanges-instruments-and-currency-pairs-are-supported) and their instruments/currency pairs via [downloadable CSV files](/downloadable-csv-files/overview.md) and [raw data replay API](/api/quickstart.md) (for Pro and Business subscription types).
+
+Range of historical data access for "All Exchanges" data plan depends on [billing interval and subscription type](#do-subscriptions-include-access-to-historical-data-as-well).
+
+</details>
+
+<details>
+
+<summary><strong>How can I change my subscription plan?</strong></summary>
+
+[Contact us](https://tardis.dev/#contact) with the plan you'd like to switch to and we'll handle it.
+
+</details>
+
+<details>
+
+<summary><strong>Can I pay through invoicing?</strong></summary>
+
+We offer invoicing for customers paying over $6000 for data access. Simply use our [order form](https://tardis.dev/#order) and "PAY THROUGH INVOICING" button.
+
+Alternatively [contact us](https://tardis.dev/#contact) with order details you're interested in (data plan, billing interval) and we'll send you back invoice that if paid will give you access to the data.
+
+![Pay through invoicing order form preview](/files/IgS6OoWTLmdKD9gtK8Lg)
+
+![Sample invoice document preview](/files/mx2mxdorBj2GPQuRQ4Wt)
+
+</details>
+
+<details>
+
+<summary><strong>Can I get quotation document before making an order?</strong></summary>
+
+Yes, please use our [order form](https://tardis.dev/#order) and "REQUEST QUOTATION" button.
+
+Alternatively [contact us](https://tardis.dev/#contact) with order details you're interested in (data plan, billing interval) and we'll send you a quotation document.
+
+![request quotation document order form preview](/files/IgS6OoWTLmdKD9gtK8Lg)
+
+![Sample quotation document preview](/files/2MreoyInovyg1wfofLT1)
+
+</details>
+
+<details>
+
+<summary><strong>How can I get an invoice and VAT refund?</strong></summary>
+
+After successful order you'll receive Receipt email from [Paddle](https://paddle.com/) which is our online reseller & payment processor. Click on the button titled "View Receipt" there.
+
+![Receipt email preview](/files/EHjMfsc7NKZUYtTAMT3L)
+
+You will be redirected to the receipt page where you will be able to enter your address details by clicking on "Add address & VAT Number“ link.
+
+![Receipt page preview](/files/eGP7mKXAQuoAlAeB8zvK)
+
+If you would like to enter a VAT number select "This is a business purchase" checkbox to enter the VAT ID if forgot to enter it during the checkout. The tax amount will be refunded in max. 12 hours after it is confirmed by Paddle.
+
+!["Edit receipt information" preview](/files/yEHOg1TWUsAdmOF1u4Bp)
+
+#### [Save invoice as PDF](https://www.wikihow.com/Convert-a-Webpage-to-PDF)
+
+* Right click on the screen and click 'Print...' in context menu
+* Change destination to 'Save as PDF'
+* Click 'Save' button to save invoice as PDF file
+
+</details>
+
+<details>
+
+<summary><strong>What are your VAT details?</strong></summary>
+
+Click on the link titled "Click here to get a full invoice with address & custom information" provided with the order confirmation email sent by Paddle to get the address and VAT ID of Paddle who process our payments. Paddle acts as a reseller and Merchant of Record so they handle VAT on our behalf.
+
+</details>
+
+<details>
+
+<summary><strong>I’ve lost my invoice. How do I get a new one?</strong></summary>
+
+You need to [contact us](https://tardis.dev/#contact) or <help@paddle.com> to request a new invoice. Please provide the email address you bought the subscription with and any extra details that might help.
+
+</details>
+
+<details>
+
+<summary><strong>What is the refund policy?</strong></summary>
+
+We do not offer refunds for initial subscription payments.
+
+If you are on **yearly billing** and forget to [cancel](#how-can-i-cancel-my-subscription) your subscription before the renewal date, [reach out to us](https://tardis.dev/#contact) within seven days after the renewal date to discuss a refund.
+
+If you’re on **monthly or quarterly billing**, please be sure to [cancel](#how-can-i-cancel-my-subscription) your subscription before the end date of your current plan as there are no refunds for recurring payments on monthly and quarterly billing plans.
+
+</details>
+
+<details>
+
+<summary><strong>How can I cancel my subscription?</strong></summary>
+
+To cancel your subscription, use the cancellation link from your subscription email or [contact us](https://tardis.dev/#contact) and we'll send it again.
+
+Alternatively you can email [Paddle](https://paddle.com/) (<help@paddle.com>) which acts as our reseller and Merchant of Record including a note of the email address you used to purchase your subscription and your order number.
+
+</details>
+
+<details>
+
+<summary><strong>How can I update my credit card information?</strong></summary>
+
+In order to update your credit card information use the 'Update payment method' link we've sent you in email together with your API key or [contact us](https://tardis.dev/#contact) and we'll provide that link for you.
+
+</details>
+
+
+---
+
+# Agent Instructions
+This documentation is published with GitBook. GitBook is the documentation platform designed so that both humans and AI agents can read, navigate, and reason over technical content effectively. Learn more at gitbook.com.
+
+## Querying This Documentation
+If you need additional information that is not directly available in this page, you can query the documentation dynamically by asking a question.
+
+Perform an HTTP GET request on the current page URL with the `ask` query parameter, and the optional `goal` query parameter:
+
+```
+GET https://docs.tardis.dev/faq/billing-and-subscriptions.md?ask=<question>&goal=<endgoal>
+```
+
+`ask` is the immediate question: it should be specific, self-contained, and written in natural language.
+`goal` is optional and describes the broader end goal you are ultimately trying to accomplish on behalf of the user. GitBook uses it to tailor the answer towards what is most useful for that goal.
+
+The response will contain a direct answer to the question and relevant excerpts and sources from the documentation.
+
+Use this mechanism when the answer is not explicitly present in the current page, you need clarification or additional context, or you want to retrieve related documentation sections.

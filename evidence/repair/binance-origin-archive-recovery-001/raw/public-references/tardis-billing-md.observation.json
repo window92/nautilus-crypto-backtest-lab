@@ -1,0 +1,13 @@
+{
+  "capture_timestamp_utc": "2026-08-23T10:28:46.405391Z",
+  "request_method": "GET",
+  "request_url": "https://docs.tardis.dev/faq/billing-and-subscriptions.md",
+  "final_url": "https://docs.tardis.dev/faq/billing-and-subscriptions.md",
+  "status_code": 200,
+  "body_path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/tardis-billing-md.body",
+  "body_size_bytes": 26631,
+  "body_sha256": "8eb6239605cbe9f00d5c1dc218532a49aee7cf1b19ebe82f3630fce63fee4120",
+  "headers_path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/tardis-billing-md.headers.json",
+  "credentials_used": false,
+  "parsed_before_body_saved": false
+}

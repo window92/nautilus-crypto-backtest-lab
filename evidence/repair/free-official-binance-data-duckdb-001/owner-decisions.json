@@ -1,0 +1,18 @@
+{
+  "decisions": {
+    "candidate_003": "REJECTED_BY_OWNER_PAID_PROVIDER_PATH_NOT_AUTHORIZED",
+    "duckdb_role": "DERIVED_CANONICAL_VALIDATION_AND_STORAGE_ONLY",
+    "free_official_binance_sources_only": true,
+    "mark_substitution_authorized": false,
+    "nautilus_remains_only_financial_engine": true,
+    "paid_provider_or_subscription_authorized": false,
+    "provider_contact_authorized": false,
+    "raw_bytes_remain_authority": true,
+    "strategy_or_official_trial_authorized_in_phase_a": false,
+    "synthetic_price_authorized": false
+  },
+  "epoch": "FREE_OFFICIAL_BINANCE_DATA_AND_DUCKDB_REPAIR_001",
+  "recorded_at_utc": "2026-08-23T13:21:30.702335Z",
+  "schema": "free-official-binance-owner-decisions-v1",
+  "status": "LOCKED_OWNER_DIRECTIVE_RECORDED"
+}

@@ -1,0 +1,76 @@
+{
+  "headers": [
+    [
+      "Cache-Control",
+      "public, max-age=0, must-revalidate"
+    ],
+    [
+      "Cf-Cache-Status",
+      "EXPIRED"
+    ],
+    [
+      "Cf-Ray",
+      "a2f97b82ffaabbef-FRA"
+    ],
+    [
+      "Content-Security-Policy",
+      "worker-src * blob: data: 'unsafe-eval' 'unsafe-inline'; object-src data: ; base-uri 'self'; upgrade-insecure-requests; frame-ancestors 'self' https://dashboard.mintlify.com https://app.mintlify.com; form-action 'self' https://codesandbox.io;"
+    ],
+    [
+      "Content-Type",
+      "text/plain; charset=utf-8"
+    ],
+    [
+      "Date",
+      "Sun, 23 Aug 2026 10:37:31 GMT"
+    ],
+    [
+      "Last-Modified",
+      "Sun, 23 Aug 2026 10:37:32 GMT"
+    ],
+    [
+      "Server",
+      "Vercel"
+    ],
+    [
+      "Server-Timing",
+      "cfCacheStatus;desc=\"EXPIRED\""
+    ],
+    [
+      "Server-Timing",
+      "cfEdge;dur=4,cfOrigin;dur=0,cfWorker;dur=381"
+    ],
+    [
+      "Strict-Transport-Security",
+      "max-age=63072000"
+    ],
+    [
+      "Vary",
+      "rsc, accept-encoding"
+    ],
+    [
+      "X-Frame-Options",
+      "DENY"
+    ],
+    [
+      "X-Matched-Path",
+      "/_sites/[subdomain]/llms.txt"
+    ],
+    [
+      "X-Vercel-Cache",
+      "MISS"
+    ],
+    [
+      "X-Vercel-Id",
+      "fra1:fra1:iad1::iad1::7r6td-1787481451958-bfd2ab5c0425"
+    ],
+    [
+      "Connection",
+      "close"
+    ],
+    [
+      "Transfer-Encoding",
+      "chunked"
+    ]
+  ]
+}

@@ -1,0 +1,120 @@
+{
+  "headers": [
+    [
+      "Date",
+      "Sun, 23 Aug 2026 10:37:34 GMT"
+    ],
+    [
+      "Content-Type",
+      "text/html; charset=UTF-8"
+    ],
+    [
+      "Transfer-Encoding",
+      "chunked"
+    ],
+    [
+      "Connection",
+      "close"
+    ],
+    [
+      "set-cookie",
+      "__cf_bm=PmsYmgc5bDl3914i62Nf6vqPdyyhbfBSlOLbv7lzRNE-1787481454.7884152-1.0.1.1-S.DrWl35Hus8Mo9TndnDcp1IGjK0VO.xzKnohpexCtFSGl2wnZ4N3M0sDSPF19n8jMzNcgiwFEIxoRYIa6zoQ..BfSUlm4A4tK4cm7qhv2MCM9581ZIUSWs4a1p9XSkt; HttpOnly; SameSite=None; Secure; Path=/; Domain=www.amberdata.io; Expires=Sun, 23 Aug 2026 11:07:34 GMT"
+    ],
+    [
+      "set-cookie",
+      "_cfuvid=dS6aKC.tJGmpjH7Yd92ZZhkoyo.aVDrUc6LXdiMaE9Q-1787481454.7884152-1.0.1.1-kK6Fl4wEI6oXjpIyYjnIFFYzluMt7XsT_imR6th0kQk; HttpOnly; SameSite=None; Secure; Path=/; Domain=www.amberdata.io"
+    ],
+    [
+      "Cache-Control",
+      "s-maxage=36000, max-age=5"
+    ],
+    [
+      "Nel",
+      "{\"report_to\":\"cf-nel\",\"success_fraction\":0.01,\"max_age\":604800}"
+    ],
+    [
+      "Last-Modified",
+      "Mon, 03 Aug 2026 11:27:04 GMT"
+    ],
+    [
+      "Link",
+      "<https://www.amberdata.io/hubfs/hub_generated/template_assets/1/66970015266/1785755392870/template_styles.min.css>; rel=preload; as=style,<https://www.amberdata.io/hubfs/hub_generated/template_assets/1/67759945235/1785755392692/template_code-block-styles.min.css>; rel=preload; as=style,<https://www.amberdata.io/hubfs/hub_generated/template_assets/1/190698237236/1785755395687/template_tailwind.min.css>; rel=preload; as=style,<https://www.amberdata.io/hubfs/hub_generated/module_assets/1/66970015090/1743727549207/module_u4m-cards.min.css>; rel=preload; as=style,<https://www.amberdata.io/hubfs/hub_generated/module_assets/1/66970015093/1743727550145/module_u4m-cta-row.min.css>; rel=preload; as=style,<https://www.amberdata.io/hubfs/hub_generated/module_assets/1/66970015106/1743727554371/module_u4m-form.min.css>; rel=preload; as=style,<https://www.amberdata.io/hubfs/hub_generated/module_assets/1/66970015101/1743727553385/module_u4m-footer.min.css>; rel=preload; as=style"
+    ],
+    [
+      "Strict-Transport-Security",
+      "max-age=31536000"
+    ],
+    [
+      "Content-Security-Policy",
+      "upgrade-insecure-requests"
+    ],
+    [
+      "Edge-Cache-Tag",
+      "CT-68709379120,CG-20854245,P-20854245,W-1647466554708,W-1647890363903,W-1737324689960,W-67042586402,CW-190659867269,CW-66970015090,CW-66970015093,CW-66970015101,CW-66970015106,E-190698237236,E-66970015266,E-66970015272,E-66970015273,E-66970015275,E-66970015291,E-67759945235,MENU-67042586402,PGS-ALL,SW-4,B-58412322945,GC-191068397088,GC-67054574218,TS-66970015334"
+    ],
+    [
+      "Referrer-Policy",
+      "same-origin"
+    ],
+    [
+      "X-Content-Type-Options",
+      "nosniff"
+    ],
+    [
+      "X-Frame-Options",
+      "SAMEORIGIN"
+    ],
+    [
+      "X-HS-CF-Cache-Status",
+      "HIT"
+    ],
+    [
+      "X-HS-Cache-Config",
+      "BrowserCache-5s-EdgeCache-5s"
+    ],
+    [
+      "X-HS-Cache-Control",
+      "s-maxage=36000, max-age=0"
+    ],
+    [
+      "X-HS-Content-Id",
+      "68709379120"
+    ],
+    [
+      "X-HS-Hub-Id",
+      "20854245"
+    ],
+    [
+      "X-Hs-Prerendered",
+      "Mon, 03 Aug 2026 11:27:04 GMT"
+    ],
+    [
+      "x-hs-cfworker-meta",
+      "{\"contentType\":\"LANDING_PAGE\",\"resolver\":\"PreRenderedContentResolver\"}"
+    ],
+    [
+      "x-hs-portal-id",
+      "20854245"
+    ],
+    [
+      "Vary",
+      "accept-encoding"
+    ],
+    [
+      "Report-To",
+      "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=lq8ogYyJfWMrZW9bPQTpWOqChKCN%2BCGle6bakBUYenfxEJF%2FqZksJS8RbD%2F1DUbGOEpg9WBbThHZgqng5ayyxtYFo3TVPsUS1%2BzpBr9dGZUoaNLVl2a1v1XDz%2FKsOq4V5dQH1A4Kef5ETugK4AU%3D\"}]}"
+    ],
+    [
+      "Server",
+      "cloudflare"
+    ],
+    [
+      "CF-RAY",
+      "a2f97b946e64d344-FRA"
+    ],
+    [
+      "alt-svc",
+      "h3=\":443\"; ma=86400"
+    ]
+  ]
+}

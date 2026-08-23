@@ -1,0 +1,100 @@
+{
+  "headers": [
+    [
+      "Content-Type",
+      "application/json"
+    ],
+    [
+      "Content-Length",
+      "1184"
+    ],
+    [
+      "Connection",
+      "close"
+    ],
+    [
+      "Date",
+      "Sun, 23 Aug 2026 10:55:27 GMT"
+    ],
+    [
+      "x-xss-protection",
+      "1; mode=block"
+    ],
+    [
+      "Server",
+      "nginx"
+    ],
+    [
+      "Vary",
+      "Accept-Encoding"
+    ],
+    [
+      "x-mbx-used-weight-1m",
+      "15"
+    ],
+    [
+      "x-response-time",
+      "5ms"
+    ],
+    [
+      "Access-Control-Allow-Origin",
+      "*"
+    ],
+    [
+      "Access-Control-Allow-Methods",
+      "GET, POST, PUT, DELETE, OPTIONS"
+    ],
+    [
+      "Access-Control-Allow-Credentials",
+      "true"
+    ],
+    [
+      "Access-Control-Allow-Headers",
+      "*,clienttype,Content-Type,lang,x-ui-request-trace,bnc-uuid"
+    ],
+    [
+      "Content-Security-Policy",
+      "default-src 'self'"
+    ],
+    [
+      "cache-control",
+      "no-cache, no-store, must-revalidate"
+    ],
+    [
+      "expires",
+      "0"
+    ],
+    [
+      "pragma",
+      "no-cache"
+    ],
+    [
+      "strict-transport-security",
+      "max-age=31536000; includeSubdomains"
+    ],
+    [
+      "x-content-type-options",
+      "nosniff"
+    ],
+    [
+      "x-frame-options",
+      "SAMEORIGIN"
+    ],
+    [
+      "X-Cache",
+      "Miss from cloudfront"
+    ],
+    [
+      "Via",
+      "1.1 def78bd9f6b4ff6109111fdb39be66f6.cloudfront.net (CloudFront)"
+    ],
+    [
+      "X-Amz-Cf-Pop",
+      "FRA60-P14"
+    ],
+    [
+      "X-Amz-Cf-Id",
+      "pziZTkougUB85MeINnpl3BXn9krml-ulpFs_RqgoDuzTXvfShAB34w=="
+    ]
+  ]
+}

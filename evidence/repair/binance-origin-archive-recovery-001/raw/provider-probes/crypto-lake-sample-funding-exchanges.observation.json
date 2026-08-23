@@ -1,0 +1,13 @@
+{
+  "capture_timestamp_utc": "2026-08-23T10:26:07.028709Z",
+  "request_method": "GET",
+  "request_url": "https://s3.amazonaws.com/sample.crypto.lake/?list-type=2&prefix=funding%2F&delimiter=%2F",
+  "final_url": "https://s3.amazonaws.com/sample.crypto.lake/?list-type=2&prefix=funding%2F&delimiter=%2F",
+  "status_code": 301,
+  "body_path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/crypto-lake-sample-funding-exchanges.body",
+  "body_size_bytes": 463,
+  "body_sha256": "d71595e79f6c9871197ea6c3bd2650f374d68322bbc4ac5ace765b8c0a049780",
+  "headers_path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/crypto-lake-sample-funding-exchanges.headers.json",
+  "credentials_used": false,
+  "parsed_before_body_saved": false
+}

@@ -1,0 +1,68 @@
+{
+  "catalog_validation": {
+    "BINANCE_SPOT_CASH_LONG_ONLY": {
+      "catalog_identity": "d91ee22e04e823a5fa45dc7cfe7f5d6246e65c5a53a2722665643f2dca269ea0",
+      "execution": {
+        "row_count": 304596,
+        "semantic_projection_sha256": "c803a24783c3e018b62305e3a733f849f29ba9c6103cb57b60e5c0b1b772e877"
+      },
+      "instrument_id": "BTCUSDT.BINANCE",
+      "release_time_range": {
+        "end_exclusive": "2021-08-01T00:00:00Z",
+        "start_inclusive": "2021-01-01T00:00:00Z"
+      },
+      "status": "PASS",
+      "verified_no_trade_exported_as_bar_count": 0
+    },
+    "BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING": {
+      "catalog_identity": "0b5a7e8abaf1af06dc375ef638037df7ee007d2382d9df7c8fe2e1a29cf64f4c",
+      "execution": {
+        "row_count": 305280,
+        "semantic_projection_sha256": "2e5c09fa373512bb745407f39df57561aedcb08769cd358746effb3b0affdd6b"
+      },
+      "funding": {
+        "native_binding": "NAUTILUS_2_0_0RC2_INTERVAL_BOUNDARY_REPEAT_ONCE",
+        "official_source_event_count": 636,
+        "runtime_update_count": 1272,
+        "schedule_invented": false
+      },
+      "instrument_id": "BTCUSDT-PERP.BINANCE",
+      "mark": {
+        "binding": "ORIGINAL_OFFICIAL_MARK_BAR_CLOSE_AT_COMPLETION",
+        "mark_price_update_count": 305280,
+        "mark_reconstructed": false,
+        "source_mark_bar_count": 305280,
+        "substitution_used": false
+      },
+      "release_time_range": {
+        "end_exclusive": "2021-08-01T00:00:00Z",
+        "start_inclusive": "2021-01-01T00:00:00Z"
+      },
+      "status": "PASS"
+    }
+  },
+  "created_at_utc": "2026-08-23T16:40:24.722767Z",
+  "mark_reconstructed": false,
+  "mark_substitution_used": false,
+  "network_used": false,
+  "official_trial": false,
+  "physical_rebuild_comparison": {
+    "BINANCE_SPOT_CASH_LONG_ONLY": {
+      "catalog_identity": "d91ee22e04e823a5fa45dc7cfe7f5d6246e65c5a53a2722665643f2dca269ea0",
+      "independent_inventory_identity": "dde9350bbbb26f53780672a7cd8f3581eed80b991d0f7ff0c6545d84cfbf34a6",
+      "physical_inventories_equal": true,
+      "primary_inventory_identity": "dde9350bbbb26f53780672a7cd8f3581eed80b991d0f7ff0c6545d84cfbf34a6"
+    },
+    "BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING": {
+      "catalog_identity": "0b5a7e8abaf1af06dc375ef638037df7ee007d2382d9df7c8fe2e1a29cf64f4c",
+      "independent_inventory_identity": "e1daf747a1ba51422001da0f346877dd59820aec02af7676b6bae55fa18556f3",
+      "physical_inventories_equal": true,
+      "primary_inventory_identity": "e1daf747a1ba51422001da0f346877dd59820aec02af7676b6bae55fa18556f3"
+    }
+  },
+  "public_parquet_data_catalog_used": true,
+  "schema": "free-official-binance-nautilus-export-validation-v1",
+  "status": "PASS",
+  "strategy_run": false,
+  "verified_no_trade_exported_as_bar_count": 0
+}

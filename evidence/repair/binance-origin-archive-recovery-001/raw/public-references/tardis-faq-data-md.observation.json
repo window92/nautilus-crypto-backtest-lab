@@ -1,0 +1,13 @@
+{
+  "capture_timestamp_utc": "2026-08-23T10:28:53.335546Z",
+  "request_method": "GET",
+  "request_url": "https://docs.tardis.dev/faq/data.md",
+  "final_url": "https://docs.tardis.dev/faq/data.md",
+  "status_code": 200,
+  "body_path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/tardis-faq-data-md.body",
+  "body_size_bytes": 44061,
+  "body_sha256": "f7099c4abbf7a849c8e636cde7fa6fe029adfab7a1b6d7693148f279ee7609bc",
+  "headers_path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/tardis-faq-data-md.headers.json",
+  "credentials_used": false,
+  "parsed_before_body_saved": false
+}

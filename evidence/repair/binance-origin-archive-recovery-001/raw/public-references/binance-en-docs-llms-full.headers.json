@@ -1,0 +1,96 @@
+{
+  "headers": [
+    [
+      "Content-Type",
+      "text/plain; charset=utf-8"
+    ],
+    [
+      "Content-Length",
+      "7975451"
+    ],
+    [
+      "Connection",
+      "close"
+    ],
+    [
+      "Date",
+      "Sun, 23 Aug 2026 10:36:06 GMT"
+    ],
+    [
+      "Strict-Transport-Security",
+      "max-age=31536000; includeSubdomains"
+    ],
+    [
+      "Accept-Ranges",
+      "bytes"
+    ],
+    [
+      "Cache-Control",
+      "no-cache, no-store, must-revalidate"
+    ],
+    [
+      "K8scluster",
+      "master"
+    ],
+    [
+      "Last-Modified",
+      "Fri, 21 Aug 2026 19:14:24 GMT"
+    ],
+    [
+      "X-Envoy-Upstream-Service-Time",
+      "2"
+    ],
+    [
+      "X-Gateway",
+      "traefik"
+    ],
+    [
+      "X-Service-Name",
+      "binance-dev-docs"
+    ],
+    [
+      "X-Trace-Id",
+      "95b4bbf00b364962aa33fcedf5ce5ddd"
+    ],
+    [
+      "X-Traefik-Duration",
+      "27.00"
+    ],
+    [
+      "X-Frame-Options",
+      "SAMEORIGIN"
+    ],
+    [
+      "X-Content-Type-Options",
+      "nosniff"
+    ],
+    [
+      "Referrer-Policy",
+      "origin-when-cross-origin"
+    ],
+    [
+      "ETag",
+      "\"6a88a390-79b21b\""
+    ],
+    [
+      "Vary",
+      "Accept-Encoding,Accept-Encoding"
+    ],
+    [
+      "X-Cache",
+      "Miss from cloudfront"
+    ],
+    [
+      "Via",
+      "1.1 db38c5279288cd1c6aea4fa2c0409120.cloudfront.net (CloudFront)"
+    ],
+    [
+      "X-Amz-Cf-Pop",
+      "FRA60-P8"
+    ],
+    [
+      "X-Amz-Cf-Id",
+      "x3IIyPtTDDVIoyBGhzRNDpCLEOdcqkCOAR34gZqOZ_H6NyAWm6GItQ=="
+    ]
+  ]
+}

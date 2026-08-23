@@ -1,0 +1,28 @@
+{
+  "headers": [
+    [
+      "Date",
+      "Sun, 23 Aug 2026 10:34:34 GMT"
+    ],
+    [
+      "Content-Type",
+      "application/json"
+    ],
+    [
+      "Content-Length",
+      "367"
+    ],
+    [
+      "Connection",
+      "close"
+    ],
+    [
+      "Server",
+      "cloudflare"
+    ],
+    [
+      "CF-RAY",
+      "a2f976e7ff435d8b-FRA"
+    ]
+  ]
+}

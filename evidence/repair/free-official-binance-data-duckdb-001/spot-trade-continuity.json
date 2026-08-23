@@ -1,0 +1,337 @@
+{
+  "analysis_identity": "bf7c4d476702a6438e2940d85548943ca1b2b926f74ba64380e20bd0490c654d",
+  "duplicate_event_count": 0,
+  "event_archive_missing_anomaly_days": [],
+  "partial_2021_04_25_04_00": {
+    "disposition": {
+      "disposition": "DERIVED_FROM_OFFICIAL_TRADES",
+      "evidence": {
+        "after": {
+          "aggregate_trade_id": 704256667,
+          "buyer_is_maker": true,
+          "first_trade_id": 790459365,
+          "last_trade_id": 790459365,
+          "price_text": "49683.95000000",
+          "quantity_text": "0.01000000",
+          "timestamp_ms": 1619340300976,
+          "timestamp_utc": "2021-04-25T08:45:00.976000Z"
+        },
+        "before": {
+          "aggregate_trade_id": 704256460,
+          "buyer_is_maker": true,
+          "first_trade_id": 790459140,
+          "last_trade_id": 790459140,
+          "price_text": "49615.54000000",
+          "quantity_text": "0.00412700",
+          "timestamp_ms": 1619323199859,
+          "timestamp_utc": "2021-04-25T03:59:59.859000Z"
+        },
+        "derived_matches": [],
+        "derived_semantic_sha256": "1ee47b91569c479136b9b5b125fe2d68d6cc3561218a6ee5ce9599f6a49abf12",
+        "event_count": 206,
+        "event_source_sha256": "787f55cd7e79bbd1d90b12fc9d05654d2220ccdc93c50c7c70f8e82e5c7e6f90",
+        "kline_observations": {
+          "DAILY": {
+            "base_volume": "5.887034",
+            "invalid_reasons": [
+              "INVALID_CLOSE_TIME"
+            ],
+            "original_fields": [
+              "1619323200000",
+              "49626.76000000",
+              "49705.04000000",
+              "49600.24000000",
+              "49683.94000000",
+              "5.88703400",
+              "1619323258146",
+              "292226.01345715",
+              "224",
+              "4.22924500",
+              "209956.01047409",
+              "0"
+            ],
+            "semantic_sha256": "8970b85a9ee2c628f9f48006d4005851bcae3b117d1dab053c837c3e57f1bcc3",
+            "source_sha256": "064e666cfb7fe26fcf97da0942bf5383669f8f7dcd059b343db6970af8defcb9",
+            "trade_count": 224
+          },
+          "MONTHLY": {
+            "base_volume": "5.887034",
+            "invalid_reasons": [
+              "INVALID_CLOSE_TIME"
+            ],
+            "original_fields": [
+              "1619323200000",
+              "49626.76000000",
+              "49705.04000000",
+              "49600.24000000",
+              "49683.94000000",
+              "5.88703400",
+              "1619323258146",
+              "292226.01345715",
+              "224",
+              "4.22924500",
+              "209956.01047409",
+              "0"
+            ],
+            "semantic_sha256": "8970b85a9ee2c628f9f48006d4005851bcae3b117d1dab053c837c3e57f1bcc3",
+            "source_sha256": "016ea34ee7e52c4783c1e03ec65c710361c1ccf228d3a4c0b44a4d0baa859641",
+            "trade_count": 224
+          },
+          "REST": {
+            "base_volume": "5.887034",
+            "invalid_reasons": [
+              "INVALID_CLOSE_TIME"
+            ],
+            "original_fields": [
+              "1619323200000",
+              "49626.76000000",
+              "49705.04000000",
+              "49600.24000000",
+              "49683.94000000",
+              "5.88703400",
+              "1619323258146",
+              "292226.01345715",
+              "224",
+              "4.22924500",
+              "209956.01047409",
+              "0"
+            ],
+            "semantic_sha256": "8970b85a9ee2c628f9f48006d4005851bcae3b117d1dab053c837c3e57f1bcc3",
+            "source_sha256": "565118a0443472e11f947fa362bb67b450f173ad53610a7d985db2766c635029",
+            "trade_count": 224
+          }
+        },
+        "raw_trades_and_aggtrades_exact_match": true,
+        "raw_trades_derived_semantic_sha256": "1ee47b91569c479136b9b5b125fe2d68d6cc3561218a6ee5ce9599f6a49abf12",
+        "raw_trades_source_sha256": "36ab0d1f692d9f6564beca7698fc8c093c62e987acdda15a4fceecb05e358995"
+      },
+      "open_time_ms": 1619323200000,
+      "open_time_utc": "2021-04-25T04:00:00Z",
+      "reason": "INVALID_KLINE_CLOSE_TIME_SUPERSEDED_BY_COMPLETE_RAW_TRADES_AND_AGGTRADES",
+      "superseded_source_roles": [
+        "DAILY",
+        "MONTHLY",
+        "REST"
+      ]
+    },
+    "raw_trades": {
+      "archive_sha256": "36ab0d1f692d9f6564beca7698fc8c093c62e987acdda15a4fceecb05e358995",
+      "boundary_after": {
+        "best_price_match": true,
+        "buyer_is_maker": true,
+        "price_text": "49683.95000000",
+        "quantity_text": "0.01000000",
+        "quote_quantity_text": "496.83950000",
+        "timestamp_ms": 1619340300976,
+        "trade_id": 790459365
+      },
+      "boundary_before": {
+        "best_price_match": true,
+        "buyer_is_maker": true,
+        "price_text": "49615.54000000",
+        "quantity_text": "0.00412700",
+        "quote_quantity_text": "204.76333358",
+        "timestamp_ms": 1619323199859,
+        "trade_id": 790459140
+      },
+      "derived_material": [
+        1619323200000,
+        "49626.76",
+        "49705.04",
+        "49600.24",
+        "49683.94",
+        "5.887034",
+        1619323259999,
+        "292226.01345715",
+        224,
+        "4.229245",
+        "209956.01047409"
+      ],
+      "derived_semantic_sha256": "1ee47b91569c479136b9b5b125fe2d68d6cc3561218a6ee5ce9599f6a49abf12",
+      "events_inside_minute": 224,
+      "first_inside_trade_id": 790459141,
+      "last_inside_trade_id": 790459364,
+      "no_synthetic_bar_created": true,
+      "publisher_checksum_match": true,
+      "row_count": 1475479,
+      "trade_id_gap_count": 0
+    }
+  },
+  "schema": "free-official-binance-spot-trade-continuity-v1",
+  "status": "PASS",
+  "target_2021_02_11_03_40": {
+    "canonical_bar_created": false,
+    "disposition": {
+      "disposition": "VERIFIED_NO_TRADE_INTERVAL",
+      "evidence": {
+        "after": {
+          "aggregate_trade_id": 568349720,
+          "buyer_is_maker": false,
+          "first_trade_id": 633819971,
+          "last_trade_id": 633819971,
+          "price_text": "44583.71000000",
+          "quantity_text": "0.00071000",
+          "timestamp_ms": 1613019600655,
+          "timestamp_utc": "2021-02-11T05:00:00.655000Z"
+        },
+        "before": {
+          "aggregate_trade_id": 568349719,
+          "buyer_is_maker": true,
+          "first_trade_id": 633819970,
+          "last_trade_id": 633819970,
+          "price_text": "44582.07000000",
+          "quantity_text": "0.00130000",
+          "timestamp_ms": 1613009968145,
+          "timestamp_utc": "2021-02-11T02:19:28.145000Z"
+        },
+        "event_count": 0,
+        "event_source_sha256": "79707d763dec1e1414c518c45c32d811bdcc642617c84fbe32d96b158be3c89f",
+        "kline_observations": {
+          "DAILY": {
+            "base_volume": "0",
+            "invalid_reasons": [
+              "INVALID_CLOSE_TIME"
+            ],
+            "original_fields": [
+              "1613014800000",
+              "44582.07000000",
+              "44582.07000000",
+              "44582.07000000",
+              "44582.07000000",
+              "0.00000000",
+              "1613014854773",
+              "0.00000000",
+              "0",
+              "0.00000000",
+              "0.00000000",
+              "0"
+            ],
+            "semantic_sha256": "76c008c0b0aaf56095211d68a83af799e423a3d142925f2fcbcc324f0329bd84",
+            "source_sha256": "f2c2fb98b3ac6a4839163f9e10d83a9d7a987ecd3a7d31ca1784ff52ead5aeae",
+            "trade_count": 0
+          },
+          "MONTHLY": {
+            "base_volume": "0",
+            "invalid_reasons": [
+              "INVALID_CLOSE_TIME"
+            ],
+            "original_fields": [
+              "1613014800000",
+              "44582.07000000",
+              "44582.07000000",
+              "44582.07000000",
+              "44582.07000000",
+              "0.00000000",
+              "1613014854773",
+              "0.00000000",
+              "0",
+              "0.00000000",
+              "0.00000000",
+              "0"
+            ],
+            "semantic_sha256": "76c008c0b0aaf56095211d68a83af799e423a3d142925f2fcbcc324f0329bd84",
+            "source_sha256": "21723e4951ba30037cb8417278b7cf4a38d47c625b1cb5ac97864d539ae6d407",
+            "trade_count": 0
+          },
+          "REST": {
+            "base_volume": "0",
+            "invalid_reasons": [
+              "INVALID_CLOSE_TIME"
+            ],
+            "original_fields": [
+              "1613014800000",
+              "44582.07000000",
+              "44582.07000000",
+              "44582.07000000",
+              "44582.07000000",
+              "0.00000000",
+              "1613014854773",
+              "0.00000000",
+              "0",
+              "0.00000000",
+              "0.00000000",
+              "0"
+            ],
+            "semantic_sha256": "76c008c0b0aaf56095211d68a83af799e423a3d142925f2fcbcc324f0329bd84",
+            "source_sha256": "af5be12cce88fcf3f5610bf1084a523689fd948ceb92c558a9ba4ffeb327e41d",
+            "trade_count": 0
+          }
+        },
+        "raw_trade_and_aggtrade_boundaries_match": true,
+        "raw_trade_range_proof": {
+          "archive_row_count": 2570949,
+          "archive_sha256": "bac373963d2976fe0e85e58822f48aaa756553380df95ab212db274f9b9eac00",
+          "archive_trade_id_gap_count": 0,
+          "boundary_after": {
+            "best_price_match": true,
+            "buyer_is_maker": false,
+            "price_text": "44583.71000000",
+            "quantity_text": "0.00071000",
+            "quote_quantity_text": "31.65443410",
+            "timestamp_ms": 1613019600655,
+            "timestamp_utc": "2021-02-11T05:00:00.655000Z",
+            "trade_id": 633819971
+          },
+          "boundary_before": {
+            "best_price_match": true,
+            "buyer_is_maker": true,
+            "price_text": "44582.07000000",
+            "quantity_text": "0.00130000",
+            "quote_quantity_text": "57.95669100",
+            "timestamp_ms": 1613009968145,
+            "timestamp_utc": "2021-02-11T02:19:28.145000Z",
+            "trade_id": 633819970
+          },
+          "boundary_trade_ids_contiguous": true,
+          "events_inside_range": 0,
+          "publisher_checksum_match": true,
+          "range_end_exclusive_ms": 1613019600000,
+          "range_end_exclusive_utc": "2021-02-11T05:00:00Z",
+          "range_minute_count": 160,
+          "range_start_ms": 1613010000000,
+          "range_start_utc": "2021-02-11T02:20:00Z",
+          "source_role": "SPOT_TARGET_DAILY_TRADES",
+          "status": "PASS"
+        }
+      },
+      "excluded_zero_event_kline_roles": [
+        "REST",
+        "DAILY",
+        "MONTHLY"
+      ],
+      "open_time_ms": 1613014800000,
+      "open_time_utc": "2021-02-11T03:40:00Z",
+      "reason": "COMPLETE_OFFICIAL_AGGREGATE_AND_TRADE_ID_CONTINUITY_NO_EVENTS"
+    },
+    "raw_trades": {
+      "archive_sha256": "bac373963d2976fe0e85e58822f48aaa756553380df95ab212db274f9b9eac00",
+      "boundary_after": {
+        "best_price_match": true,
+        "buyer_is_maker": false,
+        "price_text": "44583.71000000",
+        "quantity_text": "0.00071000",
+        "quote_quantity_text": "31.65443410",
+        "timestamp_ms": 1613019600655,
+        "trade_id": 633819971
+      },
+      "boundary_before": {
+        "best_price_match": true,
+        "buyer_is_maker": true,
+        "price_text": "44582.07000000",
+        "quantity_text": "0.00130000",
+        "quote_quantity_text": "57.95669100",
+        "timestamp_ms": 1613009968145,
+        "trade_id": 633819970
+      },
+      "boundary_trade_ids_contiguous": true,
+      "events_inside_target_minute": 0,
+      "no_synthetic_bar_created": true,
+      "publisher_checksum_match": true,
+      "row_count": 2570949,
+      "trade_id_gap_count": 0
+    },
+    "synthetic_ohlcv_created": false,
+    "trades_and_aggtrades_boundary_match": true
+  },
+  "unexplained_trade_id_gap_count": 0
+}

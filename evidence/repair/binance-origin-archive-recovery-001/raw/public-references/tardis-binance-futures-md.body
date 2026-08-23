@@ -1,0 +1,185 @@
+> For the complete documentation index, see [llms.txt](https://docs.tardis.dev/llms.txt). Markdown versions of documentation pages are available by appending `.md` to page URLs; this page is available as [Markdown](https://docs.tardis.dev/historical-data-details/binance-futures.md).
+
+# Binance USDS-M Futures
+
+Binance USDS-M Futures historical data for **all its instruments** is available since **2019-11-17**.
+
+{% embed url="<https://api.tardis.dev/v1/exchanges/binance-futures>" %}
+See Binance USDS-M Futures historical data coverage: available symbols, channels, date ranges and incidents
+{% endembed %}
+
+{% hint style="info" %}
+Data collection before 2020-05-14 suffered some issues (missing data, latency spikes) during market volatility periods. It has been circumvented by switching to [Tokyo DC](#market-data-collection-details) and using multiple WS connections for real-time market data collection.
+{% endhint %}
+
+### Downloadable **CSV** files
+
+Historical CSV datasets for the first day of each month are **available to download without API key**. See [downloadable CSV files documentation](/downloadable-csv-files/overview.md).
+
+`derivative_ticker` **open interest data is available since 2020-05-13** - date since we've started collecting that info via Binance USDS-M Futures REST API (open interest channel).
+
+| data type             | symbol  | date       |                                                                                                                 |
+| --------------------- | ------- | ---------- | --------------------------------------------------------------------------------------------------------------- |
+| incremental\_book\_L2 | BTCUSDT | 2020-02-01 | [Download sample](https://datasets.tardis.dev/v1/binance-futures/incremental_book_L2/2020/02/01/BTCUSDT.csv.gz) |
+| trades                | BTCUSDT | 2020-02-01 | [Download sample](https://datasets.tardis.dev/v1/binance-futures/trades/2020/02/01/BTCUSDT.csv.gz)              |
+| derivative\_ticker    | BTCUSDT | 2020-02-01 | [Download sample](https://datasets.tardis.dev/v1/binance-futures/derivative_ticker/2020/02/01/BTCUSDT.csv.gz)   |
+
+### API Access and data format
+
+Historical data format is the same as provided by real-time Binance USDS-M Futures WebSocket API with addition of local timestamps. If you'd like to work with **normalized data format** instead (same format for each exchange) see [downloadable CSV files](/downloadable-csv-files/overview.md) or official [client libs](/api/quickstart.md) that perform data normalization client-side.
+
+{% tabs %}
+{% tab title="Python" %}
+
+```python
+# pip install tardis-dev
+import asyncio
+from tardis_dev import Channel, replay
+
+async def main():
+    async for local_timestamp, message in replay(
+        exchange="binance-futures",
+        from_date="2023-03-01",
+        to_date="2023-03-02",
+        filters=[Channel(name="depth", symbols=["btcusdt"])],
+        api_key="YOUR_API_KEY",
+    ):
+        # messages as provided by Binance USDS-M Futures real-time stream
+        print(message)
+
+asyncio.run(main())
+```
+
+See [Python client docs](/python-client/quickstart.md).
+{% endtab %}
+
+{% tab title="Node.js" %}
+
+```javascript
+// npm install tardis-dev
+import { replay } from 'tardis-dev';
+
+const messages = replay({
+  exchange: 'binance-futures',
+  from: '2023-03-01',
+  to: '2023-03-02',
+  filters: [{ channel: 'depth', symbols: ['btcusdt'] }],
+  apiKey: 'YOUR_API_KEY'
+});
+
+// messages as provided by Binance USDS-M Futures real-time stream
+for await (const { localTimestamp, message } of messages) {
+  console.log(localTimestamp, message);
+}
+```
+
+See [Node.js client docs](/node-client/quickstart.md).
+{% endtab %}
+
+{% tab title="cURL & HTTP API" %}
+
+```bash
+curl --compressed -g 'https://api.tardis.dev/v1/data-feeds/binance-futures?from=2023-03-01&filters=[{"channel":"depth","symbols":["btcusdt"]}]&offset=0'
+```
+
+{% embed url="<https://api.tardis.dev/v1/data-feeds/binance-futures?from=2023-03-01&filters=[{%22channel%22:%22depth%22,%22symbols%22:[%22btcusdt%22]}]&offset=0>" %}
+Example API response for Binance USDS-M Futures historical market data request
+{% endembed %}
+
+See [HTTP API docs](/api/http-api-reference.md).
+{% endtab %}
+
+{% tab title="cURL & tardis-machine" %}
+
+```bash
+curl -g 'localhost:8000/replay?options={"exchange":"binance-futures","filters":[{"channel":"depth","symbols":["btcusdt"]}],"from":"2023-03-01","to":"2023-03-02"}'
+```
+
+[Tardis-machine](/tardis-machine/quickstart.md) is a locally runnable server that exposes API allowing efficiently requesting historical market data for whole time periods in contrast to [HTTP API](/api/http-api-reference.md) that provides data only in minute by minute slices.
+
+See [tardis-machine](/tardis-machine/quickstart.md) docs.
+{% endtab %}
+{% endtabs %}
+
+### Captured real-time channels
+
+{% embed url="<https://binance-docs.github.io/apidocs/futures/en/#websocket-market-streams>" %}
+See Binance USDS-M Futures WebSocket API docs providing documentation for each captured channel's format
+{% endembed %}
+
+{% hint style="info" %}
+Click any channel below to see [HTTP API](/api/http-api-reference.md#data-feeds-exchange) response with historical data recorded for it.
+{% endhint %}
+
+* [trade](https://api.tardis.dev/v1/data-feeds/binance-futures?from=2024-01-01\&filters=\[{%22channel%22:%22trade%22}]) Public futures trade executions stream
+* [depth](https://api.tardis.dev/v1/data-feeds/binance-futures?from=2024-01-01\&filters=\[{%22channel%22:%22depth%22,%22symbols%22:\[%22btcusdt%22]}]) Incremental futures order book updates stream. Recorded with the fastest API cadence available at the time: until 2020-01-07 it was subscribed as `depth@100ms` (100ms updates), after that as `depth@0ms` (real-time dynamically adjusted update speed).
+* [depthSnapshot](https://api.tardis.dev/v1/data-feeds/binance-futures?from=2024-01-01\&filters=\[{%22channel%22:%22depthSnapshot%22,%22symbols%22:\[%22btcusdt%22]}]) — generated channel Binance USDS-M Futures real-time WebSocket API **does not provide initial order book snapshots**. To overcome this issue we fetch initial order book snapshots from REST API and store them together with the rest of the WebSocket messages — top 1000 levels. Such snapshot messages are marked with `"stream":"<symbol>@depthSnapshot"` and `"generated":true` fields.
+
+  During data collection integrity of order book incremental updates is being validated using [sequence numbers](https://binance-docs.github.io/apidocs/futures/en/#how-to-manage-a-local-order-book-correctly) provided by real-time feed (`pu` and `u` fields) — in case of detecting missed message WebSocket connection is being restarted. We also validate if initial book snapshot fetched from REST API overlaps with received `depth` messages.
+* [bookTicker](https://api.tardis.dev/v1/data-feeds/binance-futures?from=2024-01-01\&filters=\[{%22channel%22:%22bookTicker%22,%22symbols%22:\[%22btcusdt%22]}]) Best bid and best ask updates stream
+* [forceOrder](https://api.tardis.dev/v1/data-feeds/binance-futures?from=2024-01-01\&filters=\[{%22channel%22:%22forceOrder%22}]) — available since **2020-01-07** Liquidation order stream publishing only the latest liquidation per symbol in each 1000ms window
+* [ticker](https://api.tardis.dev/v1/data-feeds/binance-futures?from=2024-01-01\&filters=\[{%22channel%22:%22ticker%22,%22symbols%22:\[%22btcusdt%22]}]) 24h futures ticker updates stream
+* [markPrice](https://api.tardis.dev/v1/data-feeds/binance-futures?from=2024-01-01\&filters=\[{%22channel%22:%22markPrice%22,%22symbols%22:\[%22btcusdt%22]}]) Mark price and funding metrics stream. Subscribed as `@markPrice@1s`. The 1s update speed has been available since 2020-02-13; before that the default (3s) speed was used.
+* [premiumIndex](https://api.tardis.dev/v1/data-feeds/binance-futures?from=2026-05-01\&filters=\[{%22channel%22:%22premiumIndex%22,%22symbols%22:\[%22btcusdt%22]}]) — generated channel, available since **2026-04-11**
+
+  Snapshots are fetched from the REST [mark price endpoint](https://developers.binance.com/docs/derivatives/usds-margined-futures/market-data/rest-api/Mark-Price) about every 6 seconds for all instruments. The recorder splits the REST response into one generated message per instrument, marked with `"stream":"<symbol>@premiumIndex"` and `"generated":true` fields. This channel includes the `interestRate` field that is not present on the WebSocket `markPrice` stream.
+* [indexConstituents](https://api.tardis.dev/v1/data-feeds/binance-futures?from=2026-05-01\&filters=\[{%22channel%22:%22indexConstituents%22,%22symbols%22:\[%22btcusdt%22]}]) — generated channel, available since **2026-04-23**
+
+  Snapshots are fetched from the REST [index price constituents endpoint](https://developers.binance.com/docs/derivatives/usds-margined-futures/market-data/rest-api/Index-Constituents) every minute per instrument. Messages are marked with `"stream":"<symbol>@indexConstituents"` and `"generated":true` fields with REST response format.
+* [openInterest](https://api.tardis.dev/v1/data-feeds/binance-futures?from=2024-01-01\&filters=\[{%22channel%22:%22openInterest%22,%22symbols%22:\[%22btcusdt%22]}]) — generated channel, available since **2020-05-12**
+
+  Snapshots are fetched from the REST [open interest endpoint](https://binance-docs.github.io/apidocs/futures/en/#open-interest) about every 6 seconds per instrument. Messages are marked with `"stream":"<symbol>@openInterest"` and `"generated":true` fields with REST response format.
+* [fundingInfo](https://api.tardis.dev/v1/data-feeds/binance-futures?from=2026-03-17\&filters=\[{%22channel%22:%22fundingInfo%22}]) — generated channel, available since **2026-03-17**
+
+  Snapshots are fetched from the REST [funding info endpoint](https://developers.binance.com/docs/derivatives/usds-margined-futures/market-data/rest-api/Get-Funding-Rate-Info) every minute. Binance returns only symbols with adjusted funding cap, floor, or interval. Messages are marked with `"stream":"<symbol>@fundingInfo"` and `"generated":true` fields with REST response format.
+* [insuranceBalance](https://api.tardis.dev/v1/data-feeds/binance-futures?from=2026-03-17\&filters=\[{%22channel%22:%22insuranceBalance%22}]) — generated channel, available since **2026-03-17**
+
+  Snapshots are fetched from the REST [insurance fund balance endpoint](https://developers.binance.com/docs/derivatives/usds-margined-futures/market-data/rest-api/Insurance-Fund-Balance) every minute. Messages are marked with `"stream":"insuranceBalance"` and `"generated":true` fields with REST response format.
+* [aggTrade](https://api.tardis.dev/v1/data-feeds/binance-futures?from=2024-01-01\&filters=\[{%22channel%22:%22aggTrade%22}]) Aggregated futures trade executions stream
+* [compositeIndex](https://api.tardis.dev/v1/data-feeds/binance-futures?from=2024-01-01\&filters=\[{%22channel%22:%22compositeIndex%22,%22symbols%22:\[%22defiusdt%22]}]) — available since **2020-10-28** Composite index updates stream for multi-asset index symbols
+* [assetIndex](https://api.tardis.dev/v1/data-feeds/binance-futures?from=2024-01-01\&filters=\[{%22channel%22:%22assetIndex%22}]) — available since **2023-06-16** Asset index updates stream
+* [topLongShortAccountRatio](https://api.tardis.dev/v1/data-feeds/binance-futures?from=2024-01-01\&filters=\[{%22channel%22:%22topLongShortAccountRatio%22,%22symbols%22:\[%22btcusdt%22]}]\&offset=3) — generated channel, available since **2020-10-28**
+
+  Top trader long/short ratio (accounts), sourced by querying [REST endpoint](https://binance-docs.github.io/apidocs/futures/en/#top-trader-long-short-ratio-accounts) every minute
+* [topLongShortPositionRatio](https://api.tardis.dev/v1/data-feeds/binance-futures?from=2024-01-01\&filters=\[{%22channel%22:%22topLongShortPositionRatio%22,%22symbols%22:\[%22btcusdt%22]}]\&offset=3) — generated channel, available since **2020-10-28**
+
+  Top trader long/short ratio (positions), sourced by querying [REST endpoint](https://binance-docs.github.io/apidocs/futures/en/#top-trader-long-short-ratio-positions) every minute
+* [globalLongShortAccountRatio](https://api.tardis.dev/v1/data-feeds/binance-futures?from=2024-01-01\&filters=\[{%22channel%22:%22globalLongShortAccountRatio%22,%22symbols%22:\[%22btcusdt%22]}]\&offset=3) — generated channel, available since **2020-10-28**
+
+  Global long/short ratio, sourced by querying [REST endpoint](https://binance-docs.github.io/apidocs/futures/en/#long-short-ratio) every minute
+* [takerlongshortRatio](https://api.tardis.dev/v1/data-feeds/binance-futures?from=2024-01-01\&filters=\[{%22channel%22:%22takerlongshortRatio%22,%22symbols%22:\[%22btcusdt%22]}]\&offset=3) — generated channel, available since **2021-12-01**
+
+  Taker buy/sell volume ratio, sourced by querying [REST endpoint](https://binance-docs.github.io/apidocs/futures/en/#taker-buy-sell-volume) every minute
+* `!contractInfo` — available since **2023-07-24** Contract metadata updates stream pushed when listing, settlement, or bracket information changes
+
+### Market data collection details
+
+[Market data collection infrastructure](/faq/general.md#what-is-your-infrastructure-setup) for Binance USDS-M Futures **since 2020-05-14** is located in GCP asia-northeast1 region (Tokyo, Japan), before that it was located in GCP europe-west2 region (London, UK).
+
+Real-time market data is captured via **multiple WebSocket connections** to `wss://fstream.binance.com/stream`.
+
+{% hint style="info" %}
+Binance servers are located in AWS ap-northeast-1 region (Tokyo, Japan).
+{% endhint %}
+
+
+---
+
+# Agent Instructions
+This documentation is published with GitBook. GitBook is the documentation platform designed so that both humans and AI agents can read, navigate, and reason over technical content effectively. Learn more at gitbook.com.
+
+## Querying This Documentation
+If you need additional information that is not directly available in this page, you can query the documentation dynamically by asking a question.
+
+Perform an HTTP GET request on the current page URL with the `ask` query parameter, and the optional `goal` query parameter:
+
+```
+GET https://docs.tardis.dev/historical-data-details/binance-futures.md?ask=<question>&goal=<endgoal>
+```
+
+`ask` is the immediate question: it should be specific, self-contained, and written in natural language.
+`goal` is optional and describes the broader end goal you are ultimately trying to accomplish on behalf of the user. GitBook uses it to tailor the answer towards what is most useful for that goal.
+
+The response will contain a direct answer to the question and relevant excerpts and sources from the documentation.
+
+Use this mechanism when the answer is not explicitly present in the current page, you need clarification or additional context, or you want to retrieve related documentation sections.

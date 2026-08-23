@@ -1,0 +1,12 @@
+{
+  "code": 10,
+  "message": "For unauthorized requests, only historical CSV market datasets for the first day of each month are available (dataset for '2020-12-17' has been requested).",
+  "providedParams": {
+    "exchange": "binance-futures",
+    "dataType": "derivative_ticker",
+    "year": "2020",
+    "month": "12",
+    "day": "17",
+    "symbol": "BTCUSDT"
+  }
+}

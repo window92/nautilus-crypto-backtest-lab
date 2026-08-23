@@ -1,0 +1,13 @@
+{
+  "capture_timestamp_utc": "2026-08-23T10:30:15.348873Z",
+  "request_method": "GET",
+  "request_url": "https://api.tardis.dev/v1/data-feeds/binance-futures?from=2021-02-01T12%3A00%3A00Z&to=2021-02-01T12%3A10%3A00Z&filters=%5B%7B%22channel%22%3A%22markPrice%22%2C%22symbols%22%3A%5B%22btcusdt%22%5D%7D%5D",
+  "final_url": "https://api.tardis.dev/v1/data-feeds/binance-futures?from=2021-02-01T12%3A00%3A00Z&to=2021-02-01T12%3A10%3A00Z&filters=%5B%7B%22channel%22%3A%22markPrice%22%2C%22symbols%22%3A%5B%22btcusdt%22%5D%7D%5D",
+  "status_code": 406,
+  "body_path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-mark-raw-2021-02-01-b.body",
+  "body_size_bytes": 107,
+  "body_sha256": "ec4bd0ed42607ec69d356409c1dd28fc063a220bdea6266b54c77f9f1db6d19e",
+  "headers_path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-mark-raw-2021-02-01-b.headers.json",
+  "credentials_used": false,
+  "parsed_before_body_saved": false
+}

@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="en">
+<!-- Beautiful Jekyll 5.0.0 | Copyright Dean Attali 2020 -->
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <title>Data</title>
+  <meta name="description" content="Available data types">
+  <link rel="alternate" type="application/rss+xml" title="Crypto Lake" href="https://crypto-lake.com/feed.xml">
+  <!-- Preconnect -->
+<link rel="dns-prefetch" href="//stackpath.bootstrapcdn.com">
+<link rel="dns-prefetch" href="//ajax.googleapis.com/ajax">
+  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+      <link rel="stylesheet" href="/assets/css/beautifuljekyll.css?v=1784385721" crossorigin="anonymous">
+  <meta property="og:site_name" content="Crypto Lake">
+  <meta property="og:title" content="Data">
+  <meta property="og:description" content="Available data types">
+  <meta property="og:image" content="https://crypto-lake.com/assets/img/lake.png">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://crypto-lake.com/data/">
+  <link rel="canonical" href="https://crypto-lake.com/data/">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@crypto_lake_com">
+  <meta name="twitter:creator" content="@crypto_lake_com">
+  <meta property="twitter:title" content="Data">
+  <meta property="twitter:description" content="Available data types">
+  <meta name="twitter:image" content="https://crypto-lake.com/assets/img/lake.png">
+  <meta name="robots" content="noarchive">
+  <script>function initApollo(){var n=Math.random().toString(36).substring(7),o=document.createElement("script");
+o.src="https://assets.apollo.io/micro/website-tracker/tracker.iife.js?nocache="+n,o.async=!0,o.defer=!0,
+o.onload=function(){window.trackingFunctions.onLoad({appId:"6718ea031dd12401b1156f07"})},
+document.head.appendChild(o)}initApollo();</script>
+  <script>
+    if (typeof dataLayer === 'undefined') dataLayer = [];
+  </script>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-light navbar-custom top-nav-regular"><a class="navbar-brand" href="/">Crypto Lake</a><button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#main-navbar" aria-controls="main-navbar" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+  <div class="collapse navbar-collapse" id="main-navbar">
+    <ul class="navbar-nav ml-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="/">Home</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/data/">Data types</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/coverage/">Coverage</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/free-data/">Free data</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/subscribe/">Pricing</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/mission/">Mission</a>
+          </li>
+</ul>
+  </div>
+</nav>
+<header class="header-section ">
+<div class="intro-header no-img">
+  <div class="container-md">
+    <div class="row">
+      <div class="col-xl-8 offset-xl-2 col-lg-10 offset-lg-1">
+        <div class="page-heading">
+          <h1>Data</h1>
+              <hr class="small">
+              <span class="page-subheading">Available data types</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</header>
+<div class=" container-md " role="main">
+  <div class="row">
+    <div class=" col-xl-10 offset-xl-1 col-lg-10 offset-lg-1 ">
+      <p>Lake offers the following data types:</p>
+<ul>
+  <li>
+<em>trades</em> – trades occurring on the given exchange aggregated by a single taker order and price.</li>
+  <li>
+<em>book</em> – market depth (order book) snapshots in high frequency, at least once per 100ms depending on the exchange support. Contains 20 price levels for each order book side.</li>
+  <li>
+<em>candles</em> – 1-minute OHLCV candles.</li>
+  <li>
+<em>level_1</em> – a practical derivate of <em>book</em> containing just the first price level on each order book side. <em>book</em> rows containing updates on deeper price levels are skipped, which makes this data type much faster to load and work with.</li>
+  <li>
+<em>book_delta_v2</em> – market depth (order book) updates in high frequency, supports unlimited (eg. 1000+) price levels on each order book side. Has even higher update frequency than <em>book</em> data, but is more complicated to process as you have to build order book model from the updates as shown in <a href="https://colab.research.google.com/drive/1--iB9Jpxbr-DBBGjho2OdND_c_AEPMIa#scrollTo=EJoIHzGkskqZ">this interactive notebook</a>.</li>
+  <li>
+<em>book_1m</em> – 1-minute order book snapshots containing 20 price levels on each order book side.</li>
+  <li>
+<em>deep_book_1m</em> – 1-minute order book snapshots containing roughly one thousand price levels on each order book side.</li>
+  <li>
+<em>funding</em> – funding and predicted funding rate plus mark_price for futures. On Binance for example this is updated every 3 seconds.</li>
+  <li>
+<em>open_interest</em> – open interest for futures. On Binance for example this is updated every 20 seconds.</li>
+  <li>
+<em>liquidations</em> – liquidation metrics such as side, price and quantity for futures. On Binance for example this is updated at most once per second.</li>
+</ul>
+<p>All data are partitioned by exchange, symbol and day and you can access any combination of those. Note that <em>level_1</em> and <em>candles</em> data are just a derivates of <em>book</em> and <em>trades</em> data. Perpetuals/futures symbols have ‘-PERP’ suffix in their name.</p>
+<p>You can find more details about exchange coverage and available history in the <a href="/coverage/">Coverage</a> section.</p>
+<h2 id="access-api">Access API</h2>
+<p>The data are available through an easy-to-use Python API. It offers high-performance parallelized data downloads,
+supports caching and downloading only new and unseen data once you add more time range or more token pairs to your
+query. This enables for example complex distributed machine-learning workloads.</p>
+<ul>
+  <li>API source code: <a href="https://github.com/crypto-lake/lake-api" onclick="javascript:track_event('github', 'interaction')">https://github.com/crypto-lake/lake-api</a>
+</li>
+  <li>API reference documentation: <a href="https://lake-api.readthedocs.io" onclick="javascript:track_event('documentation', 'interaction')">https://lake-api.readthedocs.io</a>
+</li>
+  <li>API package on pypi: <a href="https://pypi.org/project/lakeapi/" onclick="javascript:track_event('pypi', 'interaction')">https://pypi.org/project/lakeapi/</a>
+</li>
+</ul>
+<p>For advanced users, it’s also possible to access the data directly through AWS S3. The data storage consists of a directory structure eg. <code class="language-plaintext highlighter-rouge">trades/exchange=BINANCE/symbol=BTC-USDT/dt=2022-01-01/random_name.parquet</code> and contains compressed parquet table files that are easy to load from any programming language. If you use this interface, please implement some kind of caching or don’t download the same data often to stay compliant with our Terms. Also be warned that the column names might slightly differ from the Python API and <em>Schemata</em> part of this page.</p>
+<p>Our affordable subscription plan <em>For individuals</em> has 300 GB soft download monthly limit. We also reserve the right to contact customers who scrape all data or misconfigure cache and cause unnecessary traffic in the scale of hundreds of gigabytes. More details can be found in the <a href="/terms-of-service/">Terms of Service</a>.</p>
+<h2 id="schemata">Schemata</h2>
+<p>In all our data types, the <em>origin_time</em> column stands for the time when the event happened on the exchange, <em>received_time</em> is the time when the data was received and processed by our servers close to the exchange (mostly in AWS Tokyo zone).</p>
+<h3 id="trade-data">trades</h3>
+<table>
+  <thead>
+    <tr>
+      <th>name</th>
+      <th>pandas type</th>
+      <th>example value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>side</td>
+      <td>category</td>
+      <td>‘buy’</td>
+    </tr>
+    <tr>
+      <td>quantity</td>
+      <td>float64</td>
+      <td>0.00342</td>
+    </tr>
+    <tr>
+      <td>price</td>
+      <td>float64</td>
+      <td>19549.73</td>
+    </tr>
+    <tr>
+      <td>trade_id</td>
+      <td>Int64</td>
+      <td>1704373229</td>
+    </tr>
+    <tr>
+      <td>origin_time</td>
+      <td>datetime64[ns]</td>
+      <td>1666051199989000192</td>
+    </tr>
+    <tr>
+      <td>received_time</td>
+      <td>datetime64[ns]</td>
+      <td>1666051200016254720</td>
+    </tr>
+    <tr>
+      <td>exchange</td>
+      <td>category</td>
+      <td>‘BINANCE’</td>
+    </tr>
+    <tr>
+      <td>symbol</td>
+      <td>category</td>
+      <td>‘BTC-USDT’</td>
+    </tr>
+  </tbody>
+</table>
+<p>Note that on SERUM exchange the trades also contain <em>MPID</em> identification of the buying and selling party. This variant of the <em>trades</em> schema is called <em>trades_mpid</em>.</p>
+<h3 id="order-book-data">book</h3>
+<table>
+  <thead>
+    <tr>
+      <th>name</th>
+      <th>pandas type</th>
+      <th>example value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>origin_time</td>
+      <td>datetime64[ns]</td>
+      <td>1666051200014000000</td>
+    </tr>
+    <tr>
+      <td>received_time</td>
+      <td>datetime64[ns]</td>
+      <td>1666051200016254720</td>
+    </tr>
+    <tr>
+      <td>sequence_number</td>
+      <td>Int64</td>
+      <td>548631456</td>
+    </tr>
+    <tr>
+      <td>bid_0_price</td>
+      <td>float64</td>
+      <td>19549.73</td>
+    </tr>
+    <tr>
+      <td>bid_0_size</td>
+      <td>float64</td>
+      <td>0.00342</td>
+    </tr>
+    <tr>
+      <td>bid_1_price</td>
+      <td>float64</td>
+      <td>…</td>
+    </tr>
+    <tr>
+      <td>bid_1_size</td>
+      <td>float64</td>
+      <td>…</td>
+    </tr>
+    <tr>
+      <td>…</td>
+      <td>…</td>
+      <td>…</td>
+    </tr>
+    <tr>
+      <td>bid_19_price</td>
+      <td>float64</td>
+      <td>…</td>
+    </tr>
+    <tr>
+      <td>bid_19_size</td>
+      <td>float64</td>
+      <td>…</td>
+    </tr>
+    <tr>
+      <td>ask_0_price</td>
+      <td>float64</td>
+      <td>…</td>
+    </tr>
+    <tr>
+      <td>ask_0_size</td>
+      <td>float64</td>
+      <td>…</td>
+    </tr>
+    <tr>
+      <td>…</td>
+      <td>…</td>
+      <td>…</td>
+    </tr>
+    <tr>
+      <td>ask_19_price</td>
+      <td>float64</td>
+      <td>…</td>
+    </tr>
+    <tr>
+      <td>ask_19_size</td>
+      <td>float64</td>
+      <td>…</td>
+    </tr>
+    <tr>
+      <td>exchange</td>
+      <td>category</td>
+      <td>‘BINANCE’</td>
+    </tr>
+    <tr>
+      <td>symbol</td>
+      <td>category</td>
+      <td>‘BTC-USDT’</td>
+    </tr>
+  </tbody>
+</table>
+<h3 id="level-1-data">level_1</h3>
+<table>
+  <thead>
+    <tr>
+      <th>name</th>
+      <th>pandas type</th>
+      <th>example value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>origin_time</td>
+      <td>datetime64[ns]</td>
+      <td>1666051200014000000</td>
+    </tr>
+    <tr>
+      <td>received_time</td>
+      <td>datetime64[ns]</td>
+      <td>1666051200016254720</td>
+    </tr>
+    <tr>
+      <td>bid_0_price</td>
+      <td>float64</td>
+      <td>19549.73</td>
+    </tr>
+    <tr>
+      <td>bid_0_size</td>
+      <td>float64</td>
+      <td>0.00342</td>
+    </tr>
+    <tr>
+      <td>ask_0_price</td>
+      <td>float64</td>
+      <td>19549.75</td>
+    </tr>
+    <tr>
+      <td>ask_0_size</td>
+      <td>float64</td>
+      <td>0.00634</td>
+    </tr>
+    <tr>
+      <td>exchange</td>
+      <td>category</td>
+      <td>‘BINANCE’</td>
+    </tr>
+    <tr>
+      <td>symbol</td>
+      <td>category</td>
+      <td>‘BTC-USDT’</td>
+    </tr>
+  </tbody>
+</table>
+<h3 id="book-delta-v2">book_delta_v2</h3>
+<table>
+  <thead>
+    <tr>
+      <th>name</th>
+      <th>pandas type</th>
+      <th>example value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>origin_time</td>
+      <td>datetime64[ns]</td>
+      <td>1666051200014000000</td>
+    </tr>
+    <tr>
+      <td>received_time</td>
+      <td>datetime64[ns]</td>
+      <td>1666051200016254720</td>
+    </tr>
+    <tr>
+      <td>sequence_number</td>
+      <td>Int64</td>
+      <td>5667521204</td>
+    </tr>
+    <tr>
+      <td>side_is_bid</td>
+      <td>boolean</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <td>price</td>
+      <td>float64</td>
+      <td>33.97</td>
+    </tr>
+    <tr>
+      <td>size</td>
+      <td>float64</td>
+      <td>393.38</td>
+    </tr>
+    <tr>
+      <td>exchange</td>
+      <td>category</td>
+      <td>‘BINANCE’</td>
+    </tr>
+    <tr>
+      <td>symbol</td>
+      <td>category</td>
+      <td>‘AVAX-USDT’</td>
+    </tr>
+  </tbody>
+</table>
+<h3 id="book_1m">book_1m</h3>
+<table id="book-1m">
+  <thead>
+    <tr>
+      <th>name</th>
+      <th>pandas type</th>
+      <th>example value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>received_time</td>
+      <td>datetime64[ns]</td>
+      <td>1666051200016254720</td>
+    </tr>
+    <tr>
+      <td>sequence_number</td>
+      <td>Int64</td>
+      <td>548631456</td>
+    </tr>
+    <tr>
+      <td>bid_0_price</td>
+      <td>float64</td>
+      <td>19549.73</td>
+    </tr>
+    <tr>
+      <td>bid_0_size</td>
+      <td>float64</td>
+      <td>0.00342</td>
+    </tr>
+    <tr>
+      <td>bid_1_price</td>
+      <td>float64</td>
+      <td>…</td>
+    </tr>
+    <tr>
+      <td>bid_1_size</td>
+      <td>float64</td>
+      <td>…</td>
+    </tr>
+    <tr>
+      <td>…</td>
+      <td>…</td>
+      <td>…</td>
+    </tr>
+    <tr>
+      <td>bid_19_price</td>
+      <td>float64</td>
+      <td>…</td>
+    </tr>
+    <tr>
+      <td>bid_19_size</td>
+      <td>float64</td>
+      <td>…</td>
+    </tr>
+    <tr>
+      <td>ask_0_price</td>
+      <td>float64</td>
+      <td>…</td>
+    </tr>
+    <tr>
+      <td>ask_0_size</td>
+      <td>float64</td>
+      <td>…</td>
+    </tr>
+    <tr>
+      <td>…</td>
+      <td>…</td>
+      <td>…</td>
+    </tr>
+    <tr>
+      <td>ask_19_price</td>
+      <td>float64</td>
+      <td>…</td>
+    </tr>
+    <tr>
+      <td>ask_19_size</td>
+      <td>float64</td>
+      <td>…</td>
+    </tr>
+    <tr>
+      <td>exchange</td>
+      <td>category</td>
+      <td>‘BINANCE’</td>
+    </tr>
+    <tr>
+      <td>symbol</td>
+      <td>category</td>
+      <td>‘BTC-USDT’</td>
+    </tr>
+  </tbody>
+</table>
+<h3 id="deep_book_1m">deep_book_1m</h3>
+<table id="deep-book-1m">
+  <thead>
+    <tr>
+      <th>name</th>
+      <th>pandas type</th>
+      <th>example value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>received_time</td>
+      <td>datetime64[ns]</td>
+      <td>1666051200016254720</td>
+    </tr>
+    <tr>
+      <td>sequence_number</td>
+      <td>Int64</td>
+      <td>5667521204</td>
+    </tr>
+    <tr>
+      <td>bid_prices</td>
+      <td>list[float64]</td>
+      <td>[36.6, 36.2, 36.77, …]</td>
+    </tr>
+    <tr>
+      <td>bid_sizes</td>
+      <td>list[float64]</td>
+      <td>[100.0, 502.0, …]</td>
+    </tr>
+    <tr>
+      <td>ask_prices</td>
+      <td>list[float64]</td>
+      <td>[33.97, …]</td>
+    </tr>
+    <tr>
+      <td>ask_sizes</td>
+      <td>list[float64]</td>
+      <td>[50.0, 74.0, 96.0, …]</td>
+    </tr>
+    <tr>
+      <td>exchange</td>
+      <td>category</td>
+      <td>‘BINANCE’</td>
+    </tr>
+    <tr>
+      <td>symbol</td>
+      <td>category</td>
+      <td>‘AVAX-USDT’</td>
+    </tr>
+  </tbody>
+</table>
+<h3 id="candle-data">candles</h3>
+<table>
+  <thead>
+    <tr>
+      <th>name</th>
+      <th>pandas type</th>
+      <th>example value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>origin_time</td>
+      <td>datetime64[ns]</td>
+      <td>1666051140000000000</td>
+    </tr>
+    <tr>
+      <td>open</td>
+      <td>float64</td>
+      <td>19549.73</td>
+    </tr>
+    <tr>
+      <td>high</td>
+      <td>float64</td>
+      <td>19549.87</td>
+    </tr>
+    <tr>
+      <td>low</td>
+      <td>float64</td>
+      <td>19548.48</td>
+    </tr>
+    <tr>
+      <td>close</td>
+      <td>float64</td>
+      <td>19549.86</td>
+    </tr>
+    <tr>
+      <td>volume</td>
+      <td>float64</td>
+      <td>0.03388</td>
+    </tr>
+    <tr>
+      <td>trades</td>
+      <td>Int64</td>
+      <td>24</td>
+    </tr>
+    <tr>
+      <td>received_time</td>
+      <td>datetime64[ns]</td>
+      <td>1666051140004562561</td>
+    </tr>
+    <tr>
+      <td>start</td>
+      <td>float64</td>
+      <td>1666051140000000000</td>
+    </tr>
+    <tr>
+      <td>stop</td>
+      <td>float64</td>
+      <td>166605120000000000</td>
+    </tr>
+    <tr>
+      <td>exchange</td>
+      <td>category</td>
+      <td>‘BINANCE’</td>
+    </tr>
+    <tr>
+      <td>symbol</td>
+      <td>category</td>
+      <td>‘BTC-USDT’</td>
+    </tr>
+  </tbody>
+</table>
+<h3 id="funding">funding</h3>
+<table id="funding-data">
+  <thead>
+    <tr>
+      <th>name</th>
+      <th>pandas type</th>
+      <th>example value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>origin_time</td>
+      <td>datetime64[ns]</td>
+      <td>1682899248008000000</td>
+    </tr>
+    <tr>
+      <td>mark_price</td>
+      <td>float64</td>
+      <td>1867.939062</td>
+    </tr>
+    <tr>
+      <td>index_price</td>
+      <td>float64</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <td>rate</td>
+      <td>float64</td>
+      <td>-0.000026</td>
+    </tr>
+    <tr>
+      <td>next_funding_time</td>
+      <td>datetime64[ns]</td>
+      <td>1682928000000000000</td>
+    </tr>
+    <tr>
+      <td>received_time</td>
+      <td>datetime64[ns]</td>
+      <td>1682899273386438400</td>
+    </tr>
+    <tr>
+      <td>exchange</td>
+      <td>category</td>
+      <td>‘BINANCE_FUTURES’</td>
+    </tr>
+    <tr>
+      <td>symbol</td>
+      <td>category</td>
+      <td>‘ETH-USDT-PERP’</td>
+    </tr>
+  </tbody>
+</table>
+<p>Note that index price or mark price may be zero based on exchange or data origin.</p>
+<h3 id="open_interest">open_interest</h3>
+<table id="open-interest-data">
+  <thead>
+    <tr>
+      <th>name</th>
+      <th>pandas type</th>
+      <th>example value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>origin_time</td>
+      <td>datetime64[ns]</td>
+      <td>1682899248008000000</td>
+    </tr>
+    <tr>
+      <td>open_interest</td>
+      <td>float64</td>
+      <td>92098.846</td>
+    </tr>
+    <tr>
+      <td>received_time</td>
+      <td>datetime64[ns]</td>
+      <td>1682899273386438400</td>
+    </tr>
+    <tr>
+      <td>exchange</td>
+      <td>category</td>
+      <td>‘BINANCE_FUTURES’</td>
+    </tr>
+    <tr>
+      <td>symbol</td>
+      <td>category</td>
+      <td>‘ETH-BUSD-PERP’</td>
+    </tr>
+  </tbody>
+</table>
+<h3 id="liquidations">liquidations</h3>
+<table id="liquidations-data">
+  <thead>
+    <tr>
+      <th>name</th>
+      <th>pandas type</th>
+      <th>example value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>origin_time</td>
+      <td>datetime64[ns]</td>
+      <td>1682899248008000000</td>
+    </tr>
+    <tr>
+      <td>side</td>
+      <td>string</td>
+      <td>‘buy’</td>
+    </tr>
+    <tr>
+      <td>quantity</td>
+      <td>float64</td>
+      <td>0.457</td>
+    </tr>
+    <tr>
+      <td>price</td>
+      <td>float64</td>
+      <td>1942.6</td>
+    </tr>
+    <tr>
+      <td>id</td>
+      <td>float64</td>
+      <td>-1</td>
+    </tr>
+    <tr>
+      <td>status</td>
+      <td>string</td>
+      <td>filled</td>
+    </tr>
+    <tr>
+      <td>received_time</td>
+      <td>datetime64[ns]</td>
+      <td>1682899273386438400</td>
+    </tr>
+    <tr>
+      <td>exchange</td>
+      <td>category</td>
+      <td>‘BINANCE_FUTURES’</td>
+    </tr>
+    <tr>
+      <td>symbol</td>
+      <td>category</td>
+      <td>‘ETH-BUSD-PERP’</td>
+    </tr>
+  </tbody>
+</table>
+<p>Note that some exchanges only publish last liquidation in a given second, here is <a href="https://binance-docs.github.io/apidocs/futures/en/#liquidation-order-streams">documentation for Binance</a>.</p>
+<h3 id="notes">Notes</h3>
+<ul>
+  <li>All quantities, sizes and volumes are in the base asset (eg. BTC in case of BTC-USDT pair).</li>
+  <li>All times are in nanosecond unix integer timestamp format</li>
+  <li>All decimal numbers are as floats. This is to ensure good storage and computational performance. You may wish to round them to tick size and convert to Python Decimal or string to get the precise value eg. for a pretty human-readable representation.</li>
+  <li>Order book data usually don’t contain origin_time. Dataframes with them may contain an empty origin_time column with 0 or -1.</li>
+  <li>Data for the past day are uploaded every day between 00:00 UTC and 3:00 UTC.</li>
+</ul>
+<h2 id="subscription">Subscription</h2>
+<div class="row row-cols-1 row-cols-md-2 mt-5 mb-5 text-center">
+    <div class="col">
+        <div class="card mb-2 rounded-3 shadow-sm">
+            <div class="card-header py-3">
+                <h3 class="my-0 fw-normal">Market data</h3>
+            </div>
+            <div class="card-body">
+                <div class="card-content" style="min-height: 6.1em;">
+                    <ul class="list-unstyled mt-3 mb-4">
+                        <li>Subscribe now,<br>start your research in 3 minutes.</li>
+                    </ul>
+                </div>
+                <button type="button" class="w-100 btn btn-lg btn-primary" onclick="track_click('/subscribe/', 'subscribe_page');" id="subscribe">See pricing &amp; subscribe</button>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card mb-2 rounded-3 shadow-sm">
+            <div class="card-header py-3">
+                <h3 class="my-0 fw-normal">Existing subscribers</h3>
+            </div>
+            <div class="card-body">
+                <div class="card-content" style="min-height: 6.1em;">
+                    <ul class="list-unstyled mt-3 mb-4">
+                        <li>Upgrade, pause or cancel<br>your subscription any time.</li>
+                    </ul>
+                </div>
+                <button type="button" class="w-100 btn btn-lg btn-secondary" onclick="javascript:track_click('https://billing.stripe.com/p/login/7sIcOZ7kZ9lB3II8ww', 'manage_subscription')">Manage subscription</button>
+            </div>
+        </div>
+    </div>
+</div>
+    </div>
+  </div>
+</div>
+  <footer>
+    <div class="container-md beautiful-jekyll-footer">
+        <div class="row">
+            <div class="col-xl-10 offset-xl-1 col-lg-10 offset-lg-1">
+                <p class="theme-by text-muted">
+                    <a href="/terms-of-service/">Terms of Service</a>,
+                    <a href="/privacy-policy/">Privacy policy</a>,
+                    <a href="/contact/">Contact</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.slim.min.js" integrity="sha256-4+XzXVhsDmqanXGHaHvgh1gMQKX40OUvDEBTu8JcmNs=" crossorigin="anonymous"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+<script>
+    function setCookie(name, value, days = 30) {
+        var expires = "";
+        if (days) {
+            var date = new Date();
+            date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+            expires = "; expires=" + date.toUTCString();
+        }
+        document.cookie = name + "=" + (value || "") + expires + "; path=/";
+    }
+    function getCookie(name) {
+        var nameEQ = name + "=";
+        var ca = document.cookie.split(';');
+        for (var i = 0; i < ca.length; i++) {
+            var c = ca[i];
+            while (c.charAt(0) == ' ') c = c.substring(1, c.length);
+            if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length);
+        }
+        return null;
+    }
+    var campaign = {}
+    // Remove unwanted params (twclid so far)
+    try {
+        const params = new URL(window.location.href).searchParams;
+        if (params.has('twclid')) {
+            params.delete('twclid');
+            campaign['source'] = 'twitter';
+        }
+        if (params.has('gclid')) {
+            params.delete('gclid');
+            campaign['source'] = 'google';
+        }
+        var page_location = location.protocol + '//' + location.host + location.pathname;
+        if (params.toString()) {
+            page_location += '?' + params.toString();
+        }
+        if (location.hash) {
+            page_location += location.hash;
+        }
+        console.log('Page location: ' + page_location);
+    } catch {
+        var page_location = location.href;
+    }
+    if (!getCookie('firsttime') && campaign['source']) {
+        setCookie('source', campaign['source'], 30);
+    }
+    if (!getCookie('firsttime') && campaign['medium']) {
+        setCookie('medium', campaign['medium'], 30);
+    }
+    if (!getCookie('firsttime')) {
+        setCookie('firsttime', new Date().toISOString(), 30);
+        setCookie('firstlocation', window.location.href, 30);
+        setCookie('firstreferrer', document.referrer, 30);
+    }
+    var track_click = function(url, name) {
+        dataLayer.push({
+            'event': name,
+            'event_label': url,
+            'transport_type': 'beacon'
+        });
+        document.location = url;
+    }
+    var track_event = function(name, category = '', label = '', value = '') {
+        dataLayer.push({
+            'event': name,
+            'event_category': category,
+            'event_label': label,
+            'transport_type': 'beacon'
+        });
+        if (value) {
+            dataLayer[dataLayer.length-1]['value'] = value;
+            dataLayer[dataLayer.length-1]['currency'] = 'USD';
+        }
+    }
+    var twq = function(name, category = '', label = '') {
+        dataLayer.push({
+            'event': name,
+            'event_category': category,
+            'event_label': label,
+            'transport_type': 'beacon'
+        });
+    }
+</script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"e73f46c4ed6e4a92bce53e03ab9c4b8d","r":1}' crossorigin="anonymous"></script>
+</body>
+</html>

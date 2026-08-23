@@ -1,0 +1,147 @@
+> For the complete documentation index, see [llms.txt](https://docs.tardis.dev/llms.txt). Markdown versions of documentation pages are available by appending `.md` to page URLs; this page is available as [Markdown](https://docs.tardis.dev/python-client/replaying-historical-data.md).
+
+# Replaying Historical Data
+
+{% hint style="info" %}
+See [historical data details](/historical-data-details/overview.md) page to get detailed information about historical market data available for each exchange.
+{% endhint %}
+
+## `replay(...)`
+
+Replays historical market data messages for given replay arguments in [exchange-native format](/faq/data.md#what-is-a-difference-between-exchange-native-and-normalized-data-format). Historical market data is fetched in parallel from the [Tardis.dev HTTP API](/api/http-api-reference.md#data-feeds-exchange), cached locally on disk in compressed format and returned as an async generator.
+
+`from_date` and `to_date` accept either ISO date strings or Python `datetime` values. Naive datetimes are treated as UTC.
+
+{% hint style="info" %}
+For filtered historical replay, the client automatically uses the [recommended `sliceSize`](/api/http-api-reference.md#data-feeds-exchange) to reduce `/data-feeds` request count.
+{% endhint %}
+
+```python
+import asyncio
+from tardis_dev import Channel, replay
+
+
+async def main():
+    async for local_timestamp, message in replay(
+        exchange="binance",
+        from_date="2024-03-01",
+        to_date="2024-03-02",
+        filters=[
+            Channel("trade", ["btcusdt"]),
+            Channel("depth", ["btcusdt"]),
+        ],
+        api_key="YOUR_API_KEY",
+    ):
+        print(local_timestamp, message)
+
+
+asyncio.run(main())
+```
+
+When `symbols` is omitted or `None` in `Channel`, data for all active symbols for that channel is returned. Use that form when you need the whole channel instead of starting one replay per symbol. If you need selected symbols, pass them together in one `Channel(name, [...])` entry.
+
+{% hint style="info" %}
+The replay API fetches data in parallel. Avoid blocking the async loop with slow I/O (for example synchronous file writes) inside the iteration — use async I/O or buffer writes to prevent slowdowns and timeouts.
+{% endhint %}
+
+#### replay arguments
+
+| name               | type                            | default                           | description                                                                                                                                                       |
+| ------------------ | ------------------------------- | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `exchange`         | string                          | -                                 | requested exchange id - use [`get_exchange_details()`](/python-client/quickstart.md#historical-market-data-helpers) to inspect available channels and symbols     |
+| `from_date`        | string or `datetime`            | -                                 | replay period start date (UTC) as ISO string or Python `datetime`, e.g. `2019-04-01` or `2019-04-01T12:00:00Z`; naive datetimes are treated as UTC                |
+| `to_date`          | string or `datetime`            | -                                 | replay period end date (UTC, non-inclusive) as ISO string or Python `datetime`; naive datetimes are treated as UTC                                                |
+| `filters`          | `Sequence[Channel]` (optional)  | `None`                            | optional filters of requested historical data feed                                                                                                                |
+| `api_key`          | string (optional)               | `""`                              | API key for Tardis.dev [HTTP API](/api/http-api-reference.md#data-feeds-exchange) - if not provided only first day of each month of historical data is accessible |
+| `cache_dir`        | string (optional)               | `<system temp dir>/.tardis-cache` | path to local dir that will be used as cache location                                                                                                             |
+| `endpoint`         | string (optional)               | `https://api.tardis.dev/v1`       | override HTTP API endpoint                                                                                                                                        |
+| `timeout`          | integer (optional)              | `135`                             | timeout in seconds for each replay HTTP request attempt                                                                                                           |
+| `http_proxy`       | string (optional)               | `None`                            | HTTP proxy URL passed to `aiohttp`                                                                                                                                |
+| `compression`      | `"zstd"` or `"gzip"` (optional) | `"zstd"`                          | preferred compression for replay requests; set to `"gzip"` when you need gzip-compressed slices                                                                   |
+| `decode_response`  | boolean (optional)              | `True`                            | when set to `False`, returns raw bytes instead of decoding JSON                                                                                                   |
+| `with_disconnects` | boolean (optional)              | `False`                           | when set to `True`, yields `None` for events when the recording connection got disconnected                                                                       |
+| `auto_cleanup`     | boolean (optional)              | `False`                           | when set to `True`, automatically removes cached data from disk after it has been processed                                                                       |
+| `json`             | module-like object (optional)   | `json`                            | custom JSON module/object with a `loads()` function used when `decode_response=True`                                                                              |
+
+## `Channel(name, symbols=None)`
+
+Use `Channel` objects to filter replay by exchange-native channel name and symbol list.
+
+| name      | type                           | description                                                                           |
+| --------- | ------------------------------ | ------------------------------------------------------------------------------------- |
+| `name`    | string                         | exchange-native channel name, e.g. `trade` or `depth`                                 |
+| `symbols` | sequence of strings (optional) | symbols to include; omit or pass `None` to include all active symbols for the channel |
+
+```python
+from tardis_dev import Channel
+
+Channel("trade", ["btcusdt", "ethusdt"])
+Channel("depth", ["btcusdt"])
+Channel("trade")
+```
+
+{% hint style="warning" %}
+The client can fetch replay data with up to 60 concurrent `/data-feeds` HTTP requests per replay job. Long date ranges, many channel/symbol filters and multiple concurrent replay processes can quickly exceed [API rate limits](/api/rate-limits.md), causing request failures.
+{% endhint %}
+
+{% hint style="warning" %}
+Avoid using `auto_cleanup=True` with concurrent replay jobs that share the same exchange, filters and calendar day. Those jobs reuse the same cache path and can remove files that are still needed by another replay task.
+{% endhint %}
+
+#### type of messages returned by `replay`
+
+`replay()` yields `Response(local_timestamp, message)` items, where `Response` is the public `NamedTuple` export from `tardis_dev`:
+
+* `local_timestamp` is a Python `datetime` marking when the message was received from the exchange real-time feed
+* `message` is a Python dict with parsed JSON in exchange-native format
+
+When `decode_response=False`, both fields are returned as raw bytes instead.
+
+When `with_disconnects=True`, replay can also yield `None` for disconnect events.
+
+#### sample message
+
+```python
+{
+  "stream": "btcusdt@trade",
+  "data": {
+    "e": "trade",
+    "E": 1709251199998,
+    "s": "BTCUSDT",
+    "t": 3445374963,
+    "p": "61130.98000000",
+    "q": "0.00145000",
+    "b": 25230662315,
+    "a": 25230662808,
+    "T": 1709251199998,
+    "m": True,
+    "M": True
+  }
+}
+```
+
+{% hint style="info" %}
+Python `tardis-dev` currently documents exchange-native replay only. If you need normalized replay or real-time streaming, use the [Node.js client](/node-client/quickstart.md) or [tardis-machine](/tardis-machine/quickstart.md).
+{% endhint %}
+
+
+---
+
+# Agent Instructions
+This documentation is published with GitBook. GitBook is the documentation platform designed so that both humans and AI agents can read, navigate, and reason over technical content effectively. Learn more at gitbook.com.
+
+## Querying This Documentation
+If you need additional information that is not directly available in this page, you can query the documentation dynamically by asking a question.
+
+Perform an HTTP GET request on the current page URL with the `ask` query parameter, and the optional `goal` query parameter:
+
+```
+GET https://docs.tardis.dev/python-client/replaying-historical-data.md?ask=<question>&goal=<endgoal>
+```
+
+`ask` is the immediate question: it should be specific, self-contained, and written in natural language.
+`goal` is optional and describes the broader end goal you are ultimately trying to accomplish on behalf of the user. GitBook uses it to tailor the answer towards what is most useful for that goal.
+
+The response will contain a direct answer to the question and relevant excerpts and sources from the documentation.
+
+Use this mechanism when the answer is not explicitly present in the current page, you need clarification or additional context, or you want to retrieve related documentation sections.

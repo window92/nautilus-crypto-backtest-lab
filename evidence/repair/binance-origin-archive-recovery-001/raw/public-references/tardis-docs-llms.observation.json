@@ -1,0 +1,13 @@
+{
+  "capture_timestamp_utc": "2026-08-23T10:28:02.092280Z",
+  "request_method": "GET",
+  "request_url": "https://docs.tardis.dev/llms.txt",
+  "final_url": "https://docs.tardis.dev/llms.txt",
+  "status_code": 200,
+  "body_path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/tardis-docs-llms.body",
+  "body_size_bytes": 17015,
+  "body_sha256": "69b2c1484e992fa548a9a4e1abfd3f82280e8e6b423d8776d7dee1c93db15d43",
+  "headers_path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/tardis-docs-llms.headers.json",
+  "credentials_used": false,
+  "parsed_before_body_saved": false
+}

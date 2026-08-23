@@ -1,0 +1,14 @@
+{
+  "capture_timestamp_utc": "2026-08-23T10:35:11.868407Z",
+  "request_method": "GET",
+  "request_url": "https://developers.binance.com/llms-full.txt",
+  "request_accept_encoding": "identity",
+  "final_url": "https://developers.binance.com/llms-full.txt",
+  "status_code": 404,
+  "body_path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/binance-developer-llms-full.body",
+  "body_size_bytes": 0,
+  "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "headers_path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/binance-developer-llms-full.headers.json",
+  "credentials_used": false,
+  "parsed_before_body_saved": false
+}

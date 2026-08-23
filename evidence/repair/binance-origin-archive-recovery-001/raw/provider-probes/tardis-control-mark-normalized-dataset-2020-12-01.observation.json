@@ -1,0 +1,14 @@
+{
+  "capture_timestamp_utc": "2026-08-23T10:34:36.995735Z",
+  "request_method": "GET",
+  "request_url": "https://datasets.tardis.dev/v1/binance-futures/derivative_ticker/2020/12/01/BTCUSDT.csv.gz",
+  "request_accept_encoding": "identity",
+  "final_url": "https://datasets.tardis.dev/v1/binance-futures/derivative_ticker/2020/12/01/BTCUSDT.csv.gz",
+  "status_code": 200,
+  "body_path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-mark-normalized-dataset-2020-12-01.body",
+  "body_size_bytes": 3202385,
+  "body_sha256": "6bc8de3a07d954e712a14eddf3711f111705fb43229d66ad3df2828dee194756",
+  "headers_path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-mark-normalized-dataset-2020-12-01.headers.json",
+  "credentials_used": false,
+  "parsed_before_body_saved": false
+}

@@ -1,0 +1,96 @@
+{
+  "headers": [
+    [
+      "Connection",
+      "close"
+    ],
+    [
+      "Content-Length",
+      "325"
+    ],
+    [
+      "Server",
+      "GitHub.com"
+    ],
+    [
+      "Content-Type",
+      "text/html; charset=utf-8"
+    ],
+    [
+      "Last-Modified",
+      "Wed, 18 Dec 2024 18:00:29 GMT"
+    ],
+    [
+      "Access-Control-Allow-Origin",
+      "*"
+    ],
+    [
+      "Strict-Transport-Security",
+      "max-age=31556952"
+    ],
+    [
+      "ETag",
+      "\"67630dbd-145\""
+    ],
+    [
+      "expires",
+      "Sun, 23 Aug 2026 10:28:39 GMT"
+    ],
+    [
+      "Cache-Control",
+      "max-age=600"
+    ],
+    [
+      "x-proxy-cache",
+      "MISS"
+    ],
+    [
+      "X-GitHub-Request-Id",
+      "C15E:15CB:1C1BF0C:1C5CE96:6A8AC8FD"
+    ],
+    [
+      "x-github-edge-region",
+      "fra"
+    ],
+    [
+      "Accept-Ranges",
+      "bytes"
+    ],
+    [
+      "Age",
+      "0"
+    ],
+    [
+      "Date",
+      "Sun, 23 Aug 2026 10:35:38 GMT"
+    ],
+    [
+      "Via",
+      "1.1 varnish"
+    ],
+    [
+      "X-Served-By",
+      "cache-par-lfpg1960049-PAR"
+    ],
+    [
+      "X-Cache",
+      "HIT"
+    ],
+    [
+      "X-Cache-Hits",
+      "0"
+    ],
+    [
+      "X-Timer",
+      "S1787481338.400760,VS0,VE125"
+    ],
+    [
+      "Vary",
+      "Accept-Encoding"
+    ],
+    [
+      "X-Fastly-Request-ID",
+      "e3e79c3ad6de128d4f02498e13a2d07c807df814"
+    ]
+  ]
+}

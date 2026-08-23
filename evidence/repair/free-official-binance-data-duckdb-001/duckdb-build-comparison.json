@@ -1,0 +1,50 @@
+{
+  "canonical_table_hashes_equal": true,
+  "created_at_utc": "2026-08-23T16:40:24.722767Z",
+  "dataset_release_ids_equal": true,
+  "exact_keys_compared": [
+    "status",
+    "schema_identity",
+    "source_inventory_identity",
+    "semantic_database_identity",
+    "semantic_export_contract",
+    "pre_manifest_table_hashes",
+    "readonly_table_hashes",
+    "row_counts",
+    "readonly_row_counts",
+    "dataset_release_ids",
+    "releases",
+    "catalogs",
+    "spot",
+    "perpetual",
+    "funding",
+    "window_contracts",
+    "data_tool_lock_identity",
+    "network_used_during_build",
+    "strategy_run",
+    "official_trial"
+  ],
+  "independent": {
+    "file_sha256": "3403b25612115a4f431847eaa1be738451a7a1eebc60ec954650d006b0154cf0",
+    "path": "data/duckdb/free-official-binance-data-duckdb-001/independent-v4.duckdb",
+    "read_only_reopen": "PASS",
+    "size_bytes": 1758736384
+  },
+  "nautilus_catalog_identities_equal": true,
+  "ordered_row_counts_equal": true,
+  "physical_difference_is_non_authoritative": true,
+  "physical_file_hashes_equal": false,
+  "primary": {
+    "file_sha256": "965dea1cfb4dadf189448e1cb34a58dedbba111727d075fd633a6d41c4400fc6",
+    "path": "data/duckdb/free-official-binance-data-duckdb-001/primary-v4.duckdb",
+    "read_only_reopen": "PASS",
+    "size_bytes": 1757949952
+  },
+  "schema": "free-official-binance-duckdb-build-comparison-v1",
+  "schema_identity": "3ca976671f80d429da1ec30db348968999b04deb4dca87e60ed9650a9fc05cee",
+  "semantic_database_identity": "c363294d7c00373904c970beddb25c87f5e68d53178510e03312f4423da3914d",
+  "source_inventory_identity": "5dabc8f01c552245168ff778629291763b25f37f7877a6ff7060e43b9925c094",
+  "status": "PASS",
+  "validation_result_path": "data/duckdb/free-official-binance-data-duckdb-001/deterministic-validation-v4.json",
+  "validation_result_sha256": "61eceb83b3c3051637b087c656f3464cd70eddb7e23ffd3e6b9721c462155366"
+}

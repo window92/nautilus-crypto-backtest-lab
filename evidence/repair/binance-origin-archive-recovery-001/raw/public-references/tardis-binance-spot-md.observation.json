@@ -1,0 +1,13 @@
+{
+  "capture_timestamp_utc": "2026-08-23T10:28:30.628274Z",
+  "request_method": "GET",
+  "request_url": "https://docs.tardis.dev/historical-data-details/binance.md",
+  "final_url": "https://docs.tardis.dev/historical-data-details/binance.md",
+  "status_code": 200,
+  "body_path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/tardis-binance-spot-md.body",
+  "body_size_bytes": 8799,
+  "body_sha256": "f3485b5d7a347209e7c04f0736080d2a85716212216a9ffa903e92e037017430",
+  "headers_path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/tardis-binance-spot-md.headers.json",
+  "credentials_used": false,
+  "parsed_before_body_saved": false
+}

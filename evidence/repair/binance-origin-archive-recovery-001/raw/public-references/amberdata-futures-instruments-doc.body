@@ -1,0 +1,271 @@
+> ## Documentation Index
+> Fetch the complete documentation index at: https://docs.amberdata.io/llms.txt
+> Use this file to discover all available pages before exploring further.
+
+# Instruments
+
+> Provides detailed metadata and trading activity timelines for futures instruments across exchanges, including funding rates, liquidations, long/short ratios, OHLCV, open interest, order book snapshots and events, ticker updates, and trade history.
+
+
+
+## OpenAPI
+
+````yaml get /futures/exchanges/information
+openapi: 3.1.0
+info:
+  title: market-api
+  version: '2'
+servers:
+  - url: https://api.amberdata.com/markets
+security:
+  - ApiKeyAuth: []
+paths:
+  /futures/exchanges/information:
+    get:
+      summary: Instruments
+      description: >-
+        Provides detailed metadata and trading activity timelines for futures
+        instruments across exchanges, including funding rates, liquidations,
+        long/short ratios, OHLCV, open interest, order book snapshots and
+        events, ticker updates, and trade history.
+      operationId: futures-exchanges-pairs
+      parameters:
+        - name: exchange
+          in: query
+          description: >-
+            **[Optional]** Only return data for the given exchange(s) (comma
+            separated)
+          schema:
+            type: string
+        - name: instrument
+          in: query
+          description: Only return data for the given pair.
+          schema:
+            type: string
+        - name: includeInactive
+          in: query
+          description: >-
+            **[Optional]** If true, endpoint returns all instruments, including
+            delisted ones. **[Defaults]** `True | False*`.
+          schema:
+            type: boolean
+        - name: timeFormat
+          in: query
+          description: >-
+            **[Optional]** Time format of the timestamps in the return payload.
+            **[Defaults]** `milliseconds | ms* | iso | iso8601 | hr |
+            human_readable`
+          schema:
+            type: string
+        - name: size
+          in: query
+          description: >-
+            **[Optional]** The number of records per page (only available when
+            `includeInactive=true`).
+          schema:
+            type: integer
+            format: int32
+        - name: Accept-Encoding
+          in: header
+          required: true
+          description: ''
+          schema:
+            type: string
+            default: gzip, deflate, br
+        - name: api-version
+          in: header
+          schema:
+            type: string
+      responses:
+        '200':
+          description: '200'
+          content:
+            application/json:
+              examples:
+                Success:
+                  value:
+                    status: 200
+                    title: OK
+                    description: Successful request
+                    payload:
+                      metadata:
+                        next: >-
+                          https://api.amberdata.com/markets/futures/exchanges/information?cursor=N4IglgdgxgNgrgEwKYEkIEMoBcwDckgBcAZujAM5IA0408yAqhOXAA6sD2ATlkggKIAPKAAt0EAOZJyRUhWogcAWyQAxbkvRYiIJWBgwwlKBwgIZNYhq06AVuVMgardFKIBGGuTAAvAoQBWAAYggF8gA
+                        api-version: '2023-09-30'
+                      data:
+                        - exchange: binance
+                          instrument: 1000BONKUSDC
+                          fundingRate:
+                            startDate: 1714521600000
+                            endDate: 1722369601000
+                          liquidation:
+                            startDate: 1714639265467
+                            endDate: 1722370187666
+                          longShortRatio:
+                            startDate: 1714636800000
+                            endDate: 1722369600000
+                          ohlcv:
+                            startDate: 1714608000000
+                            endDate: 1722211200000
+                          openInterest:
+                            startDate: 1714635667663
+                            endDate: 1722373127413
+                          orderBookSnapshot:
+                            startDate: 1714635300000
+                            endDate: 1722373440667
+                          orderBookEvent:
+                            startDate: 1714635333956
+                            endDate: 1722373199545
+                          ticker:
+                            startDate: 1714635454117
+                            endDate: 1722373199496
+                          trade:
+                            startDate: 1714635667663
+                            endDate: 1722373188111
+              schema:
+                oneOf:
+                  - title: Success
+                    type: object
+                    properties:
+                      status:
+                        type: integer
+                        example: 200
+                        default: 0
+                      title:
+                        type: string
+                        example: OK
+                      description:
+                        type: string
+                        example: Successful request
+                      payload:
+                        type: object
+                        properties:
+                          metadata:
+                            type: object
+                            properties:
+                              next:
+                                type: string
+                                example: >-
+                                  https://api.amberdata.com/markets/futures/exchanges/information?cursor=N4IglgdgxgNgrgEwKYEkIEMoBcwDckgBcAZujAM5IA0408yAqhOXAA6sD2ATlkggKIAPKAAt0EAOZJyRUhWogcAWyQAxbkvRYiIJWBgwwlKBwgIZNYhq06AVuVMgardFKIBGGuTAAvAoQBWAAYggF8gA
+                              api-version:
+                                type: string
+                                example: '2023-09-30'
+                          data:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                exchange:
+                                  type: string
+                                  example: binance
+                                instrument:
+                                  type: string
+                                  example: 1000BONKUSDC
+                                fundingRate:
+                                  type: object
+                                  properties:
+                                    startDate:
+                                      type: integer
+                                      example: 1714521600000
+                                      default: 0
+                                    endDate:
+                                      type: integer
+                                      example: 1722369601000
+                                      default: 0
+                                liquidation:
+                                  type: object
+                                  properties:
+                                    startDate:
+                                      type: integer
+                                      example: 1714639265467
+                                      default: 0
+                                    endDate:
+                                      type: integer
+                                      example: 1722370187666
+                                      default: 0
+                                longShortRatio:
+                                  type: object
+                                  properties:
+                                    startDate:
+                                      type: integer
+                                      example: 1714636800000
+                                      default: 0
+                                    endDate:
+                                      type: integer
+                                      example: 1722369600000
+                                      default: 0
+                                ohlcv:
+                                  type: object
+                                  properties:
+                                    startDate:
+                                      type: integer
+                                      example: 1714608000000
+                                      default: 0
+                                    endDate:
+                                      type: integer
+                                      example: 1722211200000
+                                      default: 0
+                                openInterest:
+                                  type: object
+                                  properties:
+                                    startDate:
+                                      type: integer
+                                      example: 1714635667663
+                                      default: 0
+                                    endDate:
+                                      type: integer
+                                      example: 1722373127413
+                                      default: 0
+                                orderBookSnapshot:
+                                  type: object
+                                  properties:
+                                    startDate:
+                                      type: integer
+                                      example: 1714635300000
+                                      default: 0
+                                    endDate:
+                                      type: integer
+                                      example: 1722373440667
+                                      default: 0
+                                orderBookEvent:
+                                  type: object
+                                  properties:
+                                    startDate:
+                                      type: integer
+                                      example: 1714635333956
+                                      default: 0
+                                    endDate:
+                                      type: integer
+                                      example: 1722373199545
+                                      default: 0
+                                ticker:
+                                  type: object
+                                  properties:
+                                    startDate:
+                                      type: integer
+                                      example: 1714635454117
+                                      default: 0
+                                    endDate:
+                                      type: integer
+                                      example: 1722373199496
+                                      default: 0
+                                trade:
+                                  type: object
+                                  properties:
+                                    startDate:
+                                      type: integer
+                                      example: 1714635667663
+                                      default: 0
+                                    endDate:
+                                      type: integer
+                                      example: 1722373188111
+                                      default: 0
+      deprecated: false
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: x-api-key
+
+````

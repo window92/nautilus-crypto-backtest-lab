@@ -1,0 +1,100 @@
+{
+  "base": {
+    "final_lf": true,
+    "lf_only": true,
+    "line_count": 2514,
+    "path_role": "base_ssot",
+    "sha256": "f51971ed7a09b172c82ff5965f2899d2a302dd71a2af60eb7c920133567b4354",
+    "size_bytes": 122428,
+    "utf8_valid": true
+  },
+  "base_bytes_match_reverse_result": true,
+  "candidate": {
+    "final_lf": true,
+    "lf_only": true,
+    "line_count": 2582,
+    "path_role": "complete_candidate_ssot",
+    "sha256": "9e6e9328b40104a65ed7d4f785731032d7b1b4cd37df5d845cad2197d6db067a",
+    "size_bytes": 131868,
+    "utf8_valid": true
+  },
+  "candidate_bytes_match_forward_result": true,
+  "contract": "DATA_PROVENANCE_SSOT_CANDIDATE_003_ROUND_TRIP_V1",
+  "created_at_utc": "2026-08-23T10:49:34.742334Z",
+  "forward_application_result": "PASS",
+  "independent_process_count": 2,
+  "no_fuzz_or_offset": true,
+  "patch": {
+    "path": "evidence/repair/binance-origin-archive-recovery-001/ssot-candidate-003/SSOT.candidate-003.diff",
+    "sha256": "b6940d7f1a7adf592a46984710c23579ecab6b2c8b67002ed38f2dd3e4a665c1",
+    "size_bytes": 22007,
+    "unified_diff_generated_automatically": true
+  },
+  "processes": [
+    {
+      "apply_diagnostics": [
+        "Checking patch SSOT.md...",
+        "",
+        "",
+        "Checking patch SSOT.md...",
+        "Applied patch SSOT.md cleanly.",
+        "",
+        "",
+        "Checking patch SSOT.md...",
+        "",
+        "",
+        "Checking patch SSOT.md...",
+        "Applied patch SSOT.md cleanly."
+      ],
+      "base_before_sha256": "f51971ed7a09b172c82ff5965f2899d2a302dd71a2af60eb7c920133567b4354",
+      "checkout_branch": "main",
+      "checkout_head": "f379a411bfd45ee566fd99d72ea402776ed48a85",
+      "checkout_head_matches_expected": true,
+      "clean_checkout_after_reverse": true,
+      "clean_checkout_before_apply": true,
+      "forward_apply_check_passed": true,
+      "forward_apply_passed": true,
+      "forward_result_sha256": "9e6e9328b40104a65ed7d4f785731032d7b1b4cd37df5d845cad2197d6db067a",
+      "git_diff_check_passed": true,
+      "no_fuzz_or_offset_reported": true,
+      "process_ordinal": 1,
+      "reverse_apply_check_passed": true,
+      "reverse_apply_passed": true,
+      "reverse_result_sha256": "f51971ed7a09b172c82ff5965f2899d2a302dd71a2af60eb7c920133567b4354"
+    },
+    {
+      "apply_diagnostics": [
+        "Checking patch SSOT.md...",
+        "",
+        "",
+        "Checking patch SSOT.md...",
+        "Applied patch SSOT.md cleanly.",
+        "",
+        "",
+        "Checking patch SSOT.md...",
+        "",
+        "",
+        "Checking patch SSOT.md...",
+        "Applied patch SSOT.md cleanly."
+      ],
+      "base_before_sha256": "f51971ed7a09b172c82ff5965f2899d2a302dd71a2af60eb7c920133567b4354",
+      "checkout_branch": "main",
+      "checkout_head": "f379a411bfd45ee566fd99d72ea402776ed48a85",
+      "checkout_head_matches_expected": true,
+      "clean_checkout_after_reverse": true,
+      "clean_checkout_before_apply": true,
+      "forward_apply_check_passed": true,
+      "forward_apply_passed": true,
+      "forward_result_sha256": "9e6e9328b40104a65ed7d4f785731032d7b1b4cd37df5d845cad2197d6db067a",
+      "git_diff_check_passed": true,
+      "no_fuzz_or_offset_reported": true,
+      "process_ordinal": 2,
+      "reverse_apply_check_passed": true,
+      "reverse_apply_passed": true,
+      "reverse_result_sha256": "f51971ed7a09b172c82ff5965f2899d2a302dd71a2af60eb7c920133567b4354"
+    }
+  ],
+  "reverse_round_trip_result": "PASS",
+  "root_ssot_preserved": true,
+  "status": "PASS"
+}

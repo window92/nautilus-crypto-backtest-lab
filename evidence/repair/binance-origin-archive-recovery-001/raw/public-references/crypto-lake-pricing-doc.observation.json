@@ -1,0 +1,13 @@
+{
+  "capture_timestamp_utc": "2026-08-23T10:24:41.805978Z",
+  "request_method": "GET",
+  "request_url": "https://crypto-lake.com/pricing/",
+  "final_url": "https://crypto-lake.com/pricing/",
+  "status_code": 404,
+  "body_path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/crypto-lake-pricing-doc.body",
+  "body_size_bytes": 7809,
+  "body_sha256": "5d67c8c2e0f9aad64d25ca7a813a9e7c95e8d7e2c961e0baa16ddbbb1dc32a65",
+  "headers_path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/crypto-lake-pricing-doc.headers.json",
+  "credentials_used": false,
+  "parsed_before_body_saved": false
+}

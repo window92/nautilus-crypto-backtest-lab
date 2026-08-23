@@ -1,0 +1,380 @@
+{
+  "automatic_diff_reproduction_verified": true,
+  "base_bytes_match_reverse_result": true,
+  "base_sha256": "f51971ed7a09b172c82ff5965f2899d2a302dd71a2af60eb7c920133567b4354",
+  "candidate_bytes_match_forward_result": true,
+  "candidate_sha256": "b4deb7048242239234de7eaa353b623b3e45247eb42f1021dbc26ffd910edb99",
+  "diff_sha256": "19ff0232d938c320ee9d9cf549a754f244ae00f357be1d3d738b4f303ff74577",
+  "forward_apply_verified": true,
+  "fuzz_used": false,
+  "git_diff_check": {
+    "command": [
+      "git",
+      "diff",
+      "--no-index",
+      "--check",
+      "--",
+      "/home/builder/projects/nautilus-crypto-backtest-lab/SSOT.md",
+      "/home/builder/projects/nautilus-crypto-backtest-lab/evidence/repair/free-official-binance-data-duckdb-001/ssot-candidate-004/SSOT.candidate-004.md"
+    ],
+    "return_code": 1,
+    "stderr": "",
+    "stdout": ""
+  },
+  "hunk_position_verification": [
+    {
+      "base_preimage_matches_declared_position": true,
+      "candidate_postimage_matches_declared_position": true,
+      "fuzz_used": false,
+      "header": "@@ -437,7 +437,7 @@",
+      "new_line_count": 7,
+      "new_start_line": 437,
+      "offset_used": false,
+      "old_line_count": 7,
+      "old_start_line": 437
+    },
+    {
+      "base_preimage_matches_declared_position": true,
+      "candidate_postimage_matches_declared_position": true,
+      "fuzz_used": false,
+      "header": "@@ -452,6 +452,10 @@",
+      "new_line_count": 10,
+      "new_start_line": 452,
+      "offset_used": false,
+      "old_line_count": 6,
+      "old_start_line": 452
+    },
+    {
+      "base_preimage_matches_declared_position": true,
+      "candidate_postimage_matches_declared_position": true,
+      "fuzz_used": false,
+      "header": "@@ -468,11 +472,11 @@",
+      "new_line_count": 11,
+      "new_start_line": 472,
+      "offset_used": false,
+      "old_line_count": 11,
+      "old_start_line": 468
+    },
+    {
+      "base_preimage_matches_declared_position": true,
+      "candidate_postimage_matches_declared_position": true,
+      "fuzz_used": false,
+      "header": "@@ -510,6 +514,8 @@",
+      "new_line_count": 8,
+      "new_start_line": 514,
+      "offset_used": false,
+      "old_line_count": 6,
+      "old_start_line": 510
+    },
+    {
+      "base_preimage_matches_declared_position": true,
+      "candidate_postimage_matches_declared_position": true,
+      "fuzz_used": false,
+      "header": "@@ -521,13 +527,14 @@",
+      "new_line_count": 14,
+      "new_start_line": 527,
+      "offset_used": false,
+      "old_line_count": 13,
+      "old_start_line": 521
+    },
+    {
+      "base_preimage_matches_declared_position": true,
+      "candidate_postimage_matches_declared_position": true,
+      "fuzz_used": false,
+      "header": "@@ -584,7 +591,19 @@",
+      "new_line_count": 19,
+      "new_start_line": 591,
+      "offset_used": false,
+      "old_line_count": 7,
+      "old_start_line": 584
+    },
+    {
+      "base_preimage_matches_declared_position": true,
+      "candidate_postimage_matches_declared_position": true,
+      "fuzz_used": false,
+      "header": "@@ -600,25 +619,29 @@",
+      "new_line_count": 29,
+      "new_start_line": 619,
+      "offset_used": false,
+      "old_line_count": 25,
+      "old_start_line": 600
+    },
+    {
+      "base_preimage_matches_declared_position": true,
+      "candidate_postimage_matches_declared_position": true,
+      "fuzz_used": false,
+      "header": "@@ -627,14 +650,16 @@",
+      "new_line_count": 16,
+      "new_start_line": 650,
+      "offset_used": false,
+      "old_line_count": 14,
+      "old_start_line": 627
+    },
+    {
+      "base_preimage_matches_declared_position": true,
+      "candidate_postimage_matches_declared_position": true,
+      "fuzz_used": false,
+      "header": "@@ -642,18 +667,19 @@",
+      "new_line_count": 19,
+      "new_start_line": 667,
+      "offset_used": false,
+      "old_line_count": 18,
+      "old_start_line": 642
+    },
+    {
+      "base_preimage_matches_declared_position": true,
+      "candidate_postimage_matches_declared_position": true,
+      "fuzz_used": false,
+      "header": "@@ -693,13 +719,13 @@",
+      "new_line_count": 13,
+      "new_start_line": 719,
+      "offset_used": false,
+      "old_line_count": 13,
+      "old_start_line": 693
+    },
+    {
+      "base_preimage_matches_declared_position": true,
+      "candidate_postimage_matches_declared_position": true,
+      "fuzz_used": false,
+      "header": "@@ -717,7 +743,9 @@",
+      "new_line_count": 9,
+      "new_start_line": 743,
+      "offset_used": false,
+      "old_line_count": 7,
+      "old_start_line": 717
+    },
+    {
+      "base_preimage_matches_declared_position": true,
+      "candidate_postimage_matches_declared_position": true,
+      "fuzz_used": false,
+      "header": "@@ -753,6 +781,35 @@",
+      "new_line_count": 35,
+      "new_start_line": 781,
+      "offset_used": false,
+      "old_line_count": 6,
+      "old_start_line": 753
+    },
+    {
+      "base_preimage_matches_declared_position": true,
+      "candidate_postimage_matches_declared_position": true,
+      "fuzz_used": false,
+      "header": "@@ -1135,7 +1192,7 @@",
+      "new_line_count": 7,
+      "new_start_line": 1192,
+      "offset_used": false,
+      "old_line_count": 7,
+      "old_start_line": 1135
+    },
+    {
+      "base_preimage_matches_declared_position": true,
+      "candidate_postimage_matches_declared_position": true,
+      "fuzz_used": false,
+      "header": "@@ -1154,6 +1211,9 @@",
+      "new_line_count": 9,
+      "new_start_line": 1211,
+      "offset_used": false,
+      "old_line_count": 6,
+      "old_start_line": 1154
+    },
+    {
+      "base_preimage_matches_declared_position": true,
+      "candidate_postimage_matches_declared_position": true,
+      "fuzz_used": false,
+      "header": "@@ -1878,8 +1938,9 @@",
+      "new_line_count": 9,
+      "new_start_line": 1938,
+      "offset_used": false,
+      "old_line_count": 8,
+      "old_start_line": 1878
+    },
+    {
+      "base_preimage_matches_declared_position": true,
+      "candidate_postimage_matches_declared_position": true,
+      "fuzz_used": false,
+      "header": "@@ -1891,8 +1952,10 @@",
+      "new_line_count": 10,
+      "new_start_line": 1952,
+      "offset_used": false,
+      "old_line_count": 8,
+      "old_start_line": 1891
+    },
+    {
+      "base_preimage_matches_declared_position": true,
+      "candidate_postimage_matches_declared_position": true,
+      "fuzz_used": false,
+      "header": "@@ -1903,8 +1966,11 @@",
+      "new_line_count": 11,
+      "new_start_line": 1966,
+      "offset_used": false,
+      "old_line_count": 8,
+      "old_start_line": 1903
+    },
+    {
+      "base_preimage_matches_declared_position": true,
+      "candidate_postimage_matches_declared_position": true,
+      "fuzz_used": false,
+      "header": "@@ -2146,6 +2212,8 @@",
+      "new_line_count": 8,
+      "new_start_line": 2212,
+      "offset_used": false,
+      "old_line_count": 6,
+      "old_start_line": 2146
+    },
+    {
+      "base_preimage_matches_declared_position": true,
+      "candidate_postimage_matches_declared_position": true,
+      "fuzz_used": false,
+      "header": "@@ -2163,6 +2231,7 @@",
+      "new_line_count": 7,
+      "new_start_line": 2231,
+      "offset_used": false,
+      "old_line_count": 6,
+      "old_start_line": 2163
+    },
+    {
+      "base_preimage_matches_declared_position": true,
+      "candidate_postimage_matches_declared_position": true,
+      "fuzz_used": false,
+      "header": "@@ -2432,7 +2501,7 @@",
+      "new_line_count": 7,
+      "new_start_line": 2501,
+      "offset_used": false,
+      "old_line_count": 7,
+      "old_start_line": 2432
+    },
+    {
+      "base_preimage_matches_declared_position": true,
+      "candidate_postimage_matches_declared_position": true,
+      "fuzz_used": false,
+      "header": "@@ -2446,7 +2515,7 @@",
+      "new_line_count": 7,
+      "new_start_line": 2515,
+      "offset_used": false,
+      "old_line_count": 7,
+      "old_start_line": 2446
+    }
+  ],
+  "independent_round_trips": [
+    {
+      "base_bytes_match_reverse_result": true,
+      "candidate_bytes_match_forward_result": true,
+      "forward_apply": {
+        "command": [
+          "git",
+          "apply",
+          "--verbose",
+          "/home/builder/projects/nautilus-crypto-backtest-lab/evidence/repair/free-official-binance-data-duckdb-001/ssot-candidate-004/SSOT.candidate-004.diff"
+        ],
+        "return_code": 0,
+        "stderr": "Checking patch SSOT.md...\nApplied patch SSOT.md cleanly.\n",
+        "stdout": ""
+      },
+      "forward_check": {
+        "command": [
+          "git",
+          "apply",
+          "--check",
+          "--verbose",
+          "/home/builder/projects/nautilus-crypto-backtest-lab/evidence/repair/free-official-binance-data-duckdb-001/ssot-candidate-004/SSOT.candidate-004.diff"
+        ],
+        "return_code": 0,
+        "stderr": "Checking patch SSOT.md...\n",
+        "stdout": ""
+      },
+      "forward_result_sha256": "b4deb7048242239234de7eaa353b623b3e45247eb42f1021dbc26ffd910edb99",
+      "fuzz_used": false,
+      "iteration": 1,
+      "offset_used": false,
+      "reverse_apply": {
+        "command": [
+          "git",
+          "apply",
+          "--reverse",
+          "--verbose",
+          "/home/builder/projects/nautilus-crypto-backtest-lab/evidence/repair/free-official-binance-data-duckdb-001/ssot-candidate-004/SSOT.candidate-004.diff"
+        ],
+        "return_code": 0,
+        "stderr": "Checking patch SSOT.md...\nApplied patch SSOT.md cleanly.\n",
+        "stdout": ""
+      },
+      "reverse_check": {
+        "command": [
+          "git",
+          "apply",
+          "--check",
+          "--reverse",
+          "--verbose",
+          "/home/builder/projects/nautilus-crypto-backtest-lab/evidence/repair/free-official-binance-data-duckdb-001/ssot-candidate-004/SSOT.candidate-004.diff"
+        ],
+        "return_code": 0,
+        "stderr": "Checking patch SSOT.md...\n",
+        "stdout": ""
+      },
+      "reverse_result_sha256": "f51971ed7a09b172c82ff5965f2899d2a302dd71a2af60eb7c920133567b4354",
+      "temporary_checkout_removed_after_validation": true
+    },
+    {
+      "base_bytes_match_reverse_result": true,
+      "candidate_bytes_match_forward_result": true,
+      "forward_apply": {
+        "command": [
+          "git",
+          "apply",
+          "--verbose",
+          "/home/builder/projects/nautilus-crypto-backtest-lab/evidence/repair/free-official-binance-data-duckdb-001/ssot-candidate-004/SSOT.candidate-004.diff"
+        ],
+        "return_code": 0,
+        "stderr": "Checking patch SSOT.md...\nApplied patch SSOT.md cleanly.\n",
+        "stdout": ""
+      },
+      "forward_check": {
+        "command": [
+          "git",
+          "apply",
+          "--check",
+          "--verbose",
+          "/home/builder/projects/nautilus-crypto-backtest-lab/evidence/repair/free-official-binance-data-duckdb-001/ssot-candidate-004/SSOT.candidate-004.diff"
+        ],
+        "return_code": 0,
+        "stderr": "Checking patch SSOT.md...\n",
+        "stdout": ""
+      },
+      "forward_result_sha256": "b4deb7048242239234de7eaa353b623b3e45247eb42f1021dbc26ffd910edb99",
+      "fuzz_used": false,
+      "iteration": 2,
+      "offset_used": false,
+      "reverse_apply": {
+        "command": [
+          "git",
+          "apply",
+          "--reverse",
+          "--verbose",
+          "/home/builder/projects/nautilus-crypto-backtest-lab/evidence/repair/free-official-binance-data-duckdb-001/ssot-candidate-004/SSOT.candidate-004.diff"
+        ],
+        "return_code": 0,
+        "stderr": "Checking patch SSOT.md...\nApplied patch SSOT.md cleanly.\n",
+        "stdout": ""
+      },
+      "reverse_check": {
+        "command": [
+          "git",
+          "apply",
+          "--check",
+          "--reverse",
+          "--verbose",
+          "/home/builder/projects/nautilus-crypto-backtest-lab/evidence/repair/free-official-binance-data-duckdb-001/ssot-candidate-004/SSOT.candidate-004.diff"
+        ],
+        "return_code": 0,
+        "stderr": "Checking patch SSOT.md...\n",
+        "stdout": ""
+      },
+      "reverse_result_sha256": "f51971ed7a09b172c82ff5965f2899d2a302dd71a2af60eb7c920133567b4354",
+      "temporary_checkout_removed_after_validation": true
+    }
+  ],
+  "offset_used": false,
+  "reverse_apply_verified": true,
+  "schema": "ssot-candidate-004-round-trip-v1",
+  "status": "PASS",
+  "verified_at_utc": "2026-08-23T13:21:39.795941Z"
+}

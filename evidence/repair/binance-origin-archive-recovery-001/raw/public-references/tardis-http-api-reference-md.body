@@ -1,0 +1,513 @@
+> For the complete documentation index, see [llms.txt](https://docs.tardis.dev/llms.txt). Markdown versions of documentation pages are available by appending `.md` to page URLs; this page is available as [Markdown](https://docs.tardis.dev/api/http-api-reference.md).
+
+# HTTP API Reference
+
+{% hint style="info" %}
+Base API Endpoint: **<https://api.tardis.dev/v1>**
+{% endhint %}
+
+## /data-feeds/:exchange
+
+<mark style="color:blue;">`GET`</mark> `https://api.tardis.dev/v1/data-feeds/:exchange`
+
+Returns historical market data for the requested exchange as newline-delimited JSON (NDJSON). Each line starts with the local timestamp in ISO 8601 format, followed by one exchange-native JSON message.
+
+Empty lines mark disconnect events that occurred during data collection.
+
+Requests without a `compression` query parameter must include an `Accept-Encoding` header that allows compressed responses.
+
+By default, `/data-feeds` returns `gzip`. To get Zstandard, set `compression=zstd` and use a client that accepts and decodes `content-encoding: zstd`. `Accept-Encoding: zstd` alone is not enough because Cloudflare normalizes that header before it reaches the Worker.
+
+By default, each request returns one minute of historical market data starting at `from` plus the minute `offset`. Filtered requests can set `sliceSize` from `1` to `10` to return consecutive minutes in one request.
+
+Parallel requests to this endpoint are supported. Using more than \~60 parallel requests does not improve throughput. Use HTTP/1.1; in our testing HTTP/2 was noticeably slower for this endpoint.
+
+Official client libraries are built on top of this endpoint and handle date ranges, caching, compression and normalized data formats.
+
+#### Path Parameters
+
+| Name                                       | Type   | Description                                               |
+| ------------------------------------------ | ------ | --------------------------------------------------------- |
+| exchange<mark style="color:red;">\*</mark> | string | one of <https://api.tardis.dev/v1/exchanges> (field `id`) |
+
+#### Query Parameters
+
+| Name                                   | Type   | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| -------------------------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| from<mark style="color:red;">\*</mark> | string | requested UTC start date of historical market data feed (e.g.: `2019-04-05` or `2019-04-05T01:02:00.000Z`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| offset                                 | number | Minute offset that, together with `from`, specifies the first minute of historical data returned. For example, `from=2019-04-05`, `offset=2` and default `sliceSize=1` returns data between `2019-04-05T00:02:00.000Z` and `2019-04-05T00:03:00.000Z`. With `sliceSize` greater than `1`, the response starts at the same offset and covers consecutive minutes. Minute boundaries are based on `localTimestamp` (when we received the message), not exchange event timestamps. An empty response for a given offset is normal and means no data was recorded during that minute.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| filters                                | string | <p>URL-encoded JSON string in <code>{channel:string, symbols?: string\[]}\[]</code> format with optional historical market data filters, e.g.: <code>\[{"channel":"trade", "symbols":\["XBTUSD"]}]</code></p><p>To request all active symbols for a channel, omit <code>symbols</code> or pass an empty <code>symbols</code> array. Use this when you need the whole channel instead of sending one request per symbol.</p><p>If you need selected symbols, put them in one <code>symbols</code> array. One filter can include up to 50 symbols.</p><p>Symbols are case-sensitive and must match the format returned by the <code>/exchanges/:exchange</code> API. For example, Binance uses lowercase symbols (<code>btcusdt</code>), not uppercase.</p><p>To get the list of allowed channels and symbols for each exchange, use the <code><https://api.tardis.dev/v1/exchanges/:exchange></code> API endpoint documented below.</p><p>Subscriptions with limited scope (e.g., perpetuals data plan) must provide explicit <code>symbols</code> in filters. Omitting <code>symbols</code> on a limited-scope plan will return an entitlement error.</p> |
+| sliceSize                              | number | <p>Number of consecutive minutes returned by one request. Valid values are whole integers from <code>1</code> to <code>10</code>. Default is <code>1</code>.</p><p>Values greater than <code>1</code> require the <code>filters</code> query parameter.</p><p><code>sliceSize</code> reduces <code>/data-feeds</code> request count when replaying consecutive minutes with the same filters.</p>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| compression                            | string | Optional response compression override for `/data-feeds`. Allowed values are `gzip`, `zstd` and `zstd-multiframe`. Prefer `zstd-multiframe` for Zstandard-capable clients; use `zstd` only when the decoder cannot consume concatenated frames.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+
+#### Headers
+
+| Name            | Type   | Description                                                                                                                                                                         |
+| --------------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Authorization   | string | For authenticated requests, provide the Authorization header with value `Bearer YOUR_API_KEY`. Without API key historical data feeds for the first day of each month are available. |
+| Accept-Encoding | string | Required unless `compression` is set. Use `gzip` for default responses. To request Zstandard, set `compression=zstd`; `Accept-Encoding: zstd` alone is not enough.                  |
+
+{% tabs %}
+{% tab title="200: OK " %}
+Each line contains local timestamp (ISO 8601) and JSON message in exchange native data format. Compression is indicated by the `content-encoding` response header and can be `zstd` or `gzip`.
+
+The `x-slice-size` response header contains the slice size used for this response. The `x-suggested-slice-size` response header contains a recommended `sliceSize` for later requests with the same exchange, filters and compression. Official Node.js and Python clients do this automatically.
+
+`compression=zstd-multiframe` is more efficient and usually returns faster because it avoids server-side recompression. The response uses `content-encoding: zstd` and contains one independent Zstandard frame per minute, including one frame when `sliceSize=1`. Clients must decode every concatenated frame; the official clients handle this automatically. Plain `compression=zstd` remains available for decoders that support only a single Zstandard stream.
+
+```javascript
+2019-04-01T00:00:34.8345516Z {"table":"trade","action":"insert","data":[{"timestamp":"2019-04-01T00:00:34.815Z","symbol":"ETHUSD","side":"Sell","size":7000,"price":141.2,"tickDirection":"ZeroMinusTick","trdMatchID":"baa369de-cb3b-b18f-685e-0ffdec00358c","grossValue":98840000,"homeNotional":28.654468050268125,"foreignNotional":4046.010888697859}]}
+2019-04-01T00:00:34.8346465Z {"table":"orderBookL2","action":"update","data":[{"symbol":"ETHUSD","id":29699997176,"side":"Buy","size":65350}]}
+2019-04-01T00:00:34.8395743Z {"table":"orderBookL2","action":"update","data":[{"symbol":"BCHM19","id":32999999571,"side":"Sell","size":333},{"symbol":"BCHM19","id":32999999572,"side":"Sell","size":576},{"symbol":"BCHM19","id":32999999573,"side":"Sell","size":353}]}
+2019-04-01T00:00:34.8567501Z {"table":"trade","action":"insert","data":[{"timestamp":"2019-04-01T00:00:34.830Z","symbol":"XBTUSD","side":"Buy","size":182,"price":4089,"tickDirection":"ZeroPlusTick","trdMatchID":"fa93bd9b-e1b6-d38d-f4d4-65337a766e34","grossValue":4450992,"homeNotional":0.04450992,"foreignNotional":182}]}
+2019-04-01T00:00:34.8567741Z {"table":"orderBookL2","action":"update","data":[{"symbol":"XBTUSD","id":8799591100,"side":"Sell","size":351568}]}
+2019-04-01T00:00:34.8567783Z {"table":"orderBookL2","action":"update","data":[{"symbol":"ETHUSD","id":29699997176,"side":"Buy","size":55349}]}
+2019-04-01T00:00:34.8567812Z {"table":"orderBookL2","action":"update","data":[{"symbol":"ETHUSD","id":29699997167,"side":"Sell","size":430305}]}
+2019-04-01T00:00:34.8567847Z {"table":"orderBookL2","action":"insert","data":[{"symbol":"EOSM19","id":33199989652,"side":"Buy","size":216,"price":0.0010348}]}
+2019-04-01T00:00:34.8605618Z {"table":"orderBookL2","action":"update","data":[{"symbol":"XBTUSD","id":8799591850,"side":"Buy","size":154511}]}
+2019-04-01T00:00:34.8605944Z {"table":"orderBookL2","action":"update","data":[{"symbol":"TRXM19","id":33299999258,"side":"Sell","size":1493}]}
+2019-04-01T00:00:34.8617223Z {"table":"orderBookL2","action":"update","data":[{"symbol":"ADAM19","id":33099998260,"side":"Buy","size":224039}]}
+```
+
+{% endtab %}
+
+{% tab title="400: Bad Request " %}
+Invalid request parameters. This includes `sliceSize` values outside `1` to `10`, non-integer `sliceSize` values, and `sliceSize` greater than `1` without `filters`.
+
+Example response headers:
+
+```http
+HTTP/1.1 400 Bad Request
+content-type: application/json
+```
+
+Example response body:
+
+```json
+{
+  "code": 300,
+  "message": "Invalid 'sliceSize' query string param value: '11'. Please provide a whole integer from 1 to 10."
+}
+```
+
+{% endtab %}
+
+{% tab title="429: Too Many Requests " %}
+Too many requests. Retry later. A 429 response for filtered `/data-feeds` requests may include `x-suggested-slice-size`; use that value as `sliceSize` on later requests with the same exchange, filters and compression.
+
+Example response headers:
+
+```http
+HTTP/1.1 429 Too Many Requests
+content-type: application/json
+x-suggested-slice-size: 5
+```
+
+Example response body:
+
+```json
+{
+  "code": 30,
+  "message": "Too many requests. Retry later. Use x-suggested-slice-size as sliceSize on later filtered /data-feeds requests with the same exchange, filters and compression."
+}
+```
+
+{% endtab %}
+{% endtabs %}
+
+{% hint style="info" %}
+Lines in the response are ordered by capture time. When multiple events share the same millisecond exchange timestamp, use line order as the tie-breaker — see [event ordering FAQ](/faq/data.md#how-are-events-ordered-when-multiple-messages-share-the-same-timestamp).
+{% endhint %}
+
+{% hint style="info" %}
+Not sure [what is the channel field?](/faq/data.md#what-is-the-channel-field-used-in-the-http-api-and-client-libs-replay-functions)
+{% endhint %}
+
+{% hint style="info" %}
+See [downloadable CSV files documentation](/downloadable-csv-files/overview.md) and related [datasets API](/downloadable-csv-files/api.md#datasets-api-reference) if you'd like to access historical tick-level trades, order book snapshots, incremental order book L2 updates, options chains, quotes, derivative tickers and liquidations datasets in daily intervals split by exchange, data type and symbol. It may be faster and more native to your toolkit to access historical data this way.
+{% endhint %}
+
+{% tabs %}
+{% tab title="Python" %}
+
+```python
+import json
+import requests
+
+
+def get_data_feeds():
+    filters = [
+        {"channel": "trade", "symbols": ["btcusdt"]},
+        {"channel": "depth", "symbols": ["btcusdt"]},
+    ]
+    qs_params = {"from": "2024-03-01", "offset": 3, "filters": json.dumps(filters)}
+
+    headers = {"Authorization": "Bearer YOUR_API_KEY"}
+
+    url = "https://api.tardis.dev/v1/data-feeds/binance"
+
+    response = requests.get(url, headers=headers, params=qs_params, stream=True)
+
+    for line in response.iter_lines():
+        # empty lines in response are being used as markers
+        # for disconnect events that occurred when collecting the data
+        if len(line) <= 1:
+            continue
+
+        parts = line.decode("utf-8").split(" ")
+        local_timestamp = parts[0]
+        message = json.loads(parts[1])
+        # local_timestamp string marks message arrival timestamp
+        # message is a message dict as provided by exchange real-time stream
+        print(local_timestamp, message)
+
+
+get_data_feeds()
+```
+
+{% hint style="info" %}
+The [Python client](/python-client/quickstart.md) adds local caching and date-range replay on top of this endpoint, so you can request longer periods while the client handles raw data replay requests.
+{% endhint %}
+{% endtab %}
+
+{% tab title="Node.js" %}
+
+```javascript
+import split2 from 'split2'
+import { Readable } from 'node:stream'
+
+const serialize = (options) => encodeURIComponent(JSON.stringify(options))
+
+const filters = serialize([
+  {
+    channel: 'trade',
+    symbols: ['btcusdt']
+  },
+  {
+    channel: 'depth',
+    symbols: ['btcusdt']
+  }
+])
+
+const baseUrl = 'https://api.tardis.dev/v1/data-feeds/binance'
+const url = `${baseUrl}?from=2024-03-01&offset=3&filters=${filters}`
+
+const response = await fetch(url)
+const lines = Readable.fromWeb(response.body).pipe(split2())
+
+for await (const line of lines) {
+  // empty lines in response are being used as markers
+  // for disconnect events that occurred when collecting the data
+  if (line.length === 0) {
+    continue
+  }
+
+  const parts = line.split(' ')
+  const localTimestamp = parts[0]
+  const message = JSON.parse(parts[1])
+  // localTimestamp string marks message arrival timestamp
+  // message is a message dict as provided by exchange real-time stream
+  console.log(localTimestamp, message)
+}
+```
+
+{% hint style="info" %}
+The [Node.js client](/node-client/quickstart.md) adds local caching, date-range replay, and normalized data helpers on top of this endpoint, so you can request longer periods while the client handles raw data replay requests.
+{% endhint %}
+{% endtab %}
+
+{% tab title="cURL" %}
+
+```bash
+curl --compressed -g 'https://api.tardis.dev/v1/data-feeds/binance?from=2024-03-01&filters=[{"channel":"trade","symbols":["btcusdt"]}]&offset=3'
+```
+
+{% embed url="<https://api.tardis.dev/v1/data-feeds/binance?from=2024-03-01&filters=[{%22channel%22:%22trade%22,%22symbols%22:[%22btcusdt%22]}]&offset=3>" %}
+Click to see API response in the browser
+{% endembed %}
+{% endtab %}
+{% endtabs %}
+
+#### Sample requests
+
+{% embed url="<https://api.tardis.dev/v1/data-feeds/bitmex?from=2019-04-01&offset=2>" %}
+Full BitMEX data feed from 2019-04-01T00:02:00.000Z to 2019-04-01T00:03:00.000Z
+{% endembed %}
+
+{% embed url="<https://api.tardis.dev/v1/data-feeds/bitmex?from=2019-05-01&filters=[{%22channel%22:%22trade%22}>]" %}
+BitMEX trades for all instruments from 2019-05-01T00:00:00.000Z to 2019-05-01T00:01:00.000Z
+{% endembed %}
+
+{% embed url="<https://api.tardis.dev/v1/data-feeds/bitmex?from=2019-06-01&filters=[{%22channel%22:%22trade%22,%20%22symbols%22:%20[%22XBTUSD%22]}>]" %}
+BitMEX trades for XBTUSD from 2019-06-01T00:00:00.000Z to 2019-06-01T00:01:00.000Z
+{% endembed %}
+
+{% embed url="<https://api.tardis.dev/v1/data-feeds/bitmex?from=2019-06-01&filters=[{%22channel%22:%22trade%22,%20%22symbols%22:%20[%22XBTUSD%22]}]&sliceSize=5>" %}
+BitMEX trades for XBTUSD from 2019-06-01T00:00:00.000Z to 2019-06-01T00:05:00.000Z (`sliceSize=5`)
+{% endembed %}
+
+{% embed url="<https://api.tardis.dev/v1/data-feeds/deribit?from=2019-06-01&offset=10>" %}
+Full Deribit data feed from 2019-06-01T00:10:00.000Z to 2019-06-01T00:11:00.000Z
+{% endembed %}
+
+## /exchanges
+
+<mark style="color:blue;">`GET`</mark> `https://api.tardis.dev/v1/exchanges`
+
+Gets the list of all supported exchanges that historical market data is available for.
+
+{% tabs %}
+{% tab title="200 Response contains JSON array of supported exchanges with basic details for each" %}
+Example response shortened for readability. Use the live endpoint for the current full exchange list.
+
+```javascript
+[
+  {
+    "id": "bitmex",
+    "name": "BitMEX",
+    "enabled": true,
+    "supportsDatasets": true,
+    "availableSince": "2019-03-30T00:00:00.000Z",
+    "availableChannels": ["trade", "orderBookL2", "quote", "liquidation", "instrument", "..."]
+  },
+  {
+    "id": "deribit",
+    "name": "Deribit",
+    "enabled": true,
+    "supportsDatasets": true,
+    "availableSince": "2019-03-30T00:00:00.000Z",
+    "availableChannels": ["trades", "book", "ticker", "deribit_price_index", "..."]
+  },
+  ...
+]
+```
+
+{% endtab %}
+{% endtabs %}
+
+#### Sample request
+
+{% embed url="<https://api.tardis.dev/v1/exchanges>" %}
+List of all supported exchanges that historical market data is available for
+{% endembed %}
+
+## /exchanges/:exchange
+
+<mark style="color:blue;">`GET`</mark> `https://api.tardis.dev/v1/exchanges/:exchange`
+
+Gets the exchanges details: available symbols, availability dates, available channels, CSV datasets info, incidents etc.
+
+#### Path Parameters
+
+| Name                                       | Type   | Description                                               |
+| ------------------------------------------ | ------ | --------------------------------------------------------- |
+| exchange<mark style="color:red;">\*</mark> | string | one of <https://api.tardis.dev/v1/exchanges> (field `id`) |
+
+{% tabs %}
+{% tab title="200 Response contains JSON object with exchange details - available symbols, available channels, CSV datasets info, incidents etc." %}
+
+```javascript
+{
+  "id": "bitmex",
+  "name": "BitMEX",
+  "enabled": true,
+  "availableSince": "2019-03-30T00:00:00.000Z",
+  "availableChannels": [
+    "trade",
+    "orderBookL2",
+    "quote",
+    "liquidation",
+    "instrument",
+    "connected",
+    "announcement",
+    "chat",
+    "publicNotifications",
+    "settlement",
+    "funding",
+    "insurance",
+    "orderBookL2_25",
+    "orderBook10",
+    "quoteBin1m",
+    "quoteBin5m",
+    "quoteBin1h",
+    "quoteBin1d",
+    "tradeBin1m",
+    "tradeBin5m",
+    "tradeBin1h",
+    "tradeBin1d"
+  ],
+  "availableSymbols": [
+    {
+      "id": "XBTUSD",
+      "type": "perpetual",
+      "availableSince": "2019-03-30T00:00:00.000Z"
+    },
+    {
+      "id": "XBTUSDT",
+      "type": "perpetual",
+      "availableSince": "2021-11-10T00:00:00.000Z"
+    },
+    {
+      "id": "ETHUSD",
+      "type": "perpetual",
+      "availableSince": "2019-03-30T00:00:00.000Z"
+    },
+    {
+      "id": "ETHUSDT",
+      "type": "perpetual",
+      "availableSince": "2021-11-10T00:00:00.000Z"
+    },
+    ...
+  ],
+  "incidentReports": [],
+  "channelDetails": [
+    {
+      "name": "trade",
+      "description": "Public trade executions stream",
+      "frequency": "real-time",
+      "frequencySource": "exchange-docs",
+      "exchangeDocsUrl": "https://www.bitmex.com/app/wsAPI",
+      "sourceFor": ["trade"],
+      "availableSince": "2019-03-30T00:00:00.000Z"
+    },
+    {
+      "name": "orderBookL2",
+      "description": "Order book snapshots and deltas by price level",
+      "frequency": "real-time",
+      "frequencySource": "exchange-docs",
+      "exchangeDocsUrl": "https://www.bitmex.com/app/wsAPI",
+      "sourceFor": ["book_change"],
+      "availableSince": "2019-03-30T00:00:00.000Z"
+    },
+    {
+      "name": "quote",
+      "description": "Best bid and ask quote updates",
+      "frequency": "real-time",
+      "frequencySource": "exchange-docs",
+      "exchangeDocsUrl": "https://www.bitmex.com/app/wsAPI",
+      "sourceFor": ["book_ticker"],
+      "availableSince": "2019-03-30T00:00:00.000Z"
+    },
+    {
+      "name": "liquidation",
+      "description": "Liquidation events stream",
+      "frequency": "real-time",
+      "frequencySource": "exchange-docs",
+      "exchangeDocsUrl": "https://www.bitmex.com/app/wsAPI",
+      "sourceFor": ["liquidation"],
+      "availableSince": "2019-03-30T00:00:00.000Z"
+    },
+    {
+      "name": "instrument",
+      "description": "Instrument state snapshots and deltas with bidPrice/askPrice/midPrice on 5s timer",
+      "frequency": "5s",
+      "frequencySource": "exchange-docs",
+      "exchangeDocsUrl": "https://www.bitmex.com/app/wsAPI",
+      "sourceFor": ["derivative_ticker"],
+      "availableSince": "2019-03-30T00:00:00.000Z"
+    }
+  ],
+  "apiDocsUrl": "https://www.bitmex.com/app/wsAPI",
+  "dataCollectionDetails": {
+    "recorderDataCenter": {
+      "host": "GCP",
+      "regionId": "asia-northeast1",
+      "location": "Tokyo, Asia Pacific"
+    },
+    "wssConnection": {
+      "url": "wss://direct.bitmex.com:443/realtimePublic"
+    },
+    "exchangeDataCenter": {
+      "host": "AWS",
+      "regionId": "ap-northeast-1",
+      "location": "Tokyo, Asia Pacific"
+    }
+  },
+  "datasets": {
+    "formats": ["csv"],
+    "exportedFrom": "2019-03-30T00:00:00.000Z",
+    "exportedUntil": "2026-03-15T00:00:00.000Z",
+    "symbols": [
+      {
+        "id": "XBTUSD",
+        "type": "perpetual",
+        "availableSince": "2019-03-30T00:00:00.000Z",
+        "dataTypes": ["trades", "incremental_book_L2", "quotes", "derivative_ticker", "book_snapshot_25", "liquidations"]
+      },
+      ...
+    ]
+  }
+}
+```
+
+{% endtab %}
+{% endtabs %}
+
+`channelDetails[].changes` is optional. When present, each entry describes previous user-visible metadata for the same public channel up to `until`; omitted fields are unchanged from the current channel detail. Typical changed fields are `apiVersion`, `frequency`, `sourceFor`, `description`, `additionalInfo`, and `generated`.
+
+#### Sample request
+
+{% embed url="<https://api.tardis.dev/v1/exchanges/bitmex>" %}
+BitMEX exchange details
+{% endembed %}
+
+## /api-key-info
+
+<mark style="color:blue;">`GET`</mark> `https://api.tardis.dev/v1/api-key-info`
+
+Given `API_KEY` provided in request header provides information about what historical data (exchanges, date ranges, symbols) is available for given `API_KEY`.
+
+#### Headers
+
+| Name                                            | Type   | Description                                              |
+| ----------------------------------------------- | ------ | -------------------------------------------------------- |
+| Authorization<mark style="color:red;">\*</mark> | string | Authorization header with value: `'Bearer YOUR_API_KEY'` |
+
+{% tabs %}
+{% tab title="200 " %}
+
+```javascript
+[
+  {
+    "exchange": "bitmex",
+    "accessType": "pro",
+    "from": "2019-03-30T00:00:00.000Z",
+    "to": "2050-12-02T00:00:00.000Z",
+    "symbols": [],
+    "dataPlan": "unlimited"
+  },
+  {
+    "exchange": "deribit",
+    "accessType": "one-off-purchase",
+    "from": "2019-03-30T00:00:00.000Z",
+    "to": "2050-12-02T00:00:00.000Z",
+    "symbols": [],
+    "dataPlan": "unlimited"
+  }
+]
+```
+
+{% endtab %}
+{% endtabs %}
+
+
+---
+
+# Agent Instructions
+This documentation is published with GitBook. GitBook is the documentation platform designed so that both humans and AI agents can read, navigate, and reason over technical content effectively. Learn more at gitbook.com.
+
+## Querying This Documentation
+If you need additional information that is not directly available in this page, you can query the documentation dynamically by asking a question.
+
+Perform an HTTP GET request on the current page URL with the `ask` query parameter, and the optional `goal` query parameter:
+
+```
+GET https://docs.tardis.dev/api/http-api-reference.md?ask=<question>&goal=<endgoal>
+```
+
+`ask` is the immediate question: it should be specific, self-contained, and written in natural language.
+`goal` is optional and describes the broader end goal you are ultimately trying to accomplish on behalf of the user. GitBook uses it to tailor the answer towards what is most useful for that goal.
+
+The response will contain a direct answer to the question and relevant excerpts and sources from the documentation.
+
+Use this mechanism when the answer is not explicitly present in the current page, you need clarification or additional context, or you want to retrieve related documentation sections.

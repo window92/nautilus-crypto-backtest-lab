@@ -1,0 +1,14 @@
+{
+  "capture_timestamp_utc": "2026-08-23T10:37:34.746788Z",
+  "request_method": "GET",
+  "request_url": "https://www.amberdata.io/pricing",
+  "request_accept_encoding": "identity",
+  "final_url": "https://www.amberdata.io/pricing",
+  "status_code": 200,
+  "body_path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/amberdata-pricing-doc.body",
+  "body_size_bytes": 173248,
+  "body_sha256": "022a46abad388811db8b13c387b967231b293b59c459e88cabe49e3d8c272adc",
+  "headers_path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/amberdata-pricing-doc.headers.json",
+  "credentials_used": false,
+  "parsed_before_body_saved": false
+}

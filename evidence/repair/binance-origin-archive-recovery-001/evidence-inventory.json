@@ -1,0 +1,2805 @@
+{
+  "classification_counts": {
+    "EVIDENCE_ONLY_VALIDATOR": 8,
+    "OWNER_REPORT": 1,
+    "QUALIFICATION_RESULT": 9,
+    "RAW_PUBLIC_ACQUISITION_EVIDENCE": 258,
+    "SSOT_CANDIDATE_003": 6
+  },
+  "commit_or_push_performed": false,
+  "created_at_utc": "2026-08-23T11:07:53.802305Z",
+  "credentials_or_signed_private_urls_committed": false,
+  "file_count_excluding_inventory": 282,
+  "files": [
+    {
+      "classification": "QUALIFICATION_RESULT",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 89,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/baseline-attestation.json",
+      "phase_relative_path": "baseline-attestation.json",
+      "sha256": "11ca76b5e897b0498e18b7166747c864eab7d8bd5de5e447c148d9eb06bb93a4",
+      "size_bytes": 2808,
+      "utf8_valid": true
+    },
+    {
+      "classification": "QUALIFICATION_RESULT",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 3293,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/control-window-comparison.json",
+      "phase_relative_path": "control-window-comparison.json",
+      "sha256": "25b37552981e1c4890acc2c91da5465fa368c24da05152703f8c11bbe42fabb4",
+      "size_bytes": 119257,
+      "utf8_valid": true
+    },
+    {
+      "classification": "QUALIFICATION_RESULT",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 3123,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/daily-404-reconciliation.json",
+      "phase_relative_path": "daily-404-reconciliation.json",
+      "sha256": "d7e58869aa6ae485d6cc8b1b4ec3363d3d74b7ca0d526d51f2b4057857e247bc",
+      "size_bytes": 149903,
+      "utf8_valid": true
+    },
+    {
+      "classification": "QUALIFICATION_RESULT",
+      "jsonl_valid": true,
+      "lf_only": true,
+      "line_count": 18,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/failed-attempts.jsonl",
+      "phase_relative_path": "failed-attempts.jsonl",
+      "sha256": "55845da2e556c6ee8cdbb4339bad124336197b1a9604614785db13458d780d3d",
+      "size_bytes": 7748,
+      "utf8_valid": true
+    },
+    {
+      "classification": "OWNER_REPORT",
+      "lf_only": true,
+      "line_count": 98,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/owner-report/README.md",
+      "phase_relative_path": "owner-report/README.md",
+      "sha256": "cb07de7a45eb6af44b3a35bcc0257caccbbc5ae7bba1292089eafd8eadff63a2",
+      "size_bytes": 9796,
+      "utf8_valid": true
+    },
+    {
+      "classification": "QUALIFICATION_RESULT",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 200,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/provider-coverage-qualification.json",
+      "phase_relative_path": "provider-coverage-qualification.json",
+      "sha256": "f9fc86922a71bb0c260dae12d499d0115ac3a46ff186fdcd265bb984f733c9ce",
+      "size_bytes": 12451,
+      "utf8_valid": true
+    },
+    {
+      "classification": "QUALIFICATION_RESULT",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 237,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/provider-source-references.json",
+      "phase_relative_path": "provider-source-references.json",
+      "sha256": "460a76ac0a151304cc169bcae37fad9a2523c98fcb279e926960cf5d638fb262",
+      "size_bytes": 15521,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/amberdata-futures-tickers-metadata-probe.body",
+      "phase_relative_path": "raw/provider-probes/amberdata-futures-tickers-metadata-probe.body",
+      "sha256": "12a22880bc2e59f8278b4a5e547567f0aa14d020ea456598267fa00208cfebc5",
+      "size_bytes": 23
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 48,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/amberdata-futures-tickers-metadata-probe.headers.json",
+      "phase_relative_path": "raw/provider-probes/amberdata-futures-tickers-metadata-probe.headers.json",
+      "sha256": "01a62d44adecc0ac098072d61492451090ed166766238ed5d994195fb035ca90",
+      "size_bytes": 765,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 14,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/amberdata-futures-tickers-metadata-probe.observation.json",
+      "phase_relative_path": "raw/provider-probes/amberdata-futures-tickers-metadata-probe.observation.json",
+      "sha256": "1d156d1c61acd9278a1b225fea10987d7b26f22d8c091b31f02bf74f2b1fb01c",
+      "size_bytes": 772,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/amberdata-target-mark-ticker-probe.body",
+      "phase_relative_path": "raw/provider-probes/amberdata-target-mark-ticker-probe.body",
+      "sha256": "12a22880bc2e59f8278b4a5e547567f0aa14d020ea456598267fa00208cfebc5",
+      "size_bytes": 23
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 48,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/amberdata-target-mark-ticker-probe.headers.json",
+      "phase_relative_path": "raw/provider-probes/amberdata-target-mark-ticker-probe.headers.json",
+      "sha256": "866f03a1d663953b9717d3e0f3151b714f9dbd4f4607dd661c95df25104b4b76",
+      "size_bytes": 765,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 14,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/amberdata-target-mark-ticker-probe.observation.json",
+      "phase_relative_path": "raw/provider-probes/amberdata-target-mark-ticker-probe.observation.json",
+      "sha256": "fc8e1cae921da2be7f963a937cdb4e119a20e3611c0627608fdb25f28e126f94",
+      "size_bytes": 922,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/binance-control-mark-klines-2020-12-01-12.body",
+      "phase_relative_path": "raw/provider-probes/binance-control-mark-klines-2020-12-01-12.body",
+      "sha256": "6f6145b791e5edd9df6516410e5214e3669e9086ae1d26d1d106708700eb7f7b",
+      "size_bytes": 1175
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 100,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/binance-control-mark-klines-2020-12-01-12.headers.json",
+      "phase_relative_path": "raw/provider-probes/binance-control-mark-klines-2020-12-01-12.headers.json",
+      "sha256": "f06a1adf0cd59ccde4fe7ce1f528019afd064041d0a533cb7f027c1d7736881d",
+      "size_bytes": 1599,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 14,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/binance-control-mark-klines-2020-12-01-12.observation.json",
+      "phase_relative_path": "raw/provider-probes/binance-control-mark-klines-2020-12-01-12.observation.json",
+      "sha256": "0a5306bea28b0ea0215e6f59621da26c54aa9c887bac8fb3bc1808c94d3e9043",
+      "size_bytes": 918,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/binance-control-mark-klines-2020-12-01-a.body",
+      "phase_relative_path": "raw/provider-probes/binance-control-mark-klines-2020-12-01-a.body",
+      "sha256": "0aea02d3764d6427db27c4bdc6b1bee07753d95604e708f28f55bdfb3a015bbd",
+      "size_bytes": 1305
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 100,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/binance-control-mark-klines-2020-12-01-a.headers.json",
+      "phase_relative_path": "raw/provider-probes/binance-control-mark-klines-2020-12-01-a.headers.json",
+      "sha256": "b71efbe648f7c4be4e0f28aeeb7bb9521bb0163f3223dd229dad4a55eef39cbb",
+      "size_bytes": 1598,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 14,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/binance-control-mark-klines-2020-12-01-a.observation.json",
+      "phase_relative_path": "raw/provider-probes/binance-control-mark-klines-2020-12-01-a.observation.json",
+      "sha256": "e3fddee66bcef492d307260e9f3851d9636749de40645455e4d395e733d79857",
+      "size_bytes": 916,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/binance-control-mark-klines-2021-01-01-06.body",
+      "phase_relative_path": "raw/provider-probes/binance-control-mark-klines-2021-01-01-06.body",
+      "sha256": "08cebab4b4b7eda0114bcf8dcc27764f35b17289c9f262561bf16714c897df4e",
+      "size_bytes": 1184
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 100,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/binance-control-mark-klines-2021-01-01-06.headers.json",
+      "phase_relative_path": "raw/provider-probes/binance-control-mark-klines-2021-01-01-06.headers.json",
+      "sha256": "0461deda3b1b112bc6026dc50651fd053e5ac5d7d19f39746c8169aec813b6ea",
+      "size_bytes": 1599,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 14,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/binance-control-mark-klines-2021-01-01-06.observation.json",
+      "phase_relative_path": "raw/provider-probes/binance-control-mark-klines-2021-01-01-06.observation.json",
+      "sha256": "be89f312ff37d9b70b79a585a79512333695bfd273c90beef30c0067a8701b17",
+      "size_bytes": 918,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/binance-control-mark-klines-2021-02-01-18.body",
+      "phase_relative_path": "raw/provider-probes/binance-control-mark-klines-2021-02-01-18.body",
+      "sha256": "1ee9a8402d915e56d9f590cb6e874b6402406fdc03e011d7c7047848ae936bd9",
+      "size_bytes": 1211
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 100,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/binance-control-mark-klines-2021-02-01-18.headers.json",
+      "phase_relative_path": "raw/provider-probes/binance-control-mark-klines-2021-02-01-18.headers.json",
+      "sha256": "eeecc532246647b553386084fcd29055b78c8005910a18a5ee737b24e7efab5b",
+      "size_bytes": 1599,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 14,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/binance-control-mark-klines-2021-02-01-18.observation.json",
+      "phase_relative_path": "raw/provider-probes/binance-control-mark-klines-2021-02-01-18.observation.json",
+      "sha256": "4b00a58c76de786db648b71126ef0fd57c4d96ca5f380640aef0e7f4965c8c35",
+      "size_bytes": 918,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/binance-control-mark-klines-2021-02-01-b.body",
+      "phase_relative_path": "raw/provider-probes/binance-control-mark-klines-2021-02-01-b.body",
+      "sha256": "22fb27d6ed5a65cbc35abf95f27b9571a8c09fac6fe70282603a7a6dbad63916",
+      "size_bytes": 1314
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 100,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/binance-control-mark-klines-2021-02-01-b.headers.json",
+      "phase_relative_path": "raw/provider-probes/binance-control-mark-klines-2021-02-01-b.headers.json",
+      "sha256": "f9f0b5f65379f79f635b39afa62559eddcb41021160031bdf75ce161e0dca4b1",
+      "size_bytes": 1599,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 14,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/binance-control-mark-klines-2021-02-01-b.observation.json",
+      "phase_relative_path": "raw/provider-probes/binance-control-mark-klines-2021-02-01-b.observation.json",
+      "sha256": "62f69f8345224fd88336123d3a6353078adccf1b3908e31cf372a5c684b2897b",
+      "size_bytes": 916,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/binance-control-mark-klines-2021-03-01-06.body",
+      "phase_relative_path": "raw/provider-probes/binance-control-mark-klines-2021-03-01-06.body",
+      "sha256": "9f2764fa0ceb9b1cfa892b361470d5998eae39f9bd0d1557d76124f0736ea483",
+      "size_bytes": 1184
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 100,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/binance-control-mark-klines-2021-03-01-06.headers.json",
+      "phase_relative_path": "raw/provider-probes/binance-control-mark-klines-2021-03-01-06.headers.json",
+      "sha256": "d1571e1866047aaff74688a30502a9507ae99ed48c4e90c6591b78707649225f",
+      "size_bytes": 1599,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 14,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/binance-control-mark-klines-2021-03-01-06.observation.json",
+      "phase_relative_path": "raw/provider-probes/binance-control-mark-klines-2021-03-01-06.observation.json",
+      "sha256": "7cd2aaba406e521ad0f500e597e38a76e15cc3c2068695054c0004ea85e2ccc2",
+      "size_bytes": 918,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/binance-control-mark-klines-2021-04-01-12.body",
+      "phase_relative_path": "raw/provider-probes/binance-control-mark-klines-2021-04-01-12.body",
+      "sha256": "f1bc9fa3aa8cea955a7b68ffb813d9e529cd5a3905d82dcf44f38f2e96717eae",
+      "size_bytes": 1211
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 100,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/binance-control-mark-klines-2021-04-01-12.headers.json",
+      "phase_relative_path": "raw/provider-probes/binance-control-mark-klines-2021-04-01-12.headers.json",
+      "sha256": "c23f3ddf702470f84344b2f6d6fd4f91e0ab69ebe2133677fa47ff1b55bb244c",
+      "size_bytes": 1601,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 14,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/binance-control-mark-klines-2021-04-01-12.observation.json",
+      "phase_relative_path": "raw/provider-probes/binance-control-mark-klines-2021-04-01-12.observation.json",
+      "sha256": "feab7cc62f5d1ba3810f05f12437a6e7f8bb0929efc0177a23c2fd57140fd6d0",
+      "size_bytes": 918,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/binance-control-mark-klines-2021-05-01-18.body",
+      "phase_relative_path": "raw/provider-probes/binance-control-mark-klines-2021-05-01-18.body",
+      "sha256": "5488ef2d95f550f87ddc803e3acec0f04f7974537b30cef405e86939e6a276a9",
+      "size_bytes": 1193
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 100,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/binance-control-mark-klines-2021-05-01-18.headers.json",
+      "phase_relative_path": "raw/provider-probes/binance-control-mark-klines-2021-05-01-18.headers.json",
+      "sha256": "cbc74889c286b728bfbc757c6f242c9fad1886101cb72e465304c6351493c912",
+      "size_bytes": 1599,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 14,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/binance-control-mark-klines-2021-05-01-18.observation.json",
+      "phase_relative_path": "raw/provider-probes/binance-control-mark-klines-2021-05-01-18.observation.json",
+      "sha256": "f4c62aea71cb3c336ee8a1a462aac45aac0f461055c17d2dc137d8e0d1a5c0af",
+      "size_bytes": 918,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/binance-control-mark-klines-2021-06-01-06.body",
+      "phase_relative_path": "raw/provider-probes/binance-control-mark-klines-2021-06-01-06.body",
+      "sha256": "452315beb01ec43e48f7670d4c35b04726a474750f62b8351107ba96f56bd0ab",
+      "size_bytes": 1211
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 100,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/binance-control-mark-klines-2021-06-01-06.headers.json",
+      "phase_relative_path": "raw/provider-probes/binance-control-mark-klines-2021-06-01-06.headers.json",
+      "sha256": "076f960ad52bb24607203b73147dd2d11715b1f666cc04779696319c7b231a17",
+      "size_bytes": 1598,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 14,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/binance-control-mark-klines-2021-06-01-06.observation.json",
+      "phase_relative_path": "raw/provider-probes/binance-control-mark-klines-2021-06-01-06.observation.json",
+      "sha256": "c72aed2113f0f340722d7c4d9caf1c5715697f7f5d1ea1e02c5f13968f3c55da",
+      "size_bytes": 918,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/binance-control-mark-klines-2021-06-01-c.body",
+      "phase_relative_path": "raw/provider-probes/binance-control-mark-klines-2021-06-01-c.body",
+      "sha256": "da5e6c54e567b6f47dfe7bd5be86ae1ede6e1b69188ec8bcdda2aa79fdb9ec07",
+      "size_bytes": 1332
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 100,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/binance-control-mark-klines-2021-06-01-c.headers.json",
+      "phase_relative_path": "raw/provider-probes/binance-control-mark-klines-2021-06-01-c.headers.json",
+      "sha256": "f0b66d77c487f0286776ff1ab7b2802f9d85c5ca0ab125d5f220c7197e808773",
+      "size_bytes": 1598,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 14,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/binance-control-mark-klines-2021-06-01-c.observation.json",
+      "phase_relative_path": "raw/provider-probes/binance-control-mark-klines-2021-06-01-c.observation.json",
+      "sha256": "5dddbbcf6d031c0b3fdd6eaa6450e43913f55a569e2297001b9a21230fbef990",
+      "size_bytes": 916,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/binance-target-mark-klines.body",
+      "phase_relative_path": "raw/provider-probes/binance-target-mark-klines.body",
+      "sha256": "7f9f801706edee459fd38ec07ee9a7fcc7aa0bb5ef0dc5b7cffe79747b82b48c",
+      "size_bytes": 595
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 100,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/binance-target-mark-klines.headers.json",
+      "phase_relative_path": "raw/provider-probes/binance-target-mark-klines.headers.json",
+      "sha256": "54143915fa96f78432c57c62f6d8bbd241a8433ec1beb5f4e83522301cfeb2c5",
+      "size_bytes": 1598,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 14,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/binance-target-mark-klines.observation.json",
+      "phase_relative_path": "raw/provider-probes/binance-target-mark-klines.observation.json",
+      "sha256": "ef8c77e881645a28a08e373fcffaf04a9f20e9209328e4c5e0b07f0388217aea",
+      "size_bytes": 887,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/crypto-lake-sample-funding-binance-futures-symbols-eu-west-1.body",
+      "phase_relative_path": "raw/provider-probes/crypto-lake-sample-funding-binance-futures-symbols-eu-west-1.body",
+      "sha256": "2cc44c1e1dbbdc2e4dd68f71aa00a1fafbbb8577b18b2ebcceab4151de3448d3",
+      "size_bytes": 410
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 36,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/crypto-lake-sample-funding-binance-futures-symbols-eu-west-1.headers.json",
+      "phase_relative_path": "raw/provider-probes/crypto-lake-sample-funding-binance-futures-symbols-eu-west-1.headers.json",
+      "sha256": "1b09afdd2515501861320f03c2eb766cc87e1a01e22548737ebe05b2cb73e8e6",
+      "size_bytes": 557,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 13,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/crypto-lake-sample-funding-binance-futures-symbols-eu-west-1.observation.json",
+      "phase_relative_path": "raw/provider-probes/crypto-lake-sample-funding-binance-futures-symbols-eu-west-1.observation.json",
+      "sha256": "830fcb3392d406585205e810a1f1efba814a6c4f53c10500dd7d7bb905705df2",
+      "size_bytes": 904,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/crypto-lake-sample-funding-binance-futures-symbols.body",
+      "phase_relative_path": "raw/provider-probes/crypto-lake-sample-funding-binance-futures-symbols.body",
+      "sha256": "c01ff0da1619859802cd3b98757faffbc0339b7d2be1189df67b7c59a337ce81",
+      "size_bytes": 483
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 36,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/crypto-lake-sample-funding-binance-futures-symbols.headers.json",
+      "phase_relative_path": "raw/provider-probes/crypto-lake-sample-funding-binance-futures-symbols.headers.json",
+      "sha256": "09a000c9b78884b0951b505dee8c1eaa375eaf63587b77966e7859a340985bfd",
+      "size_bytes": 557,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 13,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/crypto-lake-sample-funding-binance-futures-symbols.observation.json",
+      "phase_relative_path": "raw/provider-probes/crypto-lake-sample-funding-binance-futures-symbols.observation.json",
+      "sha256": "48b5e40d8a880f04cd57db986060b796ac45bf1736c0d1ff08fa6cc791ec9620",
+      "size_bytes": 864,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/crypto-lake-sample-funding-dates-eu-west-1.body",
+      "phase_relative_path": "raw/provider-probes/crypto-lake-sample-funding-dates-eu-west-1.body",
+      "sha256": "f7367a18c97cf2bfea3dc993a79182cd844bd00fcf8a5ec6b978f53722738c48",
+      "size_bytes": 445
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 36,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/crypto-lake-sample-funding-dates-eu-west-1.headers.json",
+      "phase_relative_path": "raw/provider-probes/crypto-lake-sample-funding-dates-eu-west-1.headers.json",
+      "sha256": "55f8b209ee52a6da8c7f306f0367ca66f6bf6bcdd9067fdc020939ced95efe62",
+      "size_bytes": 557,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 13,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/crypto-lake-sample-funding-dates-eu-west-1.observation.json",
+      "phase_relative_path": "raw/provider-probes/crypto-lake-sample-funding-dates-eu-west-1.observation.json",
+      "sha256": "270114ce28d845d70e4777f19a1b9e094ad0d914028e0b431fac94d65a2c3cff",
+      "size_bytes": 918,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/crypto-lake-sample-funding-exchanges-eu-west-1.body",
+      "phase_relative_path": "raw/provider-probes/crypto-lake-sample-funding-exchanges-eu-west-1.body",
+      "sha256": "5ef1519456f7c896c2abc2a1f882a12971484b5fb4fd6629092c02774f385d85",
+      "size_bytes": 364
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 36,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/crypto-lake-sample-funding-exchanges-eu-west-1.headers.json",
+      "phase_relative_path": "raw/provider-probes/crypto-lake-sample-funding-exchanges-eu-west-1.headers.json",
+      "sha256": "addd37abd741d82a4be390d6641561f0414a5d74c62e664728a8cea8bc0f1db7",
+      "size_bytes": 557,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 13,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/crypto-lake-sample-funding-exchanges-eu-west-1.observation.json",
+      "phase_relative_path": "raw/provider-probes/crypto-lake-sample-funding-exchanges-eu-west-1.observation.json",
+      "sha256": "3b5c64602f41998e5e4917db2b5385faa3719d00738b3c8d48c3ec3c1a09c969",
+      "size_bytes": 818,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/crypto-lake-sample-funding-exchanges.body",
+      "phase_relative_path": "raw/provider-probes/crypto-lake-sample-funding-exchanges.body",
+      "sha256": "d71595e79f6c9871197ea6c3bd2650f374d68322bbc4ac5ace765b8c0a049780",
+      "size_bytes": 463
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 36,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/crypto-lake-sample-funding-exchanges.headers.json",
+      "phase_relative_path": "raw/provider-probes/crypto-lake-sample-funding-exchanges.headers.json",
+      "sha256": "4d5ed93f031c69bac6a04b6e05e2f8937802f1afe49f60cd79788511f0363cb2",
+      "size_bytes": 537,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 13,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/crypto-lake-sample-funding-exchanges.observation.json",
+      "phase_relative_path": "raw/provider-probes/crypto-lake-sample-funding-exchanges.observation.json",
+      "sha256": "a1799fb59ae596a38210a893780a37ced01b651b7d937a516d712228d2a3c5fa",
+      "size_bytes": 778,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/crypto-lake-sample-root-list-eu-west-1.body",
+      "phase_relative_path": "raw/provider-probes/crypto-lake-sample-root-list-eu-west-1.body",
+      "sha256": "d7bd017b60e7c262e2904878b003bdb0d46a96c933e4d42596789c8981df20a6",
+      "size_bytes": 872
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 36,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/crypto-lake-sample-root-list-eu-west-1.headers.json",
+      "phase_relative_path": "raw/provider-probes/crypto-lake-sample-root-list-eu-west-1.headers.json",
+      "sha256": "43830ec2724115a3777de089185ed2a2543794fc3adcc6fda5df47280fb0c9c0",
+      "size_bytes": 557,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 13,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/crypto-lake-sample-root-list-eu-west-1.observation.json",
+      "phase_relative_path": "raw/provider-probes/crypto-lake-sample-root-list-eu-west-1.observation.json",
+      "sha256": "1a10271ec709765e22daa3dfe46330c27bd00f915b5034fe5a2b508d1e70ed04",
+      "size_bytes": 766,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/crypto-lake-sample-root-list.body",
+      "phase_relative_path": "raw/provider-probes/crypto-lake-sample-root-list.body",
+      "sha256": "0e245a9be6870b655617137acc8e143222323599f0629f1cc6e18d5d4af2cca5",
+      "size_bytes": 483
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 36,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/crypto-lake-sample-root-list.headers.json",
+      "phase_relative_path": "raw/provider-probes/crypto-lake-sample-root-list.headers.json",
+      "sha256": "7a29037478664e16ec63fa15a2b964bbaeb01a8ec8e991ace811f67976cbea4c",
+      "size_bytes": 557,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 13,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/crypto-lake-sample-root-list.observation.json",
+      "phase_relative_path": "raw/provider-probes/crypto-lake-sample-root-list.observation.json",
+      "sha256": "1e1d4eaa12320260a54563da77649786c0ce0b7efbf13431255261ecd738a0da",
+      "size_bytes": 726,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/crypto-lake-target-funding-list-eu-west-1.body",
+      "phase_relative_path": "raw/provider-probes/crypto-lake-target-funding-list-eu-west-1.body",
+      "sha256": "962e16723fe3674b18422477ff751106738e3a43929650f80a29e9fd0f98895a",
+      "size_bytes": 317
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 36,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/crypto-lake-target-funding-list-eu-west-1.headers.json",
+      "phase_relative_path": "raw/provider-probes/crypto-lake-target-funding-list-eu-west-1.headers.json",
+      "sha256": "71612141390028571b6bf19068a906c3d10ec3becdfe690ae8c0a7cb715e5ad8",
+      "size_bytes": 557,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 13,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/crypto-lake-target-funding-list-eu-west-1.observation.json",
+      "phase_relative_path": "raw/provider-probes/crypto-lake-target-funding-list-eu-west-1.observation.json",
+      "sha256": "04d5a5a2ae2eadc3e8a8899b6684006f4d34a133d4c15430ef2e0ac7091d20ca",
+      "size_bytes": 924,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/crypto-lake-target-funding-list.body",
+      "phase_relative_path": "raw/provider-probes/crypto-lake-target-funding-list.body",
+      "sha256": "a150640994174809b06274951ee6cc23dbb72f7626d97d9d0f1f8d224c1d253c",
+      "size_bytes": 463
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 36,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/crypto-lake-target-funding-list.headers.json",
+      "phase_relative_path": "raw/provider-probes/crypto-lake-target-funding-list.headers.json",
+      "sha256": "d17a9b6fe7786e26018a4221a5cf02e81017bf0c654bf48ce59a21b266290da3",
+      "size_bytes": 537,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 13,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/crypto-lake-target-funding-list.observation.json",
+      "phase_relative_path": "raw/provider-probes/crypto-lake-target-funding-list.observation.json",
+      "sha256": "3cd6d040e20575164e605a03f1f1f7c51d04a0b92e6bf7532caa8b468805e491",
+      "size_bytes": 884,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-binance-futures-metadata.body",
+      "phase_relative_path": "raw/provider-probes/tardis-binance-futures-metadata.body",
+      "sha256": "11cbcc806e7637c43685e6a735564a0290691bfeb4b7e4993ead3b21a06b91c7",
+      "size_bytes": 365306
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 48,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-binance-futures-metadata.headers.json",
+      "phase_relative_path": "raw/provider-probes/tardis-binance-futures-metadata.headers.json",
+      "sha256": "ba6a84b8d9bf48d537260902c4daead1e559c60633978362d04976c9e9cbd125",
+      "size_bytes": 626,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 13,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-binance-futures-metadata.observation.json",
+      "phase_relative_path": "raw/provider-probes/tardis-binance-futures-metadata.observation.json",
+      "sha256": "957a4a4368b6efce3d212869061f85fd90366595de00a7e902ded5a6fe193aa2",
+      "size_bytes": 697,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-binance-spot-metadata.body",
+      "phase_relative_path": "raw/provider-probes/tardis-binance-spot-metadata.body",
+      "sha256": "a362e5847d1031242a43d2d0bbd7282b4bc559a9685071fa5ddd6c7223405af0",
+      "size_bytes": 1097187
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 48,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-binance-spot-metadata.headers.json",
+      "phase_relative_path": "raw/provider-probes/tardis-binance-spot-metadata.headers.json",
+      "sha256": "8bcd0727893ff4dc8e94735b68b9403d7b64ab8e3b5c93ae1661bace1678c9fa",
+      "size_bytes": 627,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 13,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-binance-spot-metadata.observation.json",
+      "phase_relative_path": "raw/provider-probes/tardis-binance-spot-metadata.observation.json",
+      "sha256": "239aa1cc3f77ab2d467effaccb6e8a3b95a6ad4e5f19c86a1eb06f9a7e84f953",
+      "size_bytes": 676,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-mark-normalized-dataset-2020-12-01.body",
+      "phase_relative_path": "raw/provider-probes/tardis-control-mark-normalized-dataset-2020-12-01.body",
+      "sha256": "6bc8de3a07d954e712a14eddf3711f111705fb43229d66ad3df2828dee194756",
+      "size_bytes": 3202385
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 40,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-mark-normalized-dataset-2020-12-01.headers.json",
+      "phase_relative_path": "raw/provider-probes/tardis-control-mark-normalized-dataset-2020-12-01.headers.json",
+      "sha256": "39e793e0fd3e1884207976ce3e3df9472ef9fddb54117154a53ce8e94052207b",
+      "size_bytes": 684,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 14,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-mark-normalized-dataset-2020-12-01.observation.json",
+      "phase_relative_path": "raw/provider-probes/tardis-control-mark-normalized-dataset-2020-12-01.observation.json",
+      "sha256": "ef4cfc17c9ba9a8e81dea7b175262d3b8fc3f55076090d2f8c36a5a052f0925e",
+      "size_bytes": 853,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-mark-raw-2020-12-01-10m.body",
+      "phase_relative_path": "raw/provider-probes/tardis-control-mark-raw-2020-12-01-10m.body",
+      "sha256": "a8fbd460f7c379d93bd046b59ad78e2411a6c49a277dc346de9c948f0b98ef94",
+      "size_bytes": 14161
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 60,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-mark-raw-2020-12-01-10m.headers.json",
+      "phase_relative_path": "raw/provider-probes/tardis-control-mark-raw-2020-12-01-10m.headers.json",
+      "sha256": "ad8bebdef1496ea87f8d6564e92552322b0d0cd32e1ec14d06f33805181e6854",
+      "size_bytes": 793,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 14,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-mark-raw-2020-12-01-10m.observation.json",
+      "phase_relative_path": "raw/provider-probes/tardis-control-mark-raw-2020-12-01-10m.observation.json",
+      "sha256": "80278cf8a8913a01e963878f3c5ce33920797fe5d441256849524bd91bf0ddb9",
+      "size_bytes": 1015,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-mark-raw-2020-12-01-12-10m.body",
+      "phase_relative_path": "raw/provider-probes/tardis-control-mark-raw-2020-12-01-12-10m.body",
+      "sha256": "9e53a6ebdf7ae06d32eafa11a06a3892751cafd782b97c68a55c575fc69f828b",
+      "size_bytes": 13912
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 60,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-mark-raw-2020-12-01-12-10m.headers.json",
+      "phase_relative_path": "raw/provider-probes/tardis-control-mark-raw-2020-12-01-12-10m.headers.json",
+      "sha256": "4a6c40ae336660768e3818ae43e1b0cab6ea2320a663ee0da48624b6e902b2c7",
+      "size_bytes": 793,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 14,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-mark-raw-2020-12-01-12-10m.observation.json",
+      "phase_relative_path": "raw/provider-probes/tardis-control-mark-raw-2020-12-01-12-10m.observation.json",
+      "sha256": "90753e8cd1867eb15f436d76874fd2a2aa4bbcf18d18a4a9295836d95edb2d96",
+      "size_bytes": 1021,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-mark-raw-2020-12-01-a-gzip.body",
+      "phase_relative_path": "raw/provider-probes/tardis-control-mark-raw-2020-12-01-a-gzip.body",
+      "sha256": "234b09cfa3e4735e3582d1e674a77e86de23eb4fd5e5c8a5428855375fdbc60a",
+      "size_bytes": 1478
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 60,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-mark-raw-2020-12-01-a-gzip.headers.json",
+      "phase_relative_path": "raw/provider-probes/tardis-control-mark-raw-2020-12-01-a-gzip.headers.json",
+      "sha256": "6ae512b16e918cc918867ecf583b0afeff9f120874869a6a5ed016454f4a1991",
+      "size_bytes": 791,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 14,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-mark-raw-2020-12-01-a-gzip.observation.json",
+      "phase_relative_path": "raw/provider-probes/tardis-control-mark-raw-2020-12-01-a-gzip.observation.json",
+      "sha256": "efd7b6427539d17235f8624bcf9ecfe2050cf027a922c85afa7e71a9c795f307",
+      "size_bytes": 1050,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-mark-raw-2020-12-01-a.body",
+      "phase_relative_path": "raw/provider-probes/tardis-control-mark-raw-2020-12-01-a.body",
+      "sha256": "ec4bd0ed42607ec69d356409c1dd28fc063a220bdea6266b54c77f9f1db6d19e",
+      "size_bytes": 107
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 40,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-mark-raw-2020-12-01-a.headers.json",
+      "phase_relative_path": "raw/provider-probes/tardis-control-mark-raw-2020-12-01-a.headers.json",
+      "sha256": "7c43af226daae6d9feaca1fe411afdf49bc0ad7bf0036e2f4054f00fb6e299e0",
+      "size_bytes": 516,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 13,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-mark-raw-2020-12-01-a.observation.json",
+      "phase_relative_path": "raw/provider-probes/tardis-control-mark-raw-2020-12-01-a.observation.json",
+      "sha256": "a339a6f62daec6b6fcbf77444715f8a7cfb2cb621df3bbdcb68b47a3befc8639",
+      "size_bytes": 1002,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-mark-raw-2021-01-01-06-10m.body",
+      "phase_relative_path": "raw/provider-probes/tardis-control-mark-raw-2021-01-01-06-10m.body",
+      "sha256": "2c9b74c15a17e44a9d5bfe7a7d08e07ed30bbeca9353cad6363c90ebbb5f70c5",
+      "size_bytes": 13688
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 60,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-mark-raw-2021-01-01-06-10m.headers.json",
+      "phase_relative_path": "raw/provider-probes/tardis-control-mark-raw-2021-01-01-06-10m.headers.json",
+      "sha256": "079ba999ed7a57b78e4db638d46639696730c657cd58e3a5c2716a927de71052",
+      "size_bytes": 793,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 14,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-mark-raw-2021-01-01-06-10m.observation.json",
+      "phase_relative_path": "raw/provider-probes/tardis-control-mark-raw-2021-01-01-06-10m.observation.json",
+      "sha256": "f0223da77b1f131525ebfb8750ad7e8f3cf1de37125932ff0d52d5083f918fba",
+      "size_bytes": 1021,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-mark-raw-2021-01-01-60m.body",
+      "phase_relative_path": "raw/provider-probes/tardis-control-mark-raw-2021-01-01-60m.body",
+      "sha256": "4e76b6c88404b9d447a98858c1a6bd99ac6b6b9d951a65fbdc5efd597c612209",
+      "size_bytes": 1540
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 60,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-mark-raw-2021-01-01-60m.headers.json",
+      "phase_relative_path": "raw/provider-probes/tardis-control-mark-raw-2021-01-01-60m.headers.json",
+      "sha256": "04c03ea0f104597e062b6656e201e127ee19cc399d4f079ebee65128de311d34",
+      "size_bytes": 791,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 14,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-mark-raw-2021-01-01-60m.observation.json",
+      "phase_relative_path": "raw/provider-probes/tardis-control-mark-raw-2021-01-01-60m.observation.json",
+      "sha256": "c7f2ce4560abb4bb1b43b3470e09cf9e49f832d24bbc8264a57bd98863413718",
+      "size_bytes": 1044,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-mark-raw-2021-02-01-10m.body",
+      "phase_relative_path": "raw/provider-probes/tardis-control-mark-raw-2021-02-01-10m.body",
+      "sha256": "388f1f8ac4fca69b37929ec3cb235ccf5ce436383ee78874178cbbee9a19c350",
+      "size_bytes": 15274
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 60,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-mark-raw-2021-02-01-10m.headers.json",
+      "phase_relative_path": "raw/provider-probes/tardis-control-mark-raw-2021-02-01-10m.headers.json",
+      "sha256": "d9d1abc8d5c22e8f3e0276a656c37c8284b13bdb74112b5a16583d8bb5a8014b",
+      "size_bytes": 793,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 14,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-mark-raw-2021-02-01-10m.observation.json",
+      "phase_relative_path": "raw/provider-probes/tardis-control-mark-raw-2021-02-01-10m.observation.json",
+      "sha256": "e9d9694f61d5d01308b7394f6119cd0ad8eb133b86429d6017f6b791d82087b7",
+      "size_bytes": 1015,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-mark-raw-2021-02-01-18-10m.body",
+      "phase_relative_path": "raw/provider-probes/tardis-control-mark-raw-2021-02-01-18-10m.body",
+      "sha256": "a759214cc66ecf5214980e102a43bc075a51bbd364c050f8ebf83705f03e58bd",
+      "size_bytes": 15689
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 60,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-mark-raw-2021-02-01-18-10m.headers.json",
+      "phase_relative_path": "raw/provider-probes/tardis-control-mark-raw-2021-02-01-18-10m.headers.json",
+      "sha256": "15033ceaac226d83e91f64916520ee67a3e5022b042b11fb143e9b6160e512d5",
+      "size_bytes": 793,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 14,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-mark-raw-2021-02-01-18-10m.observation.json",
+      "phase_relative_path": "raw/provider-probes/tardis-control-mark-raw-2021-02-01-18-10m.observation.json",
+      "sha256": "27060efb04f4e1b0514a465d64297d3f2fac6fa47552b2c6889e14ab6ea5c618",
+      "size_bytes": 1021,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-mark-raw-2021-02-01-b-gzip.body",
+      "phase_relative_path": "raw/provider-probes/tardis-control-mark-raw-2021-02-01-b-gzip.body",
+      "sha256": "63c64ea6724fb993f57d2f87e7058c993547519e2e336138320b90d0a72868de",
+      "size_bytes": 1732
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 60,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-mark-raw-2021-02-01-b-gzip.headers.json",
+      "phase_relative_path": "raw/provider-probes/tardis-control-mark-raw-2021-02-01-b-gzip.headers.json",
+      "sha256": "058b0a6c0fabfc206ae559c2a638ba847a91542b21dff5e08ee1cd0c82b27310",
+      "size_bytes": 791,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 14,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-mark-raw-2021-02-01-b-gzip.observation.json",
+      "phase_relative_path": "raw/provider-probes/tardis-control-mark-raw-2021-02-01-b-gzip.observation.json",
+      "sha256": "7c63f85803009473a911b2066f4c113ca89dde0c5515ac878fcf513df2b20f60",
+      "size_bytes": 1050,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-mark-raw-2021-02-01-b.body",
+      "phase_relative_path": "raw/provider-probes/tardis-control-mark-raw-2021-02-01-b.body",
+      "sha256": "ec4bd0ed42607ec69d356409c1dd28fc063a220bdea6266b54c77f9f1db6d19e",
+      "size_bytes": 107
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 40,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-mark-raw-2021-02-01-b.headers.json",
+      "phase_relative_path": "raw/provider-probes/tardis-control-mark-raw-2021-02-01-b.headers.json",
+      "sha256": "dbf1b0265022b287a3eec328403d4ab71973c86c5ee10e6ae46bcf84c8f42dac",
+      "size_bytes": 516,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 13,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-mark-raw-2021-02-01-b.observation.json",
+      "phase_relative_path": "raw/provider-probes/tardis-control-mark-raw-2021-02-01-b.observation.json",
+      "sha256": "3901d1131d4e831b32b3600926ceea3917ee00ab6020adf552bf96b03af6f5e4",
+      "size_bytes": 1002,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-mark-raw-2021-03-01-06-10m.body",
+      "phase_relative_path": "raw/provider-probes/tardis-control-mark-raw-2021-03-01-06-10m.body",
+      "sha256": "be6297ffaab4dd7603ec4289a89f4b434dfb5d5543e082b2541548770c068acf",
+      "size_bytes": 14775
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 60,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-mark-raw-2021-03-01-06-10m.headers.json",
+      "phase_relative_path": "raw/provider-probes/tardis-control-mark-raw-2021-03-01-06-10m.headers.json",
+      "sha256": "f4f03dc83a4b69587f3868c96392a5e67803bd97332b488d5115c1435fed1411",
+      "size_bytes": 793,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 14,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-mark-raw-2021-03-01-06-10m.observation.json",
+      "phase_relative_path": "raw/provider-probes/tardis-control-mark-raw-2021-03-01-06-10m.observation.json",
+      "sha256": "a856412f7db4e3382199327da3139d273d12915893264887667b117c7d1d58a8",
+      "size_bytes": 1021,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-mark-raw-2021-04-01-12-10m.body",
+      "phase_relative_path": "raw/provider-probes/tardis-control-mark-raw-2021-04-01-12-10m.body",
+      "sha256": "b360b18c7ce2a2aaca5dbd5cbf0fb05d6e0f0facbfc390ea12d94b5811158d37",
+      "size_bytes": 15672
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 60,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-mark-raw-2021-04-01-12-10m.headers.json",
+      "phase_relative_path": "raw/provider-probes/tardis-control-mark-raw-2021-04-01-12-10m.headers.json",
+      "sha256": "eb12753f41eefe4f89d7917933e9af08ea25ca6484b32218d655294ab08dc978",
+      "size_bytes": 793,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 14,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-mark-raw-2021-04-01-12-10m.observation.json",
+      "phase_relative_path": "raw/provider-probes/tardis-control-mark-raw-2021-04-01-12-10m.observation.json",
+      "sha256": "72fe08da23bcf423dc3b3f8754c0107570a9cbb17c99238435eea8f6f1f57ef4",
+      "size_bytes": 1021,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-mark-raw-2021-05-01-18-10m.body",
+      "phase_relative_path": "raw/provider-probes/tardis-control-mark-raw-2021-05-01-18-10m.body",
+      "sha256": "8387b49bd30e6b6a8fdd2ab91fa862451fc5f39fcf86f5c103c1cb90afd58e9a",
+      "size_bytes": 15788
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 60,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-mark-raw-2021-05-01-18-10m.headers.json",
+      "phase_relative_path": "raw/provider-probes/tardis-control-mark-raw-2021-05-01-18-10m.headers.json",
+      "sha256": "13b86b9a1fa01c760051240a4d6e11dfa856ed002113b492235a63d6d1fd3b6b",
+      "size_bytes": 793,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 14,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-mark-raw-2021-05-01-18-10m.observation.json",
+      "phase_relative_path": "raw/provider-probes/tardis-control-mark-raw-2021-05-01-18-10m.observation.json",
+      "sha256": "e997e24f299f9546207185214d616761ece0b745811a4bad4cd3d3e2b5965d7f",
+      "size_bytes": 1021,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-mark-raw-2021-06-01-06-10m.body",
+      "phase_relative_path": "raw/provider-probes/tardis-control-mark-raw-2021-06-01-06-10m.body",
+      "sha256": "92b005f748b285f05f347db9083d5bf18404a7bbd4ed286cde1a7b2315ba57c9",
+      "size_bytes": 17010
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 60,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-mark-raw-2021-06-01-06-10m.headers.json",
+      "phase_relative_path": "raw/provider-probes/tardis-control-mark-raw-2021-06-01-06-10m.headers.json",
+      "sha256": "9d397bfbf609eee43f99aae85f992d6c981ddbca9c0b723837304ca77fd8fc44",
+      "size_bytes": 793,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 14,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-mark-raw-2021-06-01-06-10m.observation.json",
+      "phase_relative_path": "raw/provider-probes/tardis-control-mark-raw-2021-06-01-06-10m.observation.json",
+      "sha256": "95083b5395e5d81ce5a5281684a745694990a1eb0b5c55f70d5faa7a8f3cf9cf",
+      "size_bytes": 1021,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-mark-raw-2021-06-01-10m.body",
+      "phase_relative_path": "raw/provider-probes/tardis-control-mark-raw-2021-06-01-10m.body",
+      "sha256": "d24567dd2f30b96582070952ae7f9490e2f6e84172e137eecee8e90e5d2c0e3b",
+      "size_bytes": 15879
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 60,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-mark-raw-2021-06-01-10m.headers.json",
+      "phase_relative_path": "raw/provider-probes/tardis-control-mark-raw-2021-06-01-10m.headers.json",
+      "sha256": "cd8cd470eb00b67cbcebc48cde823a578327b81ad2be85dcb0cf6721120453b0",
+      "size_bytes": 793,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 14,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-mark-raw-2021-06-01-10m.observation.json",
+      "phase_relative_path": "raw/provider-probes/tardis-control-mark-raw-2021-06-01-10m.observation.json",
+      "sha256": "f890c87c71e02be5bf76084a2ab6d8375438d3e781b7ace551fa4a5213da1801",
+      "size_bytes": 1015,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-spot-aggtrade-raw-2021-02-01-3m.body",
+      "phase_relative_path": "raw/provider-probes/tardis-control-spot-aggtrade-raw-2021-02-01-3m.body",
+      "sha256": "9b31641c13b777a81561f58d815df8d109ed9f55a8a17f5bc6b9ce8ec4da3048",
+      "size_bytes": 103651
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 60,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-spot-aggtrade-raw-2021-02-01-3m.headers.json",
+      "phase_relative_path": "raw/provider-probes/tardis-control-spot-aggtrade-raw-2021-02-01-3m.headers.json",
+      "sha256": "cb51598f6ada252d02b448d311a3c378567250b5b0f6550440e9ef57be267f7d",
+      "size_bytes": 785,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 14,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-spot-aggtrade-raw-2021-02-01-3m.observation.json",
+      "phase_relative_path": "raw/provider-probes/tardis-control-spot-aggtrade-raw-2021-02-01-3m.observation.json",
+      "sha256": "3f4839318aa82d637b0397965ac16e9e5277646c360e7d59103861ac6d681660",
+      "size_bytes": 1012,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-target-mark-normalized-dataset-probe.body",
+      "phase_relative_path": "raw/provider-probes/tardis-target-mark-normalized-dataset-probe.body",
+      "sha256": "fde83991689ed07208ae7c9c6a66b4e3e5e94a76453bd339c2dd3b5364b87639",
+      "size_bytes": 367
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 28,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-target-mark-normalized-dataset-probe.headers.json",
+      "phase_relative_path": "raw/provider-probes/tardis-target-mark-normalized-dataset-probe.headers.json",
+      "sha256": "71139e4866e9f43b1df993d9538d999bb63f0c040715320ebb3692862683c431",
+      "size_bytes": 349,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 14,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-target-mark-normalized-dataset-probe.observation.json",
+      "phase_relative_path": "raw/provider-probes/tardis-target-mark-normalized-dataset-probe.observation.json",
+      "sha256": "9df4cafdd55499307b9f16046d80486efaf1ffd9870c08e9a55274c88f1ca90a",
+      "size_bytes": 837,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-target-mark-raw-probe.body",
+      "phase_relative_path": "raw/provider-probes/tardis-target-mark-raw-probe.body",
+      "sha256": "6880a845e4ff2c75eec1ce2cf999a49a6e634ebe0d687d00239ffad21d2c9e07",
+      "size_bytes": 190
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 40,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-target-mark-raw-probe.headers.json",
+      "phase_relative_path": "raw/provider-probes/tardis-target-mark-raw-probe.headers.json",
+      "sha256": "c3c86b6efb4f43819fedd3eda3ab682433fc1c536d3317ad4a4a516cb3c11421",
+      "size_bytes": 516,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 13,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-target-mark-raw-probe.observation.json",
+      "phase_relative_path": "raw/provider-probes/tardis-target-mark-raw-probe.observation.json",
+      "sha256": "f95d834ac40159456cfa21297d736ecfda6417f0a834660bde2d79b4d8fec072",
+      "size_bytes": 986,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-target-spot-aggtrade-raw-probe.body",
+      "phase_relative_path": "raw/provider-probes/tardis-target-spot-aggtrade-raw-probe.body",
+      "sha256": "a680e6d1aafb6d3868d3a9092e744519eb86ca4e9c90dd60d5ff11c493cbaaca",
+      "size_bytes": 190
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 40,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-target-spot-aggtrade-raw-probe.headers.json",
+      "phase_relative_path": "raw/provider-probes/tardis-target-spot-aggtrade-raw-probe.headers.json",
+      "sha256": "ea23ebb2f2a286d51e6ba3eb32f9fb024cea0f0aa9e3835e48492ff359cc4354",
+      "size_bytes": 516,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 13,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-target-spot-aggtrade-raw-probe.observation.json",
+      "phase_relative_path": "raw/provider-probes/tardis-target-spot-aggtrade-raw-probe.observation.json",
+      "sha256": "788671443d59b3b223386609f25a178c3c9ad57043301f60362fd338ff01a6b7",
+      "size_bytes": 986,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/amberdata-binance-market-data-doc.body",
+      "phase_relative_path": "raw/public-references/amberdata-binance-market-data-doc.body",
+      "sha256": "eb09dce5840fcd00e4aa50af2d4809d3713d442662d386e794db590dee106b7d",
+      "size_bytes": 197415
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 120,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/amberdata-binance-market-data-doc.headers.json",
+      "phase_relative_path": "raw/public-references/amberdata-binance-market-data-doc.headers.json",
+      "sha256": "2fd0a5410b6056855e1a675c9581d7b8e535e27dee0e10b3b5427e0e0ea2e682",
+      "size_bytes": 3771,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 14,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/amberdata-binance-market-data-doc.observation.json",
+      "phase_relative_path": "raw/public-references/amberdata-binance-market-data-doc.observation.json",
+      "sha256": "f5145dee771e9686d1dfcb2822f2d0d050a20a548049e62cf7c11b832fb58d4d",
+      "size_bytes": 732,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/amberdata-docs-llms.body",
+      "phase_relative_path": "raw/public-references/amberdata-docs-llms.body",
+      "sha256": "d05b11608644aaf13530ffc0ca489767d9dab8050642e3b3568b69a0eb418262",
+      "size_bytes": 69419
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 76,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/amberdata-docs-llms.headers.json",
+      "phase_relative_path": "raw/public-references/amberdata-docs-llms.headers.json",
+      "sha256": "4af3b8b483705f09cf070ceceaae1beb85301bdedb64a61dcc0b00f0e82e3927",
+      "size_bytes": 1429,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 14,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/amberdata-docs-llms.observation.json",
+      "phase_relative_path": "raw/public-references/amberdata-docs-llms.observation.json",
+      "sha256": "8e9e322ffdcb76f6b8e029e360c5b94b33fad256e87d1bae2cc840c512cc4cd2",
+      "size_bytes": 683,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/amberdata-futures-instruments-doc.body",
+      "phase_relative_path": "raw/public-references/amberdata-futures-instruments-doc.body",
+      "sha256": "a5f75731cffb9e6e53823a57c6185644b67c95a4ae4590ff4f1d6492c31b29e1",
+      "size_bytes": 11481
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 84,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/amberdata-futures-instruments-doc.headers.json",
+      "phase_relative_path": "raw/public-references/amberdata-futures-instruments-doc.headers.json",
+      "sha256": "994e33d894ae28723d489f4552b7abb79dbcb6dfadc9c9537e51a5a1d93ee267",
+      "size_bytes": 1349,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 14,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/amberdata-futures-instruments-doc.observation.json",
+      "phase_relative_path": "raw/public-references/amberdata-futures-instruments-doc.observation.json",
+      "sha256": "653599b5aa43cfeaaef799b3f7bbdaf588daa51942a62846cb5b95231f46f1ed",
+      "size_bytes": 783,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/amberdata-futures-tickers-historical-doc.body",
+      "phase_relative_path": "raw/public-references/amberdata-futures-tickers-historical-doc.body",
+      "sha256": "89a5070191542f175864e0c9f444945a2b3446f84d69e909ccc909616f742229",
+      "size_bytes": 9917
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 84,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/amberdata-futures-tickers-historical-doc.headers.json",
+      "phase_relative_path": "raw/public-references/amberdata-futures-tickers-historical-doc.headers.json",
+      "sha256": "8ee33c418571e2d7bb1f1e19b37e5ba3b4dfcc511a6785019c7722cf89fdd933",
+      "size_bytes": 1350,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 14,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/amberdata-futures-tickers-historical-doc.observation.json",
+      "phase_relative_path": "raw/public-references/amberdata-futures-tickers-historical-doc.observation.json",
+      "sha256": "da35ed33ebbe6c277abd6f29bc5625844b25b8c36e6d45a3cfd23fb0e0be7d5e",
+      "size_bytes": 768,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/amberdata-futures-tickers-info-doc.body",
+      "phase_relative_path": "raw/public-references/amberdata-futures-tickers-info-doc.body",
+      "sha256": "d1546d360b1822887928fc62ede40fe7e7912b3b037d5cb139523fefde6ea96d",
+      "size_bytes": 5036
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 84,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/amberdata-futures-tickers-info-doc.headers.json",
+      "phase_relative_path": "raw/public-references/amberdata-futures-tickers-info-doc.headers.json",
+      "sha256": "062ede7f4953e9cd9de7c65df1b8dedab2a5d2e7801aaac7deb68e7a6869f188",
+      "size_bytes": 1349,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 14,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/amberdata-futures-tickers-info-doc.observation.json",
+      "phase_relative_path": "raw/public-references/amberdata-futures-tickers-info-doc.observation.json",
+      "sha256": "3378076ed16cfb1fbf8ced62db4c69eb4729042b111b479c3dbea61f5853a56f",
+      "size_bytes": 780,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/amberdata-pricing-doc.body",
+      "phase_relative_path": "raw/public-references/amberdata-pricing-doc.body",
+      "sha256": "022a46abad388811db8b13c387b967231b293b59c459e88cabe49e3d8c272adc",
+      "size_bytes": 173248
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 120,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/amberdata-pricing-doc.headers.json",
+      "phase_relative_path": "raw/public-references/amberdata-pricing-doc.headers.json",
+      "sha256": "53516680fcd355a18e4c79913272fa891dd3dd1b08b24f0c8fb428fab59402b8",
+      "size_bytes": 3950,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 14,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/amberdata-pricing-doc.observation.json",
+      "phase_relative_path": "raw/public-references/amberdata-pricing-doc.observation.json",
+      "sha256": "83798680823802af7627d504eefc7d59131eb430c043a842da810e5e2e5ce6cc",
+      "size_bytes": 684,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/binance-developer-llms-full.body",
+      "phase_relative_path": "raw/public-references/binance-developer-llms-full.body",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 72,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/binance-developer-llms-full.headers.json",
+      "phase_relative_path": "raw/public-references/binance-developer-llms-full.headers.json",
+      "sha256": "9c86d2e1d96116ad794cd4a827dacca12c9e08d6c34d6f1ba57918974bb76335",
+      "size_bytes": 1127,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 14,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/binance-developer-llms-full.observation.json",
+      "phase_relative_path": "raw/public-references/binance-developer-llms-full.observation.json",
+      "sha256": "4b31df6b3d538d8d60258347268721d896b3e22b84929287b7f4a065e711e5d0",
+      "size_bytes": 715,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/binance-en-docs-llms-full.body",
+      "phase_relative_path": "raw/public-references/binance-en-docs-llms-full.body",
+      "sha256": "4a7e7cf4cbbe3a0c34bdbaeccb862700376caf6b28b598e6f1d63acf2c3fd997",
+      "size_bytes": 7975451
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 96,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/binance-en-docs-llms-full.headers.json",
+      "phase_relative_path": "raw/public-references/binance-en-docs-llms-full.headers.json",
+      "sha256": "a9be8deb8815224558962f84b8a01040b7c7412b8e1d4e814656c5a3449a41ad",
+      "size_bytes": 1521,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 14,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/binance-en-docs-llms-full.observation.json",
+      "phase_relative_path": "raw/public-references/binance-en-docs-llms-full.observation.json",
+      "sha256": "9d36cafbc195d81d34f0134b098c51b6cf2a6ca03faad7b8f1c9f4d6cb3bb66a",
+      "size_bytes": 733,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/binance-en-docs-llms.body",
+      "phase_relative_path": "raw/public-references/binance-en-docs-llms.body",
+      "sha256": "c5decbaaef780287cec46d394b34451e1bc56ffe6681ca74e2f38819fda4a12a",
+      "size_bytes": 167471
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 96,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/binance-en-docs-llms.headers.json",
+      "phase_relative_path": "raw/public-references/binance-en-docs-llms.headers.json",
+      "sha256": "1b27950562c7d57a9437f6c47347082b6d2221c227899efe71cedbc432c0f470",
+      "size_bytes": 1518,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 14,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/binance-en-docs-llms.observation.json",
+      "phase_relative_path": "raw/public-references/binance-en-docs-llms.observation.json",
+      "sha256": "ed5b0c83ff36991bc9bc823ca9390cf6492b4160d9461c291a28e7e673364fb5",
+      "size_bytes": 712,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/binance-legacy-futures-doc.body",
+      "phase_relative_path": "raw/public-references/binance-legacy-futures-doc.body",
+      "sha256": "a317413c70327c3b457c24b6619cecbfa842082201c832ffaec6dd1e4aff1af2",
+      "size_bytes": 325
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 96,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/binance-legacy-futures-doc.headers.json",
+      "phase_relative_path": "raw/public-references/binance-legacy-futures-doc.headers.json",
+      "sha256": "6ad424b4fae95ee23ff774e72576d7873880973a3cb842cc740a97230aaba4b8",
+      "size_bytes": 1367,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 14,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/binance-legacy-futures-doc.observation.json",
+      "phase_relative_path": "raw/public-references/binance-legacy-futures-doc.observation.json",
+      "sha256": "0da9ef253f6d98b8b64e69e872c6dc7adf6d740c099653e7bdb5f240c8842807",
+      "size_bytes": 727,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/binance-mark-price-stream-doc.body",
+      "phase_relative_path": "raw/public-references/binance-mark-price-stream-doc.body",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 64,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/binance-mark-price-stream-doc.headers.json",
+      "phase_relative_path": "raw/public-references/binance-mark-price-stream-doc.headers.json",
+      "sha256": "a6111233ea5ae869392e4f30cf93b62cff6df9994127c7e18d810e80b1af1641",
+      "size_bytes": 1002,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 13,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/binance-mark-price-stream-doc.observation.json",
+      "phase_relative_path": "raw/public-references/binance-mark-price-stream-doc.observation.json",
+      "sha256": "f981bb72130b6b8f0205d859508cb6dd9d532947e8ca573393b9ed0ea2a713f8",
+      "size_bytes": 825,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/binance-mark-price-stream-md.body",
+      "phase_relative_path": "raw/public-references/binance-mark-price-stream-md.body",
+      "sha256": "383c9a1b831cf317ce2d53c759082a7edb3052475b6f374050fa343d869f6f53",
+      "size_bytes": 65373
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 96,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/binance-mark-price-stream-md.headers.json",
+      "phase_relative_path": "raw/public-references/binance-mark-price-stream-md.headers.json",
+      "sha256": "7657a055cf94f7a6ff6e5ce4b5c5c75c9b38f032cdf1bdd13093e594c5ca2f1f",
+      "size_bytes": 1515,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 14,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/binance-mark-price-stream-md.observation.json",
+      "phase_relative_path": "raw/public-references/binance-mark-price-stream-md.observation.json",
+      "sha256": "6071e1b7c89d14a33c11f2a25544044edd4f9f3eb2a93d5a20c39d3d712dd469",
+      "size_bytes": 874,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/binance-official-connector-mark-stream-source.body",
+      "phase_relative_path": "raw/public-references/binance-official-connector-mark-stream-source.body",
+      "sha256": "8fec22b104a4cf39f272a1a0b23c306517f4121daa5845716ac30d1d6d6e71a5",
+      "size_bytes": 10565
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 104,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/binance-official-connector-mark-stream-source.headers.json",
+      "phase_relative_path": "raw/public-references/binance-official-connector-mark-stream-source.headers.json",
+      "sha256": "c1a8d85dc7c72c6c68e3899ad5ef7956ed992e7e6f0fa392bbd87db49cfe352f",
+      "size_bytes": 1629,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 14,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/binance-official-connector-mark-stream-source.observation.json",
+      "phase_relative_path": "raw/public-references/binance-official-connector-mark-stream-source.observation.json",
+      "sha256": "32e252b8d58eab4dd90e603063187084c1139adf46c1d2b3a7b75d9a810d0d9e",
+      "size_bytes": 923,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/binance-public-data-issue-365.body",
+      "phase_relative_path": "raw/public-references/binance-public-data-issue-365.body",
+      "sha256": "a922d013a36e9e8d056f72b4e2ca8c3ad0b06d6346e01dae804a63b18547f71e",
+      "size_bytes": 5686
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 112,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/binance-public-data-issue-365.headers.json",
+      "phase_relative_path": "raw/public-references/binance-public-data-issue-365.headers.json",
+      "sha256": "a687d2216927c375266a05b92574bb8696695930fc126006c5a160aa893bc3f6",
+      "size_bytes": 2107,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 14,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/binance-public-data-issue-365.observation.json",
+      "phase_relative_path": "raw/public-references/binance-public-data-issue-365.observation.json",
+      "sha256": "1c40a8d106c302f29c60663f71caf7440c7df4dee4e65456b3d0d38c7e6d9e5c",
+      "size_bytes": 768,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/binance-public-data-issue-483.body",
+      "phase_relative_path": "raw/public-references/binance-public-data-issue-483.body",
+      "sha256": "16a9c69c5e88ac303bbc9c4817bf5103a41304d2b53ee528682e39d75d269e33",
+      "size_bytes": 5602
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 112,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/binance-public-data-issue-483.headers.json",
+      "phase_relative_path": "raw/public-references/binance-public-data-issue-483.headers.json",
+      "sha256": "7a508fb9b023cca4cb0dad877a7f1e5d8c45206ebcad3b90b46f96c60164d33e",
+      "size_bytes": 2107,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 14,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/binance-public-data-issue-483.observation.json",
+      "phase_relative_path": "raw/public-references/binance-public-data-issue-483.observation.json",
+      "sha256": "ca986389e1631beebab2f39d6ddf365a3e684aff8d68ecd7a5c2572a902d72fa",
+      "size_bytes": 768,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/binance-skills-futures-streams.body",
+      "phase_relative_path": "raw/public-references/binance-skills-futures-streams.body",
+      "sha256": "95612311e1d7f3c988acc3f8458ac8be61e8c2695aa8f3c03908a1f388c02b9b",
+      "size_bytes": 2254
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 104,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/binance-skills-futures-streams.headers.json",
+      "phase_relative_path": "raw/public-references/binance-skills-futures-streams.headers.json",
+      "sha256": "f854b0abafcf47f332d5ea83ff771a67b268a203517cc3374437cca36b9d901a",
+      "size_bytes": 1628,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 14,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/binance-skills-futures-streams.observation.json",
+      "phase_relative_path": "raw/public-references/binance-skills-futures-streams.observation.json",
+      "sha256": "dafc77ba0e50d4529d6f0fdf5610310b92e6db43c5ed99b9ca250857ab33f6aa",
+      "size_bytes": 882,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/binance-skills-hub-tree.body",
+      "phase_relative_path": "raw/public-references/binance-skills-hub-tree.body",
+      "sha256": "c73bd313efe8722e21122b3003e96ec9cdfdd7470fbc29930558f97239908e52",
+      "size_bytes": 44168
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 112,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/binance-skills-hub-tree.headers.json",
+      "phase_relative_path": "raw/public-references/binance-skills-hub-tree.headers.json",
+      "sha256": "d2217696e674ff1a51d7da7c3d69dfa118264e7c9e56f5bdd6e9312841815a63",
+      "size_bytes": 2113,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 14,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/binance-skills-hub-tree.observation.json",
+      "phase_relative_path": "raw/public-references/binance-skills-hub-tree.observation.json",
+      "sha256": "8c99fe259842c2a6d5b63a3ca1daf71be1e8ee5b4a23b596f4ffbc3c6492140d",
+      "size_bytes": 787,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/crypto-lake-api-readme.body",
+      "phase_relative_path": "raw/public-references/crypto-lake-api-readme.body",
+      "sha256": "e081923e5afbbbee96508f25d2ac0d5ced13ac03eda7329516a020ba3fcb298f",
+      "size_bytes": 2000
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 104,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/crypto-lake-api-readme.headers.json",
+      "phase_relative_path": "raw/public-references/crypto-lake-api-readme.headers.json",
+      "sha256": "dbee9773f024ecb47d03d6f8c9b64928cb23cf5130e91b53116f73898a6f2ae9",
+      "size_bytes": 1626,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 13,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/crypto-lake-api-readme.observation.json",
+      "phase_relative_path": "raw/public-references/crypto-lake-api-readme.observation.json",
+      "sha256": "43afaa85adb34c38a6f0b72dc4c766991bd1e9900d27abbad3349ce4e24ed707",
+      "size_bytes": 719,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/crypto-lake-api-tree.body",
+      "phase_relative_path": "raw/public-references/crypto-lake-api-tree.body",
+      "sha256": "c0223f859725664239644f22677bc6e8835090e7203d74d89c05e5983f9479a3",
+      "size_bytes": 11681
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 112,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/crypto-lake-api-tree.headers.json",
+      "phase_relative_path": "raw/public-references/crypto-lake-api-tree.headers.json",
+      "sha256": "25855f4bbbaa6d999fb172befea9ece29a325155d3891a0695d5141264882403",
+      "size_bytes": 2108,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 13,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/crypto-lake-api-tree.observation.json",
+      "phase_relative_path": "raw/public-references/crypto-lake-api-tree.observation.json",
+      "sha256": "4bbe376bf7bcdea040cb68bb7f7041c8a872b7f3381a95ea51c3ebadb7cf1f97",
+      "size_bytes": 728,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/crypto-lake-config-source.body",
+      "phase_relative_path": "raw/public-references/crypto-lake-config-source.body",
+      "sha256": "9a9c685845acd5a992a516bb21f4e61baea6e1dd5d3c32a3fd5dd196f3debaaa",
+      "size_bytes": 19328
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 104,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/crypto-lake-config-source.headers.json",
+      "phase_relative_path": "raw/public-references/crypto-lake-config-source.headers.json",
+      "sha256": "dc8cf2aa4e2f8cc5685bf2fddd2534204b5feedac03d73f3f3052eea160cb549",
+      "size_bytes": 1628,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 13,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/crypto-lake-config-source.observation.json",
+      "phase_relative_path": "raw/public-references/crypto-lake-config-source.observation.json",
+      "sha256": "7c52606a980ba7ca33f7b78c5dec6db29c81844a3f9eef0bdcdc4e38ca6dc98d",
+      "size_bytes": 742,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/crypto-lake-coverage-doc.body",
+      "phase_relative_path": "raw/public-references/crypto-lake-coverage-doc.body",
+      "sha256": "19c923ff9ccf0de16b1193fe0bf15fa797ec504ed4bc7e3ec61248f70f55169f",
+      "size_bytes": 24632
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 72,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/crypto-lake-coverage-doc.headers.json",
+      "phase_relative_path": "raw/public-references/crypto-lake-coverage-doc.headers.json",
+      "sha256": "d6a4ff3ccf72ca8093e65aaae6040a630ac2701cac8b24a6e4139b7e2f84bf89",
+      "size_bytes": 1398,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 13,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/crypto-lake-coverage-doc.observation.json",
+      "phase_relative_path": "raw/public-references/crypto-lake-coverage-doc.observation.json",
+      "sha256": "6a3db82760ff91391970b306a53161d41ae6800d8c61838e6c830997a3636270",
+      "size_bytes": 650,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/crypto-lake-data-doc.body",
+      "phase_relative_path": "raw/public-references/crypto-lake-data-doc.body",
+      "sha256": "60bd04fc9a17480d43a0487568e06810481df848c89b8a13b5befffe6562f855",
+      "size_bytes": 26732
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 72,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/crypto-lake-data-doc.headers.json",
+      "phase_relative_path": "raw/public-references/crypto-lake-data-doc.headers.json",
+      "sha256": "f38ee8a9df2105e57ae777c0a245400d1a0eae94375d5361c6542d800f00c3f9",
+      "size_bytes": 1398,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 13,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/crypto-lake-data-doc.observation.json",
+      "phase_relative_path": "raw/public-references/crypto-lake-data-doc.observation.json",
+      "sha256": "57446feb3a9708665e81aa5b1347b3ab7e66e1781974482e6fa19b1e2bae4907",
+      "size_bytes": 634,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/crypto-lake-describe-source.body",
+      "phase_relative_path": "raw/public-references/crypto-lake-describe-source.body",
+      "sha256": "4c3e46fa56ae520476c6e0b125c49d8ff6013d9ffe9d7e81e8ef681e965778ed",
+      "size_bytes": 20382
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 104,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/crypto-lake-describe-source.headers.json",
+      "phase_relative_path": "raw/public-references/crypto-lake-describe-source.headers.json",
+      "sha256": "0d4a59ac4e4ca1b32f51a4a104155551fc53745fe9f7a7ba495b8777dab46fed",
+      "size_bytes": 1627,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 13,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/crypto-lake-describe-source.observation.json",
+      "phase_relative_path": "raw/public-references/crypto-lake-describe-source.observation.json",
+      "sha256": "9e9f40dfc888a55ad61a89af26120bdcd796681e085e1da87113ce229ebed042",
+      "size_bytes": 750,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/crypto-lake-fs-source.body",
+      "phase_relative_path": "raw/public-references/crypto-lake-fs-source.body",
+      "sha256": "8dea572a3d87ba33dd895f785822e6633acd79bd67f6b2574716b161f2b04e55",
+      "size_bytes": 23489
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 104,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/crypto-lake-fs-source.headers.json",
+      "phase_relative_path": "raw/public-references/crypto-lake-fs-source.headers.json",
+      "sha256": "6f80dfe9368a4c7f880c6e93755806f8377292b2952bb1765ba74f1609e81d81",
+      "size_bytes": 1629,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 13,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/crypto-lake-fs-source.observation.json",
+      "phase_relative_path": "raw/public-references/crypto-lake-fs-source.observation.json",
+      "sha256": "e9da7e28a731c9cdbd34c4443700346a09a3b48899ec3d0401826a8cd82a225b",
+      "size_bytes": 726,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/crypto-lake-main-source.body",
+      "phase_relative_path": "raw/public-references/crypto-lake-main-source.body",
+      "sha256": "58790a19aa3ce87ddfa139e6b5313b2f4e3620c8c597913e5ff14113ed66c67e",
+      "size_bytes": 23112
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 104,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/crypto-lake-main-source.headers.json",
+      "phase_relative_path": "raw/public-references/crypto-lake-main-source.headers.json",
+      "sha256": "6cad234deb824c901e246eec3a84f9c404353be93fc5a0653778ef1ff87de6ca",
+      "size_bytes": 1627,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 13,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/crypto-lake-main-source.observation.json",
+      "phase_relative_path": "raw/public-references/crypto-lake-main-source.observation.json",
+      "sha256": "48b086adf5a627882cd1be4823c859ec865b417b23ee12adab83d51eeb374ca9",
+      "size_bytes": 732,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/crypto-lake-pricing-doc.body",
+      "phase_relative_path": "raw/public-references/crypto-lake-pricing-doc.body",
+      "sha256": "5d67c8c2e0f9aad64d25ca7a813a9e7c95e8d7e2c961e0baa16ddbbb1dc32a65",
+      "size_bytes": 7809
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 68,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/crypto-lake-pricing-doc.headers.json",
+      "phase_relative_path": "raw/public-references/crypto-lake-pricing-doc.headers.json",
+      "sha256": "174d99717e4cea59c88ae836c72428b3b90f995fe33bc11616509f070b2ff0ce",
+      "size_bytes": 1301,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 13,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/crypto-lake-pricing-doc.observation.json",
+      "phase_relative_path": "raw/public-references/crypto-lake-pricing-doc.observation.json",
+      "sha256": "9fbcb3e74359d97f71a41fc96da46f8f59115c9bd2186776e03c091659ae3c61",
+      "size_bytes": 645,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/crypto-lake-tests-source.body",
+      "phase_relative_path": "raw/public-references/crypto-lake-tests-source.body",
+      "sha256": "2ed5456e09e460a73d4ee22dd8a93687b72de10af97af52bbb823284125032ee",
+      "size_bytes": 858
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 104,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/crypto-lake-tests-source.headers.json",
+      "phase_relative_path": "raw/public-references/crypto-lake-tests-source.headers.json",
+      "sha256": "0f3b3e2f1c6b4e01fd5df1bd3a8acf258094f81fbb6912dc8f55c8b9509b2786",
+      "size_bytes": 1625,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 13,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/crypto-lake-tests-source.observation.json",
+      "phase_relative_path": "raw/public-references/crypto-lake-tests-source.observation.json",
+      "sha256": "b326bfa2be170fe48548ea7cb474f6581a1eb6ba79c931f880e2fd4d19630486",
+      "size_bytes": 744,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/crypto-lake-usage-doc.body",
+      "phase_relative_path": "raw/public-references/crypto-lake-usage-doc.body",
+      "sha256": "f96642bb8a93e5b0c8f8bf7f19a98f82e41e06cfe918540ab470ad1d2258a518",
+      "size_bytes": 658
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 104,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/crypto-lake-usage-doc.headers.json",
+      "phase_relative_path": "raw/public-references/crypto-lake-usage-doc.headers.json",
+      "sha256": "c309067f0624dc41ce3871487c29fa4be3022827dd680cf19dbbda81e3777a01",
+      "size_bytes": 1626,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 13,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/crypto-lake-usage-doc.observation.json",
+      "phase_relative_path": "raw/public-references/crypto-lake-usage-doc.observation.json",
+      "sha256": "d28e94fb60ff2216568d03523dba7beb0da51b0db9be2f83575c6c22ef2b4bb9",
+      "size_bytes": 724,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/tardis-billing-md.body",
+      "phase_relative_path": "raw/public-references/tardis-billing-md.body",
+      "sha256": "8eb6239605cbe9f00d5c1dc218532a49aee7cf1b19ebe82f3630fce63fee4120",
+      "size_bytes": 26631
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 92,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/tardis-billing-md.headers.json",
+      "phase_relative_path": "raw/public-references/tardis-billing-md.headers.json",
+      "sha256": "226c5b040ed09f43e9d822208dc41b4e2b3057c12e31bc343212a5e1f88e9817",
+      "size_bytes": 1813,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 13,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/tardis-billing-md.observation.json",
+      "phase_relative_path": "raw/public-references/tardis-billing-md.observation.json",
+      "sha256": "87a5530c93c37ed257f435fc80babec151873ff235bcf58d6b9b37261fc5babf",
+      "size_bytes": 682,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/tardis-binance-futures-doc.body",
+      "phase_relative_path": "raw/public-references/tardis-binance-futures-doc.body",
+      "sha256": "6b10ca61492161bd6e2a16a73ff3ed5bc8b84a9e791f3040f4f713ebb21dc4b5",
+      "size_bytes": 800114
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 100,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/tardis-binance-futures-doc.headers.json",
+      "phase_relative_path": "raw/public-references/tardis-binance-futures-doc.headers.json",
+      "sha256": "ff8d39e21da3e86b87b6cc8787681fa02c3a28ce35fcd9cc38c4515ff8bec746",
+      "size_bytes": 1888,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 13,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/tardis-binance-futures-doc.observation.json",
+      "phase_relative_path": "raw/public-references/tardis-binance-futures-doc.observation.json",
+      "sha256": "6f1f7de5d97123851664b300aa5125cde3b7d899c3253a96e9abdb0e4e6e792b",
+      "size_bytes": 715,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/tardis-binance-futures-md.body",
+      "phase_relative_path": "raw/public-references/tardis-binance-futures-md.body",
+      "sha256": "9f906e0fc4fcea117329c8e920032f66c35213c55ea30c3e60adcda159a0c5f5",
+      "size_bytes": 14831
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 92,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/tardis-binance-futures-md.headers.json",
+      "phase_relative_path": "raw/public-references/tardis-binance-futures-md.headers.json",
+      "sha256": "cbba563da419f40baea73f612335b97c9a289038b6b453af758d0e4ed130e135",
+      "size_bytes": 1813,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 13,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/tardis-binance-futures-md.observation.json",
+      "phase_relative_path": "raw/public-references/tardis-binance-futures-md.observation.json",
+      "sha256": "918bec4189525ea120c47f7a80d96e41a5b2951d1eb71fbd135004aa73a29d7f",
+      "size_bytes": 718,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/tardis-binance-spot-md.body",
+      "phase_relative_path": "raw/public-references/tardis-binance-spot-md.body",
+      "sha256": "f3485b5d7a347209e7c04f0736080d2a85716212216a9ffa903e92e037017430",
+      "size_bytes": 8799
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 92,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/tardis-binance-spot-md.headers.json",
+      "phase_relative_path": "raw/public-references/tardis-binance-spot-md.headers.json",
+      "sha256": "ced8ade71c820ced71bb32ea475597525760d1ab2a6c5fd8a14348332c35a463",
+      "size_bytes": 1813,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 13,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/tardis-binance-spot-md.observation.json",
+      "phase_relative_path": "raw/public-references/tardis-binance-spot-md.observation.json",
+      "sha256": "2e84f82d8bd3b4a8d081335a7188ebd56111320d3f7710777fadd26c3556f83d",
+      "size_bytes": 695,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/tardis-csv-api-md.body",
+      "phase_relative_path": "raw/public-references/tardis-csv-api-md.body",
+      "sha256": "0210ebd0effc6fb8a3d02333ac4681530e7763776486027e3661794214f227b6",
+      "size_bytes": 12963
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 92,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/tardis-csv-api-md.headers.json",
+      "phase_relative_path": "raw/public-references/tardis-csv-api-md.headers.json",
+      "sha256": "5afcb7d4962767e60b4787a97a76e3951080ef2f5b248ce83a7a53c0df1575bd",
+      "size_bytes": 1808,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 13,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/tardis-csv-api-md.observation.json",
+      "phase_relative_path": "raw/public-references/tardis-csv-api-md.observation.json",
+      "sha256": "64454090da02c87142867177ebbf4f133f2f131a2879b69458d8dd65f8479f7b",
+      "size_bytes": 676,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/tardis-csv-data-types-md.body",
+      "phase_relative_path": "raw/public-references/tardis-csv-data-types-md.body",
+      "sha256": "ace8023cdd07bec20bff80de9033e7d39d267b6c01ccf244d20ce4676ecf9c4e",
+      "size_bytes": 47232
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 92,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/tardis-csv-data-types-md.headers.json",
+      "phase_relative_path": "raw/public-references/tardis-csv-data-types-md.headers.json",
+      "sha256": "a701d6b613cee57e1cd3641340490d88f2a23c55f6e7b60577195adfca43f954",
+      "size_bytes": 1808,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 13,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/tardis-csv-data-types-md.observation.json",
+      "phase_relative_path": "raw/public-references/tardis-csv-data-types-md.observation.json",
+      "sha256": "e023f3976bdd03e87cba93c5699ecc5dd979190d8111eb3a082f42ea7861cb6a",
+      "size_bytes": 704,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/tardis-csv-doc.body",
+      "phase_relative_path": "raw/public-references/tardis-csv-doc.body",
+      "sha256": "828777912d524549c978152d88dfdc7ea4a99ae490e14cb1a11f0031dfb1e1d1",
+      "size_bytes": 903861
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 100,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/tardis-csv-doc.headers.json",
+      "phase_relative_path": "raw/public-references/tardis-csv-doc.headers.json",
+      "sha256": "59e5d8830fb83a6231ded1083b2f9120429eb4c0d8dced68bf3e3a8ddf4622e5",
+      "size_bytes": 1889,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 13,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/tardis-csv-doc.observation.json",
+      "phase_relative_path": "raw/public-references/tardis-csv-doc.observation.json",
+      "sha256": "e47c915113cb32854cac20e988cfc9af384fad3369acb7ac4282cdd5c24b8f89",
+      "size_bytes": 666,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/tardis-csv-overview-md.body",
+      "phase_relative_path": "raw/public-references/tardis-csv-overview-md.body",
+      "sha256": "df37b3db3dab6b4d53202a62d78521834db2c6b124355b5d9d72be3a9748db51",
+      "size_bytes": 12775
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 92,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/tardis-csv-overview-md.headers.json",
+      "phase_relative_path": "raw/public-references/tardis-csv-overview-md.headers.json",
+      "sha256": "87a49ad198e349892cbe00849e4826e00af5293c8b28a3f2dcd8dea6b5c69cb7",
+      "size_bytes": 1813,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 13,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/tardis-csv-overview-md.observation.json",
+      "phase_relative_path": "raw/public-references/tardis-csv-overview-md.observation.json",
+      "sha256": "f30ed4e1fa13695e65e859929b85521d86ea08ba4e7ad6e7151539bd1790dd47",
+      "size_bytes": 696,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/tardis-docs-llms.body",
+      "phase_relative_path": "raw/public-references/tardis-docs-llms.body",
+      "sha256": "69b2c1484e992fa548a9a4e1abfd3f82280e8e6b423d8776d7dee1c93db15d43",
+      "size_bytes": 17015
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 88,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/tardis-docs-llms.headers.json",
+      "phase_relative_path": "raw/public-references/tardis-docs-llms.headers.json",
+      "sha256": "c06b8412ae37dde5dbda1a7ce6ab1a1dd1f196264763bbf55829ed752b6915cf",
+      "size_bytes": 1734,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 13,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/tardis-docs-llms.observation.json",
+      "phase_relative_path": "raw/public-references/tardis-docs-llms.observation.json",
+      "sha256": "4ba6ba0625f1b2f65b008dc3262feabf91c0b38cffd8f41481674737534c87a2",
+      "size_bytes": 632,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/tardis-faq-data-md.body",
+      "phase_relative_path": "raw/public-references/tardis-faq-data-md.body",
+      "sha256": "f7099c4abbf7a849c8e636cde7fa6fe029adfab7a1b6d7693148f279ee7609bc",
+      "size_bytes": 44061
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 92,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/tardis-faq-data-md.headers.json",
+      "phase_relative_path": "raw/public-references/tardis-faq-data-md.headers.json",
+      "sha256": "e64fd0f5099a4c8fd6267bcaa3fa08b9fa2a0015283ba8d92599c7b9c6bf00ba",
+      "size_bytes": 1808,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 13,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/tardis-faq-data-md.observation.json",
+      "phase_relative_path": "raw/public-references/tardis-faq-data-md.observation.json",
+      "sha256": "dfafb8d9e90c41914788f28f507be9bce869eb5279ee531cb72d1ef65477866b",
+      "size_bytes": 642,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/tardis-http-api-doc.body",
+      "phase_relative_path": "raw/public-references/tardis-http-api-doc.body",
+      "sha256": "a2bc50b6a8d1f23cdd70a34369bd20a1eda11895c36f00b568f77777461b67f9",
+      "size_bytes": 986431
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 100,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/tardis-http-api-doc.headers.json",
+      "phase_relative_path": "raw/public-references/tardis-http-api-doc.headers.json",
+      "sha256": "be419f78a4885ed79e1138879c0954b53884d4958643cd820d777c2cc56bf33c",
+      "size_bytes": 1889,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 13,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/tardis-http-api-doc.observation.json",
+      "phase_relative_path": "raw/public-references/tardis-http-api-doc.observation.json",
+      "sha256": "941bd2bb0b4eb0012fe29d78511bf59f4cfed152ea709ea03163a236116bcca3",
+      "size_bytes": 653,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/tardis-http-api-reference-md.body",
+      "phase_relative_path": "raw/public-references/tardis-http-api-reference-md.body",
+      "sha256": "ba456705c0cbee991e24e6608c00e8dae05c16d4e9a61047103794646964c9e8",
+      "size_bytes": 28887
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 92,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/tardis-http-api-reference-md.headers.json",
+      "phase_relative_path": "raw/public-references/tardis-http-api-reference-md.headers.json",
+      "sha256": "b95da77b6514409b936926bdb1df8476206ed682103fe183114f8cead3e4fd7d",
+      "size_bytes": 1813,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 13,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/tardis-http-api-reference-md.observation.json",
+      "phase_relative_path": "raw/public-references/tardis-http-api-reference-md.observation.json",
+      "sha256": "39f31f61290ed812eff0720e71c7a13c3fb44e0f07a82148391e7a5420ac09f1",
+      "size_bytes": 690,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/tardis-pricing-doc.body",
+      "phase_relative_path": "raw/public-references/tardis-pricing-doc.body",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 24,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/tardis-pricing-doc.headers.json",
+      "phase_relative_path": "raw/public-references/tardis-pricing-doc.headers.json",
+      "sha256": "95d243be5840c3b343c554a8f97979c4afe65518bfbb986cf3d07edb07620729",
+      "size_bytes": 287,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 13,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/tardis-pricing-doc.observation.json",
+      "phase_relative_path": "raw/public-references/tardis-pricing-doc.observation.json",
+      "sha256": "5164eed547fb9bb07967524e01b2966ebd16ceef5a7899b7e981edbd896e4aed",
+      "size_bytes": 620,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/tardis-python-replay-md.body",
+      "phase_relative_path": "raw/public-references/tardis-python-replay-md.body",
+      "sha256": "380ac35ba840a21e135f12f121ffbe9191aed87232c30668462d209454252cf8",
+      "size_bytes": 10129
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 92,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/tardis-python-replay-md.headers.json",
+      "phase_relative_path": "raw/public-references/tardis-python-replay-md.headers.json",
+      "sha256": "1a2471c41b9229da5b697aeac09f53eeadec52e896fee6ccd023ff95a61b3672",
+      "size_bytes": 1806,
+      "utf8_valid": true
+    },
+    {
+      "classification": "RAW_PUBLIC_ACQUISITION_EVIDENCE",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 13,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/tardis-python-replay-md.observation.json",
+      "phase_relative_path": "raw/public-references/tardis-python-replay-md.observation.json",
+      "sha256": "9af1e6c2b185548f6ef8252c5725a18465582972e5a435191a80466b8a3adef6",
+      "size_bytes": 714,
+      "utf8_valid": true
+    },
+    {
+      "classification": "QUALIFICATION_RESULT",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 73,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/spot-control-validation.json",
+      "phase_relative_path": "spot-control-validation.json",
+      "sha256": "1c4b05998dff9e3737407f34724bfd439ccd629163d4c42aa7e6c1f2c511ad9c",
+      "size_bytes": 2626,
+      "utf8_valid": true
+    },
+    {
+      "classification": "QUALIFICATION_RESULT",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 122,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/spot-no-trade-status.json",
+      "phase_relative_path": "spot-no-trade-status.json",
+      "sha256": "5e467e6794ac19d28c787a1283c24269f35ec6e676fa6252cd299c7697763971",
+      "size_bytes": 5937,
+      "utf8_valid": true
+    },
+    {
+      "classification": "SSOT_CANDIDATE_003",
+      "lf_only": true,
+      "line_count": 219,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/ssot-candidate-003/SSOT.candidate-003.diff",
+      "phase_relative_path": "ssot-candidate-003/SSOT.candidate-003.diff",
+      "sha256": "b6940d7f1a7adf592a46984710c23579ecab6b2c8b67002ed38f2dd3e4a665c1",
+      "size_bytes": 22007,
+      "utf8_valid": true
+    },
+    {
+      "classification": "SSOT_CANDIDATE_003",
+      "lf_only": true,
+      "line_count": 2582,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/ssot-candidate-003/SSOT.candidate-003.md",
+      "phase_relative_path": "ssot-candidate-003/SSOT.candidate-003.md",
+      "sha256": "9e6e9328b40104a65ed7d4f785731032d7b1b4cd37df5d845cad2197d6db067a",
+      "size_bytes": 131868,
+      "utf8_valid": true
+    },
+    {
+      "classification": "SSOT_CANDIDATE_003",
+      "lf_only": true,
+      "line_count": 1,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/ssot-candidate-003/SSOT.candidate-003.sha256",
+      "phase_relative_path": "ssot-candidate-003/SSOT.candidate-003.sha256",
+      "sha256": "614672eae325cf00397aaa684c69836aa5fe724b3c70c3ddeb311c52bdb1480f",
+      "size_bytes": 88,
+      "utf8_valid": true
+    },
+    {
+      "classification": "SSOT_CANDIDATE_003",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 68,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/ssot-candidate-003/candidate-manifest.json",
+      "phase_relative_path": "ssot-candidate-003/candidate-manifest.json",
+      "sha256": "26dc5e0aa6e642db74b26e2e3f49655bc96510596e1a9b4c2084c4da221acf74",
+      "size_bytes": 2538,
+      "utf8_valid": true
+    },
+    {
+      "classification": "SSOT_CANDIDATE_003",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 100,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/ssot-candidate-003/round-trip-verification.json",
+      "phase_relative_path": "ssot-candidate-003/round-trip-verification.json",
+      "sha256": "8607e1ea708a5a8fc0a639c39a58c5c3d1f8bb55263fc4c265263132ac83da00",
+      "size_bytes": 3504,
+      "utf8_valid": true
+    },
+    {
+      "classification": "SSOT_CANDIDATE_003",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 1257,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/ssot-candidate-003/semantic-change-summary.json",
+      "phase_relative_path": "ssot-candidate-003/semantic-change-summary.json",
+      "sha256": "0a598b2d4971c600e1be62cbef38a2e04c70dc1b38ff441c9c87bc53f966526d",
+      "size_bytes": 57016,
+      "utf8_valid": true
+    },
+    {
+      "classification": "QUALIFICATION_RESULT",
+      "json_valid": true,
+      "lf_only": true,
+      "line_count": 3398,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/target-mark-gap-status.json",
+      "phase_relative_path": "target-mark-gap-status.json",
+      "sha256": "c56d6336b2e2b581a9720ecd74f45ae5baedc8e3fe204aa78d3c57e4bb9fe949",
+      "size_bytes": 131028,
+      "utf8_valid": true
+    },
+    {
+      "classification": "EVIDENCE_ONLY_VALIDATOR",
+      "lf_only": true,
+      "line_count": 237,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/validator/audit_candidate.py",
+      "phase_relative_path": "validator/audit_candidate.py",
+      "sha256": "08891dcea443cfabd66e8204b52fbd0b7bbdee510fa13da4a74d153c3a43fd54",
+      "size_bytes": 10497,
+      "utf8_valid": true
+    },
+    {
+      "classification": "EVIDENCE_ONLY_VALIDATOR",
+      "lf_only": true,
+      "line_count": 198,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/validator/build_inventory.py",
+      "phase_relative_path": "validator/build_inventory.py",
+      "sha256": "eeaf12ae8691ac92db83134f540706005f8ae4dd5994e1d42cdf5183a2c80084",
+      "size_bytes": 8230,
+      "utf8_valid": true
+    },
+    {
+      "classification": "EVIDENCE_ONLY_VALIDATOR",
+      "lf_only": true,
+      "line_count": 674,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/validator/build_phase_evidence.py",
+      "phase_relative_path": "validator/build_phase_evidence.py",
+      "sha256": "3066a75f790bdf43d0825934c4ea58b383217aa354d0a9b272bd93a1ba2e120f",
+      "size_bytes": 40257,
+      "utf8_valid": true
+    },
+    {
+      "classification": "EVIDENCE_ONLY_VALIDATOR",
+      "lf_only": true,
+      "line_count": 269,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/validator/daily_404_reconcile.py",
+      "phase_relative_path": "validator/daily_404_reconcile.py",
+      "sha256": "ce92427f910359f99c155ba1d002db997430ebedf9ceb662f72d92cc971d2162",
+      "size_bytes": 11447,
+      "utf8_valid": true
+    },
+    {
+      "classification": "EVIDENCE_ONLY_VALIDATOR",
+      "lf_only": true,
+      "line_count": 196,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/validator/mark_event_validator.py",
+      "phase_relative_path": "validator/mark_event_validator.py",
+      "sha256": "7a7786ab192b460aed520659eb1d041ade9755cb409c0ab1f11ef97b61341c7a",
+      "size_bytes": 8524,
+      "utf8_valid": true
+    },
+    {
+      "classification": "EVIDENCE_ONLY_VALIDATOR",
+      "lf_only": true,
+      "line_count": 102,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/validator/public_acquire.py",
+      "phase_relative_path": "validator/public_acquire.py",
+      "sha256": "7377b8f06f37f13a622ca752121dbb62b3549f772a266b86e2000272ac2b4ddd",
+      "size_bytes": 3565,
+      "utf8_valid": true
+    },
+    {
+      "classification": "EVIDENCE_ONLY_VALIDATOR",
+      "lf_only": true,
+      "line_count": 175,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/validator/spot_no_trade_validator.py",
+      "phase_relative_path": "validator/spot_no_trade_validator.py",
+      "sha256": "5ac6afda887a013cdc14983b5ebb56cc43a513207b52b2bc4be334b0ec5c6ef2",
+      "size_bytes": 7613,
+      "utf8_valid": true
+    },
+    {
+      "classification": "EVIDENCE_ONLY_VALIDATOR",
+      "lf_only": true,
+      "line_count": 231,
+      "path": "evidence/repair/binance-origin-archive-recovery-001/validator/verify_candidate.py",
+      "phase_relative_path": "validator/verify_candidate.py",
+      "sha256": "8263e90f4bd0b57833046f0305451807d5bcb94487561081a5bad423c29bd551",
+      "size_bytes": 8867,
+      "utf8_valid": true
+    }
+  ],
+  "http_observation_count": 86,
+  "http_status_code_counts": {
+    "200": 71,
+    "202": 1,
+    "301": 4,
+    "401": 3,
+    "403": 2,
+    "404": 3,
+    "406": 2
+  },
+  "integrity": {
+    "duckdb_unchanged": true,
+    "head_unchanged": true,
+    "origin_main_unchanged": true,
+    "phase_only_untracked_worktree": true,
+    "root_ssot_unchanged": true,
+    "tracked_diff_empty": true
+  },
+  "inventory_excludes_itself": true,
+  "inventory_self_path": "evidence/repair/binance-origin-archive-recovery-001/evidence-inventory.json",
+  "json_validation_failures": [],
+  "missing_required_files": [],
+  "raw_observation_binding_failures": [],
+  "required_files": [
+    "baseline-attestation.json",
+    "provider-source-references.json",
+    "provider-coverage-qualification.json",
+    "control-window-comparison.json",
+    "target-mark-gap-status.json",
+    "spot-no-trade-status.json",
+    "daily-404-reconciliation.json",
+    "failed-attempts.jsonl",
+    "owner-report/README.md",
+    "ssot-candidate-003/SSOT.candidate-003.md",
+    "ssot-candidate-003/SSOT.candidate-003.sha256",
+    "ssot-candidate-003/SSOT.candidate-003.diff",
+    "ssot-candidate-003/candidate-manifest.json",
+    "ssot-candidate-003/semantic-change-summary.json",
+    "ssot-candidate-003/round-trip-verification.json"
+  ],
+  "schema": "binance-origin-archive-recovery-evidence-inventory-v1",
+  "status": "PASS",
+  "text_validation_failures": [],
+  "total_size_bytes_excluding_inventory": 17717366
+}

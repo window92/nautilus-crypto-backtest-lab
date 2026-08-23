@@ -1,0 +1,14 @@
+{
+  "capture_timestamp_utc": "2026-08-23T10:56:33.582009Z",
+  "request_method": "GET",
+  "request_url": "https://api.tardis.dev/v1/data-feeds/binance?from=2021-02-01T03%3A39%3A00Z&filters=%5B%7B%22channel%22%3A%22aggTrade%22%2C%22symbols%22%3A%5B%22btcusdt%22%5D%7D%5D&sliceSize=3",
+  "request_accept_encoding": "gzip",
+  "final_url": "https://api.tardis.dev/v1/data-feeds/binance?from=2021-02-01T03%3A39%3A00Z&filters=%5B%7B%22channel%22%3A%22aggTrade%22%2C%22symbols%22%3A%5B%22btcusdt%22%5D%7D%5D&sliceSize=3",
+  "status_code": 200,
+  "body_path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-spot-aggtrade-raw-2021-02-01-3m.body",
+  "body_size_bytes": 103651,
+  "body_sha256": "9b31641c13b777a81561f58d815df8d109ed9f55a8a17f5bc6b9ce8ec4da3048",
+  "headers_path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-spot-aggtrade-raw-2021-02-01-3m.headers.json",
+  "credentials_used": false,
+  "parsed_before_body_saved": false
+}

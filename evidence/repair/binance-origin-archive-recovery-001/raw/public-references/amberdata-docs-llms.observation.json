@@ -1,0 +1,14 @@
+{
+  "capture_timestamp_utc": "2026-08-23T10:37:31.897223Z",
+  "request_method": "GET",
+  "request_url": "https://docs.amberdata.io/llms.txt",
+  "request_accept_encoding": "identity",
+  "final_url": "https://docs.amberdata.io/llms.txt",
+  "status_code": 200,
+  "body_path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/amberdata-docs-llms.body",
+  "body_size_bytes": 69419,
+  "body_sha256": "d05b11608644aaf13530ffc0ca489767d9dab8050642e3b3568b69a0eb418262",
+  "headers_path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/amberdata-docs-llms.headers.json",
+  "credentials_used": false,
+  "parsed_before_body_saved": false
+}

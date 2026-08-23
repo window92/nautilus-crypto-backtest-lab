@@ -1,0 +1,64 @@
+{
+  "headers": [
+    [
+      "Server",
+      "CloudFront"
+    ],
+    [
+      "Date",
+      "Sun, 23 Aug 2026 10:24:06 GMT"
+    ],
+    [
+      "Content-Length",
+      "0"
+    ],
+    [
+      "Connection",
+      "close"
+    ],
+    [
+      "x-amzn-waf-action",
+      "challenge"
+    ],
+    [
+      "Cache-Control",
+      "no-store, max-age=0"
+    ],
+    [
+      "Content-Type",
+      "text/html; charset=UTF-8"
+    ],
+    [
+      "Access-Control-Allow-Origin",
+      "*"
+    ],
+    [
+      "Access-Control-Max-Age",
+      "86400"
+    ],
+    [
+      "Access-Control-Allow-Methods",
+      "OPTIONS,GET,POST"
+    ],
+    [
+      "Access-Control-Expose-Headers",
+      "x-amzn-waf-action"
+    ],
+    [
+      "X-Cache",
+      "Error from cloudfront"
+    ],
+    [
+      "Via",
+      "1.1 84c3894c21a4640fb5c0efcf95646dca.cloudfront.net (CloudFront)"
+    ],
+    [
+      "X-Amz-Cf-Pop",
+      "FRA60-P8"
+    ],
+    [
+      "X-Amz-Cf-Id",
+      "LEupITYXQn-ikfxxcT4mRM6mMeRZO64sdIBVnW2kJuFd1UZcIl2qSg=="
+    ]
+  ]
+}

@@ -1,0 +1,73 @@
+{
+  "archive": {
+    "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-spot-aggtrade-raw-2021-02-01-3m.body",
+    "provider_normalized_values_used": false,
+    "record_classification": "ARCHIVED_BINANCE_ORIGIN_EVENT",
+    "sha256": "9b31641c13b777a81561f58d815df8d109ed9f55a8a17f5bc6b9ce8ec4da3048",
+    "size_bytes": 103651
+  },
+  "arithmetic": "Decimal parse validation only; no float calculations",
+  "boundary_after": {
+    "aggregate_trade_id": 548004502,
+    "capture_order": 2399,
+    "first_trade_id": 610829318,
+    "last_trade_id": 610829320,
+    "price_text": "33739.06000000",
+    "provider_receive_timestamp": "2021-02-01T03:41:00.0728422Z",
+    "quantity_text": "0.34558700",
+    "trade_timestamp_ms": 1612150860069
+  },
+  "boundary_before": {
+    "aggregate_trade_id": 548003153,
+    "capture_order": 1050,
+    "first_trade_id": 610827870,
+    "last_trade_id": 610827870,
+    "price_text": "33687.37000000",
+    "provider_receive_timestamp": "2021-02-01T03:39:59.5891128Z",
+    "quantity_text": "0.00296600",
+    "trade_timestamp_ms": 1612150799583
+  },
+  "classification": "NOT_VERIFIED_NO_TRADE_EVENTS_PRESENT",
+  "contract": "BINANCE_ORIGIN_SPOT_AGGTRADE_CONTINUITY_VALIDATOR_V1",
+  "event_order": "preserved provider capture order",
+  "events_inside_minute_count": 1348,
+  "first_inside_event": {
+    "aggregate_trade_id": 548003154,
+    "capture_order": 1051,
+    "first_trade_id": 610827871,
+    "last_trade_id": 610827873,
+    "price_text": "33687.38000000",
+    "provider_receive_timestamp": "2021-02-01T03:40:00.0806315Z",
+    "quantity_text": "2.55000000",
+    "trade_timestamp_ms": 1612150800076
+  },
+  "full_verified_no_trade_claim": false,
+  "integrity": {
+    "aggregate_id_gaps": [],
+    "archive_continuity_valid": true,
+    "duplicate_aggregate_ids": [],
+    "parse_errors": [],
+    "underlying_trade_id_gaps": [],
+    "underlying_trade_id_overlaps": []
+  },
+  "last_inside_event": {
+    "aggregate_trade_id": 548004501,
+    "capture_order": 2398,
+    "first_trade_id": 610829317,
+    "last_trade_id": 610829317,
+    "price_text": "33739.06000000",
+    "provider_receive_timestamp": "2021-02-01T03:40:59.9098587Z",
+    "quantity_text": "0.00227900",
+    "trade_timestamp_ms": 1612150859906
+  },
+  "minute": {
+    "end_ms": 1612150860000,
+    "end_utc": "2021-02-01T03:41:00Z",
+    "start_ms": 1612150800000,
+    "start_utc": "2021-02-01T03:40:00Z"
+  },
+  "reason": "Real Binance-origin aggTrade events are present in the minute; a no-trade classification is rejected.",
+  "row_count": 3701,
+  "status": "PASS",
+  "synthetic_ohlcv_created": false
+}

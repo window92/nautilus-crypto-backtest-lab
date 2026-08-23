@@ -1,0 +1,4 @@
+{
+  "code": 400,
+  "message": "Please set Accept-Encoding request header to include \"zstd\" or \"gzip\""
+}

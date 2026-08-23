@@ -1,0 +1,13 @@
+{
+  "capture_timestamp_utc": "2026-08-23T10:26:04.044407Z",
+  "request_method": "GET",
+  "request_url": "https://s3.amazonaws.com/sample.crypto.lake/?list-type=2&delimiter=%2F",
+  "final_url": "https://s3.amazonaws.com/sample.crypto.lake/?list-type=2&delimiter=%2F",
+  "status_code": 301,
+  "body_path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/crypto-lake-sample-root-list.body",
+  "body_size_bytes": 483,
+  "body_sha256": "0e245a9be6870b655617137acc8e143222323599f0629f1cc6e18d5d4af2cca5",
+  "headers_path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/crypto-lake-sample-root-list.headers.json",
+  "credentials_used": false,
+  "parsed_before_body_saved": false
+}

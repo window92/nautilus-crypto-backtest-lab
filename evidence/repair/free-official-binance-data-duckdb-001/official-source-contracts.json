@@ -1,0 +1,113 @@
+{
+  "allowed_sources": [
+    "https://data.binance.vision/",
+    "https://data-api.binance.vision/api/v3/klines",
+    "https://fapi.binance.com/fapi/v1/klines",
+    "https://fapi.binance.com/fapi/v1/markPriceKlines",
+    "https://fapi.binance.com/fapi/v1/fundingRate",
+    "https://fapi.binance.com/fapi/v1/fundingInfo",
+    "official Binance GitHub documentation and issue records for contract/investigative context only"
+  ],
+  "analysis_identity": "bf7c4d476702a6438e2940d85548943ca1b2b926f74ba64380e20bd0490c654d",
+  "captured_at_utc": "2026-08-23T13:21:30.702335Z",
+  "credentials_used": false,
+  "downloaded_bytes_preserved_before_parsing": true,
+  "forbidden_sources_used": [],
+  "investigative_references": [
+    {
+      "author_association": "NONE",
+      "byte_size": 5686,
+      "evidentiary_role": "INVESTIGATIVE_LEAD_ONLY_NOT_PRICE_AUTHORITY",
+      "exact_url": "https://api.github.com/repos/binance/binance-public-data/issues/365",
+      "http_status": 200,
+      "raw_object_sha256": "a922d013a36e9e8d056f72b4e2ca8c3ad0b06d6346e01dae804a63b18547f71e",
+      "retrieval_completed_at_utc": "2026-08-23T12:23:23.305655Z",
+      "source_role": "BINANCE_PUBLIC_DATA_ISSUE_365",
+      "title": "Missing Klines for BTC USDT between 2017-2024 (1 sec interval)"
+    },
+    {
+      "author_association": "NONE",
+      "byte_size": 8469,
+      "evidentiary_role": "INVESTIGATIVE_LEAD_ONLY_NOT_PRICE_AUTHORITY",
+      "exact_url": "https://api.github.com/repos/binance/binance-public-data/issues/475",
+      "http_status": 200,
+      "raw_object_sha256": "9baeab7f641f922f4fa3e70cb2efde0494878906aa9679bd8fe4eca812b8f6e1",
+      "retrieval_completed_at_utc": "2026-08-23T12:23:23.311151Z",
+      "source_role": "BINANCE_PUBLIC_DATA_ISSUE_475",
+      "title": "Monthly SPOT kline archives disagree with daily archives and API for 2020-12-21 and 2021-09-29"
+    },
+    {
+      "author_association": "NONE",
+      "byte_size": 5602,
+      "evidentiary_role": "INVESTIGATIVE_LEAD_ONLY_NOT_PRICE_AUTHORITY",
+      "exact_url": "https://api.github.com/repos/binance/binance-public-data/issues/483",
+      "http_status": 200,
+      "raw_object_sha256": "16a9c69c5e88ac303bbc9c4817bf5103a41304d2b53ee528682e39d75d269e33",
+      "retrieval_completed_at_utc": "2026-08-23T12:23:23.309779Z",
+      "source_role": "BINANCE_PUBLIC_DATA_ISSUE_483",
+      "title": "Missing USD-M 1m markPriceKlines and indexPriceKlines rows across multiple symbols"
+    },
+    {
+      "author_association": "NONE",
+      "byte_size": 7265,
+      "evidentiary_role": "INVESTIGATIVE_LEAD_ONLY_NOT_PRICE_AUTHORITY",
+      "exact_url": "https://api.github.com/repos/binance/binance-public-data/issues/484",
+      "http_status": 200,
+      "raw_object_sha256": "392a268163964f845bd9325414a970390eddbacbc6a3753b818056d404b5e605",
+      "retrieval_completed_at_utc": "2026-08-23T12:23:23.562217Z",
+      "source_role": "BINANCE_PUBLIC_DATA_ISSUE_484",
+      "title": "[Futures data quality] Missing and duplicate USD-M metrics/markPriceKlines timestamps for BTCUSDT and ETHUSDT (2023-2025)"
+    },
+    {
+      "byte_size": 5335,
+      "evidentiary_role": "OFFICIAL_SOURCE_CONTRACT_OR_CURRENT_METADATA",
+      "exact_url": "https://data-api.binance.vision/api/v3/exchangeInfo?symbol=BTCUSDT",
+      "http_status": 200,
+      "raw_object_sha256": "307b4b3adc864bde63fb63f3cd5d51e353bd355a215ff1a3f68e0ed38b81cb4c",
+      "retrieval_completed_at_utc": "2026-08-23T12:23:24.341904Z",
+      "source_role": "SPOT_CURRENT_INSTRUMENT_METADATA"
+    },
+    {
+      "byte_size": 1077582,
+      "evidentiary_role": "OFFICIAL_SOURCE_CONTRACT_OR_CURRENT_METADATA",
+      "exact_url": "https://fapi.binance.com/fapi/v1/exchangeInfo",
+      "http_status": 200,
+      "raw_object_sha256": "23fba8a309fe4ef559dec3cb81c8db6b315b600653527dfdf25310e34f022cd8",
+      "retrieval_completed_at_utc": "2026-08-23T12:23:24.348233Z",
+      "source_role": "USDM_CURRENT_INSTRUMENT_METADATA"
+    },
+    {
+      "byte_size": 129901,
+      "evidentiary_role": "OFFICIAL_SOURCE_CONTRACT_OR_CURRENT_METADATA",
+      "exact_url": "https://fapi.binance.com/fapi/v1/fundingInfo",
+      "http_status": 200,
+      "raw_object_sha256": "9a624edc6d4ccf79fabc5a141c49486a6400be70dead2b7d1061cd0a9eb557bf",
+      "retrieval_completed_at_utc": "2026-08-23T12:23:23.632704Z",
+      "source_role": "USDM_CURRENT_FUNDING_INFO"
+    },
+    {
+      "byte_size": 5144,
+      "evidentiary_role": "OFFICIAL_SOURCE_CONTRACT_OR_CURRENT_METADATA",
+      "exact_url": "https://raw.githubusercontent.com/binance/binance-public-data/master/README.md",
+      "http_status": 200,
+      "raw_object_sha256": "085ab91377aa9325d44f4c7ad27cce4ab381e158403e1d7df2bad39d1a66f7c6",
+      "retrieval_completed_at_utc": "2026-08-23T12:23:23.303809Z",
+      "source_role": "BINANCE_PUBLIC_DATA_README"
+    },
+    {
+      "byte_size": 1616,
+      "evidentiary_role": "OFFICIAL_SOURCE_CONTRACT_OR_CURRENT_METADATA",
+      "exact_url": "https://raw.githubusercontent.com/binance/binance-spot-api-docs/master/faqs/market_data_only.md",
+      "http_status": 200,
+      "raw_object_sha256": "57d608507426215c43f11907c07ed693f02725840d9ee4d6630f134de402b6da",
+      "retrieval_completed_at_utc": "2026-08-23T12:23:23.307411Z",
+      "source_role": "BINANCE_SPOT_MARKET_DATA_ONLY_FAQ"
+    }
+  ],
+  "new_acquisition_identity": "6031d1f37a7e2687ba07988c6d2c9c74d241da368fd3baa4bfd5ffd31f1d8b40",
+  "paid_access_used": false,
+  "prior_official_acquisition_identity": "5e726b7790c3efe7ed7e2fe0f7d20853cdbc1b729968c09446560a4f1e9188a3",
+  "publisher_checksum_is_transport_integrity_not_semantic_completeness": true,
+  "schema": "free-official-binance-source-contracts-v1",
+  "status": "PASS"
+}

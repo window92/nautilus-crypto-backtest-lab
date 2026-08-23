@@ -1,0 +1,159 @@
+{
+  "control_count": 24,
+  "controls": {
+    "checksum_mismatch": {
+      "status": "PASS_REJECTION_PROVEN",
+      "test_ids": [
+        "tests.unit.test_m2_raw_and_parsing.RawObjectTests.test_publisher_checksum_verification_and_corruption_failure"
+      ]
+    },
+    "conflicting_funding_schedule": {
+      "status": "PASS_REJECTION_PROVEN",
+      "test_ids": [
+        "tests.unit.test_m2_release_contract.FundingContractTests.test_unproven_schedule_is_funding_ambiguous"
+      ]
+    },
+    "conflicting_monthly_daily_api_row": {
+      "status": "PASS_REJECTION_PROVEN",
+      "test_ids": [
+        "tests.unit.test_data_provenance_repair.DataProvenanceContractTests.test_monthly_conflict_without_event_arbitration_blocks"
+      ]
+    },
+    "corrupted_archive_bytes": {
+      "status": "PASS_REJECTION_PROVEN",
+      "test_ids": [
+        "tests.unit.test_m2_raw_and_parsing.RawObjectTests.test_acquirer_stores_corrupted_download_before_failing_checksum"
+      ]
+    },
+    "duckdb_extension_or_network_use": {
+      "status": "PASS_REJECTION_PROVEN",
+      "test_ids": [
+        "tests.unit.test_free_official_binance_repair.NewDuckDBContractTests.test_builder_prohibits_duckdb_extensions_and_network"
+      ]
+    },
+    "duckdb_row_mutation": {
+      "status": "PASS_REJECTION_PROVEN",
+      "test_ids": [
+        "tests.unit.test_free_official_binance_repair.NewDuckDBContractTests.test_constraints_rollback_readonly_and_exact_types"
+      ]
+    },
+    "duckdb_source_binding_mutation": {
+      "status": "PASS_REJECTION_PROVEN",
+      "test_ids": [
+        "tests.unit.test_free_official_binance_repair.NewDuckDBContractTests.test_constraints_rollback_readonly_and_exact_types"
+      ]
+    },
+    "duplicate_funding": {
+      "status": "PASS_REJECTION_PROVEN",
+      "test_ids": [
+        "tests.unit.test_m2_release_contract.FundingContractTests.test_conflicting_funding_duplicate_blocks"
+      ]
+    },
+    "duplicate_raw_trade_id": {
+      "status": "PASS_REJECTION_PROVEN",
+      "test_ids": [
+        "tests.unit.test_data_provenance_repair.DataProvenanceContractTests.test_trade_order_duplicate_overlap_and_gap_fail_closed"
+      ]
+    },
+    "forged_no_trade_interval": {
+      "status": "PASS_REJECTION_PROVEN",
+      "test_ids": [
+        "tests.unit.test_data_provenance_repair.DataProvenanceContractTests.test_no_trade_rejects_aggregate_or_underlying_id_gap"
+      ]
+    },
+    "forward_filled_close": {
+      "status": "PASS_REJECTION_PROVEN",
+      "test_ids": [
+        "tests.unit.test_data_provenance_repair.DataProvenanceContractTests.test_forward_filled_or_interpolated_ohlc_cannot_arbitrate_official_conflict"
+      ]
+    },
+    "interpolated_ohlc": {
+      "status": "PASS_REJECTION_PROVEN",
+      "test_ids": [
+        "tests.unit.test_data_provenance_repair.DataProvenanceContractTests.test_forward_filled_or_interpolated_ohlc_cannot_arbitrate_official_conflict"
+      ]
+    },
+    "malformed_checksum": {
+      "status": "PASS_REJECTION_PROVEN",
+      "test_ids": [
+        "tests.unit.test_m2_repair_contracts.F02PreserveBeforeParseTests.test_malformed_checksum_preserves_both_responses_and_retry_history"
+      ]
+    },
+    "mark_derived_from_execution": {
+      "status": "PASS_REJECTION_PROVEN",
+      "test_ids": [
+        "tests.unit.test_free_official_binance_repair.SparseOfficialGridTests.test_missing_mark_minute_and_execution_price_substitution_are_rejected"
+      ]
+    },
+    "mark_replaced_by_index_premium_last_or_spot": {
+      "status": "PASS_REJECTION_PROVEN",
+      "test_ids": [
+        "tests.unit.test_m2_raw_and_parsing.RawObjectTests.test_prohibited_archive_role_substitution_is_rejected"
+      ]
+    },
+    "missing_mark_minute": {
+      "status": "PASS_REJECTION_PROVEN",
+      "test_ids": [
+        "tests.unit.test_free_official_binance_repair.SparseOfficialGridTests.test_missing_mark_minute_and_execution_price_substitution_are_rejected"
+      ]
+    },
+    "missing_raw_trade_id": {
+      "status": "PASS_REJECTION_PROVEN",
+      "test_ids": [
+        "tests.unit.test_data_provenance_repair.DataProvenanceContractTests.test_trade_order_duplicate_overlap_and_gap_fail_closed"
+      ]
+    },
+    "nautilus_catalog_semantic_mismatch": {
+      "status": "PASS_REJECTION_PROVEN",
+      "test_ids": [
+        "tests.unit.test_free_official_binance_repair.NewDuckDBContractTests.test_nondeterministic_rebuild_and_catalog_mutation_are_rejected",
+        "tests.unit.test_m2_release_contract.DatasetReleaseTests.test_catalog_rebuild_semantic_stability_and_mutation_staleness"
+      ]
+    },
+    "nondeterministic_rebuild": {
+      "status": "PASS_REJECTION_PROVEN",
+      "test_ids": [
+        "tests.unit.test_free_official_binance_repair.NewDuckDBContractTests.test_nondeterministic_rebuild_and_catalog_mutation_are_rejected"
+      ]
+    },
+    "partial_minute_without_continuity": {
+      "status": "PASS_REJECTION_PROVEN",
+      "test_ids": [
+        "tests.unit.test_data_provenance_repair.DataProvenanceContractTests.test_monthly_only_impossible_row_blocks_without_complete_proof"
+      ]
+    },
+    "source_role_mismatch": {
+      "status": "PASS_REJECTION_PROVEN",
+      "test_ids": [
+        "tests.unit.test_m2_raw_and_parsing.TimestampAndParsingTests.test_source_role_mismatch_blocks"
+      ]
+    },
+    "stale_dataset_release": {
+      "status": "PASS_REJECTION_PROVEN",
+      "test_ids": [
+        "tests.unit.test_free_official_binance_repair.NewDuckDBContractTests.test_nondeterministic_rebuild_and_catalog_mutation_are_rejected",
+        "tests.unit.test_m2_release_contract.DatasetReleaseTests.test_catalog_rebuild_semantic_stability_and_mutation_staleness"
+      ]
+    },
+    "synthetic_zero_volume_bar": {
+      "status": "PASS_REJECTION_PROVEN",
+      "test_ids": [
+        "tests.unit.test_free_official_binance_repair.SparseOfficialGridTests.test_bar_during_verified_no_trade_is_rejected_as_synthetic_inventory"
+      ]
+    },
+    "timestamp_unit_mismatch": {
+      "status": "PASS_REJECTION_PROVEN",
+      "test_ids": [
+        "tests.unit.test_free_official_binance_repair.NewDuckDBContractTests.test_constraints_rollback_readonly_and_exact_types"
+      ]
+    }
+  },
+  "created_at_utc": "2026-08-23T16:40:24.722767Z",
+  "errors": 0,
+  "failures": 0,
+  "missing_test_ids": [],
+  "schema": "free-official-binance-negative-controls-v1",
+  "skips": 0,
+  "status": "PASS",
+  "xfail": 0
+}

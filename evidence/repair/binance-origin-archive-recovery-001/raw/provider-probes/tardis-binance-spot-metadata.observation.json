@@ -1,0 +1,13 @@
+{
+  "capture_timestamp_utc": "2026-08-23T10:29:11.464011Z",
+  "request_method": "GET",
+  "request_url": "https://api.tardis.dev/v1/exchanges/binance",
+  "final_url": "https://api.tardis.dev/v1/exchanges/binance",
+  "status_code": 200,
+  "body_path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-binance-spot-metadata.body",
+  "body_size_bytes": 1097187,
+  "body_sha256": "a362e5847d1031242a43d2d0bbd7282b4bc559a9685071fa5ddd6c7223405af0",
+  "headers_path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-binance-spot-metadata.headers.json",
+  "credentials_used": false,
+  "parsed_before_body_saved": false
+}

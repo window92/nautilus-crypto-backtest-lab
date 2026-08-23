@@ -1,0 +1,202 @@
+> For the complete documentation index, see [llms.txt](https://docs.tardis.dev/llms.txt). Markdown versions of documentation pages are available by appending `.md` to page URLs; this page is available as [Markdown](https://docs.tardis.dev/downloadable-csv-files/api.md).
+
+# API Reference
+
+## Datasets API details
+
+The Datasets API serves gzip-compressed CSV files by day, exchange, data type and symbol.
+
+* all downloadable datasets are gzip-compressed
+* historical market data is available as one file per day, split by exchange, [data type](/downloadable-csv-files/data-types.md) and symbol
+* data for a given day is available on the next day around 06:00 UTC; use the [`/exchanges/:exchange`](/api/http-api-reference.md#exchanges-exchange) API endpoint and `datasets.exportedUntil` to check exact export status
+* datasets are ordered and split into daily files by [`local_timestamp`](/faq/data.md#how-are-market-data-messages-timestamped)
+* an empty gzip file is returned when no data is available for a given day, symbol and data type, for example during exchange downtime or for very low volume markets
+* if `timestamp` equals `local_timestamp`, the exchange did not provide a timestamp for the message, for example BitMEX order book updates
+* a CSV cell is empty when the exchange does not provide that value, for example a missing trade ID
+* datasets are exported from Tardis.dev's collected [raw WebSocket data](/faq/data.md#why-data-source-matters-websocket-feeds-vs-rest-endpoints), not exchange REST endpoints. The same raw data is available in exchange-native format via the [HTTP API](/api/http-api-reference.md)
+* disconnect events are not included in CSV datasets — they are available via the [raw HTTP API](/api/http-api-reference.md) (as empty lines) and via [normalized replay](https://docs.tardis.dev/downloadable-csv-files/pages/gkHZyu4v8WrMNBBiqduR#replaynormalized-options-...normalizers) with `withDisconnectMessages` enabled
+* dataset download responses for Pro and Business subscriptions (premium network) include an `x-md5` header, but for large files uploaded in chunks this value may not match a full-file MD5 checksum — use file size and gzip decompression success as primary integrity checks
+* CSV datasets for a given day are typically available by 06:00 UTC the next day. To check the exact export status for an exchange, use the [`/exchanges/:exchange`](/api/http-api-reference.md#exchanges-exchange) API endpoint and poll the `datasets.exportedUntil` field — do not rely on wall-clock time alone
+* See ["Data FAQ"](/faq/data.md) regarding [potential order book overlaps](/faq/order-books.md#can-reconstructed-order-books-have-bid-ask-overlap), [non-monotonically increasing exchange timestamps](/faq/data.md#can-timestamps-be-non-monotonic-within-a-channel), [duplicated trade data](/faq/data.md#are-exchanges-publishing-duplicated-trades-data-messages), and more
+
+## Download via client libraries
+
+{% hint style="info" %}
+Historical datasets for the first day of each month are available to download without API key.
+{% endhint %}
+
+{% tabs %}
+{% tab title="Python" %}
+
+```python
+# pip install tardis-dev
+# requires Python >=3.9
+from tardis_dev import download_datasets, get_exchange_details
+import logging
+import re
+
+# comment out to disable debug logs
+logging.basicConfig(level=logging.DEBUG)
+
+# function used by default if not provided via options
+def default_file_name(exchange, data_type, date, symbol, format):
+    sanitized_symbol = re.sub(r'[:\\/?*<>|"]', "-", symbol)
+    return f"{exchange}_{data_type}_{date.strftime('%Y-%m-%d')}_{sanitized_symbol}.{format}.gz"
+
+
+# customized get filename function - saves data in nested directory structure
+def file_name_nested(exchange, data_type, date, symbol, format):
+    sanitized_symbol = re.sub(r'[:\\/?*<>|"]', "-", symbol)
+    return f"{exchange}/{data_type}/{date.strftime('%Y-%m-%d')}_{sanitized_symbol}.{format}.gz"
+
+
+# returns data available at https://api.tardis.dev/v1/exchanges/deribit
+deribit_details = get_exchange_details("deribit")
+# print(deribit_details)
+
+download_datasets(
+    # one of https://api.tardis.dev/v1/exchanges with supportsDatasets:true - use 'id' value
+    exchange="deribit",
+    # accepted data types - 'datasets.symbols[].dataTypes' field in https://api.tardis.dev/v1/exchanges/deribit,
+    # or get those values from 'deribit_details["datasets"]["symbols"][i]["dataTypes"]' above
+    data_types=["incremental_book_L2", "trades", "quotes", "derivative_ticker", "book_snapshot_25", "book_snapshot_5", "liquidations"],
+    # change date ranges as needed to fetch full month or year for example
+    from_date="2019-11-01",
+    # to date is non inclusive
+    to_date="2019-11-02",
+    # accepted values: 'datasets.symbols[].id' field in https://api.tardis.dev/v1/exchanges/deribit
+    symbols=["BTC-PERPETUAL", "ETH-PERPETUAL",],
+    # (optional) your API key to get access to non sample data as well
+    api_key="YOUR API KEY",
+    # (optional) path where data will be downloaded into, default dir is './datasets'
+    # download_dir="./datasets",
+    # (optional) - one can customize downloaded file name/path (flat dir structure, or nested etc) - by default function 'default_file_name' is used
+    # get_filename=default_file_name,
+    # (optional) file_name_nested will download data to nested directory structure (split by exchange and data type)
+    # get_filename=file_name_nested,
+)
+```
+
+{% hint style="info" %}
+If you're running into `RuntimeError: download_datasets() cannot be called from a running event loop`, use `download_datasets_async()` instead.
+{% endhint %}
+{% endtab %}
+
+{% tab title="Node.js" %}
+
+```javascript
+// npm install tardis-dev
+// requires Node.js v24+
+
+// remove it to disable debug logs
+process.env.DEBUG = 'tardis-dev*'
+
+import { downloadDatasets, getExchangeDetails } from 'tardis-dev'
+
+// returns data available at https://api.tardis.dev/v1/exchanges/deribit
+const deribitDetails = await getExchangeDetails('deribit')
+
+// console.log(deribitDetails.datasets)
+
+await downloadDatasets({
+  exchange: 'deribit', // one of https://api.tardis.dev/v1/exchanges with supportsDatasets:true - use 'id' value
+  dataTypes: ['incremental_book_L2', 'trades', 'quotes', 'derivative_ticker', 'book_snapshot_25', 'book_snapshot_5', 'liquidations'], // accepted data types - 'datasets.symbols[].dataTypes' field in https://api.tardis.dev/v1/exchanges/deribit, or get those values from 'deribitDetails.datasets.symbols[].dataTypes' object above
+  from: '2019-11-01', // change date ranges as needed to fetch full month or year for example
+  to: '2019-11-02', // to date is non inclusive
+  symbols: ['BTC-PERPETUAL', 'ETH-PERPETUAL'], // accepted values: 'datasets.symbols[].id' field in https://api.tardis.dev/v1/exchanges/deribit, or `deribitDetails.datasets.symbols[].id` from object above
+
+  apiKey: 'YOUR_API_KEY', // (optional) your API key to get access to non sample data as well
+  // downloadDir:'./datasets', // (optional) path where data will be downloaded into, default dir is './datasets'
+
+  // getFilename: getFilenameDefault, // (optional) - one can customize downloaded file name/path (flat dir structure, or nested etc) - by default function 'getFilenameDefault' is used
+  // getFilename: getFilenameCustom // (optional) getFilenameCustom will download data to nested directory structure (split by exchange and data type)
+})
+
+// function used by default if not provided via options
+function sanitizeForFilename(value) {
+  return value.replace(/[:\\/?*<>|"]/g, '-')
+}
+
+function getFilenameDefault({ exchange, dataType, format, date, symbol }) {
+  return `${exchange}_${dataType}_${date.toISOString().split('T')[0]}_${sanitizeForFilename(symbol)}.${format}.gz`
+}
+
+// customized get filename function - saves data in nested directory structure
+function getFilenameCustom({ exchange, dataType, format, date, symbol }) {
+  return `${exchange}/${dataType}/${date.toISOString().split('T')[0]}_${sanitizeForFilename(symbol)}.${format}.gz`
+}
+```
+
+{% endtab %}
+{% endtabs %}
+
+## Datasets API reference
+
+<mark style="color:blue;">`GET`</mark> `https://datasets.tardis.dev/v1/:exchange/:dataType/:year/:month/:day/:symbol.csv.gz`
+
+Returns gzip compressed CSV dataset for given exchange, data type, date (year, month, day) and symbol.
+
+#### Path Parameters
+
+| Name     | Type   | Description                                                                                                                |
+| -------- | ------ | -------------------------------------------------------------------------------------------------------------------------- |
+| exchange | string | one of <https://api.tardis.dev/v1/exchanges> (field `id`, only exchanges with "supportsDatasets":true)                     |
+| dataType | string | one of `datasets.symbols[].dataTypes` values from <https://api.tardis.dev/v1/exchanges/:exchange> API response             |
+| year     | string | year in format `YYYY` (four-digit year)                                                                                    |
+| month    | string | month in format `MM` (two-digit month of the year)                                                                         |
+| day      | string | day in format `DD` (two-digit day of the month)                                                                            |
+| symbol   | string | one of `datasets.symbols[].id` values from <https://api.tardis.dev/v1/exchanges/:exchange> API response, see details below |
+
+#### Headers
+
+| Name          | Type   | Description                                                                                                                                                                                                        |
+| ------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Authorization | string | <p>For authenticated requests provide Authorization header with value: '<code>Bearer YOUR\_API\_KEY</code>'.<br>Without API key historical datasets for the first day of each month are available to download.</p> |
+
+{% tabs %}
+{% tab title="200 gzip compressed CSV dataset" %}
+
+```
+```
+
+{% endtab %}
+{% endtabs %}
+
+* `symbol` values for the datasets API are CSV dataset symbols, not raw replay symbols. Use `datasets.symbols[].id` from `/exchanges/:exchange` or `datasetId` from the Instruments Metadata API when present. If an instrument has no `datasetId`, the symbol has not appeared in exported dataset metadata yet. Dataset symbols are uppercase and have `/` and `:` replaced with `-`; they can still contain non-ASCII or reserved URL characters, so URL-encode the symbol path segment when constructing URLs manually. Official clients do this automatically.
+* list of allowed symbols for each exchange can be requested via [/exchanges/:exchange](/api/http-api-reference.md#exchanges-exchange) API call, e.g., <https://api.tardis.dev/v1/exchanges/deribit> - `datasets.symbols[].id` field
+
+#### Sample requests
+
+{% embed url="<https://datasets.tardis.dev/v1/deribit/trades/2019/11/01/BTC-PERPETUAL.csv.gz>" %}
+
+{% embed url="<https://datasets.tardis.dev/v1/deribit/trades/2019/11/01/OPTIONS.csv.gz>" %}
+
+{% embed url="<https://datasets.tardis.dev/v1/bitmex/incremental_book_L2/2020/04/01/XBTUSD.csv.gz>" %}
+
+{% embed url="<https://datasets.tardis.dev/v1/deribit/options_chain/2019/08/01/OPTIONS.csv.gz>" %}
+
+{% embed url="<https://datasets.tardis.dev/v1/deribit/book_snapshot_25/2020/08/01/BTC-PERPETUAL.csv.gz>" %}
+
+{% embed url="<https://datasets.tardis.dev/v1/deribit/quotes/2019/08/01/OPTIONS.csv.gz>" %}
+
+
+---
+
+# Agent Instructions
+This documentation is published with GitBook. GitBook is the documentation platform designed so that both humans and AI agents can read, navigate, and reason over technical content effectively. Learn more at gitbook.com.
+
+## Querying This Documentation
+If you need additional information that is not directly available in this page, you can query the documentation dynamically by asking a question.
+
+Perform an HTTP GET request on the current page URL with the `ask` query parameter, and the optional `goal` query parameter:
+
+```
+GET https://docs.tardis.dev/downloadable-csv-files/api.md?ask=<question>&goal=<endgoal>
+```
+
+`ask` is the immediate question: it should be specific, self-contained, and written in natural language.
+`goal` is optional and describes the broader end goal you are ultimately trying to accomplish on behalf of the user. GitBook uses it to tailor the answer towards what is most useful for that goal.
+
+The response will contain a direct answer to the question and relevant excerpts and sources from the documentation.
+
+Use this mechanism when the answer is not explicitly present in the current page, you need clarification or additional context, or you want to retrieve related documentation sections.

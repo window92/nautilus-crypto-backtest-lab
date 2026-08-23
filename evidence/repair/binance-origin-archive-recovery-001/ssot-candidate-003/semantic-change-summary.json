@@ -1,0 +1,1257 @@
+{
+  "allowed_semantic_changes": [
+    "Permit an external provider only as transport for immutable, proven Binance-origin event payloads.",
+    "Classify direct publisher objects, archived Binance-origin events, provider-normalized rows, verified no-trade coverage, and redundant official delivery unavailability explicitly.",
+    "Preserve provider bytes, locator, exchange timestamp, receive/capture timestamp, ordering, schema, identity, and conflicts before parsing.",
+    "Require exact Decimal, half-open, multi-control 100-percent mark OHLC reproduction before accepting event-derived mark bars.",
+    "Permit an event-level Nautilus MarkPriceUpdate qualification only when exact bar reproduction fails; otherwise remain blocked.",
+    "Permit a Daily delivery 404 only as redundant-route unavailability when checksum-valid Monthly and complete REST representations exactly agree.",
+    "Keep all disagreement, incomplete capture, and unsupported normalized records fail-closed without averaging or silent precedence."
+  ],
+  "base_ssot_sha256": "f51971ed7a09b172c82ff5965f2899d2a302dd71a2af60eb7c920133567b4354",
+  "candidate_ssot_sha256": "9e6e9328b40104a65ed7d4f785731032d7b1b4cd37df5d845cad2197d6db067a",
+  "candidate_status": "PENDING_OWNER_ADOPTION",
+  "changed_sections": [
+    "4.1",
+    "4.2",
+    "4.3",
+    "4.5",
+    "4.5.1",
+    "4.5.3",
+    "4.8",
+    "4.9",
+    "4.9.1",
+    "4.11",
+    "8.3 (G11, G12, G23, G24)",
+    "M2 — Frozen Binance data",
+    "15 — Required failure codes"
+  ],
+  "contract": "DATA_PROVENANCE_SSOT_CANDIDATE_003_SEMANTIC_AUDIT_V1",
+  "normative_concept_scan": {
+    "classification_rule": "Every hit was reviewed in the complete candidate; retained hits are unchanged-compatible or updated, and no active normative contradiction remains.",
+    "conflicting_hit_count": 0,
+    "hit_count": 130,
+    "hits": [
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 21,
+        "patterns": [
+          "repair"
+        ],
+        "text": "The laboratory MUST prevent a good-looking result from becoming an Official Result when the result depends on look-ahead, same-bar execution, hidden defaults, silent data repair, omitted failed trials, reused Holdout data, non-reproducible settings, or unsupported claims."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 143,
+        "patterns": [
+          "DatasetRelease|Dataset Release"
+        ],
+        "text": "- one Dataset Release;"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 155,
+        "patterns": [
+          "canonical (?:execution )?bar"
+        ],
+        "text": "The canonical execution bar interval is exactly `1m`."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 157,
+        "patterns": [
+          "canonical (?:execution )?bar"
+        ],
+        "text": "An accepted canonical execution bar is either a `REAL_OFFICIAL_BAR` or a `DERIVED_FROM_OFFICIAL_TRADES` bar. A `VERIFIED_NO_TRADE_INTERVAL` is coverage evidence, not a bar, and MUST NOT be converted into a Nautilus market-data event."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 226,
+        "patterns": [
+          "DatasetRelease|Dataset Release"
+        ],
+        "text": "- Dataset Release construction and completeness checks;"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 408,
+        "patterns": [
+          "repair"
+        ],
+        "text": "Every synthetic qualification Bar MUST encode price and size precision valid for its Instrument. For Appendix A.4 with a price-precision-2 Instrument, the numerically unchanged values are encoded as `100.00`, `101.00`, and so on. A precision-rejected Bar is not a valid causal test result. `CAUSAL_FILL_REPAIR_001` qualifies the public v2 path with external one-minute LAST Bars, volume `1000`, order quantity `1`, and the locked standard Fill Model: the causal Fill is `BUY 1 @ 200.01` at `120_000_000_000` ns; the zero-latency control is `BUY 1 @ 100.01` at `60_000_000_000` ns and fails the invariant as required."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 438,
+        "patterns": [
+          "DatasetRelease|Dataset Release",
+          "archiv(?:e|al)"
+        ],
+        "text": "The V1 Official market-data source is Binance Public Data. Official Binance public archives and public market-data endpoints are the direct publisher roles for V1 Dataset Releases. The narrow external transport exception below does not create another exchange, publisher, or price authority."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 448,
+        "patterns": [
+          "aggTrades|trade-event|trade event"
+        ],
+        "text": "Spot official trade events:"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 449,
+        "patterns": [
+          "aggTrades|trade-event|trade event"
+        ],
+        "text": "GET /api/v3/aggTrades"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 450,
+        "patterns": [
+          "aggTrades|trade-event|trade event"
+        ],
+        "text": "data/spot/daily/aggTrades/{SYMBOL}/"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 451,
+        "patterns": [
+          "aggTrades|trade-event|trade event"
+        ],
+        "text": "data/spot/monthly/aggTrades/{SYMBOL}/"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 459,
+        "patterns": [
+          "markPrice"
+        ],
+        "text": "GET /fapi/v1/markPriceKlines"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 460,
+        "patterns": [
+          "markPrice"
+        ],
+        "text": "data/futures/um/daily/markPriceKlines/{SYMBOL}/1m/"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 461,
+        "patterns": [
+          "markPrice"
+        ],
+        "text": "data/futures/um/monthly/markPriceKlines/{SYMBOL}/1m/"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 469,
+        "patterns": [
+          "archiv(?:e|al)"
+        ],
+        "text": "Publisher `.CHECKSUM` objects, official archive-update manifests, and official Binance source-contract documentation are allowed provenance evidence. Each endpoint, archive prefix, and object MUST retain its exact source role; one official role MUST NOT silently substitute for another."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 471,
+        "patterns": [
+          "repair",
+          "archiv(?:e|al)",
+          "provider"
+        ],
+        "text": "An external archival provider MAY be used only as a transport archive for immutable records proven to originate from Binance real-time WebSocket or event streams. It does not become an exchange authority and it MUST NOT supply a repaired price series, a cross-venue substitute, or an unsupported source role. Every acquired observation in this contract MUST be classified explicitly as exactly one of:"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 475,
+        "patterns": [
+          "archiv(?:e|al)"
+        ],
+        "text": "ARCHIVED_BINANCE_ORIGIN_EVENT"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 476,
+        "patterns": [
+          "provider"
+        ],
+        "text": "PROVIDER_NORMALIZED_RECORD"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 479,
+        "patterns": [
+          "DatasetRelease|Dataset Release",
+          "archiv(?:e|al)",
+          "provider"
+        ],
+        "text": "`OFFICIAL_BINANCE_PUBLISHED_OBJECT` is an object or response published directly through an allowed Binance role in this Section. `ARCHIVED_BINANCE_ORIGIN_EVENT` is an exchange-native Binance WebSocket or event payload retained by an external archive with the original exchange payload, exchange timestamp, provider capture or receive timestamp, and deterministic capture ordering. `PROVIDER_NORMALIZED_RECORD` is any provider-transformed row, including a row that converts, rounds, combines, renames, resamples, or stores a Binance numeric value as binary floating point. A provider-normalized record MAY be diagnostic evidence but MUST NOT by itself establish canonical price truth, trade-ID continuity, or a Dataset Release."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 481,
+        "patterns": [
+          "archiv(?:e|al)",
+          "provider"
+        ],
+        "text": "An archived event is eligible only after its exact exchange, channel, symbol, historical coverage, schema, provenance, and immutable-byte identity are verified. Provider marketing or date-range claims do not prove that a target interval exists. A target interval requires preserved target bytes and successful validation under the applicable reconciliation contract."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 485,
+        "patterns": [
+          "repair"
+        ],
+        "text": "Do not use a third-party repaired dataset as Official input."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 505,
+        "patterns": [
+          "archiv(?:e|al)"
+        ],
+        "text": "For an external archival observation, also preserve:"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 508,
+        "patterns": [
+          "provider"
+        ],
+        "text": "provider_identity"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 509,
+        "patterns": [
+          "provider"
+        ],
+        "text": "provider_dataset_or_table"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 512,
+        "patterns": [
+          "provider"
+        ],
+        "text": "original_provider_response_bytes"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 514,
+        "patterns": [
+          "provider"
+        ],
+        "text": "provider_capture_or_receive_timestamp"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 516,
+        "patterns": [
+          "provider"
+        ],
+        "text": "provider_schema_and_version"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 521,
+        "patterns": [
+          "provider"
+        ],
+        "text": "Original provider bytes MUST be saved before parsing. Credentials and signed private locators MUST NOT be written to evidence. A provider's normalized export and its exchange-native replay are separate observations and MUST NOT be conflated."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 529,
+        "patterns": [
+          "DatasetRelease|Dataset Release"
+        ],
+        "text": "### 4.3 Dataset Release"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 531,
+        "patterns": [
+          "DatasetRelease|Dataset Release",
+          "catalog"
+        ],
+        "text": "A `DatasetRelease` is an immutable manifest over exact raw-object hashes plus the Nautilus catalog derived from them."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 549,
+        "patterns": [
+          "catalog"
+        ],
+        "text": "catalog_identity"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 552,
+        "patterns": [
+          "archiv(?:e|al)",
+          "provider"
+        ],
+        "text": "archival_provider_validation_identity or NOT_APPLICABLE"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 560,
+        "patterns": [
+          "DatasetRelease|Dataset Release",
+          "catalog"
+        ],
+        "text": "Changing any raw object, parser rule, timestamp rule, source-reconciliation rule, minute-coverage disposition, instrument metadata, derived-validation identity, Data Tool Lock used for material normalization, or derived catalog creates a new Dataset Release."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 574,
+        "patterns": [
+          "archiv(?:e|al)"
+        ],
+        "text": "For Binance Spot archive data, timestamps before `2025-01-01T00:00:00Z` use milliseconds and Spot timestamps from that boundary onward use microseconds, as defined by Binance Public Data. The parser MUST select the unit from the source role and date, not from digit count."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 576,
+        "patterns": [
+          "DatasetRelease|Dataset Release"
+        ],
+        "text": "The Spot timestamp transition MUST NOT be copied to USDⓈ-M Futures. Each USDⓈ-M source role MUST use the timestamp unit defined by its own verified official source schema. If that unit cannot be established for a required role, the Dataset Release is `BLOCKED` with `DATA_TIMESTAMP_INVALID`."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 590,
+        "patterns": [
+          "catalog"
+        ],
+        "text": "A parser or catalog conversion that makes the full OHLCV bar visible before `available_at` is a fatal data error."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 607,
+        "patterns": [
+          "source conflict"
+        ],
+        "text": "`REAL_OFFICIAL_BAR` means an official Binance kline accepted after its official source identity is verified and no material source conflict remains unresolved."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 609,
+        "patterns": [
+          "interpolat",
+          "repair",
+          "aggTrades|trade-event|trade event"
+        ],
+        "text": "`DERIVED_FROM_OFFICIAL_TRADES` means a bar derived deterministically from complete official Binance trade or aggregate-trade events under Section 4.5.2. It is not interpolation, repair from adjacent prices, a synthetic price, or a third-party substitution."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 611,
+        "patterns": [
+          "aggTrades|trade-event|trade event"
+        ],
+        "text": "`VERIFIED_NO_TRADE_INTERVAL` means an exact UTC minute proven under Section 4.5.3 to contain no official trade event. It proves coverage only: it has no OHLC, no volume, is not a Bar, is not exported to Nautilus, and cannot authorize a Fill."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 615,
+        "patterns": [
+          "complete grid"
+        ],
+        "text": "`REDUNDANT_OFFICIAL_DELIVERY_ROLE_UNAVAILABLE` is an observation-level delivery classification, not an execution-minute disposition and not a Bar. It means one official packaging route is unavailable while the exact interval is complete and semantically identical in two other required official Binance representations under Section 4.5.1. The unavailable response and its raw bytes remain preserved. This classification MUST NOT be used for absent market events, an incomplete grid, or disagreement between the surviving representations."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 617,
+        "patterns": [
+          "canonical (?:execution )?bar",
+          "DatasetRelease|Dataset Release"
+        ],
+        "text": "Only `REAL_OFFICIAL_BAR` and `DERIVED_FROM_OFFICIAL_TRADES` produce canonical execution bars. `SOURCE_CONFLICT`, `SOURCE_INCOMPLETE`, and `UNRESOLVED_GAP` are terminal blocking dispositions for the affected Dataset Release. A successful Dataset Release MUST contain exactly one non-blocking coverage disposition for every expected execution minute and no terminal blocking disposition."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 619,
+        "patterns": [
+          "DatasetRelease|Dataset Release",
+          "markPrice"
+        ],
+        "text": "For a Perpetual Dataset Release, the required mark role MUST satisfy exact coverage for every interval in which Official valuation can occur. Each required minute MUST resolve through the official `markPriceKlines` roles or the separately qualified Binance-origin mark-event path in Section 4.9.1. A delivery-role exception under Section 4.5.1 does not waive market-state completeness. `VERIFIED_NO_TRADE_INTERVAL` is not a mark disposition and cannot excuse missing mark state."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 621,
+        "patterns": [
+          "DatasetRelease|Dataset Release"
+        ],
+        "text": "For Perpetual funding, the release builder MUST derive the expected funding-event schedule only from verified official Binance funding data or metadata for the exact Instrument and historical interval. V1 MUST NOT hard-code an eight-hour cadence unless the official evidence proves that cadence for the tested interval. Every expected funding slot in `[start_inclusive, end_exclusive)` MUST resolve to exactly one funding event. If the expected schedule itself cannot be proven, the Dataset Release is `BLOCKED` with `FUNDING_AMBIGUOUS`; if a proven required event is absent, it is `BLOCKED` with `FUNDING_MISSING`."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 623,
+        "patterns": [
+          "source conflict"
+        ],
+        "text": "A duplicate, unexplained missing required row, conflicting duplicate, malformed row, non-monotonic timestamp, invalid OHLC relation, negative volume, or unresolved source conflict makes the affected interval unusable. A missing execution kline ceases to be unexplained only when the minute has an accepted deterministic official-trade bar or satisfies the complete `VERIFIED_NO_TRADE_INTERVAL` proof."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 627,
+        "patterns": [
+          "missing bar",
+          "interpolat"
+        ],
+        "text": "- interpolate a missing bar;"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 633,
+        "patterns": [
+          "provider"
+        ],
+        "text": "- average provider observations or select a provider because its value is favorable;"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 634,
+        "patterns": [
+          "archiv(?:e|al)",
+          "provider"
+        ],
+        "text": "- grant an archival provider silent precedence over Binance or another archive;"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 641,
+        "patterns": [
+          "aggTrades|trade-event|trade event",
+          "archiv(?:e|al)"
+        ],
+        "text": "REST kline pages, daily kline archives, monthly kline archives, and official trade-event objects are independent official observations. Preserve every observation, raw byte object, source locator, response or archive identity, publisher checksum when available, and parser result. REST, daily, and monthly observations have no automatic priority over one another, and a source row MUST NOT become canonical merely because it completes the grid."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 643,
+        "patterns": [
+          "aggTrades|trade-event|trade event",
+          "archiv(?:e|al)"
+        ],
+        "text": "For a Spot open timestamp, a `REAL_OFFICIAL_BAR` MAY be accepted when REST `/api/v3/klines` and the daily archive match semantically in every material kline field and available complete official trade-event evidence does not contradict them."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 645,
+        "patterns": [
+          "aggTrades|trade-event|trade event"
+        ],
+        "text": "If only the monthly observation differs while REST and daily match and the deterministic bar derived from complete official `aggTrades` also matches them, the matching value is canonical. Preserve the original monthly row and classify that observation as `SOURCE_CONFLICT_SUPERSEDED_OBSERVATION`; this observation-level status does not replace the minute's coverage disposition. Do not call the row corrupted without separate evidence, delete it, hide it, or export it."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 647,
+        "patterns": [
+          "DatasetRelease|Dataset Release",
+          "aggTrades|trade-event|trade event"
+        ],
+        "text": "If REST and daily differ, official `aggTrades` MAY arbitrate only as independent event-level evidence. Resolving the conflict requires a decisive semantic match from at least two independent official observations. Otherwise the minute is `SOURCE_CONFLICT` and blocks the Dataset Release."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 649,
+        "patterns": [
+          "aggTrades|trade-event|trade event"
+        ],
+        "text": "A complete official `aggTrades` event stream MAY independently produce a `DERIVED_FROM_OFFICIAL_TRADES` bar when no competing kline observation exists and all Section 4.5.2 integrity checks pass. If any available official kline contradicts that derived bar, the conflict rule above applies; event derivation MUST NOT be used as silent precedence."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 651,
+        "patterns": [
+          "aggTrades|trade-event|trade event"
+        ],
+        "text": "A monthly-only row with no supporting official trade event cannot become canonical. When REST and daily are absent and complete trade-ID continuity proves no trade under Section 4.5.3, preserve the monthly row as a superseded historical conflict and record `VERIFIED_NO_TRADE_INTERVAL` for minute coverage. Without that complete proof, block with `SOURCE_CONFLICT` or `UNRESOLVED_GAP` as the evidence requires."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 653,
+        "patterns": [
+          "archiv(?:e|al)",
+          "provider"
+        ],
+        "text": "A validated `ARCHIVED_BINANCE_ORIGIN_EVENT` trade or aggregate-trade capture MAY act as independent event-level evidence when its exchange-native payload and capture continuity pass Sections 4.1, 4.2, and 4.5.3. It has no automatic precedence. Preserve every conflicting official kline and archived event observation. A `PROVIDER_NORMALIZED_RECORD` cannot independently arbitrate a conflict or prove no trading."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 655,
+        "patterns": [
+          "archiv(?:e|al)"
+        ],
+        "text": "An official Daily archive delivery that returns HTTP 404 MAY be classified `REDUNDANT_OFFICIAL_DELIVERY_ROLE_UNAVAILABLE` only when, for the exact date and role: the official Monthly archive exists and passes its publisher checksum; the official REST representation exists; each surviving representation contains a complete unique valid UTC grid; and the Monthly and REST grids agree exactly in all material fields and original Decimal text. Preserve the 404 response, URL, headers, raw bytes, and source role. If any condition fails, the required role remains unresolved and blocks with `DELIVERY_ROLE_REDUNDANCY_UNRESOLVED`. This exception concerns redundant object delivery only and MUST NOT hide a missing market interval."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 659,
+        "patterns": [
+          "aggTrades|trade-event|trade event"
+        ],
+        "text": "A `DERIVED_FROM_OFFICIAL_TRADES` bar MAY be created only from official Binance trade or `aggTrades` events inside that UTC minute. Use exact Decimal arithmetic and order aggregate events by `(timestamp, aggregate_trade_id)`:"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 677,
+        "patterns": [
+          "interpolat",
+          "archiv(?:e|al)"
+        ],
+        "text": "Compare every derived material field against every available official kline observation and preserve the field-by-field comparison and raw-object bindings. A duplicate aggregate ID, overlap, ID gap, incomplete page or archive, or unresolved contradiction produces `SOURCE_INCOMPLETE` or `SOURCE_CONFLICT` and blocks release. This deterministic normalization of official event truth is not interpolation and is not a second financial engine."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 684,
+        "patterns": [
+          "archiv(?:e|al)"
+        ],
+        "text": "2. The official daily kline archive contains no row for the minute."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 685,
+        "patterns": [
+          "aggTrades|trade-event|trade event",
+          "archiv(?:e|al)"
+        ],
+        "text": "3. Complete event observations contain no event inside the minute. These MUST include every available required official Binance `aggTrades` role and MAY include a validated independent `ARCHIVED_BINANCE_ORIGIN_EVENT` capture when an official historical delivery is unavailable."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 687,
+        "patterns": [
+          "archiv(?:e|al)"
+        ],
+        "text": "5. Their underlying first/last trade-ID ranges prove no missing underlying trade ID, and an external archive also proves uninterrupted capture ordering across the boundary."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 688,
+        "patterns": [
+          "archiv(?:e|al)"
+        ],
+        "text": "6. Every required official archive or API object that exists for the target window is complete and every published checksum used by the source contract matches. An unavailable historical event-delivery route is not silently waived: preserve the exact missing role and reason, and require the qualified archive to supply the event-level continuity evidence used by this proof."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 689,
+        "patterns": [
+          "archiv(?:e|al)"
+        ],
+        "text": "7. No allowed official Binance trade observation or qualified independent Binance-origin archive contradicts the no-trade finding."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 694,
+        "patterns": [
+          "interpolat",
+          "DatasetRelease|Dataset Release"
+        ],
+        "text": "If aggregate-ID continuity, underlying trade-ID continuity, or another required proof is absent, classify the minute as `SOURCE_INCOMPLETE` or `UNRESOLVED_GAP` and block the Dataset Release. A verified interval MUST NOT carry OHLC, volume, previous close, nearest value, or any proxy price and MUST NOT be transformed into a bar by forward fill, backward fill, interpolation, another Binance role, another venue, or a third party."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 711,
+        "patterns": [
+          "canonical (?:execution )?bar"
+        ],
+        "text": "- a `VERIFIED_NO_TRADE_INTERVAL` contributes no source Bar, price, or volume; Nautilus aggregation receives only accepted completed canonical bars;"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 714,
+        "patterns": [
+          "canonical (?:execution )?bar"
+        ],
+        "text": "A higher-timeframe interval containing verified no-trade minutes MAY be valid only after the complete lower-timeframe coverage grid is proven and the higher-timeframe bar is formed from accepted completed canonical bars alone. If the interval contains no accepted canonical bar, no synthetic higher-timeframe bar is created."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 720,
+        "patterns": [
+          "DatasetRelease|Dataset Release"
+        ],
+        "text": "Every Dataset Release MUST contain the instrument definition used by Nautilus."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 732,
+        "patterns": [
+          "DatasetRelease|Dataset Release"
+        ],
+        "text": "A Spot Dataset Release requires:"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 734,
+        "patterns": [
+          "aggTrades|trade-event|trade event",
+          "archiv(?:e|al)"
+        ],
+        "text": "- the independent official REST, daily, monthly, and available official trade-event observations required to reconcile the complete window under Sections 4.5.1 through 4.5.3, plus a qualified `ARCHIVED_BINANCE_ORIGIN_EVENT` only where an official historical event-delivery route is unavailable; absence of both complete official event evidence and a qualified archived event remains blocking;"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 746,
+        "patterns": [
+          "DatasetRelease|Dataset Release"
+        ],
+        "text": "A USDⓈ-M Perpetual Dataset Release requires:"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 748,
+        "patterns": [
+          "archiv(?:e|al)"
+        ],
+        "text": "- official `/fapi/v1/klines` observations and the exact USDⓈ-M daily and monthly `klines/{SYMBOL}/1m/` archive roles listed in Section 4.1;"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 750,
+        "patterns": [
+          "archiv(?:e|al)"
+        ],
+        "text": "- historical funding evidence from `/fapi/v1/fundingRate`, `/fapi/v1/fundingInfo` when applicable, and the official archive role listed in Section 4.1;"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 751,
+        "patterns": [
+          "markPrice",
+          "archiv(?:e|al)"
+        ],
+        "text": "- `1m` mark-price observations from `/fapi/v1/markPriceKlines` and the exact USDⓈ-M daily and monthly `markPriceKlines/{SYMBOL}/1m/` archive roles listed in Section 4.1, except for an individually proven `REDUNDANT_OFFICIAL_DELIVERY_ROLE_UNAVAILABLE` under Section 4.5.1;"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 760,
+        "patterns": [
+          "archiv(?:e|al)"
+        ],
+        "text": "#### 4.9.1 Archived Binance-origin mark events"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 762,
+        "patterns": [
+          "DatasetRelease|Dataset Release",
+          "markPrice",
+          "archiv(?:e|al)",
+          "provider"
+        ],
+        "text": "A Dataset Release MAY use an external archive of the Binance USDⓈ-M `<symbol>@markPrice@1s` WebSocket stream only when every accepted record is an `ARCHIVED_BINANCE_ORIGIN_EVENT`, not merely a `PROVIDER_NORMALIZED_RECORD`. Preserve the original Binance payload bytes and numeric text, Binance event timestamp, provider receive or capture timestamp, and original capture order. Equal exchange timestamps are ordered by preserved capture order. The required target interval MUST contain continuous real captured events in every UTC minute; a provider coverage statement is not target evidence."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 764,
+        "patterns": [
+          "DatasetRelease|Dataset Release",
+          "markPrice",
+          "provider"
+        ],
+        "text": "Before event-derived minute mark bars can be accepted, the same provider, channel, symbol, parser, ordering rule, and Decimal normalization MUST reproduce official Binance `markPriceKlines` with 100% semantic OHLC agreement over large, multiple known-good control samples inside the Dataset Release window. Use half-open UTC minute boundaries and exact Decimal arithmetic:"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 773,
+        "patterns": [
+          "interpolat",
+          "archiv(?:e|al)",
+          "provider"
+        ],
+        "text": "Only normalization explicitly justified by the official Instrument price precision is allowed. Interpolation, forward fill, backward fill, nearest value, provider averaging, execution/index/premium/last-price substitution, and synthetic OHLC are forbidden. Prefer agreement between two independent archives for the target interval. One archive MAY suffice only when it supplies exchange-native Binance payloads, proves continuous capture for every target minute, and passes the exact control-validation gate. Any target disagreement or provenance gap remains blocking; no source may be selected silently."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 775,
+        "patterns": [
+          "DatasetRelease|Dataset Release",
+          "markPrice"
+        ],
+        "text": "An event-derived result that fails exact control reproduction MUST NOT be called an official mark kline or exported as one. In that case the same real exchange-native events MAY instead be evaluated as event-level Nautilus `MarkPriceUpdate` input only if a pinned-runtime qualification proves exact timestamp, causal availability, valuation, ordering, and replay semantics without creating bars or prices. If that qualification fails or the target events are incomplete, the Dataset Release blocks with `MARK_EVENT_CONTROL_VALIDATION_FAILED` or `MARK_ROLE_INVALID` as applicable."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 787,
+        "patterns": [
+          "catalog"
+        ],
+        "text": "### 4.11 Catalog is derived data"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 789,
+        "patterns": [
+          "catalog"
+        ],
+        "text": "The Nautilus catalog is derived from the immutable raw source objects."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 791,
+        "patterns": [
+          "DatasetRelease|Dataset Release"
+        ],
+        "text": "The raw bytes and Dataset Release manifest are the provenance authority."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 793,
+        "patterns": [
+          "catalog"
+        ],
+        "text": "If the catalog is deleted or corrupted, rebuild it from the same raw objects and the same normalizer version."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 795,
+        "patterns": [
+          "DatasetRelease|Dataset Release",
+          "catalog"
+        ],
+        "text": "A rebuilt catalog MUST produce the same semantic data inventory. If it does not, the Dataset Release is stale and cannot support an Official Run."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 797,
+        "patterns": [
+          "catalog"
+        ],
+        "text": "Only accepted `REAL_OFFICIAL_BAR` and `DERIVED_FROM_OFFICIAL_TRADES` rows are exported as Bars to the Nautilus-compatible ParquetDataCatalog. `VERIFIED_NO_TRADE_INTERVAL`, `SOURCE_CONFLICT`, `SOURCE_INCOMPLETE`, `UNRESOLVED_GAP`, superseded observations, and synthetic OHLC MUST NOT be exported as Bars."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 799,
+        "patterns": [
+          "markPrice",
+          "archiv(?:e|al)",
+          "provider"
+        ],
+        "text": "Qualified `ARCHIVED_BINANCE_ORIGIN_EVENT` mark records MAY be exported only as the accepted mark representation defined by Section 4.9.1: either exact control-validated minute mark bars or event-level Nautilus `MarkPriceUpdate` records after the pinned-runtime qualification. They never become execution Bars, and `PROVIDER_NORMALIZED_RECORD` rows are not exported as financial truth."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 801,
+        "patterns": [
+          "catalog"
+        ],
+        "text": "The data phase MUST qualify the sparse canonical catalog through the pinned Nautilus runtime. The qualification MUST prove that accepted real or officially-derived bars remain usable across a verified no-trade minute, no Fill occurs during that minute, a pending order receives no synthetic price or market state, and the fixture's later Fill uses the next accepted real market state according to the locked causal-latency contract."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 805,
+        "patterns": [
+          "DatasetRelease|Dataset Release"
+        ],
+        "text": "DuckDB MAY be used as a persistent local derived store for source inventory, raw-object bindings, parsing, validation, conflict analysis, minute coverage, canonical Dataset Release materialization, deterministic query and audit, and deterministic export. The immutable raw bytes and their source identities remain the provenance authority; the Dataset Release manifest remains the release authority."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 866,
+        "patterns": [
+          "DatasetRelease|Dataset Release"
+        ],
+        "text": "- change the Dataset Release;"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 894,
+        "patterns": [
+          "DatasetRelease|Dataset Release"
+        ],
+        "text": "Given the same Runtime Lock, Dataset Release, StrategySpec, and LabRunConfig, the strategy MUST generate the same order-intent sequence."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 981,
+        "patterns": [
+          "DatasetRelease|Dataset Release"
+        ],
+        "text": "A V1 fee claim is `ESTIMATED_FEE` unless the Dataset Release proves the exact historical account fee tier for the tested period."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 1017,
+        "patterns": [
+          "DatasetRelease|Dataset Release",
+          "markPrice"
+        ],
+        "text": "For Perpetual runs, `PortfolioConfig.use_mark_prices` MUST be `true`. The configured valuation path MUST use the required `markPriceKlines` role. The Dataset Release completeness check MUST ensure the required mark is present before the Run can proceed, and the checker MUST fail with `MARK_ROLE_INVALID` if Official Perpetual valuation uses last price, contract-price bars, index price, or another fallback instead of the required mark."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 1019,
+        "patterns": [
+          "DatasetRelease|Dataset Release",
+          "markPrice"
+        ],
+        "text": "The qualified public v2 binding is `nautilus_trader.portfolio.PortfolioConfig(use_mark_prices=true)` with `nautilus_trader.model.MarkPriceUpdate`. Because the pinned runtime can fall back when a mark is missing, Dataset Release completeness preflight and the read-only invariant checker remain mandatory and MUST reject that fallback."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 1124,
+        "patterns": [
+          "DatasetRelease|Dataset Release"
+        ],
+        "text": "3.  Dataset Release resolves and passes completeness checks."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 1129,
+        "patterns": [
+          "DatasetRelease|Dataset Release"
+        ],
+        "text": "8.  The full `[warmup_start, scoring_end_exclusive)` interval required by the Run is inside the Dataset Release and satisfies the applicable completeness contract."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 1203,
+        "patterns": [
+          "repair",
+          "provider"
+        ],
+        "text": "| `G12` | A malformed, duplicate-conflicting, incomplete, or unexplained missing raw row is not silently repaired or granted Binance/provider source precedence.     |"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 1214,
+        "patterns": [
+          "archiv(?:e|al)"
+        ],
+        "text": "| `G23` | Archived Binance-origin mark events reproduce official mark klines exactly on multiple control windows; a mismatch, normalized-only source, capture gap, or source disagreement blocks. |"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 1226,
+        "patterns": [
+          "DatasetRelease|Dataset Release"
+        ],
+        "text": "- Dataset Release hashes resolve;"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 1260,
+        "patterns": [
+          "DatasetRelease|Dataset Release"
+        ],
+        "text": "For the same Runtime Lock, frozen Source Revision, Dataset Release, StrategySpec, and LabRunConfig, two clean runs MUST match on the semantic sequence of:"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 1423,
+        "patterns": [
+          "DatasetRelease|Dataset Release"
+        ],
+        "text": "Before an interval can be designated `FINAL_HOLDOUT`, the checker MUST scan `trials.jsonl` and resolve each prior result-bearing trial through its `run_id`. If any prior trial exposed results for the same Market Profile and Instrument over an overlapping UTC interval, that overlap is already consumed and cannot become a fresh Final Holdout, regardless of the earlier `partition_role`, `protocol_id`, `research_family_id`, `hypothesis_id`, Dataset Release version, seed, branch, or strategy name. An attempted fresh Holdout designation over such overlap is `BLOCKED` with `HOLDOUT_ALREADY_CONSUMED`."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 1425,
+        "patterns": [
+          "DatasetRelease|Dataset Release"
+        ],
+        "text": "`holdout_lock.json` MUST record the consumed interval, Research Family, Hypothesis lineage, Dataset Release, first exposure time, and evidence reference."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 1429,
+        "patterns": [
+          "DatasetRelease|Dataset Release"
+        ],
+        "text": "Rename, retry, new seed, new Git branch, new Research Family, new Hypothesis ID, new Dataset Release version over the same exposed market interval, or new protocol version MUST NOT restore an already consumed Holdout."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 1590,
+        "patterns": [
+          "DatasetRelease|Dataset Release"
+        ],
+        "text": "- Dataset Release completeness for the Run;"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 1640,
+        "patterns": [
+          "DatasetRelease|Dataset Release"
+        ],
+        "text": "and required Dataset Release evidence is complete"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 1817,
+        "patterns": [
+          "catalog"
+        ],
+        "text": "    catalog/"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 1849,
+        "patterns": [
+          "DatasetRelease|Dataset Release"
+        ],
+        "text": "- Run without Dataset Release;"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 1940,
+        "patterns": [
+          "aggTrades|trade-event|trade event"
+        ],
+        "text": "- deterministic Decimal-exact Spot kline derivation from complete official trade events when required;"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 1943,
+        "patterns": [
+          "DatasetRelease|Dataset Release"
+        ],
+        "text": "- Dataset Release manifests;"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 1945,
+        "patterns": [
+          "catalog"
+        ],
+        "text": "- Nautilus catalog conversion;"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 1947,
+        "patterns": [
+          "archiv(?:e|al)",
+          "provider"
+        ],
+        "text": "- external archival-provider provenance qualification for Binance-origin events when used;"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 1948,
+        "patterns": [
+          "markPrice",
+          "archiv(?:e|al)"
+        ],
+        "text": "- control validation and optional event-level `MarkPriceUpdate` qualification for archived Binance-origin mark events."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 1953,
+        "patterns": [
+          "missing minute"
+        ],
+        "text": "- an unexplained missing minute blocks;"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 1961,
+        "patterns": [
+          "repair"
+        ],
+        "text": "- no silent repair occurs;"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 1962,
+        "patterns": [
+          "catalog"
+        ],
+        "text": "- catalog rebuild from the same raw objects is semantically stable;"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 1967,
+        "patterns": [
+          "archiv(?:e|al)"
+        ],
+        "text": "- archived mark events, when used, preserve exchange-native payloads and capture ordering and reproduce official mark OHLC exactly across multiple controls;"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 1968,
+        "patterns": [
+          "provider"
+        ],
+        "text": "- provider-normalized records alone cannot establish target mark truth or Spot trade-ID continuity;"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 1973,
+        "patterns": [
+          "DatasetRelease|Dataset Release"
+        ],
+        "text": "M2 exports only `DatasetRelease` objects to M3 and M4."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 2029,
+        "patterns": [
+          "DatasetRelease|Dataset Release"
+        ],
+        "text": "- an interval already exposed by any prior result-bearing Trial for the same Market Profile and Instrument cannot later become a fresh Final Holdout under another label, protocol, family, hypothesis, Dataset Release version, seed, branch, or strategy name;"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 2058,
+        "patterns": [
+          "DatasetRelease|Dataset Release"
+        ],
+        "text": "| M2       | `DatasetRelease`                                                     | M3-M4           |"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 2072,
+        "patterns": [
+          "DatasetRelease|Dataset Release"
+        ],
+        "text": "- M2 emits a tiny Dataset Release that M3 can run without conversion changes."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 2111,
+        "patterns": [
+          "repair"
+        ],
+        "text": "### 13.5 Repair scope"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 2113,
+        "patterns": [
+          "repair"
+        ],
+        "text": "Use this default repair scope:"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 2121,
+        "patterns": [
+          "DatasetRelease|Dataset Release"
+        ],
+        "text": "| Research protocol only                            | affected research lineage; engine and Dataset Releases remain reusable |"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 2213,
+        "patterns": [
+          "archiv(?:e|al)",
+          "provider"
+        ],
+        "text": "ARCHIVAL_PROVIDER_ACCESS_REQUIRED"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 2214,
+        "patterns": [
+          "archiv(?:e|al)",
+          "provider"
+        ],
+        "text": "ARCHIVAL_PROVIDER_PROVENANCE_INVALID"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 2273,
+        "patterns": [
+          "DatasetRelease|Dataset Release"
+        ],
+        "text": "- the Dataset Release is immutable and complete for the Run;"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 2387,
+        "patterns": [
+          "repair"
+        ],
+        "text": "The project MUST preserve the rejected intent as evidence. It MUST NOT submit the order and then repair Nautilus position state afterward."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 2499,
+        "patterns": [
+          "missing minute"
+        ],
+        "text": "The engine MUST NOT jump to a later minute and pretend the unexplained missing minute never existed."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 2503,
+        "patterns": [
+          "aggTrades|trade-event|trade event",
+          "archiv(?:e|al)"
+        ],
+        "text": "Remove a one-minute Spot kline from REST and the daily archive, provide no official `aggTrades` event inside the minute, and provide adjacent official aggregate events whose aggregate IDs and underlying trade-ID ranges are exactly contiguous across the interval. Provide complete source pages or archives, matching required publisher checksums, exact UTC boundaries, and no contradictory official trade observation."
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 2509,
+        "patterns": [
+          "canonical (?:execution )?bar"
+        ],
+        "text": "canonical execution Bar for the minute = none"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 2512,
+        "patterns": [
+          "DatasetRelease|Dataset Release"
+        ],
+        "text": "Dataset Release completeness = PASS for this minute"
+      },
+      {
+        "classification": "UNCHANGED_COMPATIBLE_OR_UPDATED",
+        "line": 2567,
+        "patterns": [
+          "archiv(?:e|al)"
+        ],
+        "text": "- Binance Public Data archives for Spot and USDⓈ-M historical market data."
+      }
+    ],
+    "patterns": [
+      "missing minute",
+      "missing bar",
+      "complete grid",
+      "every minute",
+      "interpolat",
+      "repair",
+      "source conflict",
+      "canonical (?:execution )?bar",
+      "DatasetRelease|Dataset Release",
+      "catalog",
+      "aggTrades|trade-event|trade event",
+      "markPrice",
+      "archiv(?:e|al)",
+      "provider"
+    ]
+  },
+  "normative_contradiction_result": "PASS",
+  "protected_contracts": {
+    "fill_order_position_account_fees_funding_pnl": "UNCHANGED_BYTE_FOR_BYTE_WITHIN_SECTIONS_2_5_6_7",
+    "latency_and_causality": "UNCHANGED_BYTE_FOR_BYTE_WITHIN_SECTIONS_3_AND_6",
+    "official_run_network_boundary": "UNCHANGED_BYTE_FOR_BYTE_WITHIN_SECTION_3",
+    "owner_workflow_and_historical_evidence": "NO_ROOT_OR_HISTORICAL_EVIDENCE_WRITE",
+    "research_holdout_claims": "UNCHANGED_BYTE_FOR_BYTE_WITHIN_SECTIONS_9_AND_10",
+    "runtime_identity": "UNCHANGED_BYTE_FOR_BYTE_WITHIN_SECTION_3"
+  },
+  "protected_top_level_sections": {
+    "1": {
+      "base_sha256": "a4c192c921aaf9ee3f9aa55034c0a9acb7e11b89653016d2e1f2e727e30d9bcd",
+      "byte_identical": true,
+      "candidate_sha256": "a4c192c921aaf9ee3f9aa55034c0a9acb7e11b89653016d2e1f2e727e30d9bcd"
+    },
+    "10": {
+      "base_sha256": "2fce8484d37602cd340a97afcc5c2fd93e8ecca9125e1e926c9ebe9e95ec4a0b",
+      "byte_identical": true,
+      "candidate_sha256": "2fce8484d37602cd340a97afcc5c2fd93e8ecca9125e1e926c9ebe9e95ec4a0b"
+    },
+    "11": {
+      "base_sha256": "e39cb8ae68b11cfa337f600fe2645dcd00e24c66f50fd4f808be6d41c234419e",
+      "byte_identical": true,
+      "candidate_sha256": "e39cb8ae68b11cfa337f600fe2645dcd00e24c66f50fd4f808be6d41c234419e"
+    },
+    "13": {
+      "base_sha256": "6c54c9aecb2bf380bb136ea0a2a735c9068f1ab0248c3ff02593add35c64477b",
+      "byte_identical": true,
+      "candidate_sha256": "6c54c9aecb2bf380bb136ea0a2a735c9068f1ab0248c3ff02593add35c64477b"
+    },
+    "14": {
+      "base_sha256": "a073fc5c11b273c88ec157c65a55f71edd530b684158e2fcf2846b64a972846a",
+      "byte_identical": true,
+      "candidate_sha256": "a073fc5c11b273c88ec157c65a55f71edd530b684158e2fcf2846b64a972846a"
+    },
+    "16": {
+      "base_sha256": "8e0913c63347ce72e576258c8308d312d20a40ebb12bcea00be28a7080b8502b",
+      "byte_identical": true,
+      "candidate_sha256": "8e0913c63347ce72e576258c8308d312d20a40ebb12bcea00be28a7080b8502b"
+    },
+    "2": {
+      "base_sha256": "eb581f8df83dced0a0a6a6e91ed029fa6fb2e61cf83fb0675a75081fc7a9dc57",
+      "byte_identical": true,
+      "candidate_sha256": "eb581f8df83dced0a0a6a6e91ed029fa6fb2e61cf83fb0675a75081fc7a9dc57"
+    },
+    "3": {
+      "base_sha256": "da9b0970a91b0b9e87e17bfc126c401789eb2982d934fdc9f510b32f8cae831b",
+      "byte_identical": true,
+      "candidate_sha256": "da9b0970a91b0b9e87e17bfc126c401789eb2982d934fdc9f510b32f8cae831b"
+    },
+    "5": {
+      "base_sha256": "c78937abdeaeb18d3f6046463244f3e92095c2f345846327b73612115e8bed72",
+      "byte_identical": true,
+      "candidate_sha256": "c78937abdeaeb18d3f6046463244f3e92095c2f345846327b73612115e8bed72"
+    },
+    "6": {
+      "base_sha256": "2a5f0c3e2436b7d340b62e9d095a1f7a342cb064034e7ad2e12220426c577616",
+      "byte_identical": true,
+      "candidate_sha256": "2a5f0c3e2436b7d340b62e9d095a1f7a342cb064034e7ad2e12220426c577616"
+    },
+    "7": {
+      "base_sha256": "bdcf94d465ce4276bea3ba8685ab0148602bc73aa430d69df0b1d93ae8d20046",
+      "byte_identical": true,
+      "candidate_sha256": "bdcf94d465ce4276bea3ba8685ab0148602bc73aa430d69df0b1d93ae8d20046"
+    },
+    "9": {
+      "base_sha256": "d2ea25fb8c2b5f2284364de3c0774cb92bd55f622ce33bbcaf799ca241847dec",
+      "byte_identical": true,
+      "candidate_sha256": "d2ea25fb8c2b5f2284364de3c0774cb92bd55f622ce33bbcaf799ca241847dec"
+    }
+  },
+  "required_fragment_checks": {
+    "coverage_classes_retained": true,
+    "daily_redundancy_two_roles": true,
+    "event_level_alternative": true,
+    "exact_control_gate": true,
+    "exchange_and_receive_timestamps": true,
+    "fail_closed": true,
+    "no_provider_average": true,
+    "no_silent_provider_precedence": true,
+    "raw_provider_bytes": true,
+    "redundant_delivery_class": true,
+    "source_classes": true,
+    "target_bytes_not_marketing": true
+  },
+  "semantic_scope_result": "PASS",
+  "stale_forbidden_fragment_checks": {
+    "direct_publisher_only_absolute": true,
+    "mark_only_single_kline_path": true,
+    "unqualified_external_authority": true
+  },
+  "status": "PASS",
+  "structural_validation": {
+    "broken_section_references": [],
+    "duplicate_failure_codes": [],
+    "duplicate_golden_gate_ids": [],
+    "duplicate_numbered_heading_ids": [],
+    "failure_code_count": 49,
+    "golden_gate_count": 24,
+    "numbered_heading_count": 129,
+    "section_references_checked": [
+      "1.5",
+      "10.1",
+      "10.5",
+      "2",
+      "3.2",
+      "3.4",
+      "4",
+      "4.1",
+      "4.4",
+      "4.5",
+      "4.5.1",
+      "4.5.2",
+      "4.5.3",
+      "4.9.1",
+      "5.4",
+      "6.8",
+      "9.11",
+      "9.12"
+    ]
+  }
+}

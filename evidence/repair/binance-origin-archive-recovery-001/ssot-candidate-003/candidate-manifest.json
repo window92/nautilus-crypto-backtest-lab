@@ -1,0 +1,68 @@
+{
+  "adoption_status": "PENDING_OWNER_BYTE_ADOPTION",
+  "base_bytes_match_reverse_result": true,
+  "base_ssot": {
+    "line_count": 2514,
+    "path": "SSOT.md",
+    "sha256": "f51971ed7a09b172c82ff5965f2899d2a302dd71a2af60eb7c920133567b4354",
+    "size_bytes": 122428
+  },
+  "candidate_bytes_match_forward_result": true,
+  "candidate_name": "DATA_PROVENANCE_SSOT_CANDIDATE_003",
+  "candidate_sha256_file": {
+    "line_count": null,
+    "path": "evidence/repair/binance-origin-archive-recovery-001/ssot-candidate-003/SSOT.candidate-003.sha256",
+    "sha256": "614672eae325cf00397aaa684c69836aa5fe724b3c70c3ddeb311c52bdb1480f",
+    "size_bytes": 88
+  },
+  "clean_forward_application_result": "PASS",
+  "complete_candidate": {
+    "line_count": 2582,
+    "path": "evidence/repair/binance-origin-archive-recovery-001/ssot-candidate-003/SSOT.candidate-003.md",
+    "sha256": "9e6e9328b40104a65ed7d4f785731032d7b1b4cd37df5d845cad2197d6db067a",
+    "size_bytes": 131868
+  },
+  "created_at_utc": "2026-08-23T11:07:49.151041Z",
+  "exact_changed_sections": [
+    "4.1",
+    "4.2",
+    "4.3",
+    "4.5",
+    "4.5.1",
+    "4.5.3",
+    "4.8",
+    "4.9",
+    "4.9.1",
+    "4.11",
+    "8.3 (G11, G12, G23, G24)",
+    "M2 — Frozen Binance data",
+    "15 — Required failure codes"
+  ],
+  "exact_reverse_round_trip_result": "PASS",
+  "independent_round_trip_process_count": 2,
+  "no_fuzz_or_offset": true,
+  "root_ssot_modified": false,
+  "root_ssot_sha256_after_candidate_creation": "f51971ed7a09b172c82ff5965f2899d2a302dd71a2af60eb7c920133567b4354",
+  "round_trip_evidence": {
+    "line_count": 100,
+    "path": "evidence/repair/binance-origin-archive-recovery-001/ssot-candidate-003/round-trip-verification.json",
+    "sha256": "8607e1ea708a5a8fc0a639c39a58c5c3d1f8bb55263fc4c265263132ac83da00",
+    "size_bytes": 3504
+  },
+  "schema": "data-provenance-ssot-candidate-003-manifest-v1",
+  "semantic_audit": {
+    "line_count": 1257,
+    "path": "evidence/repair/binance-origin-archive-recovery-001/ssot-candidate-003/semantic-change-summary.json",
+    "sha256": "0a598b2d4971c600e1be62cbef38a2e04c70dc1b38ff441c9c87bc53f966526d",
+    "size_bytes": 57016
+  },
+  "semantic_audit_status": "PASS",
+  "status": "PASS",
+  "terminal_verdict": "SSOT_CANDIDATE_READY_PROVIDER_ACCESS_REQUIRED",
+  "unified_diff": {
+    "line_count": 219,
+    "path": "evidence/repair/binance-origin-archive-recovery-001/ssot-candidate-003/SSOT.candidate-003.diff",
+    "sha256": "b6940d7f1a7adf592a46984710c23579ecab6b2c8b67002ed38f2dd3e4a665c1",
+    "size_bytes": 22007
+  }
+}

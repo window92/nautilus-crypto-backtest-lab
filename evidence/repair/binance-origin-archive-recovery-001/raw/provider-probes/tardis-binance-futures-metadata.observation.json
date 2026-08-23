@@ -1,0 +1,13 @@
+{
+  "capture_timestamp_utc": "2026-08-23T10:29:08.991228Z",
+  "request_method": "GET",
+  "request_url": "https://api.tardis.dev/v1/exchanges/binance-futures",
+  "final_url": "https://api.tardis.dev/v1/exchanges/binance-futures",
+  "status_code": 200,
+  "body_path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-binance-futures-metadata.body",
+  "body_size_bytes": 365306,
+  "body_sha256": "11cbcc806e7637c43685e6a735564a0290691bfeb4b7e4993ead3b21a06b91c7",
+  "headers_path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-binance-futures-metadata.headers.json",
+  "credentials_used": false,
+  "parsed_before_body_saved": false
+}

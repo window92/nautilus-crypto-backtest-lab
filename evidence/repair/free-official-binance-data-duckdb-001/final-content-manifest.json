@@ -1,0 +1,310 @@
+{
+  "adopted_ssot_sha256": "b4deb7048242239234de7eaa353b623b3e45247eb42f1021dbc26ffd910edb99",
+  "analysis_identity": "bf7c4d476702a6438e2940d85548943ca1b2b926f74ba64380e20bd0490c654d",
+  "canonical_file_inventory_sha256": "e0d8584f1e1eb8829dac9129b8cb03bae479d49e42e2860f1f33261e5425f9fc",
+  "catalog_identities": [
+    "0b5a7e8abaf1af06dc375ef638037df7ee007d2382d9df7c8fe2e1a29cf64f4c",
+    "d91ee22e04e823a5fa45dc7cfe7f5d6246e65c5a53a2722665643f2dca269ea0"
+  ],
+  "created_at_utc": "2026-08-23T16:40:24.722767Z",
+  "dataset_release_ids": [
+    "95e04adb076be05eba0a970aa0978f1a4d1f41ad3caf04e9cd5859dd408ac099",
+    "9c8a5f679f38852119d1d2054b0711965f0a6d89d5dd0e0ebedaa8d8df66b503"
+  ],
+  "epoch": "FREE_OFFICIAL_BINANCE_DATA_AND_DUCKDB_REPAIR_001",
+  "file_count_excluding_inventory": 45,
+  "files": [
+    {
+      "line_count": 50,
+      "path": "baseline-attestation.json",
+      "sha256": "db048c7a27b326230ad8fb8692b2e8316fdfe106e7f26b7119ca8df804484944",
+      "size_bytes": 2111
+    },
+    {
+      "line_count": 41,
+      "path": "candidate-window-scan.json",
+      "sha256": "5a675c0923e9408fe98908883441f3940e0db2a76df4aeef0eb4741679fab931",
+      "size_bytes": 1726
+    },
+    {
+      "line_count": 70,
+      "path": "dataset-release-identities.json",
+      "sha256": "4b761c08fe6fd918f92f49b196643b655e846b04ac8597aaf35b368ebb6f0e72",
+      "size_bytes": 4324
+    },
+    {
+      "line_count": 50,
+      "path": "duckdb-build-comparison.json",
+      "sha256": "e0dfd557cb4861f154bda39ca80c0f04db17a5a366248300135986d13e1411ee",
+      "size_bytes": 1904
+    },
+    {
+      "line_count": 3383,
+      "path": "duckdb-schema.json",
+      "sha256": "a127911c3cc4dc6ef34c496a989c3d9c5b339d4afc8c2ab79ecbfe5ef7ae4553",
+      "size_bytes": 90441
+    },
+    {
+      "line_count": 40,
+      "path": "duckdb-tool-identity.json",
+      "sha256": "607e5ce6747e6ea29a18b3a4157cb7a5fecb1b7632d27206816e5a1d7da7f41e",
+      "size_bytes": 1984
+    },
+    {
+      "line_count": 15,
+      "path": "duckdb-validation-report.md",
+      "sha256": "08308b96d549b088320c807ba5c2b8987dd8e10497361a3cd271537dd3364d63",
+      "size_bytes": 1797
+    },
+    {
+      "line_count": 23,
+      "path": "failed-attempts.jsonl",
+      "sha256": "06f674a432b1dcd619cebd7fa20eeccb648e9906478cca98977952d73a3cf069",
+      "size_bytes": 10092
+    },
+    {
+      "line_count": 68,
+      "path": "nautilus-export-validation.json",
+      "sha256": "4e213b127f02d536d5b049dc32b047564e84d666638011068abc2f233a118d15",
+      "size_bytes": 2802
+    },
+    {
+      "line_count": 159,
+      "path": "negative-control-results.json",
+      "sha256": "2c879c3fa3a67a17220443131643fbd9e347ad906b07044612c86414b8a270c0",
+      "size_bytes": 6359
+    },
+    {
+      "line_count": 113,
+      "path": "official-source-contracts.json",
+      "sha256": "b3e23f1656d16704a48860423b011af9adc8d51d9329d89e661706aefc5d06b2",
+      "size_bytes": 5677
+    },
+    {
+      "line_count": 19,
+      "path": "owner-adoption.json",
+      "sha256": "5026e0a67ce81e3d086ce0f28a66c884da4e819d76d35ff23f9c4e0af957a03c",
+      "size_bytes": 1462
+    },
+    {
+      "line_count": 18,
+      "path": "owner-decisions.json",
+      "sha256": "4eb7ae0ee151c7b196884156f413b963c8f30d9bc3af3d516910e7c063bd5143",
+      "size_bytes": 770
+    },
+    {
+      "line_count": 54,
+      "path": "owner-report/PHASE-A.md",
+      "sha256": "017a715be497a97cec7f5083a3591250286a87d84c98f38fff3782461be17ac4",
+      "size_bytes": 4449
+    },
+    {
+      "line_count": 33,
+      "path": "owner-report/README.md",
+      "sha256": "b81286034c63cf7c6bfaf4bbcac75a2331f39a47439706b630a36f1e54ccd2e2",
+      "size_bytes": 3407
+    },
+    {
+      "line_count": 16,
+      "path": "perpetual-data-report.md",
+      "sha256": "d05b61503a09771b836fed4f4b138cc8c403020b8f732c7cbd947a409a1b58f7",
+      "size_bytes": 1515
+    },
+    {
+      "line_count": 5,
+      "path": "perpetual-data-report.phase-a.md",
+      "sha256": "260b8acdbd29c0c2372481b8c76eff50cee859be5b47a1a035928415c87b0f3e",
+      "size_bytes": 330
+    },
+    {
+      "line_count": 1184,
+      "path": "perpetual-mark-gap-disposition.json",
+      "sha256": "2407d36c7a41383a5ab57fe31cfc668ef1529ad76cf19e71d716139923f76f96",
+      "size_bytes": 67790
+    },
+    {
+      "line_count": 237,
+      "path": "phase-a-content-manifest.json",
+      "sha256": "acb587fba16f0c56a40539f988d4fec5eb4918e62e098ab6cd442d0525a7cc05",
+      "size_bytes": 8918
+    },
+    {
+      "line_count": 28,
+      "path": "post-adoption-integrity.json",
+      "sha256": "1aa79639805ac87629b50d271bc435ce01c3e881ef53b50971c9e1ed6314bb26",
+      "size_bytes": 1451
+    },
+    {
+      "line_count": 31430,
+      "path": "raw-object-inventory.json",
+      "sha256": "715311e0a44d4abf0a84431146a2049bbf4032119d10220290e63e5ed24ea819",
+      "size_bytes": 1219818
+    },
+    {
+      "line_count": 17,
+      "path": "rejected-candidate-003.json",
+      "sha256": "11cd715c8a9f3171bfa04b0c76cede75406899e9258fc4bf23d26da2e4902a59",
+      "size_bytes": 910
+    },
+    {
+      "line_count": 23,
+      "path": "selected-window.json",
+      "sha256": "5731b420db4b5f8a741ae0e79cdd36c297b12f670b2ef1ffb50a9b8713040208",
+      "size_bytes": 950
+    },
+    {
+      "line_count": 49,
+      "path": "semantic-table-hashes.json",
+      "sha256": "cd8727e78d9458676fd3a9b3c8a6e7c49e2e1257ba3cd4c9d4078aef847bab9e",
+      "size_bytes": 2789
+    },
+    {
+      "line_count": 171885,
+      "path": "source-observations.json",
+      "sha256": "ab53a910b4f68021caf5be62f5acb960a515d5b720391468facc52d529dc1449",
+      "size_bytes": 5427518
+    },
+    {
+      "line_count": 63835,
+      "path": "spot-conflict-reconciliation.json",
+      "sha256": "152a224af2cf5f8644c8063393dbb4de4dc7c33ef950ce193c9ad237d9313133",
+      "size_bytes": 2440774
+    },
+    {
+      "line_count": 19,
+      "path": "spot-data-report.md",
+      "sha256": "9c18a72b182bc49fb897719eaaf9ea40600bef869eeb73c969a7397db1c1bc86",
+      "size_bytes": 1442
+    },
+    {
+      "line_count": 5,
+      "path": "spot-data-report.phase-a.md",
+      "sha256": "61499825805b8431a0dba96fbc34d4070367fe1cedf1b28a1bedac90d8d99707",
+      "size_bytes": 419
+    },
+    {
+      "line_count": 337,
+      "path": "spot-trade-continuity.json",
+      "sha256": "1309d06919535e6b6da2af879e42d6eda03d50a0f019205666daf6c54b16d9fe",
+      "size_bytes": 11864
+    },
+    {
+      "line_count": 318,
+      "path": "ssot-candidate-004/SSOT.candidate-004.diff",
+      "sha256": "19ff0232d938c320ee9d9cf549a754f244ae00f357be1d3d738b4f303ff74577",
+      "size_bytes": 35506
+    },
+    {
+      "line_count": 2583,
+      "path": "ssot-candidate-004/SSOT.candidate-004.md",
+      "sha256": "b4deb7048242239234de7eaa353b623b3e45247eb42f1021dbc26ffd910edb99",
+      "size_bytes": 134376
+    },
+    {
+      "line_count": 1,
+      "path": "ssot-candidate-004/SSOT.candidate-004.sha256",
+      "sha256": "697c8e916c297801c64fa5264cfacd48fc456d1970314dabcbce8ccc4316897e",
+      "size_bytes": 88
+    },
+    {
+      "line_count": 75,
+      "path": "ssot-candidate-004/candidate-004-manifest.json",
+      "sha256": "10788f3dd425cf2f94563034b44959b3f5b64a7b76a5fce86ea6cb0e44cf2ccc",
+      "size_bytes": 4228
+    },
+    {
+      "line_count": 380,
+      "path": "ssot-candidate-004/forward-reverse-patch-verification.json",
+      "sha256": "a2bbeffdc45914512245bf99950ee33df6555afaf02f32d2fb10175d0e68eeb1",
+      "size_bytes": 12428
+    },
+    {
+      "line_count": 28,
+      "path": "ssot-candidate-004/owner-review-report.md",
+      "sha256": "38bc492f1bfa93085f8ee55931e8f0a4d6279199bbad678f38d31389a118e0d4",
+      "size_bytes": 1849
+    },
+    {
+      "line_count": 889,
+      "path": "ssot-candidate-004/semantic-audit.json",
+      "sha256": "03f86d912136037ec8a8a03b7b5155fe46d9decb4b72fe41f5e5170f3deef509",
+      "size_bytes": 51788
+    },
+    {
+      "line_count": 670,
+      "path": "test-output.txt",
+      "sha256": "32c1984eb88fdc0e8331370ba2bb8b8d90516c7996dd18de8365d02dff3b0973",
+      "size_bytes": 120861
+    },
+    {
+      "line_count": 1991,
+      "path": "test-results.json",
+      "sha256": "5d7f0505c60cf8a4c40767cdf8b0329ee3a7d0ba8bed231866ef6b92e68a9bb7",
+      "size_bytes": 109388
+    },
+    {
+      "line_count": 749,
+      "path": "tools/acquire_phase_a.py",
+      "sha256": "c743fa01e458bb7929643914588d60efc6d4ee38f3161d4b046cb089ebe0a0f1",
+      "size_bytes": 27507
+    },
+    {
+      "line_count": 1501,
+      "path": "tools/analyze_phase_a.py",
+      "sha256": "b9fd2e8660f96e6622710975c58da6e5be09602348b40bdce0b7fe95f31d7186",
+      "size_bytes": 65893
+    },
+    {
+      "line_count": 695,
+      "path": "tools/build_phase_a_evidence.py",
+      "sha256": "0ddc680d145878625d06d5f81582fc06739ba079d75524b47313d0006809df6b",
+      "size_bytes": 33899
+    },
+    {
+      "line_count": 252,
+      "path": "tools/finalize_phase_a_evidence.py",
+      "sha256": "e3b4b6f321076f5349d2fbe87e1fa8f8498707f9d802571d0b09a0204de3518d",
+      "size_bytes": 10914
+    },
+    {
+      "line_count": 788,
+      "path": "tools/finalize_post_adoption.py",
+      "sha256": "6b1a0980dfedcbf79502d2c42a72ccd91f776a83f59dc774a3aaf8f6e61ddd01",
+      "size_bytes": 42976
+    },
+    {
+      "line_count": 493,
+      "path": "tools/verify_candidate_004.py",
+      "sha256": "583782ec4ca7fcbef677eec54573a8c8b303334e495db183672964e974891f78",
+      "size_bytes": 24097
+    },
+    {
+      "line_count": 54622,
+      "path": "verified-no-trade-intervals.json",
+      "sha256": "58ec1749f7ccf57a6d4de903ee6c27fb04fb082f0b77105eab0d5b1ff12747e9",
+      "size_bytes": 2096934
+    }
+  ],
+  "historical_candidate_003": {
+    "bytes_modified": false,
+    "decision": "REJECTED_BY_OWNER_PAID_PROVIDER_PATH_NOT_AUTHORIZED",
+    "inventory_path": "evidence/repair/binance-origin-archive-recovery-001/evidence-inventory.json",
+    "inventory_sha256": "0bcf40dc3d51d44cf9e0f0619698d003de348c5c6789829f20cf95f25828aaf5",
+    "status": "PASS_UNCHANGED_HISTORICAL_EVIDENCE",
+    "validated_file_count": 282,
+    "validation_failure_count": 0
+  },
+  "inventory_excludes_itself": true,
+  "inventory_self_path": "final-content-manifest.json",
+  "json_validation_failure_count": 0,
+  "official_trial": false,
+  "raw_acquisition_identity": "6031d1f37a7e2687ba07988c6d2c9c74d241da368fd3baa4bfd5ffd31f1d8b40",
+  "schema": "free-official-binance-final-content-manifest-v1",
+  "secret_marker_hits": [],
+  "semantic_database_identity": "c363294d7c00373904c970beddb25c87f5e68d53178510e03312f4423da3914d",
+  "status": "PASS",
+  "strategy_run": false,
+  "terminal_verdict": "FREE_OFFICIAL_BINANCE_DATA_DUCKDB_REPAIR_PASS_PENDING_COMMIT_AND_PUSH",
+  "total_size_bytes_excluding_inventory": 12098525,
+  "utf8_or_lf_failure_count": 0
+}

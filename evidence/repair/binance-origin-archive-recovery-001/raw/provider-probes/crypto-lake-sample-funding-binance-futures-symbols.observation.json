@@ -1,0 +1,13 @@
+{
+  "capture_timestamp_utc": "2026-08-23T10:26:10.312303Z",
+  "request_method": "GET",
+  "request_url": "https://s3.amazonaws.com/sample.crypto.lake/?list-type=2&prefix=funding%2Fexchange%3DBINANCE_FUTURES%2F&delimiter=%2F",
+  "final_url": "https://s3.amazonaws.com/sample.crypto.lake/?list-type=2&prefix=funding%2Fexchange%3DBINANCE_FUTURES%2F&delimiter=%2F",
+  "status_code": 301,
+  "body_path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/crypto-lake-sample-funding-binance-futures-symbols.body",
+  "body_size_bytes": 483,
+  "body_sha256": "c01ff0da1619859802cd3b98757faffbc0339b7d2be1189df67b7c59a337ce81",
+  "headers_path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/crypto-lake-sample-funding-binance-futures-symbols.headers.json",
+  "credentials_used": false,
+  "parsed_before_body_saved": false
+}

@@ -1,0 +1,3398 @@
+{
+  "blocking_reason": "No exchange-native target response bytes are available; provider metadata and perfect controls cannot substitute for the target interval itself.",
+  "control_validation": {
+    "acceptance": "100% semantic OHLC agreement for every control minute",
+    "arithmetic": "Python Decimal exact; no float material arithmetic",
+    "contract": "BINANCE_ORIGIN_MARK_EVENT_CONTROL_VALIDATION_V1",
+    "event_order": "exchange event timestamp E, then preserved Tardis capture line order",
+    "minute_boundaries": "half-open UTC [minute_start, minute_start + 60s) by Binance exchange event timestamp E",
+    "prohibited_operations": [
+      "interpolation",
+      "forward_fill",
+      "averaging",
+      "synthetic_ohlc",
+      "execution_index_premium_last_substitution"
+    ],
+    "summary": {
+      "event_count": 5999,
+      "matched_minute_count": 100,
+      "minute_count": 100,
+      "status": "PASS",
+      "window_count": 10
+    },
+    "windows": [
+      {
+        "all_minute_ohlc_semantically_match": true,
+        "archive": {
+          "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-mark-raw-2020-12-01-10m.body",
+          "sha256": "a8fbd460f7c379d93bd046b59ad78e2411a6c49a277dc346de9c948f0b98ef94",
+          "size_bytes": 14161
+        },
+        "comparisons": [
+          {
+            "candidate": {
+              "close": "19734.94198531",
+              "event_count": 59,
+              "first_capture_line": 1,
+              "first_exchange_event_timestamp_ms": 1606780801000,
+              "first_receive_timestamp": "2020-12-01T00:00:01.0354287Z",
+              "high": "19734.94198531",
+              "last_capture_line": 59,
+              "last_exchange_event_timestamp_ms": 1606780859000,
+              "last_receive_timestamp": "2020-12-01T00:00:59.0465668Z",
+              "low": "19700.51000000",
+              "open": "19717.71186598"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "19734.94198531",
+              "high": "19734.94198531",
+              "low": "19700.51000000",
+              "open": "19717.71186598"
+            },
+            "open_time_ms": 1606780800000,
+            "open_time_utc": "2020-12-01T00:00:00Z"
+          },
+          {
+            "candidate": {
+              "close": "19690.37147479",
+              "event_count": 60,
+              "first_capture_line": 60,
+              "first_exchange_event_timestamp_ms": 1606780860010,
+              "first_receive_timestamp": "2020-12-01T00:01:00.0475132Z",
+              "high": "19735.67215536",
+              "last_capture_line": 119,
+              "last_exchange_event_timestamp_ms": 1606780919000,
+              "last_receive_timestamp": "2020-12-01T00:01:59.0312506Z",
+              "low": "19671.19000000",
+              "open": "19735.67215536"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "19690.37147479",
+              "high": "19735.67215536",
+              "low": "19671.19000000",
+              "open": "19735.67215536"
+            },
+            "open_time_ms": 1606780860000,
+            "open_time_utc": "2020-12-01T00:01:00Z"
+          },
+          {
+            "candidate": {
+              "close": "19720.40841153",
+              "event_count": 60,
+              "first_capture_line": 120,
+              "first_exchange_event_timestamp_ms": 1606780920004,
+              "first_receive_timestamp": "2020-12-01T00:02:00.0508920Z",
+              "high": "19720.40841153",
+              "last_capture_line": 179,
+              "last_exchange_event_timestamp_ms": 1606780979000,
+              "last_receive_timestamp": "2020-12-01T00:02:59.0310496Z",
+              "low": "19683.53581780",
+              "open": "19689.89168756"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "19720.40841153",
+              "high": "19720.40841153",
+              "low": "19683.53581780",
+              "open": "19689.89168756"
+            },
+            "open_time_ms": 1606780920000,
+            "open_time_utc": "2020-12-01T00:02:00Z"
+          },
+          {
+            "candidate": {
+              "close": "19670.37000000",
+              "event_count": 60,
+              "first_capture_line": 180,
+              "first_exchange_event_timestamp_ms": 1606780980000,
+              "first_receive_timestamp": "2020-12-01T00:03:00.0372906Z",
+              "high": "19723.35563914",
+              "last_capture_line": 239,
+              "last_exchange_event_timestamp_ms": 1606781039000,
+              "last_receive_timestamp": "2020-12-01T00:03:59.0300834Z",
+              "low": "19670.37000000",
+              "open": "19721.35000000"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "19670.37000000",
+              "high": "19723.35563914",
+              "low": "19670.37000000",
+              "open": "19721.35000000"
+            },
+            "open_time_ms": 1606780980000,
+            "open_time_utc": "2020-12-01T00:03:00Z"
+          },
+          {
+            "candidate": {
+              "close": "19632.51122585",
+              "event_count": 60,
+              "first_capture_line": 240,
+              "first_exchange_event_timestamp_ms": 1606781040000,
+              "first_receive_timestamp": "2020-12-01T00:04:00.0416233Z",
+              "high": "19672.48026739",
+              "last_capture_line": 299,
+              "last_exchange_event_timestamp_ms": 1606781099000,
+              "last_receive_timestamp": "2020-12-01T00:04:59.0411642Z",
+              "low": "19614.03654295",
+              "open": "19670.37000000"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "19632.51122585",
+              "high": "19672.48026739",
+              "low": "19614.03654295",
+              "open": "19670.37000000"
+            },
+            "open_time_ms": 1606781040000,
+            "open_time_utc": "2020-12-01T00:04:00Z"
+          },
+          {
+            "candidate": {
+              "close": "19549.89000000",
+              "event_count": 60,
+              "first_capture_line": 300,
+              "first_exchange_event_timestamp_ms": 1606781100000,
+              "first_receive_timestamp": "2020-12-01T00:05:00.0344163Z",
+              "high": "19632.24353181",
+              "last_capture_line": 359,
+              "last_exchange_event_timestamp_ms": 1606781159000,
+              "last_receive_timestamp": "2020-12-01T00:05:59.0401248Z",
+              "low": "19549.89000000",
+              "open": "19632.24353181"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "19549.89000000",
+              "high": "19632.24353181",
+              "low": "19549.89000000",
+              "open": "19632.24353181"
+            },
+            "open_time_ms": 1606781100000,
+            "open_time_utc": "2020-12-01T00:05:00Z"
+          },
+          {
+            "candidate": {
+              "close": "19557.51010738",
+              "event_count": 60,
+              "first_capture_line": 360,
+              "first_exchange_event_timestamp_ms": 1606781160006,
+              "first_receive_timestamp": "2020-12-01T00:06:00.0481820Z",
+              "high": "19573.27244630",
+              "last_capture_line": 419,
+              "last_exchange_event_timestamp_ms": 1606781219000,
+              "last_receive_timestamp": "2020-12-01T00:06:59.0328475Z",
+              "low": "19541.51462862",
+              "open": "19543.05000000"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "19557.51010738",
+              "high": "19573.27244630",
+              "low": "19541.51462862",
+              "open": "19543.05000000"
+            },
+            "open_time_ms": 1606781160000,
+            "open_time_utc": "2020-12-01T00:06:00Z"
+          },
+          {
+            "candidate": {
+              "close": "19603.10999714",
+              "event_count": 60,
+              "first_capture_line": 420,
+              "first_exchange_event_timestamp_ms": 1606781220008,
+              "first_receive_timestamp": "2020-12-01T00:07:00.0400067Z",
+              "high": "19603.10999714",
+              "last_capture_line": 479,
+              "last_exchange_event_timestamp_ms": 1606781279000,
+              "last_receive_timestamp": "2020-12-01T00:07:59.0364549Z",
+              "low": "19558.38611715",
+              "open": "19558.38611715"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "19603.10999714",
+              "high": "19603.10999714",
+              "low": "19558.38611715",
+              "open": "19558.38611715"
+            },
+            "open_time_ms": 1606781220000,
+            "open_time_utc": "2020-12-01T00:07:00Z"
+          },
+          {
+            "candidate": {
+              "close": "19563.97000000",
+              "event_count": 60,
+              "first_capture_line": 480,
+              "first_exchange_event_timestamp_ms": 1606781280008,
+              "first_receive_timestamp": "2020-12-01T00:08:00.0513929Z",
+              "high": "19611.65665299",
+              "last_capture_line": 539,
+              "last_exchange_event_timestamp_ms": 1606781339000,
+              "last_receive_timestamp": "2020-12-01T00:08:59.0329763Z",
+              "low": "19562.24713014",
+              "open": "19604.08872055"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "19563.97000000",
+              "high": "19611.65665299",
+              "low": "19562.24713014",
+              "open": "19604.08872055"
+            },
+            "open_time_ms": 1606781280000,
+            "open_time_utc": "2020-12-01T00:08:00Z"
+          },
+          {
+            "candidate": {
+              "close": "19577.00000000",
+              "event_count": 60,
+              "first_capture_line": 540,
+              "first_exchange_event_timestamp_ms": 1606781340006,
+              "first_receive_timestamp": "2020-12-01T00:09:00.0610206Z",
+              "high": "19577.00000000",
+              "last_capture_line": 599,
+              "last_exchange_event_timestamp_ms": 1606781399000,
+              "last_receive_timestamp": "2020-12-01T00:09:59.0328834Z",
+              "low": "19551.00000000",
+              "open": "19559.11000000"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "19577",
+              "high": "19577",
+              "low": "19551",
+              "open": "19559.11000000"
+            },
+            "open_time_ms": 1606781340000,
+            "open_time_utc": "2020-12-01T00:09:00Z"
+          }
+        ],
+        "continuous_real_events_each_minute": true,
+        "derived_minute_count": 10,
+        "event_count": 599,
+        "label": "control-01-2020-12-01T00:00",
+        "official_reference": {
+          "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/binance-control-mark-klines-2020-12-01-a.body",
+          "sha256": "0aea02d3764d6427db27c4bdc6b1bee07753d95604e708f28f55bdfb3a015bbd",
+          "size_bytes": 1305
+        },
+        "parse_errors": [],
+        "required_minute_count": 10,
+        "window": {
+          "end_ms": 1606781400000,
+          "end_utc": "2020-12-01T00:10:00Z",
+          "start_ms": 1606780800000,
+          "start_utc": "2020-12-01T00:00:00Z"
+        }
+      },
+      {
+        "all_minute_ohlc_semantically_match": true,
+        "archive": {
+          "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-mark-raw-2020-12-01-12-10m.body",
+          "sha256": "9e53a6ebdf7ae06d32eafa11a06a3892751cafd782b97c68a55c575fc69f828b",
+          "size_bytes": 13912
+        },
+        "comparisons": [
+          {
+            "candidate": {
+              "close": "19350.00000000",
+              "event_count": 60,
+              "first_capture_line": 1,
+              "first_exchange_event_timestamp_ms": 1606824000000,
+              "first_receive_timestamp": "2020-12-01T12:00:00.0357900Z",
+              "high": "19435.04021350",
+              "last_capture_line": 60,
+              "last_exchange_event_timestamp_ms": 1606824059000,
+              "last_receive_timestamp": "2020-12-01T12:00:59.0292923Z",
+              "low": "19336.57505032",
+              "open": "19433.03479377"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "19350",
+              "high": "19435.04021350",
+              "low": "19336.57505032",
+              "open": "19433.03479377"
+            },
+            "open_time_ms": 1606824000000,
+            "open_time_utc": "2020-12-01T12:00:00Z"
+          },
+          {
+            "candidate": {
+              "close": "19417.99791741",
+              "event_count": 60,
+              "first_capture_line": 61,
+              "first_exchange_event_timestamp_ms": 1606824060014,
+              "first_receive_timestamp": "2020-12-01T12:01:00.0538927Z",
+              "high": "19417.99791741",
+              "last_capture_line": 120,
+              "last_exchange_event_timestamp_ms": 1606824119000,
+              "last_receive_timestamp": "2020-12-01T12:01:59.0288678Z",
+              "low": "19340.02000000",
+              "open": "19346.60000000"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "19417.99791741",
+              "high": "19417.99791741",
+              "low": "19340.02000000",
+              "open": "19346.60000000"
+            },
+            "open_time_ms": 1606824060000,
+            "open_time_utc": "2020-12-01T12:01:00Z"
+          },
+          {
+            "candidate": {
+              "close": "19428.74946269",
+              "event_count": 60,
+              "first_capture_line": 121,
+              "first_exchange_event_timestamp_ms": 1606824120000,
+              "first_receive_timestamp": "2020-12-01T12:02:00.0340832Z",
+              "high": "19428.93623657",
+              "last_capture_line": 180,
+              "last_exchange_event_timestamp_ms": 1606824179000,
+              "last_receive_timestamp": "2020-12-01T12:02:59.0228610Z",
+              "low": "19389.93000000",
+              "open": "19416.02000000"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "19428.74946269",
+              "high": "19428.93623657",
+              "low": "19389.93000000",
+              "open": "19416.02000000"
+            },
+            "open_time_ms": 1606824120000,
+            "open_time_utc": "2020-12-01T12:02:00Z"
+          },
+          {
+            "candidate": {
+              "close": "19459.54274548",
+              "event_count": 60,
+              "first_capture_line": 181,
+              "first_exchange_event_timestamp_ms": 1606824180000,
+              "first_receive_timestamp": "2020-12-01T12:03:00.0479230Z",
+              "high": "19470.20880408",
+              "last_capture_line": 240,
+              "last_exchange_event_timestamp_ms": 1606824239000,
+              "last_receive_timestamp": "2020-12-01T12:03:59.0260579Z",
+              "low": "19430.49371801",
+              "open": "19430.49371801"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "19459.54274548",
+              "high": "19470.20880408",
+              "low": "19430.49371801",
+              "open": "19430.49371801"
+            },
+            "open_time_ms": 1606824180000,
+            "open_time_utc": "2020-12-01T12:03:00Z"
+          },
+          {
+            "candidate": {
+              "close": "19481.57479048",
+              "event_count": 60,
+              "first_capture_line": 241,
+              "first_exchange_event_timestamp_ms": 1606824240000,
+              "first_receive_timestamp": "2020-12-01T12:04:00.0362164Z",
+              "high": "19486.46682178",
+              "last_capture_line": 300,
+              "last_exchange_event_timestamp_ms": 1606824299000,
+              "last_receive_timestamp": "2020-12-01T12:04:59.0348509Z",
+              "low": "19458.43636250",
+              "open": "19458.43636250"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "19481.57479048",
+              "high": "19486.46682178",
+              "low": "19458.43636250",
+              "open": "19458.43636250"
+            },
+            "open_time_ms": 1606824240000,
+            "open_time_utc": "2020-12-01T12:04:00Z"
+          },
+          {
+            "candidate": {
+              "close": "19462.00000000",
+              "event_count": 60,
+              "first_capture_line": 301,
+              "first_exchange_event_timestamp_ms": 1606824300000,
+              "first_receive_timestamp": "2020-12-01T12:05:00.0487941Z",
+              "high": "19485.28989687",
+              "last_capture_line": 360,
+              "last_exchange_event_timestamp_ms": 1606824359000,
+              "last_receive_timestamp": "2020-12-01T12:05:59.0289131Z",
+              "low": "19447.70000000",
+              "open": "19481.76010963"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "19462",
+              "high": "19485.28989687",
+              "low": "19447.70000000",
+              "open": "19481.76010963"
+            },
+            "open_time_ms": 1606824300000,
+            "open_time_utc": "2020-12-01T12:05:00Z"
+          },
+          {
+            "candidate": {
+              "close": "19440.81795746",
+              "event_count": 60,
+              "first_capture_line": 361,
+              "first_exchange_event_timestamp_ms": 1606824360000,
+              "first_receive_timestamp": "2020-12-01T12:06:00.0295077Z",
+              "high": "19458.01000000",
+              "last_capture_line": 420,
+              "last_exchange_event_timestamp_ms": 1606824419000,
+              "last_receive_timestamp": "2020-12-01T12:06:59.0294452Z",
+              "low": "19420.00000000",
+              "open": "19457.00000000"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "19440.81795746",
+              "high": "19458.01000000",
+              "low": "19420",
+              "open": "19457"
+            },
+            "open_time_ms": 1606824360000,
+            "open_time_utc": "2020-12-01T12:06:00Z"
+          },
+          {
+            "candidate": {
+              "close": "19393.55000000",
+              "event_count": 60,
+              "first_capture_line": 421,
+              "first_exchange_event_timestamp_ms": 1606824420000,
+              "first_receive_timestamp": "2020-12-01T12:07:00.0347342Z",
+              "high": "19441.50870953",
+              "last_capture_line": 480,
+              "last_exchange_event_timestamp_ms": 1606824479007,
+              "last_receive_timestamp": "2020-12-01T12:07:59.0420308Z",
+              "low": "19388.35000000",
+              "open": "19439.59668086"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "19393.55000000",
+              "high": "19441.50870953",
+              "low": "19388.35000000",
+              "open": "19439.59668086"
+            },
+            "open_time_ms": 1606824420000,
+            "open_time_utc": "2020-12-01T12:07:00Z"
+          },
+          {
+            "candidate": {
+              "close": "19414.63641553",
+              "event_count": 60,
+              "first_capture_line": 481,
+              "first_exchange_event_timestamp_ms": 1606824480000,
+              "first_receive_timestamp": "2020-12-01T12:08:00.0344822Z",
+              "high": "19419.48736955",
+              "last_capture_line": 540,
+              "last_exchange_event_timestamp_ms": 1606824539000,
+              "last_receive_timestamp": "2020-12-01T12:08:59.0378971Z",
+              "low": "19382.52000000",
+              "open": "19392.90000000"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "19414.63641553",
+              "high": "19419.48736955",
+              "low": "19382.52000000",
+              "open": "19392.90000000"
+            },
+            "open_time_ms": 1606824480000,
+            "open_time_utc": "2020-12-01T12:08:00Z"
+          },
+          {
+            "candidate": {
+              "close": "19424.37104283",
+              "event_count": 60,
+              "first_capture_line": 541,
+              "first_exchange_event_timestamp_ms": 1606824540000,
+              "first_receive_timestamp": "2020-12-01T12:09:00.0357383Z",
+              "high": "19424.37104283",
+              "last_capture_line": 600,
+              "last_exchange_event_timestamp_ms": 1606824599004,
+              "last_receive_timestamp": "2020-12-01T12:09:59.0411338Z",
+              "low": "19388.17000000",
+              "open": "19414.39513893"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "19424.37104283",
+              "high": "19424.37104283",
+              "low": "19388.17000000",
+              "open": "19414.39513893"
+            },
+            "open_time_ms": 1606824540000,
+            "open_time_utc": "2020-12-01T12:09:00Z"
+          }
+        ],
+        "continuous_real_events_each_minute": true,
+        "derived_minute_count": 10,
+        "event_count": 600,
+        "label": "control-02-2020-12-01T12:00",
+        "official_reference": {
+          "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/binance-control-mark-klines-2020-12-01-12.body",
+          "sha256": "6f6145b791e5edd9df6516410e5214e3669e9086ae1d26d1d106708700eb7f7b",
+          "size_bytes": 1175
+        },
+        "parse_errors": [],
+        "required_minute_count": 10,
+        "window": {
+          "end_ms": 1606824600000,
+          "end_utc": "2020-12-01T12:10:00Z",
+          "start_ms": 1606824000000,
+          "start_utc": "2020-12-01T12:00:00Z"
+        }
+      },
+      {
+        "all_minute_ohlc_semantically_match": true,
+        "archive": {
+          "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-mark-raw-2021-01-01-06-10m.body",
+          "sha256": "2c9b74c15a17e44a9d5bfe7a7d08e07ed30bbeca9353cad6363c90ebbb5f70c5",
+          "size_bytes": 13688
+        },
+        "comparisons": [
+          {
+            "candidate": {
+              "close": "29235.46365150",
+              "event_count": 60,
+              "first_capture_line": 1,
+              "first_exchange_event_timestamp_ms": 1609480800000,
+              "first_receive_timestamp": "2021-01-01T06:00:00.0394217Z",
+              "high": "29235.46365150",
+              "last_capture_line": 60,
+              "last_exchange_event_timestamp_ms": 1609480859000,
+              "last_receive_timestamp": "2021-01-01T06:00:59.0384325Z",
+              "low": "29212.23748037",
+              "open": "29212.23748037"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "29235.46365150",
+              "high": "29235.46365150",
+              "low": "29212.23748037",
+              "open": "29212.23748037"
+            },
+            "open_time_ms": 1609480800000,
+            "open_time_utc": "2021-01-01T06:00:00Z"
+          },
+          {
+            "candidate": {
+              "close": "29245.77856001",
+              "event_count": 60,
+              "first_capture_line": 61,
+              "first_exchange_event_timestamp_ms": 1609480860000,
+              "first_receive_timestamp": "2021-01-01T06:01:00.0275593Z",
+              "high": "29245.77856001",
+              "last_capture_line": 120,
+              "last_exchange_event_timestamp_ms": 1609480919000,
+              "last_receive_timestamp": "2021-01-01T06:01:59.0267471Z",
+              "low": "29218.24000000",
+              "open": "29235.46365150"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "29245.77856001",
+              "high": "29245.77856001",
+              "low": "29218.24000000",
+              "open": "29235.46365150"
+            },
+            "open_time_ms": 1609480860000,
+            "open_time_utc": "2021-01-01T06:01:00Z"
+          },
+          {
+            "candidate": {
+              "close": "29242.97000000",
+              "event_count": 60,
+              "first_capture_line": 121,
+              "first_exchange_event_timestamp_ms": 1609480920006,
+              "first_receive_timestamp": "2021-01-01T06:02:00.0335478Z",
+              "high": "29246.08138852",
+              "last_capture_line": 180,
+              "last_exchange_event_timestamp_ms": 1609480979000,
+              "last_receive_timestamp": "2021-01-01T06:02:59.0314669Z",
+              "low": "29238.23000000",
+              "open": "29245.53856001"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "29242.97000000",
+              "high": "29246.08138852",
+              "low": "29238.23000000",
+              "open": "29245.53856001"
+            },
+            "open_time_ms": 1609480920000,
+            "open_time_utc": "2021-01-01T06:02:00Z"
+          },
+          {
+            "candidate": {
+              "close": "29258.05000000",
+              "event_count": 60,
+              "first_capture_line": 181,
+              "first_exchange_event_timestamp_ms": 1609480980010,
+              "first_receive_timestamp": "2021-01-01T06:03:00.0394056Z",
+              "high": "29265.46850302",
+              "last_capture_line": 240,
+              "last_exchange_event_timestamp_ms": 1609481039000,
+              "last_receive_timestamp": "2021-01-01T06:03:59.0289755Z",
+              "low": "29230.37000000",
+              "open": "29242.98000000"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "29258.05000000",
+              "high": "29265.46850302",
+              "low": "29230.37000000",
+              "open": "29242.98000000"
+            },
+            "open_time_ms": 1609480980000,
+            "open_time_utc": "2021-01-01T06:03:00Z"
+          },
+          {
+            "candidate": {
+              "close": "29271.14000000",
+              "event_count": 60,
+              "first_capture_line": 241,
+              "first_exchange_event_timestamp_ms": 1609481040000,
+              "first_receive_timestamp": "2021-01-01T06:04:00.0295354Z",
+              "high": "29271.14000000",
+              "last_capture_line": 300,
+              "last_exchange_event_timestamp_ms": 1609481099001,
+              "last_receive_timestamp": "2021-01-01T06:04:59.0394182Z",
+              "low": "29256.55000000",
+              "open": "29256.55000000"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "29271.14000000",
+              "high": "29271.14000000",
+              "low": "29256.55000000",
+              "open": "29256.55000000"
+            },
+            "open_time_ms": 1609481040000,
+            "open_time_utc": "2021-01-01T06:04:00Z"
+          },
+          {
+            "candidate": {
+              "close": "29272.11000000",
+              "event_count": 60,
+              "first_capture_line": 301,
+              "first_exchange_event_timestamp_ms": 1609481100000,
+              "first_receive_timestamp": "2021-01-01T06:05:00.0537984Z",
+              "high": "29283.00000000",
+              "last_capture_line": 360,
+              "last_exchange_event_timestamp_ms": 1609481159006,
+              "last_receive_timestamp": "2021-01-01T06:05:59.0334692Z",
+              "low": "29268.31000000",
+              "open": "29271.14000000"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "29272.11000000",
+              "high": "29283",
+              "low": "29268.31000000",
+              "open": "29271.14000000"
+            },
+            "open_time_ms": 1609481100000,
+            "open_time_utc": "2021-01-01T06:05:00Z"
+          },
+          {
+            "candidate": {
+              "close": "29254.68000000",
+              "event_count": 60,
+              "first_capture_line": 361,
+              "first_exchange_event_timestamp_ms": 1609481160006,
+              "first_receive_timestamp": "2021-01-01T06:06:00.0401025Z",
+              "high": "29276.45000000",
+              "last_capture_line": 420,
+              "last_exchange_event_timestamp_ms": 1609481219000,
+              "last_receive_timestamp": "2021-01-01T06:06:59.0294988Z",
+              "low": "29254.68000000",
+              "open": "29275.00000000"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "29254.68000000",
+              "high": "29276.45000000",
+              "low": "29254.68000000",
+              "open": "29275"
+            },
+            "open_time_ms": 1609481160000,
+            "open_time_utc": "2021-01-01T06:06:00Z"
+          },
+          {
+            "candidate": {
+              "close": "29251.20000000",
+              "event_count": 60,
+              "first_capture_line": 421,
+              "first_exchange_event_timestamp_ms": 1609481220000,
+              "first_receive_timestamp": "2021-01-01T06:07:00.0454602Z",
+              "high": "29269.00000000",
+              "last_capture_line": 480,
+              "last_exchange_event_timestamp_ms": 1609481279000,
+              "last_receive_timestamp": "2021-01-01T06:07:59.0246879Z",
+              "low": "29251.18000000",
+              "open": "29253.31000000"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "29251.20000000",
+              "high": "29269",
+              "low": "29251.18000000",
+              "open": "29253.31000000"
+            },
+            "open_time_ms": 1609481220000,
+            "open_time_utc": "2021-01-01T06:07:00Z"
+          },
+          {
+            "candidate": {
+              "close": "29247.96000000",
+              "event_count": 60,
+              "first_capture_line": 481,
+              "first_exchange_event_timestamp_ms": 1609481280008,
+              "first_receive_timestamp": "2021-01-01T06:08:00.0398357Z",
+              "high": "29269.50000000",
+              "last_capture_line": 540,
+              "last_exchange_event_timestamp_ms": 1609481339000,
+              "last_receive_timestamp": "2021-01-01T06:08:59.0462113Z",
+              "low": "29247.96000000",
+              "open": "29251.21000000"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "29247.96000000",
+              "high": "29269.50000000",
+              "low": "29247.96000000",
+              "open": "29251.21000000"
+            },
+            "open_time_ms": 1609481280000,
+            "open_time_utc": "2021-01-01T06:08:00Z"
+          },
+          {
+            "candidate": {
+              "close": "29238.06000000",
+              "event_count": 60,
+              "first_capture_line": 541,
+              "first_exchange_event_timestamp_ms": 1609481340000,
+              "first_receive_timestamp": "2021-01-01T06:09:00.0316788Z",
+              "high": "29256.44000000",
+              "last_capture_line": 600,
+              "last_exchange_event_timestamp_ms": 1609481399000,
+              "last_receive_timestamp": "2021-01-01T06:09:59.0493344Z",
+              "low": "29238.06000000",
+              "open": "29247.97000000"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "29238.06000000",
+              "high": "29256.44000000",
+              "low": "29238.06000000",
+              "open": "29247.97000000"
+            },
+            "open_time_ms": 1609481340000,
+            "open_time_utc": "2021-01-01T06:09:00Z"
+          }
+        ],
+        "continuous_real_events_each_minute": true,
+        "derived_minute_count": 10,
+        "event_count": 600,
+        "label": "control-03-2021-01-01T06:00",
+        "official_reference": {
+          "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/binance-control-mark-klines-2021-01-01-06.body",
+          "sha256": "08cebab4b4b7eda0114bcf8dcc27764f35b17289c9f262561bf16714c897df4e",
+          "size_bytes": 1184
+        },
+        "parse_errors": [],
+        "required_minute_count": 10,
+        "window": {
+          "end_ms": 1609481400000,
+          "end_utc": "2021-01-01T06:10:00Z",
+          "start_ms": 1609480800000,
+          "start_utc": "2021-01-01T06:00:00Z"
+        }
+      },
+      {
+        "all_minute_ohlc_semantically_match": true,
+        "archive": {
+          "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-mark-raw-2021-02-01-10m.body",
+          "sha256": "388f1f8ac4fca69b37929ec3cb235ccf5ce436383ee78874178cbbee9a19c350",
+          "size_bytes": 15274
+        },
+        "comparisons": [
+          {
+            "candidate": {
+              "close": "34439.57000000",
+              "event_count": 60,
+              "first_capture_line": 1,
+              "first_exchange_event_timestamp_ms": 1612180800000,
+              "first_receive_timestamp": "2021-02-01T12:00:00.0454609Z",
+              "high": "34447.80000000",
+              "last_capture_line": 60,
+              "last_exchange_event_timestamp_ms": 1612180859001,
+              "last_receive_timestamp": "2021-02-01T12:00:59.0261305Z",
+              "low": "34210.03000000",
+              "open": "34215.61000000"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "34439.57000000",
+              "high": "34447.80000000",
+              "low": "34210.03000000",
+              "open": "34215.61000000"
+            },
+            "open_time_ms": 1612180800000,
+            "open_time_utc": "2021-02-01T12:00:00Z"
+          },
+          {
+            "candidate": {
+              "close": "34385.86000000",
+              "event_count": 60,
+              "first_capture_line": 61,
+              "first_exchange_event_timestamp_ms": 1612180860002,
+              "first_receive_timestamp": "2021-02-01T12:01:00.0322006Z",
+              "high": "34480.01000000",
+              "last_capture_line": 120,
+              "last_exchange_event_timestamp_ms": 1612180919000,
+              "last_receive_timestamp": "2021-02-01T12:01:59.0265650Z",
+              "low": "34380.81000000",
+              "open": "34424.35000000"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "34385.86000000",
+              "high": "34480.01000000",
+              "low": "34380.81000000",
+              "open": "34424.35000000"
+            },
+            "open_time_ms": 1612180860000,
+            "open_time_utc": "2021-02-01T12:01:00Z"
+          },
+          {
+            "candidate": {
+              "close": "34265.84000000",
+              "event_count": 60,
+              "first_capture_line": 121,
+              "first_exchange_event_timestamp_ms": 1612180920000,
+              "first_receive_timestamp": "2021-02-01T12:02:00.0301044Z",
+              "high": "34392.00000000",
+              "last_capture_line": 180,
+              "last_exchange_event_timestamp_ms": 1612180979001,
+              "last_receive_timestamp": "2021-02-01T12:02:59.0259134Z",
+              "low": "34261.64000000",
+              "open": "34389.48000000"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "34265.84000000",
+              "high": "34392",
+              "low": "34261.64000000",
+              "open": "34389.48000000"
+            },
+            "open_time_ms": 1612180920000,
+            "open_time_utc": "2021-02-01T12:02:00Z"
+          },
+          {
+            "candidate": {
+              "close": "34223.25000000",
+              "event_count": 60,
+              "first_capture_line": 181,
+              "first_exchange_event_timestamp_ms": 1612180980000,
+              "first_receive_timestamp": "2021-02-01T12:03:00.0324670Z",
+              "high": "34265.49000000",
+              "last_capture_line": 240,
+              "last_exchange_event_timestamp_ms": 1612181039002,
+              "last_receive_timestamp": "2021-02-01T12:03:59.0367124Z",
+              "low": "34217.49000000",
+              "open": "34265.49000000"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "34223.25000000",
+              "high": "34265.49000000",
+              "low": "34217.49000000",
+              "open": "34265.49000000"
+            },
+            "open_time_ms": 1612180980000,
+            "open_time_utc": "2021-02-01T12:03:00Z"
+          },
+          {
+            "candidate": {
+              "close": "34327.22000000",
+              "event_count": 60,
+              "first_capture_line": 241,
+              "first_exchange_event_timestamp_ms": 1612181040003,
+              "first_receive_timestamp": "2021-02-01T12:04:00.0323164Z",
+              "high": "34327.22000000",
+              "last_capture_line": 300,
+              "last_exchange_event_timestamp_ms": 1612181099000,
+              "last_receive_timestamp": "2021-02-01T12:04:59.0320602Z",
+              "low": "34225.42000000",
+              "open": "34230.92000000"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "34327.22000000",
+              "high": "34327.22000000",
+              "low": "34225.42000000",
+              "open": "34230.92000000"
+            },
+            "open_time_ms": 1612181040000,
+            "open_time_utc": "2021-02-01T12:04:00Z"
+          },
+          {
+            "candidate": {
+              "close": "34317.70000000",
+              "event_count": 60,
+              "first_capture_line": 301,
+              "first_exchange_event_timestamp_ms": 1612181100000,
+              "first_receive_timestamp": "2021-02-01T12:05:00.0258305Z",
+              "high": "34327.22000000",
+              "last_capture_line": 360,
+              "last_exchange_event_timestamp_ms": 1612181159000,
+              "last_receive_timestamp": "2021-02-01T12:05:59.0382370Z",
+              "low": "34258.15000000",
+              "open": "34327.22000000"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "34317.70000000",
+              "high": "34327.22000000",
+              "low": "34258.15000000",
+              "open": "34327.22000000"
+            },
+            "open_time_ms": 1612181100000,
+            "open_time_utc": "2021-02-01T12:05:00Z"
+          },
+          {
+            "candidate": {
+              "close": "34256.96000000",
+              "event_count": 60,
+              "first_capture_line": 361,
+              "first_exchange_event_timestamp_ms": 1612181160000,
+              "first_receive_timestamp": "2021-02-01T12:06:00.0409252Z",
+              "high": "34329.98000000",
+              "last_capture_line": 420,
+              "last_exchange_event_timestamp_ms": 1612181219000,
+              "last_receive_timestamp": "2021-02-01T12:06:59.0377079Z",
+              "low": "34236.32000000",
+              "open": "34323.45000000"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "34256.96000000",
+              "high": "34329.98000000",
+              "low": "34236.32000000",
+              "open": "34323.45000000"
+            },
+            "open_time_ms": 1612181160000,
+            "open_time_utc": "2021-02-01T12:06:00Z"
+          },
+          {
+            "candidate": {
+              "close": "34257.50000000",
+              "event_count": 60,
+              "first_capture_line": 421,
+              "first_exchange_event_timestamp_ms": 1612181220007,
+              "first_receive_timestamp": "2021-02-01T12:07:00.0410617Z",
+              "high": "34281.00000000",
+              "last_capture_line": 480,
+              "last_exchange_event_timestamp_ms": 1612181279001,
+              "last_receive_timestamp": "2021-02-01T12:07:59.0318149Z",
+              "low": "34241.31000000",
+              "open": "34261.16000000"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "34257.50000000",
+              "high": "34281",
+              "low": "34241.31000000",
+              "open": "34261.16000000"
+            },
+            "open_time_ms": 1612181220000,
+            "open_time_utc": "2021-02-01T12:07:00Z"
+          },
+          {
+            "candidate": {
+              "close": "34245.50000000",
+              "event_count": 60,
+              "first_capture_line": 481,
+              "first_exchange_event_timestamp_ms": 1612181280002,
+              "first_receive_timestamp": "2021-02-01T12:08:00.0376319Z",
+              "high": "34272.86000000",
+              "last_capture_line": 540,
+              "last_exchange_event_timestamp_ms": 1612181339001,
+              "last_receive_timestamp": "2021-02-01T12:08:59.0410635Z",
+              "low": "34223.69000000",
+              "open": "34267.41000000"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "34245.50000000",
+              "high": "34272.86000000",
+              "low": "34223.69000000",
+              "open": "34267.41000000"
+            },
+            "open_time_ms": 1612181280000,
+            "open_time_utc": "2021-02-01T12:08:00Z"
+          },
+          {
+            "candidate": {
+              "close": "34245.12000000",
+              "event_count": 60,
+              "first_capture_line": 541,
+              "first_exchange_event_timestamp_ms": 1612181340009,
+              "first_receive_timestamp": "2021-02-01T12:09:00.0431459Z",
+              "high": "34272.85000000",
+              "last_capture_line": 600,
+              "last_exchange_event_timestamp_ms": 1612181399002,
+              "last_receive_timestamp": "2021-02-01T12:09:59.0483381Z",
+              "low": "34232.32000000",
+              "open": "34245.49000000"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "34245.12000000",
+              "high": "34272.85000000",
+              "low": "34232.32000000",
+              "open": "34245.49000000"
+            },
+            "open_time_ms": 1612181340000,
+            "open_time_utc": "2021-02-01T12:09:00Z"
+          }
+        ],
+        "continuous_real_events_each_minute": true,
+        "derived_minute_count": 10,
+        "event_count": 600,
+        "label": "control-04-2021-02-01T12:00",
+        "official_reference": {
+          "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/binance-control-mark-klines-2021-02-01-b.body",
+          "sha256": "22fb27d6ed5a65cbc35abf95f27b9571a8c09fac6fe70282603a7a6dbad63916",
+          "size_bytes": 1314
+        },
+        "parse_errors": [],
+        "required_minute_count": 10,
+        "window": {
+          "end_ms": 1612181400000,
+          "end_utc": "2021-02-01T12:10:00Z",
+          "start_ms": 1612180800000,
+          "start_utc": "2021-02-01T12:00:00Z"
+        }
+      },
+      {
+        "all_minute_ohlc_semantically_match": true,
+        "archive": {
+          "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-mark-raw-2021-02-01-18-10m.body",
+          "sha256": "a759214cc66ecf5214980e102a43bc075a51bbd364c050f8ebf83705f03e58bd",
+          "size_bytes": 15689
+        },
+        "comparisons": [
+          {
+            "candidate": {
+              "close": "34006.37938027",
+              "event_count": 60,
+              "first_capture_line": 1,
+              "first_exchange_event_timestamp_ms": 1612202400004,
+              "first_receive_timestamp": "2021-02-01T18:00:00.1714621Z",
+              "high": "34045.99353314",
+              "last_capture_line": 60,
+              "last_exchange_event_timestamp_ms": 1612202459000,
+              "last_receive_timestamp": "2021-02-01T18:00:59.0300256Z",
+              "low": "34003.28150813",
+              "open": "34004.10991172"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "34006.37938027",
+              "high": "34045.99353314",
+              "low": "34003.28150813",
+              "open": "34004.10991172"
+            },
+            "open_time_ms": 1612202400000,
+            "open_time_utc": "2021-02-01T18:00:00Z"
+          },
+          {
+            "candidate": {
+              "close": "33972.09879652",
+              "event_count": 60,
+              "first_capture_line": 61,
+              "first_exchange_event_timestamp_ms": 1612202460000,
+              "first_receive_timestamp": "2021-02-01T18:01:00.0310973Z",
+              "high": "34007.38831878",
+              "last_capture_line": 120,
+              "last_exchange_event_timestamp_ms": 1612202519001,
+              "last_receive_timestamp": "2021-02-01T18:01:59.0343143Z",
+              "low": "33949.99000000",
+              "open": "34004.66933718"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "33972.09879652",
+              "high": "34007.38831878",
+              "low": "33949.99000000",
+              "open": "34004.66933718"
+            },
+            "open_time_ms": 1612202460000,
+            "open_time_utc": "2021-02-01T18:01:00Z"
+          },
+          {
+            "candidate": {
+              "close": "33943.01000000",
+              "event_count": 60,
+              "first_capture_line": 121,
+              "first_exchange_event_timestamp_ms": 1612202520003,
+              "first_receive_timestamp": "2021-02-01T18:02:00.0272877Z",
+              "high": "33975.38839652",
+              "last_capture_line": 180,
+              "last_exchange_event_timestamp_ms": 1612202579000,
+              "last_receive_timestamp": "2021-02-01T18:02:59.0356752Z",
+              "low": "33941.25000000",
+              "open": "33972.82479652"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "33943.01000000",
+              "high": "33975.38839652",
+              "low": "33941.25000000",
+              "open": "33972.82479652"
+            },
+            "open_time_ms": 1612202520000,
+            "open_time_utc": "2021-02-01T18:02:00Z"
+          },
+          {
+            "candidate": {
+              "close": "33914.21735667",
+              "event_count": 60,
+              "first_capture_line": 181,
+              "first_exchange_event_timestamp_ms": 1612202580000,
+              "first_receive_timestamp": "2021-02-01T18:03:00.0343780Z",
+              "high": "33961.76872003",
+              "last_capture_line": 240,
+              "last_exchange_event_timestamp_ms": 1612202639000,
+              "last_receive_timestamp": "2021-02-01T18:03:59.0308911Z",
+              "low": "33905.14884035",
+              "open": "33944.52575157"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "33914.21735667",
+              "high": "33961.76872003",
+              "low": "33905.14884035",
+              "open": "33944.52575157"
+            },
+            "open_time_ms": 1612202580000,
+            "open_time_utc": "2021-02-01T18:03:00Z"
+          },
+          {
+            "candidate": {
+              "close": "33921.18217187",
+              "event_count": 60,
+              "first_capture_line": 241,
+              "first_exchange_event_timestamp_ms": 1612202640000,
+              "first_receive_timestamp": "2021-02-01T18:04:00.0320193Z",
+              "high": "33962.92829683",
+              "last_capture_line": 300,
+              "last_exchange_event_timestamp_ms": 1612202699000,
+              "last_receive_timestamp": "2021-02-01T18:04:59.0297435Z",
+              "low": "33915.48510658",
+              "open": "33917.52175667"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "33921.18217187",
+              "high": "33962.92829683",
+              "low": "33915.48510658",
+              "open": "33917.52175667"
+            },
+            "open_time_ms": 1612202640000,
+            "open_time_utc": "2021-02-01T18:04:00Z"
+          },
+          {
+            "candidate": {
+              "close": "33889.99000000",
+              "event_count": 60,
+              "first_capture_line": 301,
+              "first_exchange_event_timestamp_ms": 1612202700003,
+              "first_receive_timestamp": "2021-02-01T18:05:00.0359421Z",
+              "high": "33922.99314238",
+              "last_capture_line": 360,
+              "last_exchange_event_timestamp_ms": 1612202759001,
+              "last_receive_timestamp": "2021-02-01T18:05:59.0415826Z",
+              "low": "33889.99000000",
+              "open": "33920.90297187"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "33889.99000000",
+              "high": "33922.99314238",
+              "low": "33889.99000000",
+              "open": "33920.90297187"
+            },
+            "open_time_ms": 1612202700000,
+            "open_time_utc": "2021-02-01T18:05:00Z"
+          },
+          {
+            "candidate": {
+              "close": "33901.77966458",
+              "event_count": 60,
+              "first_capture_line": 361,
+              "first_exchange_event_timestamp_ms": 1612202760000,
+              "first_receive_timestamp": "2021-02-01T18:06:00.0370941Z",
+              "high": "33919.48581484",
+              "last_capture_line": 420,
+              "last_exchange_event_timestamp_ms": 1612202819000,
+              "last_receive_timestamp": "2021-02-01T18:06:59.0331926Z",
+              "low": "33890.32997723",
+              "open": "33890.32997723"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "33901.77966458",
+              "high": "33919.48581484",
+              "low": "33890.32997723",
+              "open": "33890.32997723"
+            },
+            "open_time_ms": 1612202760000,
+            "open_time_utc": "2021-02-01T18:06:00Z"
+          },
+          {
+            "candidate": {
+              "close": "33897.88013804",
+              "event_count": 60,
+              "first_capture_line": 421,
+              "first_exchange_event_timestamp_ms": 1612202820011,
+              "first_receive_timestamp": "2021-02-01T18:07:00.0492440Z",
+              "high": "33940.86518868",
+              "last_capture_line": 480,
+              "last_exchange_event_timestamp_ms": 1612202879001,
+              "last_receive_timestamp": "2021-02-01T18:07:59.0428360Z",
+              "low": "33897.13400629",
+              "open": "33900.38760602"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "33897.88013804",
+              "high": "33940.86518868",
+              "low": "33897.13400629",
+              "open": "33900.38760602"
+            },
+            "open_time_ms": 1612202820000,
+            "open_time_utc": "2021-02-01T18:07:00Z"
+          },
+          {
+            "candidate": {
+              "close": "33899.51427655",
+              "event_count": 60,
+              "first_capture_line": 481,
+              "first_exchange_event_timestamp_ms": 1612202880000,
+              "first_receive_timestamp": "2021-02-01T18:08:00.0386192Z",
+              "high": "33920.25724293",
+              "last_capture_line": 540,
+              "last_exchange_event_timestamp_ms": 1612202939000,
+              "last_receive_timestamp": "2021-02-01T18:08:59.0421536Z",
+              "low": "33890.81000000",
+              "open": "33897.50413804"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "33899.51427655",
+              "high": "33920.25724293",
+              "low": "33890.81000000",
+              "open": "33897.50413804"
+            },
+            "open_time_ms": 1612202880000,
+            "open_time_utc": "2021-02-01T18:08:00Z"
+          },
+          {
+            "candidate": {
+              "close": "33906.61589767",
+              "event_count": 60,
+              "first_capture_line": 541,
+              "first_exchange_event_timestamp_ms": 1612202940001,
+              "first_receive_timestamp": "2021-02-01T18:09:00.0417997Z",
+              "high": "33914.09455079",
+              "last_capture_line": 600,
+              "last_exchange_event_timestamp_ms": 1612202999000,
+              "last_receive_timestamp": "2021-02-01T18:09:59.0317422Z",
+              "low": "33896.40409907",
+              "open": "33899.64929907"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "33906.61589767",
+              "high": "33914.09455079",
+              "low": "33896.40409907",
+              "open": "33899.64929907"
+            },
+            "open_time_ms": 1612202940000,
+            "open_time_utc": "2021-02-01T18:09:00Z"
+          }
+        ],
+        "continuous_real_events_each_minute": true,
+        "derived_minute_count": 10,
+        "event_count": 600,
+        "label": "control-05-2021-02-01T18:00",
+        "official_reference": {
+          "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/binance-control-mark-klines-2021-02-01-18.body",
+          "sha256": "1ee9a8402d915e56d9f590cb6e874b6402406fdc03e011d7c7047848ae936bd9",
+          "size_bytes": 1211
+        },
+        "parse_errors": [],
+        "required_minute_count": 10,
+        "window": {
+          "end_ms": 1612203000000,
+          "end_utc": "2021-02-01T18:10:00Z",
+          "start_ms": 1612202400000,
+          "start_utc": "2021-02-01T18:00:00Z"
+        }
+      },
+      {
+        "all_minute_ohlc_semantically_match": true,
+        "archive": {
+          "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-mark-raw-2021-03-01-06-10m.body",
+          "sha256": "be6297ffaab4dd7603ec4289a89f4b434dfb5d5543e082b2541548770c068acf",
+          "size_bytes": 14775
+        },
+        "comparisons": [
+          {
+            "candidate": {
+              "close": "46232.60213682",
+              "event_count": 60,
+              "first_capture_line": 1,
+              "first_exchange_event_timestamp_ms": 1614578400000,
+              "first_receive_timestamp": "2021-03-01T06:00:00.1562096Z",
+              "high": "46232.63013682",
+              "last_capture_line": 60,
+              "last_exchange_event_timestamp_ms": 1614578459000,
+              "last_receive_timestamp": "2021-03-01T06:00:59.0226197Z",
+              "low": "46221.89233906",
+              "open": "46225.40020887"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "46232.60213682",
+              "high": "46232.63013682",
+              "low": "46221.89233906",
+              "open": "46225.40020887"
+            },
+            "open_time_ms": 1614578400000,
+            "open_time_utc": "2021-03-01T06:00:00Z"
+          },
+          {
+            "candidate": {
+              "close": "46236.49040386",
+              "event_count": 60,
+              "first_capture_line": 61,
+              "first_exchange_event_timestamp_ms": 1614578460000,
+              "first_receive_timestamp": "2021-03-01T06:01:00.0302368Z",
+              "high": "46250.50003558",
+              "last_capture_line": 120,
+              "last_exchange_event_timestamp_ms": 1614578519000,
+              "last_receive_timestamp": "2021-03-01T06:01:59.0235049Z",
+              "low": "46221.72000000",
+              "open": "46232.60613682"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "46236.49040386",
+              "high": "46250.50003558",
+              "low": "46221.72000000",
+              "open": "46232.60613682"
+            },
+            "open_time_ms": 1614578460000,
+            "open_time_utc": "2021-03-01T06:01:00Z"
+          },
+          {
+            "candidate": {
+              "close": "46184.31000000",
+              "event_count": 60,
+              "first_capture_line": 121,
+              "first_exchange_event_timestamp_ms": 1614578520000,
+              "first_receive_timestamp": "2021-03-01T06:02:00.0275849Z",
+              "high": "46235.18401672",
+              "last_capture_line": 180,
+              "last_exchange_event_timestamp_ms": 1614578579000,
+              "last_receive_timestamp": "2021-03-01T06:02:59.0181984Z",
+              "low": "46178.47000000",
+              "open": "46233.94001672"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "46184.31000000",
+              "high": "46235.18401672",
+              "low": "46178.47000000",
+              "open": "46233.94001672"
+            },
+            "open_time_ms": 1614578520000,
+            "open_time_utc": "2021-03-01T06:02:00Z"
+          },
+          {
+            "candidate": {
+              "close": "46095.36000000",
+              "event_count": 60,
+              "first_capture_line": 181,
+              "first_exchange_event_timestamp_ms": 1614578580000,
+              "first_receive_timestamp": "2021-03-01T06:03:00.0290988Z",
+              "high": "46179.58000000",
+              "last_capture_line": 240,
+              "last_exchange_event_timestamp_ms": 1614578639000,
+              "last_receive_timestamp": "2021-03-01T06:03:59.0243497Z",
+              "low": "46090.00000000",
+              "open": "46175.00000000"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "46095.36000000",
+              "high": "46179.58000000",
+              "low": "46090",
+              "open": "46175"
+            },
+            "open_time_ms": 1614578580000,
+            "open_time_utc": "2021-03-01T06:03:00Z"
+          },
+          {
+            "candidate": {
+              "close": "46155.43000000",
+              "event_count": 60,
+              "first_capture_line": 241,
+              "first_exchange_event_timestamp_ms": 1614578640000,
+              "first_receive_timestamp": "2021-03-01T06:04:00.0318174Z",
+              "high": "46162.42701664",
+              "last_capture_line": 300,
+              "last_exchange_event_timestamp_ms": 1614578699000,
+              "last_receive_timestamp": "2021-03-01T06:04:59.0254822Z",
+              "low": "46097.94000000",
+              "open": "46097.94000000"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "46155.43000000",
+              "high": "46162.42701664",
+              "low": "46097.94000000",
+              "open": "46097.94000000"
+            },
+            "open_time_ms": 1614578640000,
+            "open_time_utc": "2021-03-01T06:04:00Z"
+          },
+          {
+            "candidate": {
+              "close": "46134.37300619",
+              "event_count": 60,
+              "first_capture_line": 301,
+              "first_exchange_event_timestamp_ms": 1614578700000,
+              "first_receive_timestamp": "2021-03-01T06:05:00.0270518Z",
+              "high": "46156.55000000",
+              "last_capture_line": 360,
+              "last_exchange_event_timestamp_ms": 1614578759000,
+              "last_receive_timestamp": "2021-03-01T06:05:59.0181080Z",
+              "low": "46090.89000000",
+              "open": "46151.91201184"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "46134.37300619",
+              "high": "46156.55000000",
+              "low": "46090.89000000",
+              "open": "46151.91201184"
+            },
+            "open_time_ms": 1614578700000,
+            "open_time_utc": "2021-03-01T06:05:00Z"
+          },
+          {
+            "candidate": {
+              "close": "46166.04000000",
+              "event_count": 60,
+              "first_capture_line": 361,
+              "first_exchange_event_timestamp_ms": 1614578760000,
+              "first_receive_timestamp": "2021-03-01T06:06:00.0226703Z",
+              "high": "46168.00000000",
+              "last_capture_line": 420,
+              "last_exchange_event_timestamp_ms": 1614578819001,
+              "last_receive_timestamp": "2021-03-01T06:06:59.0213376Z",
+              "low": "46133.05300619",
+              "open": "46133.05300619"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "46166.04000000",
+              "high": "46168",
+              "low": "46133.05300619",
+              "open": "46133.05300619"
+            },
+            "open_time_ms": 1614578760000,
+            "open_time_utc": "2021-03-01T06:06:00Z"
+          },
+          {
+            "candidate": {
+              "close": "46174.07000000",
+              "event_count": 60,
+              "first_capture_line": 421,
+              "first_exchange_event_timestamp_ms": 1614578820000,
+              "first_receive_timestamp": "2021-03-01T06:07:00.0327988Z",
+              "high": "46180.76000000",
+              "last_capture_line": 480,
+              "last_exchange_event_timestamp_ms": 1614578879002,
+              "last_receive_timestamp": "2021-03-01T06:07:59.0465292Z",
+              "low": "46153.05000000",
+              "open": "46166.04000000"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "46174.07000000",
+              "high": "46180.76000000",
+              "low": "46153.05000000",
+              "open": "46166.04000000"
+            },
+            "open_time_ms": 1614578820000,
+            "open_time_utc": "2021-03-01T06:07:00Z"
+          },
+          {
+            "candidate": {
+              "close": "46181.11283238",
+              "event_count": 60,
+              "first_capture_line": 481,
+              "first_exchange_event_timestamp_ms": 1614578880000,
+              "first_receive_timestamp": "2021-03-01T06:08:00.0357598Z",
+              "high": "46181.76909916",
+              "last_capture_line": 540,
+              "last_exchange_event_timestamp_ms": 1614578939000,
+              "last_receive_timestamp": "2021-03-01T06:08:59.0244298Z",
+              "low": "46158.56000000",
+              "open": "46174.06000000"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "46181.11283238",
+              "high": "46181.76909916",
+              "low": "46158.56000000",
+              "open": "46174.06000000"
+            },
+            "open_time_ms": 1614578880000,
+            "open_time_utc": "2021-03-01T06:08:00Z"
+          },
+          {
+            "candidate": {
+              "close": "46225.30000000",
+              "event_count": 60,
+              "first_capture_line": 541,
+              "first_exchange_event_timestamp_ms": 1614578940002,
+              "first_receive_timestamp": "2021-03-01T06:09:00.0266031Z",
+              "high": "46234.05500912",
+              "last_capture_line": 600,
+              "last_exchange_event_timestamp_ms": 1614578999001,
+              "last_receive_timestamp": "2021-03-01T06:09:59.0229029Z",
+              "low": "46183.66323238",
+              "open": "46183.66323238"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "46225.30000000",
+              "high": "46234.05500912",
+              "low": "46183.66323238",
+              "open": "46183.66323238"
+            },
+            "open_time_ms": 1614578940000,
+            "open_time_utc": "2021-03-01T06:09:00Z"
+          }
+        ],
+        "continuous_real_events_each_minute": true,
+        "derived_minute_count": 10,
+        "event_count": 600,
+        "label": "control-06-2021-03-01T06:00",
+        "official_reference": {
+          "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/binance-control-mark-klines-2021-03-01-06.body",
+          "sha256": "9f2764fa0ceb9b1cfa892b361470d5998eae39f9bd0d1557d76124f0736ea483",
+          "size_bytes": 1184
+        },
+        "parse_errors": [],
+        "required_minute_count": 10,
+        "window": {
+          "end_ms": 1614579000000,
+          "end_utc": "2021-03-01T06:10:00Z",
+          "start_ms": 1614578400000,
+          "start_utc": "2021-03-01T06:00:00Z"
+        }
+      },
+      {
+        "all_minute_ohlc_semantically_match": true,
+        "archive": {
+          "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-mark-raw-2021-04-01-12-10m.body",
+          "sha256": "b360b18c7ce2a2aaca5dbd5cbf0fb05d6e0f0facbfc390ea12d94b5811158d37",
+          "size_bytes": 15672
+        },
+        "comparisons": [
+          {
+            "candidate": {
+              "close": "58492.91000000",
+              "event_count": 60,
+              "first_capture_line": 1,
+              "first_exchange_event_timestamp_ms": 1617278400001,
+              "first_receive_timestamp": "2021-04-01T12:00:00.2146859Z",
+              "high": "58640.98829499",
+              "last_capture_line": 60,
+              "last_exchange_event_timestamp_ms": 1617278459000,
+              "last_receive_timestamp": "2021-04-01T12:00:59.2769394Z",
+              "low": "58492.91000000",
+              "open": "58638.59000000"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "58492.91000000",
+              "high": "58640.98829499",
+              "low": "58492.91000000",
+              "open": "58638.59000000"
+            },
+            "open_time_ms": 1617278400000,
+            "open_time_utc": "2021-04-01T12:00:00Z"
+          },
+          {
+            "candidate": {
+              "close": "58581.26000000",
+              "event_count": 60,
+              "first_capture_line": 61,
+              "first_exchange_event_timestamp_ms": 1617278460005,
+              "first_receive_timestamp": "2021-04-01T12:01:00.2789520Z",
+              "high": "58594.03683094",
+              "last_capture_line": 120,
+              "last_exchange_event_timestamp_ms": 1617278519000,
+              "last_receive_timestamp": "2021-04-01T12:01:59.2298015Z",
+              "low": "58439.87000000",
+              "open": "58476.92000000"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "58581.26000000",
+              "high": "58594.03683094",
+              "low": "58439.87000000",
+              "open": "58476.92000000"
+            },
+            "open_time_ms": 1617278460000,
+            "open_time_utc": "2021-04-01T12:01:00Z"
+          },
+          {
+            "candidate": {
+              "close": "58654.45855269",
+              "event_count": 60,
+              "first_capture_line": 121,
+              "first_exchange_event_timestamp_ms": 1617278520002,
+              "first_receive_timestamp": "2021-04-01T12:02:00.1873133Z",
+              "high": "58675.51818127",
+              "last_capture_line": 180,
+              "last_exchange_event_timestamp_ms": 1617278579002,
+              "last_receive_timestamp": "2021-04-01T12:02:59.1943531Z",
+              "low": "58597.37660628",
+              "open": "58597.37660628"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "58654.45855269",
+              "high": "58675.51818127",
+              "low": "58597.37660628",
+              "open": "58597.37660628"
+            },
+            "open_time_ms": 1617278520000,
+            "open_time_utc": "2021-04-01T12:02:00Z"
+          },
+          {
+            "candidate": {
+              "close": "58710.34692834",
+              "event_count": 60,
+              "first_capture_line": 181,
+              "first_exchange_event_timestamp_ms": 1617278580002,
+              "first_receive_timestamp": "2021-04-01T12:03:00.1836658Z",
+              "high": "58719.11708556",
+              "last_capture_line": 240,
+              "last_exchange_event_timestamp_ms": 1617278639002,
+              "last_receive_timestamp": "2021-04-01T12:03:59.1994729Z",
+              "low": "58613.06000000",
+              "open": "58655.17055269"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "58710.34692834",
+              "high": "58719.11708556",
+              "low": "58613.06000000",
+              "open": "58655.17055269"
+            },
+            "open_time_ms": 1617278580000,
+            "open_time_utc": "2021-04-01T12:03:00Z"
+          },
+          {
+            "candidate": {
+              "close": "58660.59000000",
+              "event_count": 60,
+              "first_capture_line": 241,
+              "first_exchange_event_timestamp_ms": 1617278640003,
+              "first_receive_timestamp": "2021-04-01T12:04:00.2051886Z",
+              "high": "58716.10921350",
+              "last_capture_line": 300,
+              "last_exchange_event_timestamp_ms": 1617278699000,
+              "last_receive_timestamp": "2021-04-01T12:04:59.1402449Z",
+              "low": "58658.74000000",
+              "open": "58710.34692834"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "58660.59000000",
+              "high": "58716.10921350",
+              "low": "58658.74000000",
+              "open": "58710.34692834"
+            },
+            "open_time_ms": 1617278640000,
+            "open_time_utc": "2021-04-01T12:04:00Z"
+          },
+          {
+            "candidate": {
+              "close": "58713.42439043",
+              "event_count": 60,
+              "first_capture_line": 301,
+              "first_exchange_event_timestamp_ms": 1617278700001,
+              "first_receive_timestamp": "2021-04-01T12:05:00.1859113Z",
+              "high": "58713.42439043",
+              "last_capture_line": 360,
+              "last_exchange_event_timestamp_ms": 1617278759002,
+              "last_receive_timestamp": "2021-04-01T12:05:59.1716472Z",
+              "low": "58618.54000000",
+              "open": "58660.59000000"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "58713.42439043",
+              "high": "58713.42439043",
+              "low": "58618.54000000",
+              "open": "58660.59000000"
+            },
+            "open_time_ms": 1617278700000,
+            "open_time_utc": "2021-04-01T12:05:00Z"
+          },
+          {
+            "candidate": {
+              "close": "58736.91000000",
+              "event_count": 60,
+              "first_capture_line": 361,
+              "first_exchange_event_timestamp_ms": 1617278760001,
+              "first_receive_timestamp": "2021-04-01T12:06:00.2036776Z",
+              "high": "58782.05000000",
+              "last_capture_line": 420,
+              "last_exchange_event_timestamp_ms": 1617278819002,
+              "last_receive_timestamp": "2021-04-01T12:06:59.1705517Z",
+              "low": "58716.03759043",
+              "open": "58716.03759043"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "58736.91000000",
+              "high": "58782.05000000",
+              "low": "58716.03759043",
+              "open": "58716.03759043"
+            },
+            "open_time_ms": 1617278760000,
+            "open_time_utc": "2021-04-01T12:06:00Z"
+          },
+          {
+            "candidate": {
+              "close": "58751.66368428",
+              "event_count": 60,
+              "first_capture_line": 421,
+              "first_exchange_event_timestamp_ms": 1617278820000,
+              "first_receive_timestamp": "2021-04-01T12:07:00.2230352Z",
+              "high": "58752.12000000",
+              "last_capture_line": 480,
+              "last_exchange_event_timestamp_ms": 1617278879001,
+              "last_receive_timestamp": "2021-04-01T12:07:59.1807395Z",
+              "low": "58702.48000000",
+              "open": "58736.91000000"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "58751.66368428",
+              "high": "58752.12000000",
+              "low": "58702.48000000",
+              "open": "58736.91000000"
+            },
+            "open_time_ms": 1617278820000,
+            "open_time_utc": "2021-04-01T12:07:00Z"
+          },
+          {
+            "candidate": {
+              "close": "58705.85000000",
+              "event_count": 60,
+              "first_capture_line": 481,
+              "first_exchange_event_timestamp_ms": 1617278880002,
+              "first_receive_timestamp": "2021-04-01T12:08:00.1798252Z",
+              "high": "58772.94519804",
+              "last_capture_line": 540,
+              "last_exchange_event_timestamp_ms": 1617278939004,
+              "last_receive_timestamp": "2021-04-01T12:08:59.1698711Z",
+              "low": "58701.71000000",
+              "open": "58749.06000000"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "58705.85000000",
+              "high": "58772.94519804",
+              "low": "58701.71000000",
+              "open": "58749.06000000"
+            },
+            "open_time_ms": 1617278880000,
+            "open_time_utc": "2021-04-01T12:08:00Z"
+          },
+          {
+            "candidate": {
+              "close": "58691.48425923",
+              "event_count": 60,
+              "first_capture_line": 541,
+              "first_exchange_event_timestamp_ms": 1617278940000,
+              "first_receive_timestamp": "2021-04-01T12:09:00.1750325Z",
+              "high": "58726.98454501",
+              "last_capture_line": 600,
+              "last_exchange_event_timestamp_ms": 1617278999002,
+              "last_receive_timestamp": "2021-04-01T12:09:59.1635204Z",
+              "low": "58681.28119905",
+              "open": "58705.85000000"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "58691.48425923",
+              "high": "58726.98454501",
+              "low": "58681.28119905",
+              "open": "58705.85000000"
+            },
+            "open_time_ms": 1617278940000,
+            "open_time_utc": "2021-04-01T12:09:00Z"
+          }
+        ],
+        "continuous_real_events_each_minute": true,
+        "derived_minute_count": 10,
+        "event_count": 600,
+        "label": "control-07-2021-04-01T12:00",
+        "official_reference": {
+          "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/binance-control-mark-klines-2021-04-01-12.body",
+          "sha256": "f1bc9fa3aa8cea955a7b68ffb813d9e529cd5a3905d82dcf44f38f2e96717eae",
+          "size_bytes": 1211
+        },
+        "parse_errors": [],
+        "required_minute_count": 10,
+        "window": {
+          "end_ms": 1617279000000,
+          "end_utc": "2021-04-01T12:10:00Z",
+          "start_ms": 1617278400000,
+          "start_utc": "2021-04-01T12:00:00Z"
+        }
+      },
+      {
+        "all_minute_ohlc_semantically_match": true,
+        "archive": {
+          "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-mark-raw-2021-05-01-18-10m.body",
+          "sha256": "8387b49bd30e6b6a8fdd2ab91fa862451fc5f39fcf86f5c103c1cb90afd58e9a",
+          "size_bytes": 15788
+        },
+        "comparisons": [
+          {
+            "candidate": {
+              "close": "57660.33233300",
+              "event_count": 60,
+              "first_capture_line": 1,
+              "first_exchange_event_timestamp_ms": 1619892000011,
+              "first_receive_timestamp": "2021-05-01T18:00:00.0872068Z",
+              "high": "57660.33233300",
+              "last_capture_line": 60,
+              "last_exchange_event_timestamp_ms": 1619892059000,
+              "last_receive_timestamp": "2021-05-01T18:00:59.0175753Z",
+              "low": "57612.72000000",
+              "open": "57626.06000000"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "57660.33233300",
+              "high": "57660.33233300",
+              "low": "57612.72000000",
+              "open": "57626.06000000"
+            },
+            "open_time_ms": 1619892000000,
+            "open_time_utc": "2021-05-01T18:00:00Z"
+          },
+          {
+            "candidate": {
+              "close": "57650.57805964",
+              "event_count": 60,
+              "first_capture_line": 61,
+              "first_exchange_event_timestamp_ms": 1619892060002,
+              "first_receive_timestamp": "2021-05-01T18:01:00.0203012Z",
+              "high": "57667.06456634",
+              "last_capture_line": 120,
+              "last_exchange_event_timestamp_ms": 1619892119000,
+              "last_receive_timestamp": "2021-05-01T18:01:59.0226377Z",
+              "low": "57643.40000000",
+              "open": "57664.03233300"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "57650.57805964",
+              "high": "57667.06456634",
+              "low": "57643.40000000",
+              "open": "57664.03233300"
+            },
+            "open_time_ms": 1619892060000,
+            "open_time_utc": "2021-05-01T18:01:00Z"
+          },
+          {
+            "candidate": {
+              "close": "57651.56279706",
+              "event_count": 60,
+              "first_capture_line": 121,
+              "first_exchange_event_timestamp_ms": 1619892120000,
+              "first_receive_timestamp": "2021-05-01T18:02:00.0265450Z",
+              "high": "57662.30628115",
+              "last_capture_line": 180,
+              "last_exchange_event_timestamp_ms": 1619892179001,
+              "last_receive_timestamp": "2021-05-01T18:02:59.0233990Z",
+              "low": "57635.50000000",
+              "open": "57650.59624145"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "57651.56279706",
+              "high": "57662.30628115",
+              "low": "57635.50000000",
+              "open": "57650.59624145"
+            },
+            "open_time_ms": 1619892120000,
+            "open_time_utc": "2021-05-01T18:02:00Z"
+          },
+          {
+            "candidate": {
+              "close": "57586.60000000",
+              "event_count": 60,
+              "first_capture_line": 181,
+              "first_exchange_event_timestamp_ms": 1619892180002,
+              "first_receive_timestamp": "2021-05-01T18:03:00.0243268Z",
+              "high": "57651.88600586",
+              "last_capture_line": 240,
+              "last_exchange_event_timestamp_ms": 1619892239001,
+              "last_receive_timestamp": "2021-05-01T18:03:59.0320045Z",
+              "low": "57579.04000000",
+              "open": "57651.88600586"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "57586.60000000",
+              "high": "57651.88600586",
+              "low": "57579.04000000",
+              "open": "57651.88600586"
+            },
+            "open_time_ms": 1619892180000,
+            "open_time_utc": "2021-05-01T18:03:00Z"
+          },
+          {
+            "candidate": {
+              "close": "57582.41000000",
+              "event_count": 60,
+              "first_capture_line": 241,
+              "first_exchange_event_timestamp_ms": 1619892240009,
+              "first_receive_timestamp": "2021-05-01T18:04:00.0344315Z",
+              "high": "57609.08740156",
+              "last_capture_line": 300,
+              "last_exchange_event_timestamp_ms": 1619892299001,
+              "last_receive_timestamp": "2021-05-01T18:04:59.0171911Z",
+              "low": "57579.81000000",
+              "open": "57582.46000000"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "57582.41000000",
+              "high": "57609.08740156",
+              "low": "57579.81000000",
+              "open": "57582.46000000"
+            },
+            "open_time_ms": 1619892240000,
+            "open_time_utc": "2021-05-01T18:04:00Z"
+          },
+          {
+            "candidate": {
+              "close": "57582.36000000",
+              "event_count": 60,
+              "first_capture_line": 301,
+              "first_exchange_event_timestamp_ms": 1619892300002,
+              "first_receive_timestamp": "2021-05-01T18:05:00.0432344Z",
+              "high": "57613.61978465",
+              "last_capture_line": 360,
+              "last_exchange_event_timestamp_ms": 1619892359005,
+              "last_receive_timestamp": "2021-05-01T18:05:59.0311934Z",
+              "low": "57580.00000000",
+              "open": "57582.41000000"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "57582.36000000",
+              "high": "57613.61978465",
+              "low": "57580",
+              "open": "57582.41000000"
+            },
+            "open_time_ms": 1619892300000,
+            "open_time_utc": "2021-05-01T18:05:00Z"
+          },
+          {
+            "candidate": {
+              "close": "57512.01000000",
+              "event_count": 60,
+              "first_capture_line": 361,
+              "first_exchange_event_timestamp_ms": 1619892360002,
+              "first_receive_timestamp": "2021-05-01T18:06:00.0346977Z",
+              "high": "57587.06000000",
+              "last_capture_line": 420,
+              "last_exchange_event_timestamp_ms": 1619892419002,
+              "last_receive_timestamp": "2021-05-01T18:06:59.0278819Z",
+              "low": "57512.01000000",
+              "open": "57580.00000000"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "57512.01000000",
+              "high": "57587.06000000",
+              "low": "57512.01000000",
+              "open": "57580"
+            },
+            "open_time_ms": 1619892360000,
+            "open_time_utc": "2021-05-01T18:06:00Z"
+          },
+          {
+            "candidate": {
+              "close": "57543.59000000",
+              "event_count": 60,
+              "first_capture_line": 421,
+              "first_exchange_event_timestamp_ms": 1619892420002,
+              "first_receive_timestamp": "2021-05-01T18:07:00.0370308Z",
+              "high": "57549.99000000",
+              "last_capture_line": 480,
+              "last_exchange_event_timestamp_ms": 1619892479000,
+              "last_receive_timestamp": "2021-05-01T18:07:59.0255351Z",
+              "low": "57512.01000000",
+              "open": "57512.01000000"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "57543.59000000",
+              "high": "57549.99000000",
+              "low": "57512.01000000",
+              "open": "57512.01000000"
+            },
+            "open_time_ms": 1619892420000,
+            "open_time_utc": "2021-05-01T18:07:00Z"
+          },
+          {
+            "candidate": {
+              "close": "57505.25143066",
+              "event_count": 60,
+              "first_capture_line": 481,
+              "first_exchange_event_timestamp_ms": 1619892480007,
+              "first_receive_timestamp": "2021-05-01T18:08:00.0305832Z",
+              "high": "57555.12051730",
+              "last_capture_line": 540,
+              "last_exchange_event_timestamp_ms": 1619892539000,
+              "last_receive_timestamp": "2021-05-01T18:08:59.0315874Z",
+              "low": "57501.05000000",
+              "open": "57551.98231730"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "57505.25143066",
+              "high": "57555.12051730",
+              "low": "57501.05000000",
+              "open": "57551.98231730"
+            },
+            "open_time_ms": 1619892480000,
+            "open_time_utc": "2021-05-01T18:08:00Z"
+          },
+          {
+            "candidate": {
+              "close": "57501.37215970",
+              "event_count": 60,
+              "first_capture_line": 541,
+              "first_exchange_event_timestamp_ms": 1619892540003,
+              "first_receive_timestamp": "2021-05-01T18:09:00.0445092Z",
+              "high": "57507.08410146",
+              "last_capture_line": 600,
+              "last_exchange_event_timestamp_ms": 1619892599000,
+              "last_receive_timestamp": "2021-05-01T18:09:59.0335085Z",
+              "low": "57491.66082646",
+              "open": "57505.24688521"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "57501.37215970",
+              "high": "57507.08410146",
+              "low": "57491.66082646",
+              "open": "57505.24688521"
+            },
+            "open_time_ms": 1619892540000,
+            "open_time_utc": "2021-05-01T18:09:00Z"
+          }
+        ],
+        "continuous_real_events_each_minute": true,
+        "derived_minute_count": 10,
+        "event_count": 600,
+        "label": "control-08-2021-05-01T18:00",
+        "official_reference": {
+          "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/binance-control-mark-klines-2021-05-01-18.body",
+          "sha256": "5488ef2d95f550f87ddc803e3acec0f04f7974537b30cef405e86939e6a276a9",
+          "size_bytes": 1193
+        },
+        "parse_errors": [],
+        "required_minute_count": 10,
+        "window": {
+          "end_ms": 1619892600000,
+          "end_utc": "2021-05-01T18:10:00Z",
+          "start_ms": 1619892000000,
+          "start_utc": "2021-05-01T18:00:00Z"
+        }
+      },
+      {
+        "all_minute_ohlc_semantically_match": true,
+        "archive": {
+          "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-mark-raw-2021-06-01-06-10m.body",
+          "sha256": "92b005f748b285f05f347db9083d5bf18404a7bbd4ed286cde1a7b2315ba57c9",
+          "size_bytes": 17010
+        },
+        "comparisons": [
+          {
+            "candidate": {
+              "close": "37195.86000000",
+              "event_count": 60,
+              "first_capture_line": 1,
+              "first_exchange_event_timestamp_ms": 1622527200000,
+              "first_receive_timestamp": "2021-06-01T06:00:00.0891561Z",
+              "high": "37254.07000000",
+              "last_capture_line": 60,
+              "last_exchange_event_timestamp_ms": 1622527259001,
+              "last_receive_timestamp": "2021-06-01T06:00:59.0290709Z",
+              "low": "37184.92744287",
+              "open": "37254.07000000"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "37195.86000000",
+              "high": "37254.07000000",
+              "low": "37184.92744287",
+              "open": "37254.07000000"
+            },
+            "open_time_ms": 1622527200000,
+            "open_time_utc": "2021-06-01T06:00:00Z"
+          },
+          {
+            "candidate": {
+              "close": "37267.50000000",
+              "event_count": 60,
+              "first_capture_line": 61,
+              "first_exchange_event_timestamp_ms": 1622527260002,
+              "first_receive_timestamp": "2021-06-01T06:01:00.0304682Z",
+              "high": "37276.16391299",
+              "last_capture_line": 120,
+              "last_exchange_event_timestamp_ms": 1622527319015,
+              "last_receive_timestamp": "2021-06-01T06:01:59.0388253Z",
+              "low": "37170.50000000",
+              "open": "37192.18000000"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "37267.50000000",
+              "high": "37276.16391299",
+              "low": "37170.50000000",
+              "open": "37192.18000000"
+            },
+            "open_time_ms": 1622527260000,
+            "open_time_utc": "2021-06-01T06:01:00Z"
+          },
+          {
+            "candidate": {
+              "close": "37321.62000000",
+              "event_count": 60,
+              "first_capture_line": 121,
+              "first_exchange_event_timestamp_ms": 1622527320000,
+              "first_receive_timestamp": "2021-06-01T06:02:00.0244776Z",
+              "high": "37328.83819508",
+              "last_capture_line": 180,
+              "last_exchange_event_timestamp_ms": 1622527379001,
+              "last_receive_timestamp": "2021-06-01T06:02:59.0231151Z",
+              "low": "37271.90000000",
+              "open": "37271.90000000"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "37321.62000000",
+              "high": "37328.83819508",
+              "low": "37271.90000000",
+              "open": "37271.90000000"
+            },
+            "open_time_ms": 1622527320000,
+            "open_time_utc": "2021-06-01T06:02:00Z"
+          },
+          {
+            "candidate": {
+              "close": "37341.21855839",
+              "event_count": 60,
+              "first_capture_line": 181,
+              "first_exchange_event_timestamp_ms": 1622527380009,
+              "first_receive_timestamp": "2021-06-01T06:03:00.0282666Z",
+              "high": "37341.21855839",
+              "last_capture_line": 240,
+              "last_exchange_event_timestamp_ms": 1622527439001,
+              "last_receive_timestamp": "2021-06-01T06:03:59.0217101Z",
+              "low": "37306.34368352",
+              "open": "37322.24000000"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "37341.21855839",
+              "high": "37341.21855839",
+              "low": "37306.34368352",
+              "open": "37322.24000000"
+            },
+            "open_time_ms": 1622527380000,
+            "open_time_utc": "2021-06-01T06:03:00Z"
+          },
+          {
+            "candidate": {
+              "close": "37331.99111890",
+              "event_count": 60,
+              "first_capture_line": 241,
+              "first_exchange_event_timestamp_ms": 1622527440003,
+              "first_receive_timestamp": "2021-06-01T06:04:00.0352583Z",
+              "high": "37342.69000000",
+              "last_capture_line": 300,
+              "last_exchange_event_timestamp_ms": 1622527499000,
+              "last_receive_timestamp": "2021-06-01T06:04:59.0433911Z",
+              "low": "37310.97633669",
+              "open": "37341.73651294"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "37331.99111890",
+              "high": "37342.69000000",
+              "low": "37310.97633669",
+              "open": "37341.73651294"
+            },
+            "open_time_ms": 1622527440000,
+            "open_time_utc": "2021-06-01T06:04:00Z"
+          },
+          {
+            "candidate": {
+              "close": "37304.48000000",
+              "event_count": 60,
+              "first_capture_line": 301,
+              "first_exchange_event_timestamp_ms": 1622527500000,
+              "first_receive_timestamp": "2021-06-01T06:05:00.0332946Z",
+              "high": "37340.51000000",
+              "last_capture_line": 360,
+              "last_exchange_event_timestamp_ms": 1622527559000,
+              "last_receive_timestamp": "2021-06-01T06:05:59.0360231Z",
+              "low": "37303.03959017",
+              "open": "37331.98657345"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "37304.48000000",
+              "high": "37340.51000000",
+              "low": "37303.03959017",
+              "open": "37331.98657345"
+            },
+            "open_time_ms": 1622527500000,
+            "open_time_utc": "2021-06-01T06:05:00Z"
+          },
+          {
+            "candidate": {
+              "close": "37302.23000000",
+              "event_count": 60,
+              "first_capture_line": 361,
+              "first_exchange_event_timestamp_ms": 1622527560003,
+              "first_receive_timestamp": "2021-06-01T06:06:00.0333948Z",
+              "high": "37316.96000000",
+              "last_capture_line": 420,
+              "last_exchange_event_timestamp_ms": 1622527619000,
+              "last_receive_timestamp": "2021-06-01T06:06:59.0188844Z",
+              "low": "37302.23000000",
+              "open": "37304.01246747"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "37302.23000000",
+              "high": "37316.96000000",
+              "low": "37302.23000000",
+              "open": "37304.01246747"
+            },
+            "open_time_ms": 1622527560000,
+            "open_time_utc": "2021-06-01T06:06:00Z"
+          },
+          {
+            "candidate": {
+              "close": "37274.36000000",
+              "event_count": 60,
+              "first_capture_line": 421,
+              "first_exchange_event_timestamp_ms": 1622527620001,
+              "first_receive_timestamp": "2021-06-01T06:07:00.0381985Z",
+              "high": "37302.24000000",
+              "last_capture_line": 480,
+              "last_exchange_event_timestamp_ms": 1622527679005,
+              "last_receive_timestamp": "2021-06-01T06:07:59.0199452Z",
+              "low": "37262.79819156",
+              "open": "37302.23000000"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "37274.36000000",
+              "high": "37302.24000000",
+              "low": "37262.79819156",
+              "open": "37302.23000000"
+            },
+            "open_time_ms": 1622527620000,
+            "open_time_utc": "2021-06-01T06:07:00Z"
+          },
+          {
+            "candidate": {
+              "close": "37413.98090631",
+              "event_count": 60,
+              "first_capture_line": 481,
+              "first_exchange_event_timestamp_ms": 1622527680001,
+              "first_receive_timestamp": "2021-06-01T06:08:00.0358828Z",
+              "high": "37413.98090631",
+              "last_capture_line": 540,
+              "last_exchange_event_timestamp_ms": 1622527739000,
+              "last_receive_timestamp": "2021-06-01T06:08:59.0307350Z",
+              "low": "37275.81000000",
+              "open": "37275.81000000"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "37413.98090631",
+              "high": "37413.98090631",
+              "low": "37275.81000000",
+              "open": "37275.81000000"
+            },
+            "open_time_ms": 1622527680000,
+            "open_time_utc": "2021-06-01T06:08:00Z"
+          },
+          {
+            "candidate": {
+              "close": "37391.17836365",
+              "event_count": 60,
+              "first_capture_line": 541,
+              "first_exchange_event_timestamp_ms": 1622527740002,
+              "first_receive_timestamp": "2021-06-01T06:09:00.0569715Z",
+              "high": "37425.49000000",
+              "last_capture_line": 600,
+              "last_exchange_event_timestamp_ms": 1622527799002,
+              "last_receive_timestamp": "2021-06-01T06:09:59.0313140Z",
+              "low": "37386.92694222",
+              "open": "37413.01000000"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "37391.17836365",
+              "high": "37425.49000000",
+              "low": "37386.92694222",
+              "open": "37413.01000000"
+            },
+            "open_time_ms": 1622527740000,
+            "open_time_utc": "2021-06-01T06:09:00Z"
+          }
+        ],
+        "continuous_real_events_each_minute": true,
+        "derived_minute_count": 10,
+        "event_count": 600,
+        "label": "control-09-2021-06-01T06:00",
+        "official_reference": {
+          "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/binance-control-mark-klines-2021-06-01-06.body",
+          "sha256": "452315beb01ec43e48f7670d4c35b04726a474750f62b8351107ba96f56bd0ab",
+          "size_bytes": 1211
+        },
+        "parse_errors": [],
+        "required_minute_count": 10,
+        "window": {
+          "end_ms": 1622527800000,
+          "end_utc": "2021-06-01T06:10:00Z",
+          "start_ms": 1622527200000,
+          "start_utc": "2021-06-01T06:00:00Z"
+        }
+      },
+      {
+        "all_minute_ohlc_semantically_match": true,
+        "archive": {
+          "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-mark-raw-2021-06-01-10m.body",
+          "sha256": "d24567dd2f30b96582070952ae7f9490e2f6e84172e137eecee8e90e5d2c0e3b",
+          "size_bytes": 15879
+        },
+        "comparisons": [
+          {
+            "candidate": {
+              "close": "36185.89379584",
+              "event_count": 60,
+              "first_capture_line": 1,
+              "first_exchange_event_timestamp_ms": 1622570400003,
+              "first_receive_timestamp": "2021-06-01T18:00:00.1015741Z",
+              "high": "36219.69452648",
+              "last_capture_line": 60,
+              "last_exchange_event_timestamp_ms": 1622570459000,
+              "last_receive_timestamp": "2021-06-01T18:00:59.0251145Z",
+              "low": "36139.57147830",
+              "open": "36153.59000000"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "36185.89379584",
+              "high": "36219.69452648",
+              "low": "36139.57147830",
+              "open": "36153.59000000"
+            },
+            "open_time_ms": 1622570400000,
+            "open_time_utc": "2021-06-01T18:00:00Z"
+          },
+          {
+            "candidate": {
+              "close": "36204.84942033",
+              "event_count": 60,
+              "first_capture_line": 61,
+              "first_exchange_event_timestamp_ms": 1622570460000,
+              "first_receive_timestamp": "2021-06-01T18:01:00.0281569Z",
+              "high": "36209.18780432",
+              "last_capture_line": 120,
+              "last_exchange_event_timestamp_ms": 1622570519000,
+              "last_receive_timestamp": "2021-06-01T18:01:59.0170942Z",
+              "low": "36168.78120381",
+              "open": "36185.89379584"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "36204.84942033",
+              "high": "36209.18780432",
+              "low": "36168.78120381",
+              "open": "36185.89379584"
+            },
+            "open_time_ms": 1622570460000,
+            "open_time_utc": "2021-06-01T18:01:00Z"
+          },
+          {
+            "candidate": {
+              "close": "36200.18872565",
+              "event_count": 60,
+              "first_capture_line": 121,
+              "first_exchange_event_timestamp_ms": 1622570520000,
+              "first_receive_timestamp": "2021-06-01T18:02:00.0250107Z",
+              "high": "36216.92989201",
+              "last_capture_line": 180,
+              "last_exchange_event_timestamp_ms": 1622570579000,
+              "last_receive_timestamp": "2021-06-01T18:02:59.0164634Z",
+              "low": "36194.12830870",
+              "open": "36206.28000000"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "36200.18872565",
+              "high": "36216.92989201",
+              "low": "36194.12830870",
+              "open": "36206.28000000"
+            },
+            "open_time_ms": 1622570520000,
+            "open_time_utc": "2021-06-01T18:02:00Z"
+          },
+          {
+            "candidate": {
+              "close": "36227.19159407",
+              "event_count": 60,
+              "first_capture_line": 181,
+              "first_exchange_event_timestamp_ms": 1622570580003,
+              "first_receive_timestamp": "2021-06-01T18:03:00.0317755Z",
+              "high": "36228.84776232",
+              "last_capture_line": 240,
+              "last_exchange_event_timestamp_ms": 1622570639000,
+              "last_receive_timestamp": "2021-06-01T18:03:59.0225911Z",
+              "low": "36196.19271225",
+              "open": "36200.51112790"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "36227.19159407",
+              "high": "36228.84776232",
+              "low": "36196.19271225",
+              "open": "36200.51112790"
+            },
+            "open_time_ms": 1622570580000,
+            "open_time_utc": "2021-06-01T18:03:00Z"
+          },
+          {
+            "candidate": {
+              "close": "36189.29016840",
+              "event_count": 60,
+              "first_capture_line": 241,
+              "first_exchange_event_timestamp_ms": 1622570640000,
+              "first_receive_timestamp": "2021-06-01T18:04:00.0323343Z",
+              "high": "36249.14000000",
+              "last_capture_line": 300,
+              "last_exchange_event_timestamp_ms": 1622570699000,
+              "last_receive_timestamp": "2021-06-01T18:04:59.0233110Z",
+              "low": "36186.20567595",
+              "open": "36235.58049043"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "36189.29016840",
+              "high": "36249.14000000",
+              "low": "36186.20567595",
+              "open": "36235.58049043"
+            },
+            "open_time_ms": 1622570640000,
+            "open_time_utc": "2021-06-01T18:04:00Z"
+          },
+          {
+            "candidate": {
+              "close": "36149.21348763",
+              "event_count": 60,
+              "first_capture_line": 301,
+              "first_exchange_event_timestamp_ms": 1622570700005,
+              "first_receive_timestamp": "2021-06-01T18:05:00.0302130Z",
+              "high": "36199.70944305",
+              "last_capture_line": 360,
+              "last_exchange_event_timestamp_ms": 1622570759001,
+              "last_receive_timestamp": "2021-06-01T18:05:59.0230611Z",
+              "low": "36149.21348763",
+              "open": "36189.69000000"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "36149.21348763",
+              "high": "36199.70944305",
+              "low": "36149.21348763",
+              "open": "36189.69000000"
+            },
+            "open_time_ms": 1622570700000,
+            "open_time_utc": "2021-06-01T18:05:00Z"
+          },
+          {
+            "candidate": {
+              "close": "36136.97864967",
+              "event_count": 60,
+              "first_capture_line": 361,
+              "first_exchange_event_timestamp_ms": 1622570760000,
+              "first_receive_timestamp": "2021-06-01T18:06:00.0331059Z",
+              "high": "36161.84891969",
+              "last_capture_line": 420,
+              "last_exchange_event_timestamp_ms": 1622570819000,
+              "last_receive_timestamp": "2021-06-01T18:06:59.0239462Z",
+              "low": "36131.55705393",
+              "open": "36149.21348763"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "36136.97864967",
+              "high": "36161.84891969",
+              "low": "36131.55705393",
+              "open": "36149.21348763"
+            },
+            "open_time_ms": 1622570760000,
+            "open_time_utc": "2021-06-01T18:06:00Z"
+          },
+          {
+            "candidate": {
+              "close": "36116.43224051",
+              "event_count": 60,
+              "first_capture_line": 421,
+              "first_exchange_event_timestamp_ms": 1622570820003,
+              "first_receive_timestamp": "2021-06-01T18:07:00.0368142Z",
+              "high": "36146.86000000",
+              "last_capture_line": 480,
+              "last_exchange_event_timestamp_ms": 1622570879001,
+              "last_receive_timestamp": "2021-06-01T18:07:59.0292442Z",
+              "low": "36114.27292218",
+              "open": "36143.34226374"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "36116.43224051",
+              "high": "36146.86000000",
+              "low": "36114.27292218",
+              "open": "36143.34226374"
+            },
+            "open_time_ms": 1622570820000,
+            "open_time_utc": "2021-06-01T18:07:00Z"
+          },
+          {
+            "candidate": {
+              "close": "36105.90352165",
+              "event_count": 60,
+              "first_capture_line": 481,
+              "first_exchange_event_timestamp_ms": 1622570880006,
+              "first_receive_timestamp": "2021-06-01T18:08:00.0434227Z",
+              "high": "36130.44143645",
+              "last_capture_line": 540,
+              "last_exchange_event_timestamp_ms": 1622570939001,
+              "last_receive_timestamp": "2021-06-01T18:08:59.0307282Z",
+              "low": "36105.90352165",
+              "open": "36122.20372840"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "36105.90352165",
+              "high": "36130.44143645",
+              "low": "36105.90352165",
+              "open": "36122.20372840"
+            },
+            "open_time_ms": 1622570880000,
+            "open_time_utc": "2021-06-01T18:08:00Z"
+          },
+          {
+            "candidate": {
+              "close": "36215.49069319",
+              "event_count": 60,
+              "first_capture_line": 541,
+              "first_exchange_event_timestamp_ms": 1622570940004,
+              "first_receive_timestamp": "2021-06-01T18:09:00.0461224Z",
+              "high": "36222.75844622",
+              "last_capture_line": 600,
+              "last_exchange_event_timestamp_ms": 1622570999002,
+              "last_receive_timestamp": "2021-06-01T18:09:59.0287297Z",
+              "low": "36102.70499124",
+              "open": "36103.68072165"
+            },
+            "exact_semantic_ohlc_match": true,
+            "field_semantic_matches": {
+              "close": true,
+              "high": true,
+              "low": true,
+              "open": true
+            },
+            "official_mark_price_kline": {
+              "close": "36215.49069319",
+              "high": "36222.75844622",
+              "low": "36102.70499124",
+              "open": "36103.68072165"
+            },
+            "open_time_ms": 1622570940000,
+            "open_time_utc": "2021-06-01T18:09:00Z"
+          }
+        ],
+        "continuous_real_events_each_minute": true,
+        "derived_minute_count": 10,
+        "event_count": 600,
+        "label": "control-10-2021-06-01T18:00",
+        "official_reference": {
+          "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/binance-control-mark-klines-2021-06-01-c.body",
+          "sha256": "da5e6c54e567b6f47dfe7bd5be86ae1ede6e1b69188ec8bcdda2aa79fdb9ec07",
+          "size_bytes": 1332
+        },
+        "parse_errors": [],
+        "required_minute_count": 10,
+        "window": {
+          "end_ms": 1622571000000,
+          "end_utc": "2021-06-01T18:10:00Z",
+          "start_ms": 1622570400000,
+          "start_utc": "2021-06-01T18:00:00Z"
+        }
+      }
+    ]
+  },
+  "created_at_utc": "2026-08-23T11:07:49.151041Z",
+  "current_status": "ACCESS_REQUIRED_TARGET_BYTES_NOT_CONFIRMED",
+  "instrument": "BTCUSDT Binance USDⓈ-M perpetual",
+  "official_rest_probe": {
+    "body_path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/binance-target-mark-klines.body",
+    "body_sha256": "7f9f801706edee459fd38ec07ee9a7fcc7aa0bb5ef0dc5b7cffe79747b82b48c",
+    "body_size_bytes": 595,
+    "capture_timestamp_utc": "2026-08-23T10:31:42.250020Z",
+    "credentials_used": false,
+    "final_url": "https://fapi.binance.com/fapi/v1/markPriceKlines?symbol=BTCUSDT&interval=1m&startTime=1608190200000&endTime=1608191880000&limit=1000",
+    "headers_path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/binance-target-mark-klines.headers.json",
+    "note": "The REST endTime is inclusive and returned 07:58; that row lies outside the half-open provider research probe window.",
+    "observation_path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/binance-target-mark-klines.observation.json",
+    "raw_saved_before_parsing": true,
+    "request_url": "https://fapi.binance.com/fapi/v1/markPriceKlines?symbol=BTCUSDT&interval=1m&startTime=1608190200000&endTime=1608191880000&limit=1000",
+    "returned_open_times_ms": [
+      1608190200000,
+      1608190260000,
+      1608191760000,
+      1608191820000,
+      1608191880000
+    ],
+    "returned_open_times_utc": [
+      "2020-12-17T07:30:00Z",
+      "2020-12-17T07:31:00Z",
+      "2020-12-17T07:56:00Z",
+      "2020-12-17T07:57:00Z",
+      "2020-12-17T07:58:00Z"
+    ],
+    "returned_row_count_inclusive_query": 5,
+    "status_code": 200
+  },
+  "public_issue_reference": {
+    "documented_exact_range": "2020-12-17 07:32 through 07:55 UTC",
+    "issue": {
+      "authority_limit": "User report in official Binance repository; not publisher confirmation.",
+      "body_path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/binance-public-data-issue-483.body",
+      "body_sha256": "16a9c69c5e88ac303bbc9c4817bf5103a41304d2b53ee528682e39d75d269e33",
+      "body_size_bytes": 5602,
+      "capture_timestamp_utc": "2026-08-23T10:35:06.023011Z",
+      "credentials_used": false,
+      "final_url": "https://api.github.com/repos/binance/binance-public-data/issues/483",
+      "headers_path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/binance-public-data-issue-483.headers.json",
+      "observation_path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/binance-public-data-issue-483.observation.json",
+      "raw_saved_before_parsing": true,
+      "request_url": "https://api.github.com/repos/binance/binance-public-data/issues/483",
+      "status_code": 200
+    }
+  },
+  "research_probe_window": {
+    "end_exclusive": "2020-12-17T07:58:00Z",
+    "start_inclusive": "2020-12-17T07:30:00Z"
+  },
+  "schema": "target-mark-gap-status-v1",
+  "status": "BLOCKED_PENDING_PROVIDER_ACCESS",
+  "synthetic_or_substitute_price_used": false,
+  "target_provider_download": {
+    "access_required": {
+      "exact_required_access_for_mark": "Tardis Perpetuals data plan, Business subscription, yearly billing, provider-issued API access, raw data replay API for binance-futures markPrice. Business yearly is required for all available 2020 history; Pro is limited to four years.",
+      "exact_required_access_for_spot": "Tardis Spot data plan, Business subscription, yearly billing, provider-issued API access, raw data replay API for binance aggTrade.",
+      "http_result": "401; unauthenticated requests are limited to the first day of each month",
+      "single_scope_alternative": "Tardis All Exchanges data plan, Business subscription, yearly billing, with raw data replay API access."
+    },
+    "continuous_real_events_every_minute": null,
+    "derived_target_mark_bars_created": false,
+    "provider": "Tardis.dev",
+    "raw_probe_status_code": 401,
+    "second_independent_archive_agreement": null,
+    "target_event_row_count": null,
+    "target_values_accepted": false
+  },
+  "unresolved_gap": {
+    "end_exclusive": "2020-12-17T07:56:00Z",
+    "minute_count": 24,
+    "start_inclusive": "2020-12-17T07:32:00Z",
+    "timestamps": [
+      "2020-12-17T07:32:00Z",
+      "2020-12-17T07:33:00Z",
+      "2020-12-17T07:34:00Z",
+      "2020-12-17T07:35:00Z",
+      "2020-12-17T07:36:00Z",
+      "2020-12-17T07:37:00Z",
+      "2020-12-17T07:38:00Z",
+      "2020-12-17T07:39:00Z",
+      "2020-12-17T07:40:00Z",
+      "2020-12-17T07:41:00Z",
+      "2020-12-17T07:42:00Z",
+      "2020-12-17T07:43:00Z",
+      "2020-12-17T07:44:00Z",
+      "2020-12-17T07:45:00Z",
+      "2020-12-17T07:46:00Z",
+      "2020-12-17T07:47:00Z",
+      "2020-12-17T07:48:00Z",
+      "2020-12-17T07:49:00Z",
+      "2020-12-17T07:50:00Z",
+      "2020-12-17T07:51:00Z",
+      "2020-12-17T07:52:00Z",
+      "2020-12-17T07:53:00Z",
+      "2020-12-17T07:54:00Z",
+      "2020-12-17T07:55:00Z"
+    ]
+  }
+}

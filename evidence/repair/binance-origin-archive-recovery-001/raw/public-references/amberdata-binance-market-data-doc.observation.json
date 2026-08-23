@@ -1,0 +1,14 @@
+{
+  "capture_timestamp_utc": "2026-08-23T10:37:28.786825Z",
+  "request_method": "GET",
+  "request_url": "https://www.amberdata.io/binance-market-data",
+  "request_accept_encoding": "identity",
+  "final_url": "https://www.amberdata.io/binance-market-data",
+  "status_code": 200,
+  "body_path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/amberdata-binance-market-data-doc.body",
+  "body_size_bytes": 197415,
+  "body_sha256": "eb09dce5840fcd00e4aa50af2d4809d3713d442662d386e794db590dee106b7d",
+  "headers_path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/amberdata-binance-market-data-doc.headers.json",
+  "credentials_used": false,
+  "parsed_before_body_saved": false
+}

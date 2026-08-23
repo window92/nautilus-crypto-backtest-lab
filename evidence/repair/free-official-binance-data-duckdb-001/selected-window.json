@@ -1,0 +1,23 @@
+{
+  "analysis_identity": "bf7c4d476702a6438e2940d85548943ca1b2b926f74ba64380e20bd0490c654d",
+  "dataset_release_created": false,
+  "final_holdout_consumed": false,
+  "perpetual_execution_status": "PASS",
+  "perpetual_funding_status": "PASS",
+  "perpetual_mark_status": "PASS",
+  "schema": "free-official-binance-selected-window-v1",
+  "selected_window": {
+    "classification": "DATA_QUALITY_INSPECTED_NOT_FINAL_HOLDOUT",
+    "dataset_end_exclusive": "2021-08-01T00:00:00Z",
+    "dataset_start_inclusive": "2021-01-01T00:00:00Z",
+    "reason": "FIRST_CHRONOLOGICAL_WHOLE_MONTH_SHIFT_PASSING_BOTH_PROFILES",
+    "scoring_end_exclusive": "2021-08-01T00:00:00Z",
+    "scoring_start_inclusive": "2021-02-01T00:00:00Z",
+    "shift_months": 1,
+    "status": "PASS",
+    "strategy_performance_inspected": false,
+    "warmup_start_inclusive": "2021-01-01T00:00:00Z"
+  },
+  "spot_status": "PASS",
+  "status": "PASS_PHASE_A_ONLY_PENDING_SSOT_OWNER_ADOPTION"
+}

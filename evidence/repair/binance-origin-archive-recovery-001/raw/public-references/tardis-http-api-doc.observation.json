@@ -1,0 +1,13 @@
+{
+  "capture_timestamp_utc": "2026-08-23T10:27:49.386766Z",
+  "request_method": "GET",
+  "request_url": "https://docs.tardis.dev/api/http",
+  "final_url": "https://docs.tardis.dev/api/http-api-reference",
+  "status_code": 200,
+  "body_path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/tardis-http-api-doc.body",
+  "body_size_bytes": 986431,
+  "body_sha256": "a2bc50b6a8d1f23cdd70a34369bd20a1eda11895c36f00b568f77777461b67f9",
+  "headers_path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/tardis-http-api-doc.headers.json",
+  "credentials_used": false,
+  "parsed_before_body_saved": false
+}

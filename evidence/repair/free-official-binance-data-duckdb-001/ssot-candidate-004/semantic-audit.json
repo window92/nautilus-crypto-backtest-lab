@@ -1,0 +1,889 @@
+{
+  "active_normative_contradiction_count": 0,
+  "analysis_identity": "bf7c4d476702a6438e2940d85548943ca1b2b926f74ba64380e20bd0490c654d",
+  "audited_at_utc": "2026-08-23T13:21:39.795941Z",
+  "base_ssot_sha256": "f51971ed7a09b172c82ff5965f2899d2a302dd71a2af60eb7c920133567b4354",
+  "broken_internal_references": [],
+  "candidate_ssot_sha256": "b4deb7048242239234de7eaa353b623b3e45247eb42f1021dbc26ffd910edb99",
+  "duplicate_contract_ids": [],
+  "duplicate_failure_codes": [],
+  "duplicate_headings": [],
+  "numeric_section_references": [
+    "1.5",
+    "10.1",
+    "10.5",
+    "2",
+    "3.2",
+    "3.4",
+    "4",
+    "4.1",
+    "4.4",
+    "4.5",
+    "4.5.1",
+    "4.5.2",
+    "4.5.3",
+    "5.4",
+    "6.8",
+    "9.11",
+    "9.12",
+    "9.7"
+  ],
+  "prohibited_semantic_changes": {
+    "Dependency_Lock": false,
+    "Fill_Model_or_order_lifecycle": false,
+    "Market_Profiles": false,
+    "NautilusTrader_identity": false,
+    "Official_Run_offline_boundary": false,
+    "Runtime_Lock": false,
+    "fees_or_funding_settlement": false,
+    "latency": false,
+    "mark_valuation_semantics": false,
+    "matching_positions_accounts_PnL": false,
+    "research_Holdout_or_claim_semantics": false,
+    "strategy_behavior": false
+  },
+  "required_semantic_assertions": {
+    "DuckDB no financial-engine role": true,
+    "DuckDB raw authority limitation": true,
+    "Nautilus export restriction": true,
+    "exact Decimal reconstruction": true,
+    "fail closed": true,
+    "first passing window": true,
+    "free official Binance only": true,
+    "inspected exposure recording": true,
+    "irrecoverable Mark gap": true,
+    "no Mark reconstruction": true,
+    "no silent priority": true,
+    "no synthetic remainder": true,
+    "objective whole-month shift": true,
+    "official raw trades role": true,
+    "raw and aggregate continuity": true,
+    "raw bytes preserved before parsing": true,
+    "redundant official route": true,
+    "selected N=1 window": true,
+    "semantic rebuild": true,
+    "verified no trade with no Bar": true
+  },
+  "schema": "ssot-candidate-004-semantic-audit-v1",
+  "stale_reference_classification_counts": {
+    "conflicting": 0,
+    "historical_non_normative": 0,
+    "unchanged_and_compatible": 110,
+    "updated": 43
+  },
+  "stale_reference_hits": [
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 7,
+      "text": "Candidate runtime: official Rust/PyO3 `nautilus_trader==2.0.0rc2`, pending Owner adoption and all required qualifications before any Official Run."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 9,
+      "text": "This document defines one strict, offline crypto backtesting laboratory built on NautilusTrader. It is the complete engineering specification for V1."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 21,
+      "text": "The laboratory MUST prevent a good-looking result from becoming an Official Result when the result depends on look-ahead, same-bar execution, hidden defaults, silent data repair, omitted failed trials, reused Holdout data, non-reproducible settings, or unsupported claims."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 23,
+      "text": "The laboratory MUST NOT rebuild functionality that the pinned NautilusTrader runtime already provides correctly for the selected profile."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 27,
+      "text": "Use NautilusTrader first."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 29,
+      "text": "If NautilusTrader v2.0.0rc2 already owns a behavior in the official backtest path, use that behavior. Do not create a second matching engine, order state machine, position engine, account ledger, PnL engine, margin engine, fee engine, funding engine, portfolio engine, or report engine."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 31,
+      "text": "Add project code only when NautilusTrader does not provide the control that the laboratory needs for data integrity, causality, reproducibility, research governance, validation, or evidence."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 37,
+      "text": "The implementation agent MUST continue autonomously when this SSOT and the pinned NautilusTrader runtime determine the answer."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 48,
+      "text": "- the pinned NautilusTrader runtime;"
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 79,
+      "text": "The only official backtest engine is NautilusTrader."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 85,
+      "text": "| Package           | `nautilus_trader`                                                  |"
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 87,
+      "text": "| Source repository | `nautechsystems/nautilus_trader`                                   |"
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 89,
+      "text": "| Linux wheel       | `nautilus_trader-2.0.0rc2-cp312-cp312-manylinux_2_34_x86_64.whl`   |"
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 100,
+      "text": "The project MUST NOT fork, patch, vendor, or modify NautilusTrader."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 153,
+      "text": "Official V1 execution uses canonical one-minute bars whose provenance satisfies Section 4."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 155,
+      "text": "The canonical execution bar interval is exactly `1m`."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 157,
+      "text": "An accepted canonical execution bar is either a `REAL_OFFICIAL_BAR` or a `DERIVED_FROM_OFFICIAL_TRADES` bar. A `VERIFIED_NO_TRADE_INTERVAL` is coverage evidence, not a bar, and MUST NOT be converted into a Nautilus market-data event."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 199,
+      "text": "For an Official Run, NautilusTrader owns:"
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 318,
+      "text": "trade_execution"
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 346,
+      "text": "trade_execution = false"
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 369,
+      "text": "The V1 exchange-fee path is singular. The public v2 venue path `BacktestEngine.add_venue` MUST receive `nautilus_trader.execution.MakerTakerFeeModel`; the Instrument `maker_fee` and `taker_fee` MUST be populated from the frozen `fee_assumption`. The resolved Run evidence MUST record that exact effective fee-model identity. Another fee model or a project-side exchange-fee debit is forbidden in an Official Run."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 375,
+      "text": "Use `nautilus_trader.execution.DefaultFillModel` with these effective values: `prob_fill_on_limit=1.0`, `prob_slippage=1.0`, and `random_seed=0`. For L1 execution this applies the runtime's deterministic one-tick adverse slippage behavior to every Fill. Record that exact public class identity in the resolved Run Configuration."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 385,
+      "text": "The V1 run configuration MUST use `nautilus_trader.execution.StaticLatencyModel` exposed by the pinned v2.0.0rc2 wheel and accepted by the public `BacktestEngine.add_venue` path. M0 MUST resolve and record that exact import path and class name from the pinned artifact; it MUST NOT copy a class name from another Nautilus release."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 408,
+      "text": "Every synthetic qualification Bar MUST encode price and size precision valid for its Instrument. For Appendix A.4 with a price-precision-2 Instrument, the numerically unchanged values are encoded as `100.00`, `101.00`, and so on. A precision-rejected Bar is not a valid causal test result. `CAUSAL_FILL_REPAIR_001` qualifies the public v2 path with external one-minute LAST Bars, volume `1000`, order quantity `1`, and the locked standard Fill Model: the causal Fill is `BUY 1 @ 200.01` at `120_000_000_000` ns; the zero-latency control is `BUY 1 @ 100.01` at `60_000_000_000` ns and fails the invariant as required."
+    },
+    {
+      "classification": "updated",
+      "line": 440,
+      "text": "Use only free official Binance public archives and free public market-data endpoints for V1 Dataset Releases. A paid provider, subscription, provider-normalized dataset, third-party archive, or repaired external dataset is not an allowed V1 source."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 450,
+      "text": "Spot official trade events:"
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 451,
+      "text": "GET /api/v3/aggTrades"
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 452,
+      "text": "data/spot/daily/aggTrades/{SYMBOL}/"
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 453,
+      "text": "data/spot/monthly/aggTrades/{SYMBOL}/"
+    },
+    {
+      "classification": "updated",
+      "line": 455,
+      "text": "Spot official raw trades:"
+    },
+    {
+      "classification": "updated",
+      "line": 456,
+      "text": "data/spot/daily/trades/{SYMBOL}/"
+    },
+    {
+      "classification": "updated",
+      "line": 457,
+      "text": "data/spot/monthly/trades/{SYMBOL}/"
+    },
+    {
+      "classification": "updated",
+      "line": 479,
+      "text": "Do not use a third-party repaired dataset as Official input. V1 data acquisition MUST NOT require credentials, payment, a subscription, or contact with an archival provider."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 507,
+      "text": "A `DatasetRelease` is an immutable manifest over exact raw-object hashes plus the Nautilus catalog derived from them."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 527,
+      "text": "catalog_identity"
+    },
+    {
+      "classification": "updated",
+      "line": 537,
+      "text": "Changing any raw object, parser rule, timestamp rule, source-reconciliation rule, minute-coverage disposition, data window or partition binding, data-quality exposure record, instrument metadata, derived-validation identity, Data Tool Lock used for material normalization, or derived catalog creates a new Dataset Release."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 567,
+      "text": "A parser or catalog conversion that makes the full OHLCV bar visible before `available_at` is a fatal data error."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 577,
+      "text": "DERIVED_FROM_OFFICIAL_TRADES"
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 578,
+      "text": "VERIFIED_NO_TRADE_INTERVAL"
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 584,
+      "text": "`REAL_OFFICIAL_BAR` means an official Binance kline accepted after its official source identity is verified and no material source conflict remains unresolved."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 586,
+      "text": "`DERIVED_FROM_OFFICIAL_TRADES` means a bar derived deterministically from complete official Binance trade or aggregate-trade events under Section 4.5.2. It is not interpolation, repair from adjacent prices, a synthetic price, or a third-party substitution."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 588,
+      "text": "`VERIFIED_NO_TRADE_INTERVAL` means an exact UTC minute proven under Section 4.5.3 to contain no official trade event. It proves coverage only: it has no OHLC, no volume, is not a Bar, is not exported to Nautilus, and cannot authorize a Fill."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 590,
+      "text": "`SOURCE_CONFLICT` means two or more official observations differ materially and no sufficient independent official evidence resolves them. `SOURCE_INCOMPLETE` means required source bytes, checksum evidence, pagination, aggregate IDs, or underlying trade IDs are incomplete. `UNRESOLVED_GAP` means the minute has neither an accepted bar nor the complete proof required for `VERIFIED_NO_TRADE_INTERVAL`."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 592,
+      "text": "Only `REAL_OFFICIAL_BAR` and `DERIVED_FROM_OFFICIAL_TRADES` produce canonical execution bars. `SOURCE_CONFLICT`, `SOURCE_INCOMPLETE`, and `UNRESOLVED_GAP` are terminal blocking dispositions for the affected Dataset Release. A successful Dataset Release MUST contain exactly one non-blocking coverage disposition for every expected execution minute and no terminal blocking disposition."
+    },
+    {
+      "classification": "updated",
+      "line": 604,
+      "text": "`IRRECOVERABLE_OFFICIAL_MARK_DELIVERY_GAP` means every allowed free official Binance representation lacks the same required Perpetual mark minute. It is a blocking data-window classification, never a permission to reconstruct, interpolate, substitute, or reduce the required Mark grid."
+    },
+    {
+      "classification": "updated",
+      "line": 606,
+      "text": "For a Perpetual Dataset Release, the required `markPriceKlines` role MUST also satisfy an exact one-minute UTC grid for every interval in which Official valuation can occur. Each required minute MUST resolve to exactly one valid original Binance mark bar. A missing or semantically incomplete redundant delivery route does not by itself mean the market minute is missing only when at least two other independent allowed official Binance representations are complete, agree exactly in every material field for that minute, and no present official representation conflicts. Preserve the unavailable or incomplete route as `REDUNDANT_OFFICIAL_DELIVERY_ROLE_UNAVAILABLE`; do not let it become canonical and do not treat its publisher checksum as semantic-completeness proof."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 610,
+      "text": "A duplicate, unexplained missing required row, conflicting duplicate, malformed row, non-monotonic timestamp, invalid OHLC relation, negative volume, or unresolved source conflict makes the affected interval unusable. A missing execution kline ceases to be unexplained only when the minute has an accepted deterministic official-trade bar or satisfies the complete `VERIFIED_NO_TRADE_INTERVAL` proof."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 614,
+      "text": "- interpolate a missing bar;"
+    },
+    {
+      "classification": "updated",
+      "line": 622,
+      "text": "For execution coverage, `SOURCE_CONFLICT` blocks with `DATA_DUPLICATE_CONFLICT` unless a more specific role-conflict code applies; `SOURCE_INCOMPLETE` blocks with `DATA_SOURCE_INVALID`, `DATA_HASH_MISMATCH`, or `DATA_GAP` as the preserved evidence requires; and `UNRESOLVED_GAP` blocks with `DATA_GAP`. A required mark minute absent from every allowed free official representation blocks the window with `IRRECOVERABLE_OFFICIAL_MARK_DELIVERY_GAP`; any other unusable required mark minute blocks with `DATA_GAP` unless a more specific mark-role code applies. A conflicting or semantically unresolved funding event is `FUNDING_AMBIGUOUS`; a proven missing required funding event is `FUNDING_MISSING`."
+    },
+    {
+      "classification": "updated",
+      "line": 626,
+      "text": "REST kline pages, daily kline archives, monthly kline archives, official raw-trade objects, and official `aggTrades` objects are independent official observations. Preserve every observation, raw byte object, source locator, response or archive identity, publisher checksum when available, and parser result before parsing or reconciliation. REST, daily, monthly, raw-trade, and aggregate-trade observations have no automatic priority over one another, and a source row MUST NOT become canonical merely because it completes the grid."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 628,
+      "text": "For a Spot open timestamp, a `REAL_OFFICIAL_BAR` MAY be accepted when REST `/api/v3/klines` and the daily archive match semantically in every material kline field and available complete official trade-event evidence does not contradict them."
+    },
+    {
+      "classification": "updated",
+      "line": 630,
+      "text": "If only the monthly observation differs while REST and daily match and the deterministic bar derived from complete official raw trades or `aggTrades` also matches them, the matching value is canonical. Preserve the original monthly row and classify that observation as `SOURCE_CONFLICT_SUPERSEDED_OBSERVATION`; this observation-level status does not replace the minute's coverage disposition. Do not call the row corrupted without separate evidence, delete it, hide it, or export it."
+    },
+    {
+      "classification": "updated",
+      "line": 632,
+      "text": "If REST and daily differ, official raw trades or `aggTrades` MAY arbitrate only as independent event-level evidence. Resolving the conflict requires a decisive semantic match from at least two independent official observations. When both raw trades and `aggTrades` are available, their event boundaries, trade identities, buyer-maker semantics, and derived material values MUST agree exactly before they can jointly resolve a conflict. Otherwise the minute is `SOURCE_CONFLICT` and blocks the Dataset Release."
+    },
+    {
+      "classification": "updated",
+      "line": 634,
+      "text": "A complete official raw-trade or `aggTrades` event stream MAY independently produce a `DERIVED_FROM_OFFICIAL_TRADES` bar when no competing kline observation exists and all Section 4.5.2 integrity checks pass. If any available official kline contradicts that derived bar, the conflict rule above applies; event derivation MUST NOT be used as silent precedence."
+    },
+    {
+      "classification": "updated",
+      "line": 636,
+      "text": "An official kline observation with an invalid close timestamp MAY be superseded for that minute only when complete official raw trades and complete official `aggTrades` independently agree exactly on every material OHLCV, trade-count, and taker-volume value and their ID sequences are coherent. Build the accepted Bar solely from events whose timestamps lie inside the half-open minute, normalize its close boundary under Section 4.4, preserve every invalid kline observation, and add no price, trade, or volume after the final real event. Any event-level disagreement remains `SOURCE_CONFLICT`."
+    },
+    {
+      "classification": "updated",
+      "line": 638,
+      "text": "A published kline row that reports zero trades and zero volume during an interval proven to contain no trades is an official delivery observation, not event evidence and not a canonical Bar. Its inherited or repeated OHLC does not contradict a complete raw-trade and aggregate-trade no-event proof when every trade and volume field is exactly zero; preserve and exclude the row as a superseded observation. A kline claiming any trade, non-zero volume, or different event fact contradicts the no-trade proof and keeps the minute fail-closed."
+    },
+    {
+      "classification": "updated",
+      "line": 640,
+      "text": "A monthly-only row with no supporting official trade event cannot become canonical. When REST and daily are absent and complete raw-trade, aggregate-ID, and underlying trade-ID continuity proves no trade under Section 4.5.3, preserve the monthly row as a superseded historical conflict and record `VERIFIED_NO_TRADE_INTERVAL` for minute coverage. Without that complete proof, block with `SOURCE_CONFLICT` or `UNRESOLVED_GAP` as the evidence requires."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 642,
+      "text": "#### 4.5.2 Deterministic reconstruction from official Spot trades"
+    },
+    {
+      "classification": "updated",
+      "line": 644,
+      "text": "A `DERIVED_FROM_OFFICIAL_TRADES` bar MAY be created only from official Binance raw-trade or `aggTrades` events inside that UTC minute. Prefer complete raw trades as the most granular event observation when available, without giving their delivery role silent authority over contradictory official evidence. Use exact Decimal arithmetic. Order raw trades by `(timestamp, trade_id)` and aggregate events by `(timestamp, aggregate_trade_id)`:"
+    },
+    {
+      "classification": "updated",
+      "line": 653,
+      "text": "trade_count = exact raw-trade count, or exact sum(last_trade_id - first_trade_id + 1) for aggTrades"
+    },
+    {
+      "classification": "updated",
+      "line": 660,
+      "text": "Before acceptance, raw trade IDs MUST be strictly ordered, unique, and contiguous across every sequence used. Aggregate IDs MUST be strictly ordered and unique; underlying first/last trade-ID ranges MUST be coherent, non-overlapping, and contiguous; no underlying trade ID may be missing. Every event timestamp MUST lie inside the minute; symbol, Market Profile, source role, and interval MUST match exactly. Preserve the original Decimal strings and exact parsed values. Apply no rounding except representational normalization required by the locked Instrument precision."
+    },
+    {
+      "classification": "updated",
+      "line": 662,
+      "text": "For Binance `buyer_is_maker`, taker-buy volume is the exact sum of events where `buyer_is_maker = false`. When raw trades and `aggTrades` are both used, the first and last underlying trade identities, complete trade-ID coverage, OHLCV, trade count, and taker-buy values MUST agree exactly. A partial event-bearing minute around a venue interruption is accepted only if continuity proves the complete event sequence through the last trade before the interruption and from that trade to the first later trade; the Bar contains only actual events inside the minute and no synthetic remainder."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 664,
+      "text": "Compare every derived material field against every available official kline observation and preserve the field-by-field comparison and raw-object bindings. A duplicate aggregate ID, overlap, ID gap, incomplete page or archive, or unresolved contradiction produces `SOURCE_INCOMPLETE` or `SOURCE_CONFLICT` and blocks release. This deterministic normalization of official event truth is not interpolation and is not a second financial engine."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 666,
+      "text": "#### 4.5.3 Verified no-trade intervals"
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 668,
+      "text": "A Spot minute MAY be `VERIFIED_NO_TRADE_INTERVAL` only when all of these are proven for the exact symbol, Market Profile, UTC boundaries, and timestamp units:"
+    },
+    {
+      "classification": "updated",
+      "line": 670,
+      "text": "1. Each available REST, daily, and monthly kline role either has no row or has only a preserved zero-event observation whose trade count and every volume field are exactly zero; any event or non-zero volume claim is contradictory."
+    },
+    {
+      "classification": "updated",
+      "line": 671,
+      "text": "2. Complete official raw-trade observations contain no event inside the minute."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 672,
+      "text": "3. Complete official `aggTrades` observations contain no event inside the minute."
+    },
+    {
+      "classification": "updated",
+      "line": 673,
+      "text": "4. The last raw trade before and first raw trade after the interval prove raw trade-ID continuity."
+    },
+    {
+      "classification": "updated",
+      "line": 675,
+      "text": "6. Their underlying first/last trade-ID ranges prove no missing underlying trade ID, and the raw-trade and aggregate-trade boundary identities agree."
+    },
+    {
+      "classification": "updated",
+      "line": 677,
+      "text": "8. No other allowed official Binance trade observation contradicts the no-trade finding."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 680,
+      "text": "The evidence MAY describe the interval as `NO_TRADE_OBSERVED`, `PROBABLE_VENUE_OUTAGE`, or `OFFICIALLY_ANNOUNCED_MAINTENANCE`. The last description requires a matching official Binance announcement for the exact interval."
+    },
+    {
+      "classification": "updated",
+      "line": 682,
+      "text": "If raw trade-ID continuity, aggregate-ID continuity, underlying trade-ID continuity, or another required proof is absent, classify the minute as `SOURCE_INCOMPLETE` or `UNRESOLVED_GAP` and block the Dataset Release. A preserved zero-event kline observation does not supply OHLC for coverage. A verified interval MUST NOT carry OHLC, volume, previous close, nearest value, or any proxy price and MUST NOT be transformed into a bar by forward fill, backward fill, interpolation, another Binance role, another venue, or a third party."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 684,
+      "text": "This verified-no-trade mechanism is defined for the allowed Spot official event stream. A Perpetual execution gap cannot use Spot events or an unlisted event role to claim no trading; without an equally explicit adopted official-event contract it remains blocking. Mark data always retain their separate exact-grid requirement, and mark prices MUST NOT be derived from trades."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 688,
+      "text": "The accepted canonical one-minute bars are the execution source."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 690,
+      "text": "Strategies MAY use higher timeframes only when those bars are produced causally by NautilusTrader from already available lower-timeframe data or loaded as separately validated completed external bars."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 697,
+      "text": "- the strategy MUST receive it only after every source minute has a non-blocking coverage disposition;"
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 699,
+      "text": "- a `VERIFIED_NO_TRADE_INTERVAL` contributes no source Bar, price, or volume; Nautilus aggregation receives only accepted completed canonical bars;"
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 702,
+      "text": "A higher-timeframe interval containing verified no-trade minutes MAY be valid only after the complete lower-timeframe coverage grid is proven and the higher-timeframe bar is formed from accepted completed canonical bars alone. If the interval contains no accepted canonical bar, no synthetic higher-timeframe bar is created."
+    },
+    {
+      "classification": "updated",
+      "line": 722,
+      "text": "- the independent official REST, daily, monthly, raw-trade, and aggregate-trade observations required to reconcile the complete window under Sections 4.5.1 through 4.5.3;"
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 723,
+      "text": "- canonical `1m` execution bars containing only accepted `REAL_OFFICIAL_BAR` and `DERIVED_FROM_OFFICIAL_TRADES` rows;"
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 724,
+      "text": "- exactly one non-blocking coverage disposition for every expected UTC minute;"
+    },
+    {
+      "classification": "updated",
+      "line": 728,
+      "text": "The Spot execution grid is a sparse event-bearing Bar grid over a complete minute-disposition grid: a proven no-trade minute has no Bar, while every event-bearing minute has exactly one accepted canonical Bar. The Spot parser MUST apply the timestamp-unit transition in Section 4.4."
+    },
+    {
+      "classification": "updated",
+      "line": 746,
+      "text": "REST, daily, and monthly Perpetual observations have no automatic precedence. Preserve conflicting observations and block unless independent allowed official evidence resolves them. An unavailable or semantically incomplete redundant packaging route is governed only by the two-independent-representation rule in Section 4.5 and MUST remain preserved as `REDUNDANT_OFFICIAL_DELIVERY_ROLE_UNAVAILABLE`. Execution price MUST NOT substitute for mark, mark MUST NOT substitute for execution, and mark prices MUST NOT be reconstructed from trades."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 760,
+      "text": "### 4.11 Catalog is derived data"
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 762,
+      "text": "The Nautilus catalog is derived from the immutable raw source objects."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 766,
+      "text": "If the catalog is deleted or corrupted, rebuild it from the same raw objects and the same normalizer version."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 768,
+      "text": "A rebuilt catalog MUST produce the same semantic data inventory. If it does not, the Dataset Release is stale and cannot support an Official Run."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 770,
+      "text": "Only accepted `REAL_OFFICIAL_BAR` and `DERIVED_FROM_OFFICIAL_TRADES` rows are exported as Bars to the Nautilus-compatible ParquetDataCatalog. `VERIFIED_NO_TRADE_INTERVAL`, `SOURCE_CONFLICT`, `SOURCE_INCOMPLETE`, `UNRESOLVED_GAP`, superseded observations, and synthetic OHLC MUST NOT be exported as Bars."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 772,
+      "text": "The data phase MUST qualify the sparse canonical catalog through the pinned Nautilus runtime. The qualification MUST prove that accepted real or officially-derived bars remain usable across a verified no-trade minute, no Fill occurs during that minute, a pending order receives no synthetic price or market state, and the fixture's later Fill uses the next accepted real market state according to the locked causal-latency contract."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 778,
+      "text": "DuckDB is not an alternative source of raw truth, a Matching Engine, Order Engine, Position Engine, Account Engine, Ledger, Fee Engine, Funding Engine, PnL Engine, Portfolio Engine, or a substitute for NautilusTrader. Nautilus remains the sole owner of Official financial truth described in Section 2."
+    },
+    {
+      "classification": "updated",
+      "line": 784,
+      "text": "An adopted DuckDB database MUST NOT be mutated in place. Build each candidate database transactionally at a new versioned path, preserve raw-object foreign bindings for every canonical row or release member, roll back the whole build on failure, and make accepted release rows immutable. The logical store MUST bind raw objects, source observations and checksums, conflicts, minute dispositions, exact Spot trade events and execution bars, Perpetual execution and mark bars, funding events, instrument metadata, data windows and partitions, Dataset Releases and members, validation results, and build manifests."
+    },
+    {
+      "classification": "updated",
+      "line": 786,
+      "text": "Rebuild determinism is semantic. Two independent builds from the same immutable raw bytes and locked inputs MUST have identical schema identity, ordered row counts, per-table canonical semantic hashes, conflict and minute dispositions, Dataset Release identities, and Nautilus catalog semantic inventories. Preserve each physical DuckDB file hash, but physical-file hash equality is not required. Any semantic difference blocks with `DETERMINISTIC_REBUILD_MISMATCH`."
+    },
+    {
+      "classification": "updated",
+      "line": 795,
+      "text": "4. Run the complete Spot and Perpetual data-quality gates for each candidate without running a strategy or inspecting price-dependent selection criteria, Signals, trades, PnL, metrics, or claims."
+    },
+    {
+      "classification": "updated",
+      "line": 800,
+      "text": "The selected window and its unchanged partition geometry MUST be content-bound in the `DatasetRelease`, derived DuckDB data-window records, and Nautilus catalog inventory. If no chronological candidate in the available free official Binance history passes both profiles, stop with `DATA_WINDOW_QUALITY_EXHAUSTED`; do not choose by strategy outcome or lower a coverage denominator."
+    },
+    {
+      "classification": "updated",
+      "line": 802,
+      "text": "For `FREE_OFFICIAL_BINANCE_DATA_AND_DUCKDB_REPAIR_001`, the preserved Phase-A analysis identity `bf7c4d476702a6438e2940d85548943ca1b2b926f74ba64380e20bd0490c654d` applied that procedure without strategy execution. It records the prior dataset window `[2020-12-01T00:00:00Z, 2021-07-01T00:00:00Z)` as `EXPOSED_DATA_BLOCKED_NOT_FINAL_HOLDOUT` and selects the first passing shift, `N = 1`, with these exact bindings:"
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 1001,
+      "text": "The qualified public v2 binding is `nautilus_trader.model.FundingRateUpdate` through `nautilus_trader.backtest.BacktestEngine`. Native settlement is observable through `nautilus_trader.model.PositionAdjusted` with `adjustment_type=FUNDING` and the resulting `nautilus_trader.model.AccountState`; the engine-internal FundingSettlement need not be reimplemented or accessed through a private API. Both explicit `next_funding_ns` and an explicit verified interval were qualified. Real intervals remain governed by the verified exact-Instrument schedule in Sections 4.5 and 4.9."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 1019,
+      "text": "The qualified public v2 binding is `nautilus_trader.portfolio.PortfolioConfig(use_mark_prices=true)` with `nautilus_trader.model.MarkPriceUpdate`. Because the pinned runtime can fall back when a mark is missing, Dataset Release completeness preflight and the read-only invariant checker remain mandatory and MUST reject that fallback."
+    },
+    {
+      "classification": "updated",
+      "line": 1195,
+      "text": "| `G04` | An unexplained missing required one-minute execution bar produces `BLOCKED`; a fully proven no-trade minute, including one with only preserved zero-event kline observations, produces no Bar and no synthetic Fill. |"
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 1203,
+      "text": "| `G12` | A malformed, duplicate-conflicting, incomplete, or unexplained missing raw row is not silently repaired or granted source precedence.                      |"
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 1213,
+      "text": "| `G22` | Sparse accepted bars across a verified no-trade minute produce no Bar or Fill in that minute; a pending order receives no synthetic price, and the fixture's later Fill uses the next accepted real market state under locked latency. |"
+    },
+    {
+      "classification": "updated",
+      "line": 1214,
+      "text": "| `G23` | A partial event-bearing Spot minute is accepted only when complete raw trades and `aggTrades` agree exactly; a missing or duplicate trade ID blocks, and no synthetic remainder is added. |"
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 1228,
+      "text": "- no terminal execution-coverage disposition was ignored and no verified no-trade interval was transformed into a Bar, price, or Fill;"
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 1419,
+      "text": "- viewing a trade list or Equity curve;"
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 1474,
+      "text": "Sample size is a research-confidence rule, not a mechanical backtest rule. V1 has no universal minimum trade count."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 1479,
+      "text": "counted observation = completed trade"
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 1480,
+      "text": "minimum_completed_trades = positive integer"
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 1490,
+      "text": "`ADEQUATE` means the frozen criterion is met. `LOW_CONFIDENCE` means it is not met. `NOT_APPLICABLE` is allowed when `research_intent=EXPLORATORY`, or when the proposed claim is explicitly non-trade-based. In either case `sample_adequacy_rule` MUST be `NOT_APPLICABLE` with the reason instead of a numeric threshold. Promoting that research to a confirmatory claim requires a new protocol version with a frozen adequacy rule before new result exposure. A completed trade means the pinned Nautilus native trade-statistics unit. The project MUST NOT invent a second trade-pairing convention only to increase the sample count. If a stable native completed-trade sequence is unavailable, `SampleAdequacy` cannot be `ADEQUATE`."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 1492,
+      "text": "Sample adequacy is evaluated per Instrument Official Run. Do not pool trades from different Instruments to make a weak sample appear adequate. For a cross-instrument confirmatory claim, every contributing Instrument Run MUST satisfy the frozen threshold independently."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 1498,
+      "text": "Monte Carlo is a research diagnostic over completed net-after-cost trade outcomes. It is not a backtest engine, a forecast, an optimizer, or an automatic PASS/FAIL gate."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 1510,
+      "text": "`COMPLETED` means the frozen diagnostic ran successfully. `MC_LOW_CONFIDENCE` means the sample or native net-trade evidence is insufficient for reliable interpretation. `NOT_APPLICABLE` is allowed when `research_intent=EXPLORATORY` or the claim is non-trade-based and does not seek an eligible confirmatory profitability claim."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 1521,
+      "text": "The implementation MUST use the persisted Nautilus completed-trade outcomes after the Official Run's fees and funding. It MUST NOT reconstruct a more favorable trade sequence from Fills. If a stable net completed-trade sequence is unavailable, record `MC_LOW_CONFIDENCE` and do not run a substitute Monte Carlo. If a cost-stress Run is being analyzed, use that Run's own net outcomes; do not mix cost assumptions across Runs."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 1523,
+      "text": "For Monte Carlo, one trade outcome is that completed trade's persisted net PnL in the Run's settlement currency after every fee and funding effect that Nautilus unambiguously attributes to that completed trade. If the pinned runtime does not expose an unambiguous net completed-trade outcome, record `MC_LOW_CONFIDENCE`; the project MUST NOT invent a funding or fee allocation only to make Monte Carlo run. `IID_BOOTSTRAP` samples `n` outcomes with replacement for each simulation, where `n` is the original completed-trade count. `MOVING_BLOCK_BOOTSTRAP` samples contiguous blocks with replacement, concatenates them in sampled order, and truncates the final block to exactly `n` outcomes. No other V1 resampling method is allowed. Each simulated path starts at the Run's frozen Initial Capital and applies the sampled net PnL amounts cumulatively; it does not rerun Nautilus, rescale trades, or pretend to model a new execution path."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 1538,
+      "text": "`positive_simulation_rate` is the fraction of simulated paths whose final Equity exceeds the frozen Initial Capital. `original_result_location_in_distribution` is the percentile rank of the original final Equity within the simulated final-Equity distribution. `top_winner_dependency` is the largest positive net trade PnL divided by total positive net trade PnL; if there is no positive trade PnL, record it as `NOT_APPLICABLE`. `outlier_dependency` MUST report the original net PnL and the net PnL after removing the single largest winning trade; it is diagnostic only and MUST NOT replace the Official result."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 1556,
+      "text": "A `POINT_IN_TIME_UNIVERSE` claim additionally requires the point-in-time membership evidence from Section 9.11 and valid independent Official Runs for every Instrument that the frozen protocol says contributes to the claim. For `FROZEN_SET_ONLY` and `POINT_IN_TIME_UNIVERSE` confirmatory claims, the Sample Adequacy and Monte Carlo requirements apply independently to every contributing Instrument Run; do not pool trades across Instruments. The protocol MUST define any sampling rule before result exposure; missing or failed Instruments MUST remain visible and MUST NOT be silently dropped. Cross-instrument aggregation MAY summarize accepted independent Runs; it MUST NOT create shared cash, positions, or a portfolio that V1 does not define."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 1734,
+      "text": "completed_trade_count"
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 1752,
+      "text": "- Trade-based fields use the pinned Nautilus native completed-trade sequence. If that sequence is unavailable, record `completed_trade_count`, `win_rate`, and `max_consecutive_losses` as undefined rather than inventing a project trade-pairing rule."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 1753,
+      "text": "- When a native completed-trade sequence exists, `max_consecutive_losses` counts consecutive trades with net trade PnL `< 0`; a trade with net PnL `>= 0` ends the loss streak."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 1818,
+      "text": "    catalog/"
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 1884,
+      "text": "- runtime imports `nautilus_trader==2.0.0rc2` through the official Rust/PyO3 wheel and public API;"
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 1889,
+      "text": "- `nautilus_trader.execution.StaticLatencyModel` is resolved from the pinned wheel, and its effective insert latency is exactly `60_000_000_000` ns;"
+    },
+    {
+      "classification": "updated",
+      "line": 1941,
+      "text": "- deterministic Decimal-exact Spot kline derivation from complete official raw trades and aggregate-trade events when required;"
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 1942,
+      "text": "- one-minute coverage dispositions and verified no-trade proofs;"
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 1947,
+      "text": "- Nautilus catalog conversion;"
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 1953,
+      "text": "- an unexplained missing minute blocks;"
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 1954,
+      "text": "- a fully evidenced no-trade minute produces coverage without a Bar;"
+    },
+    {
+      "classification": "updated",
+      "line": 1955,
+      "text": "- a preserved zero-event kline observation cannot become a Bar and does not defeat a complete raw-trade and aggregate-trade no-event proof;"
+    },
+    {
+      "classification": "updated",
+      "line": 1956,
+      "text": "- broken raw-trade, aggregate-ID, or underlying trade-ID continuity rejects no-trade classification;"
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 1957,
+      "text": "- official-trade reconstruction is Decimal-exact, deterministic, and source-bound;"
+    },
+    {
+      "classification": "updated",
+      "line": 1958,
+      "text": "- a partial event-bearing minute is derived only when complete raw trades and `aggTrades` agree exactly, with no fabricated remainder;"
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 1959,
+      "text": "- REST, daily, monthly, and official trade observations receive no silent precedence;"
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 1963,
+      "text": "- no silent repair occurs;"
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 1964,
+      "text": "- catalog rebuild from the same raw objects is semantically stable;"
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 1966,
+      "text": "- sparse Nautilus qualification proves no Bar or Fill during a verified no-trade interval and the next later Fill uses only the next accepted real market state under locked latency;"
+    },
+    {
+      "classification": "updated",
+      "line": 1972,
+      "text": "- independent DuckDB rebuilds match on schema identity, ordered row counts, canonical per-table semantic hashes, dispositions, Dataset Release identities, and Nautilus semantic catalog inventories even when physical file hashes differ;"
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 1975,
+      "text": "M2 exports only `DatasetRelease` objects to M3 and M4."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 2060,
+      "text": "| M2       | `DatasetRelease`                                                     | M3-M4           |"
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 2113,
+      "text": "### 13.5 Repair scope"
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 2115,
+      "text": "Use this default repair scope:"
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 2301,
+      "text": "- for a confirmatory trade-based claim, `SampleAdequacy=ADEQUATE` for every supporting Instrument Run; `NOT_APPLICABLE` is accepted only under the explicit exception in Section 9.12;"
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 2388,
+      "text": "The project MUST preserve the rejected intent as evidence. It MUST NOT submit the order and then repair Nautilus position state afterward."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 2491,
+      "text": "Remove the one-minute bar that would be required next in the execution window and provide insufficient official aggregate-ID or underlying trade-ID continuity to prove no trading."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 2500,
+      "text": "The engine MUST NOT jump to a later minute and pretend the unexplained missing minute never existed."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 2502,
+      "text": "### A.6 Verified no-trade fixture"
+    },
+    {
+      "classification": "updated",
+      "line": 2504,
+      "text": "Provide no official raw-trade or `aggTrades` event inside a one-minute Spot interval. Provide adjacent official raw trades with contiguous trade IDs and adjacent official aggregate events whose aggregate IDs and underlying trade-ID ranges are exactly contiguous across the interval; require their boundary identities to agree. REST, daily, and monthly klines may be absent or may contain only preserved observations whose trade count and every volume field are exactly zero. Provide complete source pages or archives, matching required publisher checksums, exact UTC boundaries, and no contradictory official trade observation."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 2509,
+      "text": "coverage_disposition = VERIFIED_NO_TRADE_INTERVAL"
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 2510,
+      "text": "canonical execution Bar for the minute = none"
+    },
+    {
+      "classification": "updated",
+      "line": 2518,
+      "text": "The positive fixture MUST fail if raw trade-ID continuity, aggregate-ID continuity, underlying trade-ID continuity, cross-role boundary agreement, source completeness, checksum integrity, or the no-contradiction condition is broken. A preserved zero-event kline's repeated OHLC MUST NOT enter the canonical catalog."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 2547,
+      "text": "sample-adequacy rule for confirmatory trade-based claims"
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 2565,
+      "text": "- NautilusTrader package `2.0.0rc2` using its official Rust/PyO3 wheel and public Python API."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 2567,
+      "text": "- PyPI wheel `nautilus_trader-2.0.0rc2-cp312-cp312-manylinux_2_34_x86_64.whl` SHA-256 `716169aca15bfb615a27610a9230e670dec5be3d4606fea591fe64eca145a5ac`."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 2569,
+      "text": "- NautilusTrader v2 migration notes only where they explicitly document the public v2.0.0rc2 API; the pinned artifact and completed runtime qualifications remain the final behavior authority."
+    },
+    {
+      "classification": "unchanged_and_compatible",
+      "line": 2581,
+      "text": "Use NautilusTrader for the trading engine. Add only the controls that make its historical use causal, reproducible, auditable, and scientifically honest."
+    }
+  ],
+  "status": "PASS",
+  "unchanged_prohibited_contracts": [
+    {
+      "contract": "§1.2 Market profiles",
+      "section_sha256": "d3148f64fc13d9fb809ef7e064fd788e7f6177224496bedd5ba73f2ce374b033",
+      "unchanged": true
+    },
+    {
+      "contract": "§1.3 Official Run isolation",
+      "section_sha256": "2286de1a04273b1e89e41a9022b947a7dff630f0f4d1a10de4fc548657e8faf4",
+      "unchanged": true
+    },
+    {
+      "contract": "§2 Nautilus ownership",
+      "section_sha256": "eb581f8df83dced0a0a6a6e91ed029fa6fb2e61cf83fb0675a75081fc7a9dc57",
+      "unchanged": true
+    },
+    {
+      "contract": "§3.1 Runtime Lock",
+      "section_sha256": "d2de2ff6ad6b553f8f7a80030e457e2b93f36d07eae8944d62429d09224481ac",
+      "unchanged": true
+    },
+    {
+      "contract": "§3.4 latency",
+      "section_sha256": "522d4468b69e9db97382798716861a073d12095525670db27ffec6b40ae4d01d",
+      "unchanged": true
+    },
+    {
+      "contract": "§5 Strategy",
+      "section_sha256": "c78937abdeaeb18d3f6046463244f3e92095c2f345846327b73612115e8bed72",
+      "unchanged": true
+    },
+    {
+      "contract": "§6 execution and financial semantics",
+      "section_sha256": "2a5f0c3e2436b7d340b62e9d095a1f7a342cb064034e7ad2e12220426c577616",
+      "unchanged": true
+    },
+    {
+      "contract": "§9 research integrity",
+      "section_sha256": "d2ea25fb8c2b5f2284364de3c0774cb92bd55f622ce33bbcaf799ca241847dec",
+      "unchanged": true
+    },
+    {
+      "contract": "§10 metrics and claims",
+      "section_sha256": "2fce8484d37602cd340a97afcc5c2fd93e8ecca9125e1e926c9ebe9e95ec4a0b",
+      "unchanged": true
+    }
+  ]
+}

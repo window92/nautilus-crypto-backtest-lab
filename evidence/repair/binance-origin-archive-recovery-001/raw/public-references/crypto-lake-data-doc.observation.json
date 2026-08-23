@@ -1,0 +1,13 @@
+{
+  "capture_timestamp_utc": "2026-08-23T10:24:41.605764Z",
+  "request_method": "GET",
+  "request_url": "https://crypto-lake.com/data/",
+  "final_url": "https://crypto-lake.com/data/",
+  "status_code": 200,
+  "body_path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/crypto-lake-data-doc.body",
+  "body_size_bytes": 26732,
+  "body_sha256": "60bd04fc9a17480d43a0487568e06810481df848c89b8a13b5befffe6562f855",
+  "headers_path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/crypto-lake-data-doc.headers.json",
+  "credentials_used": false,
+  "parsed_before_body_saved": false
+}

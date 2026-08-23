@@ -1,0 +1,3383 @@
+{
+  "constraints": [
+    {
+      "constraint_text": "PRIMARY KEY(build_identity)",
+      "constraint_type": "PRIMARY KEY",
+      "table": "build_manifests"
+    },
+    {
+      "constraint_text": "CHECK(regexp_full_match(build_identity, '[0-9a-f]{64}'))",
+      "constraint_type": "CHECK",
+      "table": "build_manifests"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "build_manifests"
+    },
+    {
+      "constraint_text": "CHECK((build_role IN ('PRIMARY', 'INDEPENDENT_REBUILD')))",
+      "constraint_type": "CHECK",
+      "table": "build_manifests"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "build_manifests"
+    },
+    {
+      "constraint_text": "FOREIGN KEY (schema_identity) REFERENCES schema_metadata(schema_identity)",
+      "constraint_type": "FOREIGN KEY",
+      "table": "build_manifests"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "build_manifests"
+    },
+    {
+      "constraint_text": "CHECK(regexp_full_match(source_inventory_identity, '[0-9a-f]{64}'))",
+      "constraint_type": "CHECK",
+      "table": "build_manifests"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "build_manifests"
+    },
+    {
+      "constraint_text": "CHECK(regexp_full_match(semantic_database_identity, '[0-9a-f]{64}'))",
+      "constraint_type": "CHECK",
+      "table": "build_manifests"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "build_manifests"
+    },
+    {
+      "constraint_text": "CHECK((semantic_export_contract = 'DUCKDB_1_4_5_SORTED_CSV_HEADER_LF_EXACT_TYPES_V1'))",
+      "constraint_type": "CHECK",
+      "table": "build_manifests"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "build_manifests"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "build_manifests"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "build_manifests"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "build_manifests"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "build_manifests"
+    },
+    {
+      "constraint_text": "UNIQUE(build_role, build_identity)",
+      "constraint_type": "UNIQUE",
+      "table": "build_manifests"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "build_manifests"
+    },
+    {
+      "constraint_text": "PRIMARY KEY(data_window_identity)",
+      "constraint_type": "PRIMARY KEY",
+      "table": "data_windows"
+    },
+    {
+      "constraint_text": "CHECK(regexp_full_match(data_window_identity, '[0-9a-f]{64}'))",
+      "constraint_type": "CHECK",
+      "table": "data_windows"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "data_windows"
+    },
+    {
+      "constraint_text": "CHECK((classification IN ('EXPOSED_DATA_BLOCKED_NOT_FINAL_HOLDOUT', 'DATA_QUALITY_INSPECTED_NOT_FINAL_HOLDOUT')))",
+      "constraint_type": "CHECK",
+      "table": "data_windows"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "data_windows"
+    },
+    {
+      "constraint_text": "CHECK((shift_months >= 0))",
+      "constraint_type": "CHECK",
+      "table": "data_windows"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "data_windows"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "data_windows"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "data_windows"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "data_windows"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "data_windows"
+    },
+    {
+      "constraint_text": "CHECK(regexp_full_match(partition_geometry_identity, '[0-9a-f]{64}'))",
+      "constraint_type": "CHECK",
+      "table": "data_windows"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "data_windows"
+    },
+    {
+      "constraint_text": "CHECK((status IN ('PASS', 'FAIL')))",
+      "constraint_type": "CHECK",
+      "table": "data_windows"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "data_windows"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "data_windows"
+    },
+    {
+      "constraint_text": "CHECK((strategy_performance_inspected = CAST('f' AS BOOLEAN)))",
+      "constraint_type": "CHECK",
+      "table": "data_windows"
+    },
+    {
+      "constraint_text": "CHECK(((dataset_start_ns < scoring_start_ns) AND (scoring_start_ns < scoring_end_exclusive_ns) AND (scoring_end_exclusive_ns = dataset_end_exclusive_ns)))",
+      "constraint_type": "CHECK",
+      "table": "data_windows"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "data_windows"
+    },
+    {
+      "constraint_text": "PRIMARY KEY(dataset_release_id)",
+      "constraint_type": "PRIMARY KEY",
+      "table": "dataset_releases"
+    },
+    {
+      "constraint_text": "CHECK(regexp_full_match(dataset_release_id, '[0-9a-f]{64}'))",
+      "constraint_type": "CHECK",
+      "table": "dataset_releases"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "dataset_releases"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "dataset_releases"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "dataset_releases"
+    },
+    {
+      "constraint_text": "FOREIGN KEY (data_window_identity) REFERENCES data_windows(data_window_identity)",
+      "constraint_type": "FOREIGN KEY",
+      "table": "dataset_releases"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "dataset_releases"
+    },
+    {
+      "constraint_text": "CHECK(regexp_full_match(partition_geometry_identity, '[0-9a-f]{64}'))",
+      "constraint_type": "CHECK",
+      "table": "dataset_releases"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "dataset_releases"
+    },
+    {
+      "constraint_text": "CHECK(regexp_full_match(minute_coverage_identity, '[0-9a-f]{64}'))",
+      "constraint_type": "CHECK",
+      "table": "dataset_releases"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "dataset_releases"
+    },
+    {
+      "constraint_text": "CHECK(regexp_full_match(source_reconciliation_identity, '[0-9a-f]{64}'))",
+      "constraint_type": "CHECK",
+      "table": "dataset_releases"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "dataset_releases"
+    },
+    {
+      "constraint_text": "CHECK(regexp_full_match(catalog_identity, '[0-9a-f]{64}'))",
+      "constraint_type": "CHECK",
+      "table": "dataset_releases"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "dataset_releases"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "dataset_releases"
+    },
+    {
+      "constraint_text": "CHECK((status = 'PASS'))",
+      "constraint_type": "CHECK",
+      "table": "dataset_releases"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "dataset_releases"
+    },
+    {
+      "constraint_text": "UNIQUE(market_profile, instrument_id, data_window_identity)",
+      "constraint_type": "UNIQUE",
+      "table": "dataset_releases"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "dataset_releases"
+    },
+    {
+      "constraint_text": "PRIMARY KEY(instrument_metadata_identity)",
+      "constraint_type": "PRIMARY KEY",
+      "table": "instrument_metadata"
+    },
+    {
+      "constraint_text": "CHECK(regexp_full_match(instrument_metadata_identity, '[0-9a-f]{64}'))",
+      "constraint_type": "CHECK",
+      "table": "instrument_metadata"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "instrument_metadata"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "instrument_metadata"
+    },
+    {
+      "constraint_text": "UNIQUE(instrument_id)",
+      "constraint_type": "UNIQUE",
+      "table": "instrument_metadata"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "instrument_metadata"
+    },
+    {
+      "constraint_text": "FOREIGN KEY (source_raw_object_sha256) REFERENCES raw_objects(raw_object_sha256)",
+      "constraint_type": "FOREIGN KEY",
+      "table": "instrument_metadata"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "instrument_metadata"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "instrument_metadata"
+    },
+    {
+      "constraint_text": "CHECK((historical_exact = CAST('f' AS BOOLEAN)))",
+      "constraint_type": "CHECK",
+      "table": "instrument_metadata"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "instrument_metadata"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "instrument_metadata"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "minute_dispositions"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "minute_dispositions"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "minute_dispositions"
+    },
+    {
+      "constraint_text": "CHECK(((open_time_ns % 60000000000) = 0))",
+      "constraint_type": "CHECK",
+      "table": "minute_dispositions"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "minute_dispositions"
+    },
+    {
+      "constraint_text": "CHECK((disposition IN ('REAL_OFFICIAL_BAR', 'DERIVED_FROM_OFFICIAL_TRADES', 'VERIFIED_NO_TRADE_INTERVAL', 'SOURCE_CONFLICT', 'SOURCE_INCOMPLETE', 'UNRESOLVED_GAP')))",
+      "constraint_type": "CHECK",
+      "table": "minute_dispositions"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "minute_dispositions"
+    },
+    {
+      "constraint_text": "CHECK(regexp_full_match(source_reconciliation_identity, '[0-9a-f]{64}'))",
+      "constraint_type": "CHECK",
+      "table": "minute_dispositions"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "minute_dispositions"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "minute_dispositions"
+    },
+    {
+      "constraint_text": "PRIMARY KEY(market_profile, instrument_id, open_time_ns)",
+      "constraint_type": "PRIMARY KEY",
+      "table": "minute_dispositions"
+    },
+    {
+      "constraint_text": "CHECK((((disposition IN ('REAL_OFFICIAL_BAR', 'DERIVED_FROM_OFFICIAL_TRADES')) AND (canonical_bar_identity IS NOT NULL) AND (proof_identity IS NULL) AND (blocking = CAST('f' AS BOOLEAN))) OR ((disposition = 'VERIFIED_NO_TRADE_INTERVAL') AND (canonical_bar_identity IS NULL) AND (proof_identity IS NOT NULL) AND (blocking = CAST('f' AS BOOLEAN))) OR ((disposition IN ('SOURCE_CONFLICT', 'SOURCE_INCOMPLETE', 'UNRESOLVED_GAP')) AND (canonical_bar_identity IS NULL) AND (blocking = CAST('t' AS BOOLEAN)))))",
+      "constraint_type": "CHECK",
+      "table": "minute_dispositions"
+    },
+    {
+      "constraint_text": "PRIMARY KEY(canonical_bar_identity)",
+      "constraint_type": "PRIMARY KEY",
+      "table": "perpetual_execution_bars_1m"
+    },
+    {
+      "constraint_text": "CHECK(regexp_full_match(canonical_bar_identity, '[0-9a-f]{64}'))",
+      "constraint_type": "CHECK",
+      "table": "perpetual_execution_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "perpetual_execution_bars_1m"
+    },
+    {
+      "constraint_text": "CHECK((instrument_id = 'BTCUSDT-PERP.BINANCE'))",
+      "constraint_type": "CHECK",
+      "table": "perpetual_execution_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "perpetual_execution_bars_1m"
+    },
+    {
+      "constraint_text": "CHECK(((open_time_ns % 60000000000) = 0))",
+      "constraint_type": "CHECK",
+      "table": "perpetual_execution_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "perpetual_execution_bars_1m"
+    },
+    {
+      "constraint_text": "CHECK((end_exclusive_ns = (open_time_ns + 60000000000)))",
+      "constraint_type": "CHECK",
+      "table": "perpetual_execution_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "perpetual_execution_bars_1m"
+    },
+    {
+      "constraint_text": "CHECK((available_at_ns = end_exclusive_ns))",
+      "constraint_type": "CHECK",
+      "table": "perpetual_execution_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "perpetual_execution_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "perpetual_execution_bars_1m"
+    },
+    {
+      "constraint_text": "CHECK((open_value > 0))",
+      "constraint_type": "CHECK",
+      "table": "perpetual_execution_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "perpetual_execution_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "perpetual_execution_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "perpetual_execution_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "perpetual_execution_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "perpetual_execution_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "perpetual_execution_bars_1m"
+    },
+    {
+      "constraint_text": "CHECK((close_value > 0))",
+      "constraint_type": "CHECK",
+      "table": "perpetual_execution_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "perpetual_execution_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "perpetual_execution_bars_1m"
+    },
+    {
+      "constraint_text": "CHECK((volume_value >= 0))",
+      "constraint_type": "CHECK",
+      "table": "perpetual_execution_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "perpetual_execution_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "perpetual_execution_bars_1m"
+    },
+    {
+      "constraint_text": "CHECK((quote_volume_value >= 0))",
+      "constraint_type": "CHECK",
+      "table": "perpetual_execution_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "perpetual_execution_bars_1m"
+    },
+    {
+      "constraint_text": "CHECK((trade_count >= 0))",
+      "constraint_type": "CHECK",
+      "table": "perpetual_execution_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "perpetual_execution_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "perpetual_execution_bars_1m"
+    },
+    {
+      "constraint_text": "CHECK((taker_buy_base_value >= 0))",
+      "constraint_type": "CHECK",
+      "table": "perpetual_execution_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "perpetual_execution_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "perpetual_execution_bars_1m"
+    },
+    {
+      "constraint_text": "CHECK((taker_buy_quote_value >= 0))",
+      "constraint_type": "CHECK",
+      "table": "perpetual_execution_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "perpetual_execution_bars_1m"
+    },
+    {
+      "constraint_text": "FOREIGN KEY (primary_source_sha256) REFERENCES raw_objects(raw_object_sha256)",
+      "constraint_type": "FOREIGN KEY",
+      "table": "perpetual_execution_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "perpetual_execution_bars_1m"
+    },
+    {
+      "constraint_text": "CHECK((high_value >= greatest(open_value, close_value, low_value)))",
+      "constraint_type": "CHECK",
+      "table": "perpetual_execution_bars_1m"
+    },
+    {
+      "constraint_text": "CHECK((low_value <= least(open_value, close_value, high_value)))",
+      "constraint_type": "CHECK",
+      "table": "perpetual_execution_bars_1m"
+    },
+    {
+      "constraint_text": "UNIQUE(instrument_id, open_time_ns)",
+      "constraint_type": "UNIQUE",
+      "table": "perpetual_execution_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "perpetual_execution_bars_1m"
+    },
+    {
+      "constraint_text": "PRIMARY KEY(event_identity)",
+      "constraint_type": "PRIMARY KEY",
+      "table": "perpetual_funding_events"
+    },
+    {
+      "constraint_text": "CHECK(regexp_full_match(event_identity, '[0-9a-f]{64}'))",
+      "constraint_type": "CHECK",
+      "table": "perpetual_funding_events"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "perpetual_funding_events"
+    },
+    {
+      "constraint_text": "CHECK((instrument_id = 'BTCUSDT-PERP.BINANCE'))",
+      "constraint_type": "CHECK",
+      "table": "perpetual_funding_events"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "perpetual_funding_events"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "perpetual_funding_events"
+    },
+    {
+      "constraint_text": "CHECK((funding_interval_hours > 0))",
+      "constraint_type": "CHECK",
+      "table": "perpetual_funding_events"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "perpetual_funding_events"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "perpetual_funding_events"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "perpetual_funding_events"
+    },
+    {
+      "constraint_text": "FOREIGN KEY (primary_source_sha256) REFERENCES raw_objects(raw_object_sha256)",
+      "constraint_type": "FOREIGN KEY",
+      "table": "perpetual_funding_events"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "perpetual_funding_events"
+    },
+    {
+      "constraint_text": "UNIQUE(instrument_id, funding_time_ns)",
+      "constraint_type": "UNIQUE",
+      "table": "perpetual_funding_events"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "perpetual_funding_events"
+    },
+    {
+      "constraint_text": "PRIMARY KEY(canonical_bar_identity)",
+      "constraint_type": "PRIMARY KEY",
+      "table": "perpetual_mark_bars_1m"
+    },
+    {
+      "constraint_text": "CHECK(regexp_full_match(canonical_bar_identity, '[0-9a-f]{64}'))",
+      "constraint_type": "CHECK",
+      "table": "perpetual_mark_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "perpetual_mark_bars_1m"
+    },
+    {
+      "constraint_text": "CHECK((instrument_id = 'BTCUSDT-PERP.BINANCE'))",
+      "constraint_type": "CHECK",
+      "table": "perpetual_mark_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "perpetual_mark_bars_1m"
+    },
+    {
+      "constraint_text": "CHECK(((open_time_ns % 60000000000) = 0))",
+      "constraint_type": "CHECK",
+      "table": "perpetual_mark_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "perpetual_mark_bars_1m"
+    },
+    {
+      "constraint_text": "CHECK((end_exclusive_ns = (open_time_ns + 60000000000)))",
+      "constraint_type": "CHECK",
+      "table": "perpetual_mark_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "perpetual_mark_bars_1m"
+    },
+    {
+      "constraint_text": "CHECK((available_at_ns = end_exclusive_ns))",
+      "constraint_type": "CHECK",
+      "table": "perpetual_mark_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "perpetual_mark_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "perpetual_mark_bars_1m"
+    },
+    {
+      "constraint_text": "CHECK((open_value > 0))",
+      "constraint_type": "CHECK",
+      "table": "perpetual_mark_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "perpetual_mark_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "perpetual_mark_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "perpetual_mark_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "perpetual_mark_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "perpetual_mark_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "perpetual_mark_bars_1m"
+    },
+    {
+      "constraint_text": "CHECK((close_value > 0))",
+      "constraint_type": "CHECK",
+      "table": "perpetual_mark_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "perpetual_mark_bars_1m"
+    },
+    {
+      "constraint_text": "FOREIGN KEY (primary_source_sha256) REFERENCES raw_objects(raw_object_sha256)",
+      "constraint_type": "FOREIGN KEY",
+      "table": "perpetual_mark_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "perpetual_mark_bars_1m"
+    },
+    {
+      "constraint_text": "CHECK((high_value >= greatest(open_value, close_value, low_value)))",
+      "constraint_type": "CHECK",
+      "table": "perpetual_mark_bars_1m"
+    },
+    {
+      "constraint_text": "CHECK((low_value <= least(open_value, close_value, high_value)))",
+      "constraint_type": "CHECK",
+      "table": "perpetual_mark_bars_1m"
+    },
+    {
+      "constraint_text": "UNIQUE(instrument_id, open_time_ns)",
+      "constraint_type": "UNIQUE",
+      "table": "perpetual_mark_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "perpetual_mark_bars_1m"
+    },
+    {
+      "constraint_text": "PRIMARY KEY(checksum_identity)",
+      "constraint_type": "PRIMARY KEY",
+      "table": "publisher_checksums"
+    },
+    {
+      "constraint_text": "CHECK(regexp_full_match(checksum_identity, '[0-9a-f]{64}'))",
+      "constraint_type": "CHECK",
+      "table": "publisher_checksums"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "publisher_checksums"
+    },
+    {
+      "constraint_text": "FOREIGN KEY (archive_raw_object_sha256) REFERENCES raw_objects(raw_object_sha256)",
+      "constraint_type": "FOREIGN KEY",
+      "table": "publisher_checksums"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "publisher_checksums"
+    },
+    {
+      "constraint_text": "FOREIGN KEY (checksum_raw_object_sha256) REFERENCES raw_objects(raw_object_sha256)",
+      "constraint_type": "FOREIGN KEY",
+      "table": "publisher_checksums"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "publisher_checksums"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "publisher_checksums"
+    },
+    {
+      "constraint_text": "CHECK(regexp_full_match(publisher_sha256, '[0-9a-f]{64}'))",
+      "constraint_type": "CHECK",
+      "table": "publisher_checksums"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "publisher_checksums"
+    },
+    {
+      "constraint_text": "CHECK((local_match = CAST('t' AS BOOLEAN)))",
+      "constraint_type": "CHECK",
+      "table": "publisher_checksums"
+    },
+    {
+      "constraint_text": "UNIQUE(archive_raw_object_sha256, checksum_raw_object_sha256)",
+      "constraint_type": "UNIQUE",
+      "table": "publisher_checksums"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "publisher_checksums"
+    },
+    {
+      "constraint_text": "PRIMARY KEY(raw_object_sha256)",
+      "constraint_type": "PRIMARY KEY",
+      "table": "raw_objects"
+    },
+    {
+      "constraint_text": "CHECK(regexp_full_match(raw_object_sha256, '[0-9a-f]{64}'))",
+      "constraint_type": "CHECK",
+      "table": "raw_objects"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "raw_objects"
+    },
+    {
+      "constraint_text": "CHECK((byte_size >= 0))",
+      "constraint_type": "CHECK",
+      "table": "raw_objects"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "raw_objects"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "raw_objects"
+    },
+    {
+      "constraint_text": "CHECK((authority = 'IMMUTABLE_BINANCE_OFFICIAL_RAW_BYTES'))",
+      "constraint_type": "CHECK",
+      "table": "raw_objects"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "raw_objects"
+    },
+    {
+      "constraint_text": "CHECK((content_verified = CAST('t' AS BOOLEAN)))",
+      "constraint_type": "CHECK",
+      "table": "raw_objects"
+    },
+    {
+      "constraint_text": "UNIQUE(raw_object_sha256, byte_size)",
+      "constraint_type": "UNIQUE",
+      "table": "raw_objects"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "raw_objects"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "release_members"
+    },
+    {
+      "constraint_text": "FOREIGN KEY (dataset_release_id) REFERENCES dataset_releases(dataset_release_id)",
+      "constraint_type": "FOREIGN KEY",
+      "table": "release_members"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "release_members"
+    },
+    {
+      "constraint_text": "CHECK((member_type IN ('RAW_OBJECT', 'EXECUTION_BAR', 'MARK_BAR', 'FUNDING_EVENT', 'MINUTE_DISPOSITION', 'INSTRUMENT_METADATA')))",
+      "constraint_type": "CHECK",
+      "table": "release_members"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "release_members"
+    },
+    {
+      "constraint_text": "FOREIGN KEY (source_raw_object_sha256) REFERENCES raw_objects(raw_object_sha256)",
+      "constraint_type": "FOREIGN KEY",
+      "table": "release_members"
+    },
+    {
+      "constraint_text": "PRIMARY KEY(dataset_release_id, member_type, member_identity)",
+      "constraint_type": "PRIMARY KEY",
+      "table": "release_members"
+    },
+    {
+      "constraint_text": "PRIMARY KEY(schema_identity)",
+      "constraint_type": "PRIMARY KEY",
+      "table": "schema_metadata"
+    },
+    {
+      "constraint_text": "CHECK((length(schema_identity) = 64))",
+      "constraint_type": "CHECK",
+      "table": "schema_metadata"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "schema_metadata"
+    },
+    {
+      "constraint_text": "UNIQUE(schema_version)",
+      "constraint_type": "UNIQUE",
+      "table": "schema_metadata"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "schema_metadata"
+    },
+    {
+      "constraint_text": "CHECK((duckdb_version = '1.4.5'))",
+      "constraint_type": "CHECK",
+      "table": "schema_metadata"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "schema_metadata"
+    },
+    {
+      "constraint_text": "CHECK((timestamp_contract = 'UTC_INTEGER_NANOSECONDS_CANONICAL;SOURCE_UNITS_EXPLICIT'))",
+      "constraint_type": "CHECK",
+      "table": "schema_metadata"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "schema_metadata"
+    },
+    {
+      "constraint_text": "CHECK((extensions_allowed = CAST('f' AS BOOLEAN)))",
+      "constraint_type": "CHECK",
+      "table": "schema_metadata"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "schema_metadata"
+    },
+    {
+      "constraint_text": "CHECK((network_allowed = CAST('f' AS BOOLEAN)))",
+      "constraint_type": "CHECK",
+      "table": "schema_metadata"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "schema_metadata"
+    },
+    {
+      "constraint_text": "PRIMARY KEY(conflict_identity)",
+      "constraint_type": "PRIMARY KEY",
+      "table": "source_conflicts"
+    },
+    {
+      "constraint_text": "CHECK(regexp_full_match(conflict_identity, '[0-9a-f]{64}'))",
+      "constraint_type": "CHECK",
+      "table": "source_conflicts"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "source_conflicts"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "source_conflicts"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "source_conflicts"
+    },
+    {
+      "constraint_text": "CHECK(((open_time_ns % 60000000000) = 0))",
+      "constraint_type": "CHECK",
+      "table": "source_conflicts"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "source_conflicts"
+    },
+    {
+      "constraint_text": "CHECK((status IN ('RESOLVED_SUPERSEDED', 'UNRESOLVED_BLOCKING')))",
+      "constraint_type": "CHECK",
+      "table": "source_conflicts"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "source_conflicts"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "source_conflicts"
+    },
+    {
+      "constraint_text": "CHECK(((resolution_identity IS NULL) OR regexp_full_match(resolution_identity, '[0-9a-f]{64}')))",
+      "constraint_type": "CHECK",
+      "table": "source_conflicts"
+    },
+    {
+      "constraint_text": "UNIQUE(market_profile, instrument_id, open_time_ns, conflict_identity)",
+      "constraint_type": "UNIQUE",
+      "table": "source_conflicts"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "source_conflicts"
+    },
+    {
+      "constraint_text": "PRIMARY KEY(observation_id)",
+      "constraint_type": "PRIMARY KEY",
+      "table": "source_observations"
+    },
+    {
+      "constraint_text": "CHECK(regexp_full_match(observation_id, '[0-9a-f]{64}'))",
+      "constraint_type": "CHECK",
+      "table": "source_observations"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "source_observations"
+    },
+    {
+      "constraint_text": "FOREIGN KEY (raw_object_sha256) REFERENCES raw_objects(raw_object_sha256)",
+      "constraint_type": "FOREIGN KEY",
+      "table": "source_observations"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "source_observations"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "source_observations"
+    },
+    {
+      "constraint_text": "CHECK((http_status BETWEEN 100 AND 599))",
+      "constraint_type": "CHECK",
+      "table": "source_observations"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "source_observations"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "source_observations"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "source_observations"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "source_observations"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "source_observations"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "source_observations"
+    },
+    {
+      "constraint_text": "CHECK(((semantic_row_sha256 IS NULL) OR regexp_full_match(semantic_row_sha256, '[0-9a-f]{64}')))",
+      "constraint_type": "CHECK",
+      "table": "source_observations"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "source_observations"
+    },
+    {
+      "constraint_text": "CHECK((validation_status IN ('RAW_PRESERVED', 'PASS', 'SUPERSEDED', 'UNAVAILABLE')))",
+      "constraint_type": "CHECK",
+      "table": "source_observations"
+    },
+    {
+      "constraint_text": "CHECK(((requested_end_ms IS NULL) OR (requested_start_ms IS NULL) OR (requested_end_ms > requested_start_ms)))",
+      "constraint_type": "CHECK",
+      "table": "source_observations"
+    },
+    {
+      "constraint_text": "UNIQUE(raw_object_sha256, source_role, pagination_identity, parsed_event_time_ms, semantic_row_sha256)",
+      "constraint_type": "UNIQUE",
+      "table": "source_observations"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "source_observations"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "spot_agg_trades"
+    },
+    {
+      "constraint_text": "FOREIGN KEY (source_raw_object_sha256) REFERENCES raw_objects(raw_object_sha256)",
+      "constraint_type": "FOREIGN KEY",
+      "table": "spot_agg_trades"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "spot_agg_trades"
+    },
+    {
+      "constraint_text": "CHECK((aggregate_trade_id >= 0))",
+      "constraint_type": "CHECK",
+      "table": "spot_agg_trades"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "spot_agg_trades"
+    },
+    {
+      "constraint_text": "CHECK((source_role ~~ 'SPOT%AGG%'))",
+      "constraint_type": "CHECK",
+      "table": "spot_agg_trades"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "spot_agg_trades"
+    },
+    {
+      "constraint_text": "CHECK((symbol = 'BTCUSDT'))",
+      "constraint_type": "CHECK",
+      "table": "spot_agg_trades"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "spot_agg_trades"
+    },
+    {
+      "constraint_text": "CHECK((row_number > 0))",
+      "constraint_type": "CHECK",
+      "table": "spot_agg_trades"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "spot_agg_trades"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "spot_agg_trades"
+    },
+    {
+      "constraint_text": "CHECK((price_value > 0))",
+      "constraint_type": "CHECK",
+      "table": "spot_agg_trades"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "spot_agg_trades"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "spot_agg_trades"
+    },
+    {
+      "constraint_text": "CHECK((quantity_value > 0))",
+      "constraint_type": "CHECK",
+      "table": "spot_agg_trades"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "spot_agg_trades"
+    },
+    {
+      "constraint_text": "CHECK((first_trade_id >= 0))",
+      "constraint_type": "CHECK",
+      "table": "spot_agg_trades"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "spot_agg_trades"
+    },
+    {
+      "constraint_text": "CHECK((last_trade_id >= first_trade_id))",
+      "constraint_type": "CHECK",
+      "table": "spot_agg_trades"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "spot_agg_trades"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "spot_agg_trades"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "spot_agg_trades"
+    },
+    {
+      "constraint_text": "PRIMARY KEY(source_raw_object_sha256, aggregate_trade_id)",
+      "constraint_type": "PRIMARY KEY",
+      "table": "spot_agg_trades"
+    },
+    {
+      "constraint_text": "UNIQUE(source_raw_object_sha256, row_number)",
+      "constraint_type": "UNIQUE",
+      "table": "spot_agg_trades"
+    },
+    {
+      "constraint_text": "PRIMARY KEY(canonical_bar_identity)",
+      "constraint_type": "PRIMARY KEY",
+      "table": "spot_execution_bars_1m"
+    },
+    {
+      "constraint_text": "CHECK(regexp_full_match(canonical_bar_identity, '[0-9a-f]{64}'))",
+      "constraint_type": "CHECK",
+      "table": "spot_execution_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "spot_execution_bars_1m"
+    },
+    {
+      "constraint_text": "CHECK((instrument_id = 'BTCUSDT.BINANCE'))",
+      "constraint_type": "CHECK",
+      "table": "spot_execution_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "spot_execution_bars_1m"
+    },
+    {
+      "constraint_text": "CHECK(((open_time_ns % 60000000000) = 0))",
+      "constraint_type": "CHECK",
+      "table": "spot_execution_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "spot_execution_bars_1m"
+    },
+    {
+      "constraint_text": "CHECK((end_exclusive_ns = (open_time_ns + 60000000000)))",
+      "constraint_type": "CHECK",
+      "table": "spot_execution_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "spot_execution_bars_1m"
+    },
+    {
+      "constraint_text": "CHECK((available_at_ns = end_exclusive_ns))",
+      "constraint_type": "CHECK",
+      "table": "spot_execution_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "spot_execution_bars_1m"
+    },
+    {
+      "constraint_text": "CHECK((disposition IN ('REAL_OFFICIAL_BAR', 'DERIVED_FROM_OFFICIAL_TRADES')))",
+      "constraint_type": "CHECK",
+      "table": "spot_execution_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "spot_execution_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "spot_execution_bars_1m"
+    },
+    {
+      "constraint_text": "CHECK((open_value > 0))",
+      "constraint_type": "CHECK",
+      "table": "spot_execution_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "spot_execution_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "spot_execution_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "spot_execution_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "spot_execution_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "spot_execution_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "spot_execution_bars_1m"
+    },
+    {
+      "constraint_text": "CHECK((close_value > 0))",
+      "constraint_type": "CHECK",
+      "table": "spot_execution_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "spot_execution_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "spot_execution_bars_1m"
+    },
+    {
+      "constraint_text": "CHECK((base_volume_value > 0))",
+      "constraint_type": "CHECK",
+      "table": "spot_execution_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "spot_execution_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "spot_execution_bars_1m"
+    },
+    {
+      "constraint_text": "CHECK((quote_volume_value > 0))",
+      "constraint_type": "CHECK",
+      "table": "spot_execution_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "spot_execution_bars_1m"
+    },
+    {
+      "constraint_text": "CHECK((trade_count > 0))",
+      "constraint_type": "CHECK",
+      "table": "spot_execution_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "spot_execution_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "spot_execution_bars_1m"
+    },
+    {
+      "constraint_text": "CHECK((taker_buy_base_value >= 0))",
+      "constraint_type": "CHECK",
+      "table": "spot_execution_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "spot_execution_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "spot_execution_bars_1m"
+    },
+    {
+      "constraint_text": "CHECK((taker_buy_quote_value >= 0))",
+      "constraint_type": "CHECK",
+      "table": "spot_execution_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "spot_execution_bars_1m"
+    },
+    {
+      "constraint_text": "FOREIGN KEY (primary_source_sha256) REFERENCES raw_objects(raw_object_sha256)",
+      "constraint_type": "FOREIGN KEY",
+      "table": "spot_execution_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "spot_execution_bars_1m"
+    },
+    {
+      "constraint_text": "CHECK((high_value >= greatest(open_value, close_value, low_value)))",
+      "constraint_type": "CHECK",
+      "table": "spot_execution_bars_1m"
+    },
+    {
+      "constraint_text": "CHECK((low_value <= least(open_value, close_value, high_value)))",
+      "constraint_type": "CHECK",
+      "table": "spot_execution_bars_1m"
+    },
+    {
+      "constraint_text": "UNIQUE(instrument_id, open_time_ns)",
+      "constraint_type": "UNIQUE",
+      "table": "spot_execution_bars_1m"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "spot_execution_bars_1m"
+    },
+    {
+      "constraint_text": "PRIMARY KEY(validation_identity)",
+      "constraint_type": "PRIMARY KEY",
+      "table": "validation_results"
+    },
+    {
+      "constraint_text": "CHECK(regexp_full_match(validation_identity, '[0-9a-f]{64}'))",
+      "constraint_type": "CHECK",
+      "table": "validation_results"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "validation_results"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "validation_results"
+    },
+    {
+      "constraint_text": "CHECK((status IN ('PASS', 'FAIL', 'BLOCKED')))",
+      "constraint_type": "CHECK",
+      "table": "validation_results"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "validation_results"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "validation_results"
+    },
+    {
+      "constraint_text": "UNIQUE(validation_name, validation_identity)",
+      "constraint_type": "UNIQUE",
+      "table": "validation_results"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "validation_results"
+    },
+    {
+      "constraint_text": "PRIMARY KEY(proof_identity)",
+      "constraint_type": "PRIMARY KEY",
+      "table": "verified_no_trade_intervals"
+    },
+    {
+      "constraint_text": "CHECK(regexp_full_match(proof_identity, '[0-9a-f]{64}'))",
+      "constraint_type": "CHECK",
+      "table": "verified_no_trade_intervals"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "verified_no_trade_intervals"
+    },
+    {
+      "constraint_text": "CHECK((instrument_id = 'BTCUSDT.BINANCE'))",
+      "constraint_type": "CHECK",
+      "table": "verified_no_trade_intervals"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "verified_no_trade_intervals"
+    },
+    {
+      "constraint_text": "CHECK(((start_ns % 60000000000) = 0))",
+      "constraint_type": "CHECK",
+      "table": "verified_no_trade_intervals"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "verified_no_trade_intervals"
+    },
+    {
+      "constraint_text": "CHECK(((end_exclusive_ns > start_ns) AND ((end_exclusive_ns % 60000000000) = 0)))",
+      "constraint_type": "CHECK",
+      "table": "verified_no_trade_intervals"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "verified_no_trade_intervals"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "verified_no_trade_intervals"
+    },
+    {
+      "constraint_text": "CHECK((after_trade_id = (before_trade_id + 1)))",
+      "constraint_type": "CHECK",
+      "table": "verified_no_trade_intervals"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "verified_no_trade_intervals"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "verified_no_trade_intervals"
+    },
+    {
+      "constraint_text": "CHECK((after_aggregate_id = (before_aggregate_id + 1)))",
+      "constraint_type": "CHECK",
+      "table": "verified_no_trade_intervals"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "verified_no_trade_intervals"
+    },
+    {
+      "constraint_text": "FOREIGN KEY (raw_trade_source_sha256) REFERENCES raw_objects(raw_object_sha256)",
+      "constraint_type": "FOREIGN KEY",
+      "table": "verified_no_trade_intervals"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "verified_no_trade_intervals"
+    },
+    {
+      "constraint_text": "FOREIGN KEY (aggtrade_source_sha256) REFERENCES raw_objects(raw_object_sha256)",
+      "constraint_type": "FOREIGN KEY",
+      "table": "verified_no_trade_intervals"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "verified_no_trade_intervals"
+    },
+    {
+      "constraint_text": "UNIQUE(instrument_id, start_ns, end_exclusive_ns)",
+      "constraint_type": "UNIQUE",
+      "table": "verified_no_trade_intervals"
+    },
+    {
+      "constraint_text": "NOT NULL",
+      "constraint_type": "NOT NULL",
+      "table": "verified_no_trade_intervals"
+    }
+  ],
+  "created_at_utc": "2026-08-23T16:40:24.722767Z",
+  "database_inspected_read_only": true,
+  "extensions_prohibited": true,
+  "financial_binary_float_columns": [],
+  "raw_bytes_authority_outside_duckdb": true,
+  "schema": "free-official-binance-duckdb-schema-evidence-v1",
+  "schema_identity": "3ca976671f80d429da1ec30db348968999b04deb4dca87e60ed9650a9fc05cee",
+  "schema_path": "schemas/free_official_binance_duckdb.sql",
+  "schema_sha256": "3ca976671f80d429da1ec30db348968999b04deb4dca87e60ed9650a9fc05cee",
+  "source_sha_binding_required": true,
+  "status": "PASS",
+  "table_count": 18,
+  "tables": [
+    {
+      "columns": [
+        {
+          "default": null,
+          "name": "build_identity",
+          "not_null": true,
+          "ordinal": 0,
+          "primary_key": true,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "build_role",
+          "not_null": true,
+          "ordinal": 1,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "schema_identity",
+          "not_null": true,
+          "ordinal": 2,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "source_inventory_identity",
+          "not_null": true,
+          "ordinal": 3,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "semantic_database_identity",
+          "not_null": true,
+          "ordinal": 4,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "semantic_export_contract",
+          "not_null": true,
+          "ordinal": 5,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "table_hashes_json",
+          "not_null": true,
+          "ordinal": 6,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "row_counts_json",
+          "not_null": true,
+          "ordinal": 7,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "dataset_release_ids_json",
+          "not_null": true,
+          "ordinal": 8,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "catalog_identities_json",
+          "not_null": true,
+          "ordinal": 9,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "completed_at_utc",
+          "not_null": true,
+          "ordinal": 10,
+          "primary_key": false,
+          "type": "VARCHAR"
+        }
+      ],
+      "table": "build_manifests"
+    },
+    {
+      "columns": [
+        {
+          "default": null,
+          "name": "data_window_identity",
+          "not_null": true,
+          "ordinal": 0,
+          "primary_key": true,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "classification",
+          "not_null": true,
+          "ordinal": 1,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "shift_months",
+          "not_null": true,
+          "ordinal": 2,
+          "primary_key": false,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "dataset_start_ns",
+          "not_null": true,
+          "ordinal": 3,
+          "primary_key": false,
+          "type": "BIGINT"
+        },
+        {
+          "default": null,
+          "name": "scoring_start_ns",
+          "not_null": true,
+          "ordinal": 4,
+          "primary_key": false,
+          "type": "BIGINT"
+        },
+        {
+          "default": null,
+          "name": "scoring_end_exclusive_ns",
+          "not_null": true,
+          "ordinal": 5,
+          "primary_key": false,
+          "type": "BIGINT"
+        },
+        {
+          "default": null,
+          "name": "dataset_end_exclusive_ns",
+          "not_null": true,
+          "ordinal": 6,
+          "primary_key": false,
+          "type": "BIGINT"
+        },
+        {
+          "default": null,
+          "name": "partition_geometry_identity",
+          "not_null": true,
+          "ordinal": 7,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "status",
+          "not_null": true,
+          "ordinal": 8,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "reason",
+          "not_null": true,
+          "ordinal": 9,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "strategy_performance_inspected",
+          "not_null": true,
+          "ordinal": 10,
+          "primary_key": false,
+          "type": "BOOLEAN"
+        }
+      ],
+      "table": "data_windows"
+    },
+    {
+      "columns": [
+        {
+          "default": null,
+          "name": "dataset_release_id",
+          "not_null": true,
+          "ordinal": 0,
+          "primary_key": true,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "market_profile",
+          "not_null": true,
+          "ordinal": 1,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "instrument_id",
+          "not_null": true,
+          "ordinal": 2,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "data_window_identity",
+          "not_null": true,
+          "ordinal": 3,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "partition_geometry_identity",
+          "not_null": true,
+          "ordinal": 4,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "minute_coverage_identity",
+          "not_null": true,
+          "ordinal": 5,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "source_reconciliation_identity",
+          "not_null": true,
+          "ordinal": 6,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "catalog_identity",
+          "not_null": true,
+          "ordinal": 7,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "semantic_release_json",
+          "not_null": true,
+          "ordinal": 8,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "status",
+          "not_null": true,
+          "ordinal": 9,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "created_at_utc",
+          "not_null": true,
+          "ordinal": 10,
+          "primary_key": false,
+          "type": "VARCHAR"
+        }
+      ],
+      "table": "dataset_releases"
+    },
+    {
+      "columns": [
+        {
+          "default": null,
+          "name": "instrument_metadata_identity",
+          "not_null": true,
+          "ordinal": 0,
+          "primary_key": true,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "market_profile",
+          "not_null": true,
+          "ordinal": 1,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "instrument_id",
+          "not_null": true,
+          "ordinal": 2,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "source_raw_object_sha256",
+          "not_null": true,
+          "ordinal": 3,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "observed_at_utc",
+          "not_null": true,
+          "ordinal": 4,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "historical_exact",
+          "not_null": true,
+          "ordinal": 5,
+          "primary_key": false,
+          "type": "BOOLEAN"
+        },
+        {
+          "default": null,
+          "name": "metadata_json",
+          "not_null": true,
+          "ordinal": 6,
+          "primary_key": false,
+          "type": "VARCHAR"
+        }
+      ],
+      "table": "instrument_metadata"
+    },
+    {
+      "columns": [
+        {
+          "default": null,
+          "name": "market_profile",
+          "not_null": true,
+          "ordinal": 0,
+          "primary_key": true,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "instrument_id",
+          "not_null": true,
+          "ordinal": 1,
+          "primary_key": true,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "open_time_ns",
+          "not_null": true,
+          "ordinal": 2,
+          "primary_key": true,
+          "type": "BIGINT"
+        },
+        {
+          "default": null,
+          "name": "disposition",
+          "not_null": true,
+          "ordinal": 3,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "canonical_bar_identity",
+          "not_null": false,
+          "ordinal": 4,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "proof_identity",
+          "not_null": false,
+          "ordinal": 5,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "source_reconciliation_identity",
+          "not_null": true,
+          "ordinal": 6,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "reason",
+          "not_null": true,
+          "ordinal": 7,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "blocking",
+          "not_null": true,
+          "ordinal": 8,
+          "primary_key": false,
+          "type": "BOOLEAN"
+        }
+      ],
+      "table": "minute_dispositions"
+    },
+    {
+      "columns": [
+        {
+          "default": null,
+          "name": "canonical_bar_identity",
+          "not_null": true,
+          "ordinal": 0,
+          "primary_key": true,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "instrument_id",
+          "not_null": true,
+          "ordinal": 1,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "open_time_ns",
+          "not_null": true,
+          "ordinal": 2,
+          "primary_key": false,
+          "type": "BIGINT"
+        },
+        {
+          "default": null,
+          "name": "end_exclusive_ns",
+          "not_null": true,
+          "ordinal": 3,
+          "primary_key": false,
+          "type": "BIGINT"
+        },
+        {
+          "default": null,
+          "name": "available_at_ns",
+          "not_null": true,
+          "ordinal": 4,
+          "primary_key": false,
+          "type": "BIGINT"
+        },
+        {
+          "default": null,
+          "name": "open_text",
+          "not_null": true,
+          "ordinal": 5,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "open_value",
+          "not_null": true,
+          "ordinal": 6,
+          "primary_key": false,
+          "type": "DECIMAL(38,18)"
+        },
+        {
+          "default": null,
+          "name": "high_text",
+          "not_null": true,
+          "ordinal": 7,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "high_value",
+          "not_null": true,
+          "ordinal": 8,
+          "primary_key": false,
+          "type": "DECIMAL(38,18)"
+        },
+        {
+          "default": null,
+          "name": "low_text",
+          "not_null": true,
+          "ordinal": 9,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "low_value",
+          "not_null": true,
+          "ordinal": 10,
+          "primary_key": false,
+          "type": "DECIMAL(38,18)"
+        },
+        {
+          "default": null,
+          "name": "close_text",
+          "not_null": true,
+          "ordinal": 11,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "close_value",
+          "not_null": true,
+          "ordinal": 12,
+          "primary_key": false,
+          "type": "DECIMAL(38,18)"
+        },
+        {
+          "default": null,
+          "name": "volume_text",
+          "not_null": true,
+          "ordinal": 13,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "volume_value",
+          "not_null": true,
+          "ordinal": 14,
+          "primary_key": false,
+          "type": "DECIMAL(38,18)"
+        },
+        {
+          "default": null,
+          "name": "quote_volume_text",
+          "not_null": true,
+          "ordinal": 15,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "quote_volume_value",
+          "not_null": true,
+          "ordinal": 16,
+          "primary_key": false,
+          "type": "DECIMAL(38,18)"
+        },
+        {
+          "default": null,
+          "name": "trade_count",
+          "not_null": true,
+          "ordinal": 17,
+          "primary_key": false,
+          "type": "BIGINT"
+        },
+        {
+          "default": null,
+          "name": "taker_buy_base_text",
+          "not_null": true,
+          "ordinal": 18,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "taker_buy_base_value",
+          "not_null": true,
+          "ordinal": 19,
+          "primary_key": false,
+          "type": "DECIMAL(38,18)"
+        },
+        {
+          "default": null,
+          "name": "taker_buy_quote_text",
+          "not_null": true,
+          "ordinal": 20,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "taker_buy_quote_value",
+          "not_null": true,
+          "ordinal": 21,
+          "primary_key": false,
+          "type": "DECIMAL(38,18)"
+        },
+        {
+          "default": null,
+          "name": "primary_source_sha256",
+          "not_null": true,
+          "ordinal": 22,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "source_sha256s_json",
+          "not_null": true,
+          "ordinal": 23,
+          "primary_key": false,
+          "type": "VARCHAR"
+        }
+      ],
+      "table": "perpetual_execution_bars_1m"
+    },
+    {
+      "columns": [
+        {
+          "default": null,
+          "name": "event_identity",
+          "not_null": true,
+          "ordinal": 0,
+          "primary_key": true,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "instrument_id",
+          "not_null": true,
+          "ordinal": 1,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "funding_time_ns",
+          "not_null": true,
+          "ordinal": 2,
+          "primary_key": false,
+          "type": "BIGINT"
+        },
+        {
+          "default": null,
+          "name": "funding_interval_hours",
+          "not_null": true,
+          "ordinal": 3,
+          "primary_key": false,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "funding_rate_text",
+          "not_null": true,
+          "ordinal": 4,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "funding_rate_value",
+          "not_null": true,
+          "ordinal": 5,
+          "primary_key": false,
+          "type": "DECIMAL(38,18)"
+        },
+        {
+          "default": null,
+          "name": "primary_source_sha256",
+          "not_null": true,
+          "ordinal": 6,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "source_sha256s_json",
+          "not_null": true,
+          "ordinal": 7,
+          "primary_key": false,
+          "type": "VARCHAR"
+        }
+      ],
+      "table": "perpetual_funding_events"
+    },
+    {
+      "columns": [
+        {
+          "default": null,
+          "name": "canonical_bar_identity",
+          "not_null": true,
+          "ordinal": 0,
+          "primary_key": true,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "instrument_id",
+          "not_null": true,
+          "ordinal": 1,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "open_time_ns",
+          "not_null": true,
+          "ordinal": 2,
+          "primary_key": false,
+          "type": "BIGINT"
+        },
+        {
+          "default": null,
+          "name": "end_exclusive_ns",
+          "not_null": true,
+          "ordinal": 3,
+          "primary_key": false,
+          "type": "BIGINT"
+        },
+        {
+          "default": null,
+          "name": "available_at_ns",
+          "not_null": true,
+          "ordinal": 4,
+          "primary_key": false,
+          "type": "BIGINT"
+        },
+        {
+          "default": null,
+          "name": "open_text",
+          "not_null": true,
+          "ordinal": 5,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "open_value",
+          "not_null": true,
+          "ordinal": 6,
+          "primary_key": false,
+          "type": "DECIMAL(38,18)"
+        },
+        {
+          "default": null,
+          "name": "high_text",
+          "not_null": true,
+          "ordinal": 7,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "high_value",
+          "not_null": true,
+          "ordinal": 8,
+          "primary_key": false,
+          "type": "DECIMAL(38,18)"
+        },
+        {
+          "default": null,
+          "name": "low_text",
+          "not_null": true,
+          "ordinal": 9,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "low_value",
+          "not_null": true,
+          "ordinal": 10,
+          "primary_key": false,
+          "type": "DECIMAL(38,18)"
+        },
+        {
+          "default": null,
+          "name": "close_text",
+          "not_null": true,
+          "ordinal": 11,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "close_value",
+          "not_null": true,
+          "ordinal": 12,
+          "primary_key": false,
+          "type": "DECIMAL(38,18)"
+        },
+        {
+          "default": null,
+          "name": "primary_source_sha256",
+          "not_null": true,
+          "ordinal": 13,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "source_sha256s_json",
+          "not_null": true,
+          "ordinal": 14,
+          "primary_key": false,
+          "type": "VARCHAR"
+        }
+      ],
+      "table": "perpetual_mark_bars_1m"
+    },
+    {
+      "columns": [
+        {
+          "default": null,
+          "name": "checksum_identity",
+          "not_null": true,
+          "ordinal": 0,
+          "primary_key": true,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "archive_raw_object_sha256",
+          "not_null": true,
+          "ordinal": 1,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "checksum_raw_object_sha256",
+          "not_null": true,
+          "ordinal": 2,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "exact_filename",
+          "not_null": true,
+          "ordinal": 3,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "publisher_sha256",
+          "not_null": true,
+          "ordinal": 4,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "local_match",
+          "not_null": true,
+          "ordinal": 5,
+          "primary_key": false,
+          "type": "BOOLEAN"
+        }
+      ],
+      "table": "publisher_checksums"
+    },
+    {
+      "columns": [
+        {
+          "default": null,
+          "name": "raw_object_sha256",
+          "not_null": true,
+          "ordinal": 0,
+          "primary_key": true,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "byte_size",
+          "not_null": true,
+          "ordinal": 1,
+          "primary_key": false,
+          "type": "BIGINT"
+        },
+        {
+          "default": null,
+          "name": "local_path",
+          "not_null": true,
+          "ordinal": 2,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "authority",
+          "not_null": true,
+          "ordinal": 3,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "content_verified",
+          "not_null": true,
+          "ordinal": 4,
+          "primary_key": false,
+          "type": "BOOLEAN"
+        }
+      ],
+      "table": "raw_objects"
+    },
+    {
+      "columns": [
+        {
+          "default": null,
+          "name": "dataset_release_id",
+          "not_null": true,
+          "ordinal": 0,
+          "primary_key": true,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "member_type",
+          "not_null": true,
+          "ordinal": 1,
+          "primary_key": true,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "member_identity",
+          "not_null": true,
+          "ordinal": 2,
+          "primary_key": true,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "source_raw_object_sha256",
+          "not_null": false,
+          "ordinal": 3,
+          "primary_key": false,
+          "type": "VARCHAR"
+        }
+      ],
+      "table": "release_members"
+    },
+    {
+      "columns": [
+        {
+          "default": null,
+          "name": "schema_identity",
+          "not_null": true,
+          "ordinal": 0,
+          "primary_key": true,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "schema_version",
+          "not_null": true,
+          "ordinal": 1,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "duckdb_version",
+          "not_null": true,
+          "ordinal": 2,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "timestamp_contract",
+          "not_null": true,
+          "ordinal": 3,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "extensions_allowed",
+          "not_null": true,
+          "ordinal": 4,
+          "primary_key": false,
+          "type": "BOOLEAN"
+        },
+        {
+          "default": null,
+          "name": "network_allowed",
+          "not_null": true,
+          "ordinal": 5,
+          "primary_key": false,
+          "type": "BOOLEAN"
+        }
+      ],
+      "table": "schema_metadata"
+    },
+    {
+      "columns": [
+        {
+          "default": null,
+          "name": "conflict_identity",
+          "not_null": true,
+          "ordinal": 0,
+          "primary_key": true,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "market_profile",
+          "not_null": true,
+          "ordinal": 1,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "instrument_id",
+          "not_null": true,
+          "ordinal": 2,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "open_time_ns",
+          "not_null": true,
+          "ordinal": 3,
+          "primary_key": false,
+          "type": "BIGINT"
+        },
+        {
+          "default": null,
+          "name": "status",
+          "not_null": true,
+          "ordinal": 4,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "reason",
+          "not_null": true,
+          "ordinal": 5,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "source_observation_ids_json",
+          "not_null": true,
+          "ordinal": 6,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "resolution_identity",
+          "not_null": false,
+          "ordinal": 7,
+          "primary_key": false,
+          "type": "VARCHAR"
+        }
+      ],
+      "table": "source_conflicts"
+    },
+    {
+      "columns": [
+        {
+          "default": null,
+          "name": "observation_id",
+          "not_null": true,
+          "ordinal": 0,
+          "primary_key": true,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "raw_object_sha256",
+          "not_null": true,
+          "ordinal": 1,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "exact_locator",
+          "not_null": true,
+          "ordinal": 2,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "exact_query_json",
+          "not_null": true,
+          "ordinal": 3,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "http_status",
+          "not_null": false,
+          "ordinal": 4,
+          "primary_key": false,
+          "type": "INTEGER"
+        },
+        {
+          "default": null,
+          "name": "response_headers_json",
+          "not_null": true,
+          "ordinal": 5,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "captured_at_utc",
+          "not_null": true,
+          "ordinal": 6,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "source_role",
+          "not_null": true,
+          "ordinal": 7,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "instrument",
+          "not_null": true,
+          "ordinal": 8,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "requested_interval",
+          "not_null": true,
+          "ordinal": 9,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "requested_start_ms",
+          "not_null": false,
+          "ordinal": 10,
+          "primary_key": false,
+          "type": "BIGINT"
+        },
+        {
+          "default": null,
+          "name": "requested_end_ms",
+          "not_null": false,
+          "ordinal": 11,
+          "primary_key": false,
+          "type": "BIGINT"
+        },
+        {
+          "default": null,
+          "name": "pagination_identity",
+          "not_null": true,
+          "ordinal": 12,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "parsed_event_time_ms",
+          "not_null": false,
+          "ordinal": 13,
+          "primary_key": false,
+          "type": "BIGINT"
+        },
+        {
+          "default": null,
+          "name": "semantic_row_sha256",
+          "not_null": false,
+          "ordinal": 14,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "original_row_json",
+          "not_null": false,
+          "ordinal": 15,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "validation_status",
+          "not_null": true,
+          "ordinal": 16,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "delivery_classification",
+          "not_null": false,
+          "ordinal": 17,
+          "primary_key": false,
+          "type": "VARCHAR"
+        }
+      ],
+      "table": "source_observations"
+    },
+    {
+      "columns": [
+        {
+          "default": null,
+          "name": "source_raw_object_sha256",
+          "not_null": true,
+          "ordinal": 0,
+          "primary_key": true,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "aggregate_trade_id",
+          "not_null": true,
+          "ordinal": 1,
+          "primary_key": true,
+          "type": "BIGINT"
+        },
+        {
+          "default": null,
+          "name": "source_role",
+          "not_null": true,
+          "ordinal": 2,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "symbol",
+          "not_null": true,
+          "ordinal": 3,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "row_number",
+          "not_null": true,
+          "ordinal": 4,
+          "primary_key": false,
+          "type": "BIGINT"
+        },
+        {
+          "default": null,
+          "name": "price_text",
+          "not_null": true,
+          "ordinal": 5,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "price_value",
+          "not_null": true,
+          "ordinal": 6,
+          "primary_key": false,
+          "type": "DECIMAL(38,18)"
+        },
+        {
+          "default": null,
+          "name": "quantity_text",
+          "not_null": true,
+          "ordinal": 7,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "quantity_value",
+          "not_null": true,
+          "ordinal": 8,
+          "primary_key": false,
+          "type": "DECIMAL(38,18)"
+        },
+        {
+          "default": null,
+          "name": "first_trade_id",
+          "not_null": true,
+          "ordinal": 9,
+          "primary_key": false,
+          "type": "BIGINT"
+        },
+        {
+          "default": null,
+          "name": "last_trade_id",
+          "not_null": true,
+          "ordinal": 10,
+          "primary_key": false,
+          "type": "BIGINT"
+        },
+        {
+          "default": null,
+          "name": "event_time_ms",
+          "not_null": true,
+          "ordinal": 11,
+          "primary_key": false,
+          "type": "BIGINT"
+        },
+        {
+          "default": null,
+          "name": "buyer_is_maker",
+          "not_null": true,
+          "ordinal": 12,
+          "primary_key": false,
+          "type": "BOOLEAN"
+        },
+        {
+          "default": null,
+          "name": "best_price_match",
+          "not_null": true,
+          "ordinal": 13,
+          "primary_key": false,
+          "type": "BOOLEAN"
+        }
+      ],
+      "table": "spot_agg_trades"
+    },
+    {
+      "columns": [
+        {
+          "default": null,
+          "name": "canonical_bar_identity",
+          "not_null": true,
+          "ordinal": 0,
+          "primary_key": true,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "instrument_id",
+          "not_null": true,
+          "ordinal": 1,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "open_time_ns",
+          "not_null": true,
+          "ordinal": 2,
+          "primary_key": false,
+          "type": "BIGINT"
+        },
+        {
+          "default": null,
+          "name": "end_exclusive_ns",
+          "not_null": true,
+          "ordinal": 3,
+          "primary_key": false,
+          "type": "BIGINT"
+        },
+        {
+          "default": null,
+          "name": "available_at_ns",
+          "not_null": true,
+          "ordinal": 4,
+          "primary_key": false,
+          "type": "BIGINT"
+        },
+        {
+          "default": null,
+          "name": "disposition",
+          "not_null": true,
+          "ordinal": 5,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "open_text",
+          "not_null": true,
+          "ordinal": 6,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "open_value",
+          "not_null": true,
+          "ordinal": 7,
+          "primary_key": false,
+          "type": "DECIMAL(38,18)"
+        },
+        {
+          "default": null,
+          "name": "high_text",
+          "not_null": true,
+          "ordinal": 8,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "high_value",
+          "not_null": true,
+          "ordinal": 9,
+          "primary_key": false,
+          "type": "DECIMAL(38,18)"
+        },
+        {
+          "default": null,
+          "name": "low_text",
+          "not_null": true,
+          "ordinal": 10,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "low_value",
+          "not_null": true,
+          "ordinal": 11,
+          "primary_key": false,
+          "type": "DECIMAL(38,18)"
+        },
+        {
+          "default": null,
+          "name": "close_text",
+          "not_null": true,
+          "ordinal": 12,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "close_value",
+          "not_null": true,
+          "ordinal": 13,
+          "primary_key": false,
+          "type": "DECIMAL(38,18)"
+        },
+        {
+          "default": null,
+          "name": "base_volume_text",
+          "not_null": true,
+          "ordinal": 14,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "base_volume_value",
+          "not_null": true,
+          "ordinal": 15,
+          "primary_key": false,
+          "type": "DECIMAL(38,18)"
+        },
+        {
+          "default": null,
+          "name": "quote_volume_text",
+          "not_null": true,
+          "ordinal": 16,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "quote_volume_value",
+          "not_null": true,
+          "ordinal": 17,
+          "primary_key": false,
+          "type": "DECIMAL(38,18)"
+        },
+        {
+          "default": null,
+          "name": "trade_count",
+          "not_null": true,
+          "ordinal": 18,
+          "primary_key": false,
+          "type": "BIGINT"
+        },
+        {
+          "default": null,
+          "name": "taker_buy_base_text",
+          "not_null": true,
+          "ordinal": 19,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "taker_buy_base_value",
+          "not_null": true,
+          "ordinal": 20,
+          "primary_key": false,
+          "type": "DECIMAL(38,18)"
+        },
+        {
+          "default": null,
+          "name": "taker_buy_quote_text",
+          "not_null": true,
+          "ordinal": 21,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "taker_buy_quote_value",
+          "not_null": true,
+          "ordinal": 22,
+          "primary_key": false,
+          "type": "DECIMAL(38,18)"
+        },
+        {
+          "default": null,
+          "name": "primary_source_sha256",
+          "not_null": true,
+          "ordinal": 23,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "source_sha256s_json",
+          "not_null": true,
+          "ordinal": 24,
+          "primary_key": false,
+          "type": "VARCHAR"
+        }
+      ],
+      "table": "spot_execution_bars_1m"
+    },
+    {
+      "columns": [
+        {
+          "default": null,
+          "name": "validation_identity",
+          "not_null": true,
+          "ordinal": 0,
+          "primary_key": true,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "validation_name",
+          "not_null": true,
+          "ordinal": 1,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "status",
+          "not_null": true,
+          "ordinal": 2,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "material_json",
+          "not_null": true,
+          "ordinal": 3,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "checked_at_utc",
+          "not_null": true,
+          "ordinal": 4,
+          "primary_key": false,
+          "type": "VARCHAR"
+        }
+      ],
+      "table": "validation_results"
+    },
+    {
+      "columns": [
+        {
+          "default": null,
+          "name": "proof_identity",
+          "not_null": true,
+          "ordinal": 0,
+          "primary_key": true,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "instrument_id",
+          "not_null": true,
+          "ordinal": 1,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "start_ns",
+          "not_null": true,
+          "ordinal": 2,
+          "primary_key": false,
+          "type": "BIGINT"
+        },
+        {
+          "default": null,
+          "name": "end_exclusive_ns",
+          "not_null": true,
+          "ordinal": 3,
+          "primary_key": false,
+          "type": "BIGINT"
+        },
+        {
+          "default": null,
+          "name": "before_trade_id",
+          "not_null": true,
+          "ordinal": 4,
+          "primary_key": false,
+          "type": "BIGINT"
+        },
+        {
+          "default": null,
+          "name": "after_trade_id",
+          "not_null": true,
+          "ordinal": 5,
+          "primary_key": false,
+          "type": "BIGINT"
+        },
+        {
+          "default": null,
+          "name": "before_aggregate_id",
+          "not_null": true,
+          "ordinal": 6,
+          "primary_key": false,
+          "type": "BIGINT"
+        },
+        {
+          "default": null,
+          "name": "after_aggregate_id",
+          "not_null": true,
+          "ordinal": 7,
+          "primary_key": false,
+          "type": "BIGINT"
+        },
+        {
+          "default": null,
+          "name": "raw_trade_source_sha256",
+          "not_null": true,
+          "ordinal": 8,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "aggtrade_source_sha256",
+          "not_null": true,
+          "ordinal": 9,
+          "primary_key": false,
+          "type": "VARCHAR"
+        },
+        {
+          "default": null,
+          "name": "proof_json",
+          "not_null": true,
+          "ordinal": 10,
+          "primary_key": false,
+          "type": "VARCHAR"
+        }
+      ],
+      "table": "verified_no_trade_intervals"
+    }
+  ],
+  "timestamp_contract": "UTC_INTEGER_NANOSECONDS_HALF_OPEN"
+}

@@ -1,0 +1,48 @@
+{
+  "headers": [
+    [
+      "Date",
+      "Sun, 23 Aug 2026 10:29:11 GMT"
+    ],
+    [
+      "Content-Type",
+      "application/json"
+    ],
+    [
+      "Content-Length",
+      "1097187"
+    ],
+    [
+      "Connection",
+      "close"
+    ],
+    [
+      "CF-Ray",
+      "a2f96f4aeda8db9f-FRA"
+    ],
+    [
+      "CF-Cache-Status",
+      "HIT"
+    ],
+    [
+      "Accept-Ranges",
+      "bytes"
+    ],
+    [
+      "Age",
+      "45"
+    ],
+    [
+      "Cache-Control",
+      "public, max-age=60"
+    ],
+    [
+      "Last-Modified",
+      "Sun, 23 Aug 2026 10:28:25 GMT"
+    ],
+    [
+      "Server",
+      "cloudflare"
+    ]
+  ]
+}

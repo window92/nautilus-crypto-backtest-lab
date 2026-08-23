@@ -1,0 +1,41 @@
+{
+  "analysis_identity": "bf7c4d476702a6438e2940d85548943ca1b2b926f74ba64380e20bd0490c654d",
+  "final_holdout_consumed": false,
+  "ordered_candidates": [
+    {
+      "classification": "EXPOSED_DATA_BLOCKED_NOT_FINAL_HOLDOUT",
+      "dataset_end_exclusive": "2021-07-01T00:00:00Z",
+      "dataset_start_inclusive": "2020-12-01T00:00:00Z",
+      "reason": "IRRECOVERABLE_OFFICIAL_MARK_DELIVERY_GAP",
+      "scoring_end_exclusive": "2021-07-01T00:00:00Z",
+      "scoring_start_inclusive": "2021-01-01T00:00:00Z",
+      "shift_months": 0,
+      "status": "FAIL",
+      "strategy_performance_inspected": false,
+      "warmup_start_inclusive": "2020-12-01T00:00:00Z"
+    },
+    {
+      "classification": "DATA_QUALITY_INSPECTED_NOT_FINAL_HOLDOUT",
+      "dataset_end_exclusive": "2021-08-01T00:00:00Z",
+      "dataset_start_inclusive": "2021-01-01T00:00:00Z",
+      "reason": "FIRST_CHRONOLOGICAL_WHOLE_MONTH_SHIFT_PASSING_BOTH_PROFILES",
+      "scoring_end_exclusive": "2021-08-01T00:00:00Z",
+      "scoring_start_inclusive": "2021-02-01T00:00:00Z",
+      "shift_months": 1,
+      "status": "PASS",
+      "strategy_performance_inspected": false,
+      "warmup_start_inclusive": "2021-01-01T00:00:00Z"
+    }
+  ],
+  "partition_geometry": {
+    "all_boundaries_shifted_together": true,
+    "half_open": true,
+    "scoring_duration_calendar_months": 6,
+    "source": "evidence/research/owner-smoke-001/blocked-outcome.json",
+    "warmup_duration_calendar_months": 1
+  },
+  "price_signal_pnl_or_strategy_performance_inspected": false,
+  "schema": "free-official-binance-candidate-window-scan-v1",
+  "selection_rule": "SHIFT_ALL_BOUNDARIES_TOGETHER_BY_N_CALENDAR_MONTHS_FROM_N=1_AND_SELECT_FIRST_BOTH_PROFILE_PASS",
+  "status": "PASS"
+}

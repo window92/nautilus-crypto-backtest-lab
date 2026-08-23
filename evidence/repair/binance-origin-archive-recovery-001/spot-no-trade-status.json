@@ -1,0 +1,122 @@
+{
+  "access_required": "Tardis Spot data plan, Business subscription, yearly billing, provider-issued API access, raw data replay API for binance aggTrade.",
+  "aggregate_id_continuity_before_after_proven": false,
+  "capture_continuity_before_after_proven": false,
+  "created_at_utc": "2026-08-23T11:07:49.151041Z",
+  "current_disposition": "SOURCE_CONFLICT",
+  "existing_conflicting_official_kline_preserved": true,
+  "forward_fill_used": false,
+  "independent_archive_candidate": "Tardis.dev binance aggTrade raw data replay",
+  "instrument": "BTCUSDT Binance Spot",
+  "known_good_negative_control": {
+    "archive": {
+      "path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-control-spot-aggtrade-raw-2021-02-01-3m.body",
+      "provider_normalized_values_used": false,
+      "record_classification": "ARCHIVED_BINANCE_ORIGIN_EVENT",
+      "sha256": "9b31641c13b777a81561f58d815df8d109ed9f55a8a17f5bc6b9ce8ec4da3048",
+      "size_bytes": 103651
+    },
+    "arithmetic": "Decimal parse validation only; no float calculations",
+    "boundary_after": {
+      "aggregate_trade_id": 548004502,
+      "capture_order": 2399,
+      "first_trade_id": 610829318,
+      "last_trade_id": 610829320,
+      "price_text": "33739.06000000",
+      "provider_receive_timestamp": "2021-02-01T03:41:00.0728422Z",
+      "quantity_text": "0.34558700",
+      "trade_timestamp_ms": 1612150860069
+    },
+    "boundary_before": {
+      "aggregate_trade_id": 548003153,
+      "capture_order": 1050,
+      "first_trade_id": 610827870,
+      "last_trade_id": 610827870,
+      "price_text": "33687.37000000",
+      "provider_receive_timestamp": "2021-02-01T03:39:59.5891128Z",
+      "quantity_text": "0.00296600",
+      "trade_timestamp_ms": 1612150799583
+    },
+    "classification": "NOT_VERIFIED_NO_TRADE_EVENTS_PRESENT",
+    "contract": "BINANCE_ORIGIN_SPOT_AGGTRADE_CONTINUITY_VALIDATOR_V1",
+    "event_order": "preserved provider capture order",
+    "events_inside_minute_count": 1348,
+    "first_inside_event": {
+      "aggregate_trade_id": 548003154,
+      "capture_order": 1051,
+      "first_trade_id": 610827871,
+      "last_trade_id": 610827873,
+      "price_text": "33687.38000000",
+      "provider_receive_timestamp": "2021-02-01T03:40:00.0806315Z",
+      "quantity_text": "2.55000000",
+      "trade_timestamp_ms": 1612150800076
+    },
+    "full_verified_no_trade_claim": false,
+    "integrity": {
+      "aggregate_id_gaps": [],
+      "archive_continuity_valid": true,
+      "duplicate_aggregate_ids": [],
+      "parse_errors": [],
+      "underlying_trade_id_gaps": [],
+      "underlying_trade_id_overlaps": []
+    },
+    "last_inside_event": {
+      "aggregate_trade_id": 548004501,
+      "capture_order": 2398,
+      "first_trade_id": 610829317,
+      "last_trade_id": 610829317,
+      "price_text": "33739.06000000",
+      "provider_receive_timestamp": "2021-02-01T03:40:59.9098587Z",
+      "quantity_text": "0.00227900",
+      "trade_timestamp_ms": 1612150859906
+    },
+    "minute": {
+      "end_ms": 1612150860000,
+      "end_utc": "2021-02-01T03:41:00Z",
+      "start_ms": 1612150800000,
+      "start_utc": "2021-02-01T03:40:00Z"
+    },
+    "reason": "Real Binance-origin aggTrade events are present in the minute; a no-trade classification is rejected.",
+    "row_count": 3701,
+    "status": "PASS",
+    "synthetic_ohlcv_created": false
+  },
+  "no_event_inside_minute_proven": false,
+  "ohlcv_created": false,
+  "provider_metadata": {
+    "body_path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-binance-spot-metadata.body",
+    "body_sha256": "a362e5847d1031242a43d2d0bbd7282b4bc559a9685071fa5ddd6c7223405af0",
+    "body_size_bytes": 1097187,
+    "capture_timestamp_utc": "2026-08-23T10:29:11.464011Z",
+    "credentials_used": false,
+    "final_url": "https://api.tardis.dev/v1/exchanges/binance",
+    "headers_path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-binance-spot-metadata.headers.json",
+    "observation_path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-binance-spot-metadata.observation.json",
+    "raw_saved_before_parsing": true,
+    "request_url": "https://api.tardis.dev/v1/exchanges/binance",
+    "status_code": 200
+  },
+  "reason": "The exact target raw response returned HTTP 401 without provider access. Metadata and a user-reported kline gap do not prove no trades or ID continuity.",
+  "schema": "spot-no-trade-status-v1",
+  "status": "BLOCKED_PENDING_PROVIDER_ACCESS",
+  "target_event_count": null,
+  "target_minute": {
+    "end_exclusive": "2021-02-11T03:41:00Z",
+    "start_inclusive": "2021-02-11T03:40:00Z"
+  },
+  "target_probe": {
+    "body_path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-target-spot-aggtrade-raw-probe.body",
+    "body_sha256": "a680e6d1aafb6d3868d3a9092e744519eb86ca4e9c90dd60d5ff11c493cbaaca",
+    "body_size_bytes": 190,
+    "capture_timestamp_utc": "2026-08-23T10:30:18.741903Z",
+    "credentials_used": false,
+    "final_url": "https://api.tardis.dev/v1/data-feeds/binance?from=2021-02-11T03%3A39%3A00Z&to=2021-02-11T03%3A42%3A00Z&filters=%5B%7B%22channel%22%3A%22aggTrade%22%2C%22symbols%22%3A%5B%22btcusdt%22%5D%7D%5D",
+    "headers_path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-target-spot-aggtrade-raw-probe.headers.json",
+    "observation_path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-target-spot-aggtrade-raw-probe.observation.json",
+    "raw_saved_before_parsing": true,
+    "request_url": "https://api.tardis.dev/v1/data-feeds/binance?from=2021-02-11T03%3A39%3A00Z&to=2021-02-11T03%3A42%3A00Z&filters=%5B%7B%22channel%22%3A%22aggTrade%22%2C%22symbols%22%3A%5B%22btcusdt%22%5D%7D%5D",
+    "status_code": 401
+  },
+  "underlying_trade_id_continuity_before_after_proven": false,
+  "verified_no_trade_interval": false
+}

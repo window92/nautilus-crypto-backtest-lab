@@ -1,0 +1,13 @@
+{
+  "capture_timestamp_utc": "2026-08-23T10:24:42.464151Z",
+  "request_method": "GET",
+  "request_url": "https://crypto-lake.com/coverage/",
+  "final_url": "https://crypto-lake.com/coverage/",
+  "status_code": 200,
+  "body_path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/crypto-lake-coverage-doc.body",
+  "body_size_bytes": 24632,
+  "body_sha256": "19c923ff9ccf0de16b1193fe0bf15fa797ec504ed4bc7e3ec61248f70f55169f",
+  "headers_path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/crypto-lake-coverage-doc.headers.json",
+  "credentials_used": false,
+  "parsed_before_body_saved": false
+}

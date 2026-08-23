@@ -1,0 +1,40 @@
+{
+  "headers": [
+    [
+      "Date",
+      "Sun, 23 Aug 2026 10:34:37 GMT"
+    ],
+    [
+      "Content-Type",
+      "text/csv"
+    ],
+    [
+      "Content-Length",
+      "3202385"
+    ],
+    [
+      "Connection",
+      "close"
+    ],
+    [
+      "Content-Disposition",
+      "attachment; filename=\"binance-futures_derivative_ticker_2020-12-01_BTCUSDT.csv.gz\"; filename*=UTF-8''binance-futures_derivative_ticker_2020-12-01_BTCUSDT.csv.gz"
+    ],
+    [
+      "x-dataset-size",
+      "3202385"
+    ],
+    [
+      "x-md5",
+      "\"b0e403d00e5d4574c1d4b17475a9f13d\""
+    ],
+    [
+      "Server",
+      "cloudflare"
+    ],
+    [
+      "CF-RAY",
+      "a2f9773d7d45d2c2-FRA"
+    ]
+  ]
+}

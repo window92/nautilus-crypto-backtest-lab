@@ -1,0 +1,219 @@
+--- a/SSOT.md
++++ b/SSOT.md
+@@ -435,9 +435,7 @@
+ 
+ ### 4.1 Source
+ 
+-The V1 Official market-data source is Binance Public Data.
+-
+-Use official Binance public archives and public market-data endpoints only for V1 Dataset Releases.
++The V1 Official market-data source is Binance Public Data. Official Binance public archives and public market-data endpoints are the direct publisher roles for V1 Dataset Releases. The narrow external transport exception below does not create another exchange, publisher, or price authority.
+ 
+ For the V1 historical source roles, the allowed official Binance public endpoints and Binance Public Data prefixes are:
+ 
+@@ -470,6 +468,18 @@
+ 
+ Publisher `.CHECKSUM` objects, official archive-update manifests, and official Binance source-contract documentation are allowed provenance evidence. Each endpoint, archive prefix, and object MUST retain its exact source role; one official role MUST NOT silently substitute for another.
+ 
++An external archival provider MAY be used only as a transport archive for immutable records proven to originate from Binance real-time WebSocket or event streams. It does not become an exchange authority and it MUST NOT supply a repaired price series, a cross-venue substitute, or an unsupported source role. Every acquired observation in this contract MUST be classified explicitly as exactly one of:
++
++``` text
++OFFICIAL_BINANCE_PUBLISHED_OBJECT
++ARCHIVED_BINANCE_ORIGIN_EVENT
++PROVIDER_NORMALIZED_RECORD
++```
++
++`OFFICIAL_BINANCE_PUBLISHED_OBJECT` is an object or response published directly through an allowed Binance role in this Section. `ARCHIVED_BINANCE_ORIGIN_EVENT` is an exchange-native Binance WebSocket or event payload retained by an external archive with the original exchange payload, exchange timestamp, provider capture or receive timestamp, and deterministic capture ordering. `PROVIDER_NORMALIZED_RECORD` is any provider-transformed row, including a row that converts, rounds, combines, renames, resamples, or stores a Binance numeric value as binary floating point. A provider-normalized record MAY be diagnostic evidence but MUST NOT by itself establish canonical price truth, trade-ID continuity, or a Dataset Release.
++
++An archived event is eligible only after its exact exchange, channel, symbol, historical coverage, schema, provenance, and immutable-byte identity are verified. Provider marketing or date-range claims do not prove that a target interval exists. A target interval requires preserved target bytes and successful validation under the applicable reconciliation contract.
++
+ `indexPriceKlines`, `premiumIndexKlines`, Spot prices, last prices, and third-party datasets MUST NOT substitute for the Perpetual mark or funding roles above.
+ 
+ Do not use a third-party repaired dataset as Official input.
+@@ -492,6 +502,24 @@
+ requested_time_range
+ ```
+ 
++For an external archival observation, also preserve:
++
++``` text
++provider_identity
++provider_dataset_or_table
++exchange_native_channel
++record_classification
++original_provider_response_bytes
++exchange_event_timestamp
++provider_capture_or_receive_timestamp
++preserved_capture_order
++provider_schema_and_version
++raw_exchange_payload_when supplied
++provenance_and_conflict_history
++```
++
++Original provider bytes MUST be saved before parsing. Credentials and signed private locators MUST NOT be written to evidence. A provider's normalized export and its exchange-native replay are separate observations and MUST NOT be conflated.
++
+ Store the exact downloaded bytes before parsing.
+ 
+ Never overwrite a raw object in place. If Binance later republishes the same path with different bytes, store both objects with different hashes and record the replacement relationship.
+@@ -521,6 +549,8 @@
+ catalog_identity
+ derived_validation_identity or NOT_APPLICABLE
+ data_tool_lock_identity or NOT_APPLICABLE
++archival_provider_validation_identity or NOT_APPLICABLE
++delivery_role_reconciliation_identity or NOT_APPLICABLE
+ completeness_result
+ created_at_utc
+ ```
+@@ -582,9 +612,11 @@
+ 
+ `SOURCE_CONFLICT` means two or more official observations differ materially and no sufficient independent official evidence resolves them. `SOURCE_INCOMPLETE` means required source bytes, checksum evidence, pagination, aggregate IDs, or underlying trade IDs are incomplete. `UNRESOLVED_GAP` means the minute has neither an accepted bar nor the complete proof required for `VERIFIED_NO_TRADE_INTERVAL`.
+ 
++`REDUNDANT_OFFICIAL_DELIVERY_ROLE_UNAVAILABLE` is an observation-level delivery classification, not an execution-minute disposition and not a Bar. It means one official packaging route is unavailable while the exact interval is complete and semantically identical in two other required official Binance representations under Section 4.5.1. The unavailable response and its raw bytes remain preserved. This classification MUST NOT be used for absent market events, an incomplete grid, or disagreement between the surviving representations.
++
+ Only `REAL_OFFICIAL_BAR` and `DERIVED_FROM_OFFICIAL_TRADES` produce canonical execution bars. `SOURCE_CONFLICT`, `SOURCE_INCOMPLETE`, and `UNRESOLVED_GAP` are terminal blocking dispositions for the affected Dataset Release. A successful Dataset Release MUST contain exactly one non-blocking coverage disposition for every expected execution minute and no terminal blocking disposition.
+ 
+-For a Perpetual Dataset Release, the required `markPriceKlines` role MUST also satisfy an exact one-minute UTC grid for every interval in which Official valuation can occur. Each required minute MUST resolve to exactly one valid mark bar.
++For a Perpetual Dataset Release, the required mark role MUST satisfy exact coverage for every interval in which Official valuation can occur. Each required minute MUST resolve through the official `markPriceKlines` roles or the separately qualified Binance-origin mark-event path in Section 4.9.1. A delivery-role exception under Section 4.5.1 does not waive market-state completeness. `VERIFIED_NO_TRADE_INTERVAL` is not a mark disposition and cannot excuse missing mark state.
+ 
+ For Perpetual funding, the release builder MUST derive the expected funding-event schedule only from verified official Binance funding data or metadata for the exact Instrument and historical interval. V1 MUST NOT hard-code an eight-hour cadence unless the official evidence proves that cadence for the tested interval. Every expected funding slot in `[start_inclusive, end_exclusive)` MUST resolve to exactly one funding event. If the expected schedule itself cannot be proven, the Dataset Release is `BLOCKED` with `FUNDING_AMBIGUOUS`; if a proven required event is absent, it is `BLOCKED` with `FUNDING_MISSING`.
+ 
+@@ -598,6 +630,8 @@
+ - invent a zero-volume bar;
+ - copy a Spot row into a Perpetual role;
+ - copy a last-price row into a mark-price role;
++- average provider observations or select a provider because its value is favorable;
++- grant an archival provider silent precedence over Binance or another archive;
+ - silently deduplicate conflicting rows.
+ 
+ For execution coverage, `SOURCE_CONFLICT` blocks with `DATA_DUPLICATE_CONFLICT` unless a more specific role-conflict code applies; `SOURCE_INCOMPLETE` blocks with `DATA_SOURCE_INVALID`, `DATA_HASH_MISMATCH`, or `DATA_GAP` as the preserved evidence requires; and `UNRESOLVED_GAP` blocks with `DATA_GAP`. A required unusable mark minute also blocks with `DATA_GAP` unless a more specific mark-role code applies. A conflicting or semantically unresolved funding event is `FUNDING_AMBIGUOUS`; a proven missing required funding event is `FUNDING_MISSING`.
+@@ -616,6 +650,10 @@
+ 
+ A monthly-only row with no supporting official trade event cannot become canonical. When REST and daily are absent and complete trade-ID continuity proves no trade under Section 4.5.3, preserve the monthly row as a superseded historical conflict and record `VERIFIED_NO_TRADE_INTERVAL` for minute coverage. Without that complete proof, block with `SOURCE_CONFLICT` or `UNRESOLVED_GAP` as the evidence requires.
+ 
++A validated `ARCHIVED_BINANCE_ORIGIN_EVENT` trade or aggregate-trade capture MAY act as independent event-level evidence when its exchange-native payload and capture continuity pass Sections 4.1, 4.2, and 4.5.3. It has no automatic precedence. Preserve every conflicting official kline and archived event observation. A `PROVIDER_NORMALIZED_RECORD` cannot independently arbitrate a conflict or prove no trading.
++
++An official Daily archive delivery that returns HTTP 404 MAY be classified `REDUNDANT_OFFICIAL_DELIVERY_ROLE_UNAVAILABLE` only when, for the exact date and role: the official Monthly archive exists and passes its publisher checksum; the official REST representation exists; each surviving representation contains a complete unique valid UTC grid; and the Monthly and REST grids agree exactly in all material fields and original Decimal text. Preserve the 404 response, URL, headers, raw bytes, and source role. If any condition fails, the required role remains unresolved and blocks with `DELIVERY_ROLE_REDUNDANCY_UNRESOLVED`. This exception concerns redundant object delivery only and MUST NOT hide a missing market interval.
++
+ #### 4.5.2 Deterministic reconstruction from official Spot trades
+ 
+ A `DERIVED_FROM_OFFICIAL_TRADES` bar MAY be created only from official Binance trade or `aggTrades` events inside that UTC minute. Use exact Decimal arithmetic and order aggregate events by `(timestamp, aggregate_trade_id)`:
+@@ -644,11 +682,11 @@
+ 
+ 1. Official REST `/api/v3/klines` returns no bar for the minute.
+ 2. The official daily kline archive contains no row for the minute.
+-3. Complete official `aggTrades` observations contain no event inside the minute.
+-4. The last aggregate event before and first aggregate event after the interval prove aggregate-ID continuity.
+-5. Their underlying first/last trade-ID ranges prove no missing underlying trade ID.
+-6. Every required archive or API object is complete and every published checksum used by the source contract matches.
+-7. No other allowed official Binance trade observation contradicts the no-trade finding.
++3. Complete event observations contain no event inside the minute. These MUST include every available required official Binance `aggTrades` role and MAY include a validated independent `ARCHIVED_BINANCE_ORIGIN_EVENT` capture when an official historical delivery is unavailable.
++4. The last aggregate event before and first aggregate event after the interval, from the evidence used for the classification, prove aggregate-ID continuity.
++5. Their underlying first/last trade-ID ranges prove no missing underlying trade ID, and an external archive also proves uninterrupted capture ordering across the boundary.
++6. Every required official archive or API object that exists for the target window is complete and every published checksum used by the source contract matches. An unavailable historical event-delivery route is not silently waived: preserve the exact missing role and reason, and require the qualified archive to supply the event-level continuity evidence used by this proof.
++7. No allowed official Binance trade observation or qualified independent Binance-origin archive contradicts the no-trade finding.
+ 8. The temporal boundaries, pagination boundaries, source roles, and source timestamp units are proven exactly.
+ 
+ The evidence MAY describe the interval as `NO_TRADE_OBSERVED`, `PROBABLE_VENUE_OUTAGE`, or `OFFICIALLY_ANNOUNCED_MAINTENANCE`. The last description requires a matching official Binance announcement for the exact interval.
+@@ -693,7 +731,7 @@
+ 
+ A Spot Dataset Release requires:
+ 
+-- the independent official REST, daily, monthly, and official trade-event observations required to reconcile the complete window under Sections 4.5.1 through 4.5.3;
++- the independent official REST, daily, monthly, and available official trade-event observations required to reconcile the complete window under Sections 4.5.1 through 4.5.3, plus a qualified `ARCHIVED_BINANCE_ORIGIN_EVENT` only where an official historical event-delivery route is unavailable; absence of both complete official event evidence and a qualified archived event remains blocking;
+ - canonical `1m` execution bars containing only accepted `REAL_OFFICIAL_BAR` and `DERIVED_FROM_OFFICIAL_TRADES` rows;
+ - exactly one non-blocking coverage disposition for every expected UTC minute;
+ - the instrument definition;
+@@ -710,7 +748,7 @@
+ - official `/fapi/v1/klines` observations and the exact USDⓈ-M daily and monthly `klines/{SYMBOL}/1m/` archive roles listed in Section 4.1;
+ - the instrument definition;
+ - historical funding evidence from `/fapi/v1/fundingRate`, `/fapi/v1/fundingInfo` when applicable, and the official archive role listed in Section 4.1;
+-- `1m` mark-price observations from `/fapi/v1/markPriceKlines` and the exact USDⓈ-M daily and monthly `markPriceKlines/{SYMBOL}/1m/` archive roles listed in Section 4.1;
++- `1m` mark-price observations from `/fapi/v1/markPriceKlines` and the exact USDⓈ-M daily and monthly `markPriceKlines/{SYMBOL}/1m/` archive roles listed in Section 4.1, except for an individually proven `REDUNDANT_OFFICIAL_DELIVERY_ROLE_UNAVAILABLE` under Section 4.5.1;
+ - source checksums or locally calculated SHA-256 values.
+ 
+ The funding and mark roles MUST pass the completeness rules in Section 4.5 before the release can support an Official Perpetual Run.
+@@ -719,6 +757,23 @@
+ 
+ REST, daily, and monthly Perpetual observations have no automatic precedence. Preserve conflicting observations and block unless independent allowed official evidence resolves them. Execution price MUST NOT substitute for mark, mark MUST NOT substitute for execution, and mark prices MUST NOT be reconstructed from trades.
+ 
++#### 4.9.1 Archived Binance-origin mark events
++
++A Dataset Release MAY use an external archive of the Binance USDⓈ-M `<symbol>@markPrice@1s` WebSocket stream only when every accepted record is an `ARCHIVED_BINANCE_ORIGIN_EVENT`, not merely a `PROVIDER_NORMALIZED_RECORD`. Preserve the original Binance payload bytes and numeric text, Binance event timestamp, provider receive or capture timestamp, and original capture order. Equal exchange timestamps are ordered by preserved capture order. The required target interval MUST contain continuous real captured events in every UTC minute; a provider coverage statement is not target evidence.
++
++Before event-derived minute mark bars can be accepted, the same provider, channel, symbol, parser, ordering rule, and Decimal normalization MUST reproduce official Binance `markPriceKlines` with 100% semantic OHLC agreement over large, multiple known-good control samples inside the Dataset Release window. Use half-open UTC minute boundaries and exact Decimal arithmetic:
++
++``` text
++open = first observed mark event in the minute
++high = exact maximum observed mark price
++low = exact minimum observed mark price
++close = last observed mark event in the minute
++```
++
++Only normalization explicitly justified by the official Instrument price precision is allowed. Interpolation, forward fill, backward fill, nearest value, provider averaging, execution/index/premium/last-price substitution, and synthetic OHLC are forbidden. Prefer agreement between two independent archives for the target interval. One archive MAY suffice only when it supplies exchange-native Binance payloads, proves continuous capture for every target minute, and passes the exact control-validation gate. Any target disagreement or provenance gap remains blocking; no source may be selected silently.
++
++An event-derived result that fails exact control reproduction MUST NOT be called an official mark kline or exported as one. In that case the same real exchange-native events MAY instead be evaluated as event-level Nautilus `MarkPriceUpdate` input only if a pinned-runtime qualification proves exact timestamp, causal availability, valuation, ordering, and replay semantics without creating bars or prices. If that qualification fails or the target events are incomplete, the Dataset Release blocks with `MARK_EVENT_CONTROL_VALIDATION_FAILED` or `MARK_ROLE_INVALID` as applicable.
++
+ ### 4.10 Funding identity and duplicates
+ 
+ Do not identify a funding event by page position.
+@@ -741,6 +796,8 @@
+ 
+ Only accepted `REAL_OFFICIAL_BAR` and `DERIVED_FROM_OFFICIAL_TRADES` rows are exported as Bars to the Nautilus-compatible ParquetDataCatalog. `VERIFIED_NO_TRADE_INTERVAL`, `SOURCE_CONFLICT`, `SOURCE_INCOMPLETE`, `UNRESOLVED_GAP`, superseded observations, and synthetic OHLC MUST NOT be exported as Bars.
+ 
++Qualified `ARCHIVED_BINANCE_ORIGIN_EVENT` mark records MAY be exported only as the accepted mark representation defined by Section 4.9.1: either exact control-validated minute mark bars or event-level Nautilus `MarkPriceUpdate` records after the pinned-runtime qualification. They never become execution Bars, and `PROVIDER_NORMALIZED_RECORD` rows are not exported as financial truth.
++
+ The data phase MUST qualify the sparse canonical catalog through the pinned Nautilus runtime. The qualification MUST prove that accepted real or officially-derived bars remain usable across a verified no-trade minute, no Fill occurs during that minute, a pending order receives no synthetic price or market state, and the fixture's later Fill uses the next accepted real market state according to the locked causal-latency contract.
+ 
+ ### 4.12 DuckDB derived validation store
+@@ -1142,8 +1199,8 @@
+ | `G08` | Perpetual NETTING supports long, reduce, exact close-to-flat, then opposite-side reopen; direct cross-zero quantity and a second concurrent strategy order are both blocked before submission. |
+ | `G09` | A positive funding rate debits a long and credits a short exactly once at the required boundary.                                                       |
+ | `G10` | Exchange fee is applied exactly once through the standard Maker/Taker instrument-rate path.                                                            |
+-| `G11` | Perpetual valuation requires mark price and cannot fall back to last, contract-bar, or index price.                                                    |
+-| `G12` | A malformed, duplicate-conflicting, incomplete, or unexplained missing raw row is not silently repaired or granted source precedence.                      |
++| `G11` | Perpetual valuation requires an accepted mark representation and cannot fall back to last, contract-bar, execution, index, or premium price.              |
++| `G12` | A malformed, duplicate-conflicting, incomplete, or unexplained missing raw row is not silently repaired or granted Binance/provider source precedence.     |
+ | `G13` | A last warmup bar whose `available_at=scoring_start` cannot submit an order; scoring starts flat, at frozen Initial Capital, with zero non-terminal strategy orders. |
+ | `G14` | An excluded V1 order type is rejected before submission.                                                                                               |
+ | `G15` | A failed or blocked trial remains in `trials.jsonl`.                                                                                                   |
+@@ -1154,6 +1211,8 @@
+ | `G20` | A runtime wheel or dependency-lock mismatch blocks before data loading.                                                                                |
+ | `G21` | An eligible scored intent whose effective insert latency reaches or crosses `scoring_end_exclusive` is not submitted, and no Fill occurs at or after the boundary. |
+ | `G22` | Sparse accepted bars across a verified no-trade minute produce no Bar or Fill in that minute; a pending order receives no synthetic price, and the fixture's later Fill uses the next accepted real market state under locked latency. |
++| `G23` | Archived Binance-origin mark events reproduce official mark klines exactly on multiple control windows; a mismatch, normalized-only source, capture gap, or source disagreement blocks. |
++| `G24` | An unavailable Daily mark delivery is non-blocking only when preserved as a 404 and complete checksum-valid Monthly plus REST grids agree exactly; every negative mutation blocks. |
+ 
+ ### 8.4 Invariant checker
+ 
+@@ -1884,7 +1943,9 @@
+ - Dataset Release manifests;
+ - an optional derived DuckDB validation store governed by a separate Data Tool Lock;
+ - Nautilus catalog conversion;
+-- Perpetual mark and funding ingestion.
++- Perpetual mark and funding ingestion;
++- external archival-provider provenance qualification for Binance-origin events when used;
++- control validation and optional event-level `MarkPriceUpdate` qualification for archived Binance-origin mark events.
+ 
+ Verify:
+ 
+@@ -1903,6 +1964,9 @@
+ - sparse Nautilus qualification proves no Bar or Fill during a verified no-trade interval and the next later Fill uses only the next accepted real market state under locked latency;
+ - Spot and Perpetual roles cannot collide;
+ - Perpetual mark data satisfy the required one-minute grid;
++- archived mark events, when used, preserve exchange-native payloads and capture ordering and reproduce official mark OHLC exactly across multiple controls;
++- provider-normalized records alone cannot establish target mark truth or Spot trade-ID continuity;
++- an unavailable redundant Daily mark delivery passes only with a preserved 404 and two complete exactly agreeing official Binance representations;
+ - the expected funding schedule is proven from official evidence, a removed required funding event produces `FUNDING_MISSING`, and an unprovable schedule produces `FUNDING_AMBIGUOUS`;
+ - required mark and funding roles cannot be substituted.
+ 
+@@ -2146,6 +2210,10 @@
+ DATA_DUPLICATE_CONFLICT
+ DATA_ROLE_MISMATCH
+ DATASET_RELEASE_STALE
++ARCHIVAL_PROVIDER_ACCESS_REQUIRED
++ARCHIVAL_PROVIDER_PROVENANCE_INVALID
++MARK_EVENT_CONTROL_VALIDATION_FAILED
++DELIVERY_ROLE_REDUNDANCY_UNRESOLVED
+ INSTRUMENT_METADATA_INVALID
+ TIMEFRAME_AGGREGATION_UNRESOLVED
+ CAUSAL_EXECUTION_UNRESOLVED

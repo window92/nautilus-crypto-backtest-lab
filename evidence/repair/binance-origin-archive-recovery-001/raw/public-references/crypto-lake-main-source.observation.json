@@ -1,0 +1,13 @@
+{
+  "capture_timestamp_utc": "2026-08-23T10:25:09.010978Z",
+  "request_method": "GET",
+  "request_url": "https://raw.githubusercontent.com/crypto-lake/lake-api/main/lakeapi/main.py",
+  "final_url": "https://raw.githubusercontent.com/crypto-lake/lake-api/main/lakeapi/main.py",
+  "status_code": 200,
+  "body_path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/crypto-lake-main-source.body",
+  "body_size_bytes": 23112,
+  "body_sha256": "58790a19aa3ce87ddfa139e6b5313b2f4e3620c8c597913e5ff14113ed66c67e",
+  "headers_path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/crypto-lake-main-source.headers.json",
+  "credentials_used": false,
+  "parsed_before_body_saved": false
+}

@@ -1,0 +1,14 @@
+{
+  "capture_timestamp_utc": "2026-08-23T10:38:16.452210Z",
+  "request_method": "GET",
+  "request_url": "https://api.amberdata.com/markets/futures/tickers/BTCUSDT?exchange=binance&startDate=2020-12-17T07%3A30%3A00Z&endDate=2020-12-17T07%3A58%3A00Z",
+  "request_accept_encoding": "identity",
+  "final_url": "https://api.amberdata.com/markets/futures/tickers/BTCUSDT?exchange=binance&startDate=2020-12-17T07%3A30%3A00Z&endDate=2020-12-17T07%3A58%3A00Z",
+  "status_code": 403,
+  "body_path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/amberdata-target-mark-ticker-probe.body",
+  "body_size_bytes": 23,
+  "body_sha256": "12a22880bc2e59f8278b4a5e547567f0aa14d020ea456598267fa00208cfebc5",
+  "headers_path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/amberdata-target-mark-ticker-probe.headers.json",
+  "credentials_used": false,
+  "parsed_before_body_saved": false
+}

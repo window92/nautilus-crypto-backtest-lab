@@ -1,0 +1,112 @@
+# Tardis.dev Documentation
+
+## Tardis.dev Documentation
+
+- [Welcome](https://docs.tardis.dev/readme.md): The most granular historical and real-time data for cryptocurrency markets — order books, trades, funding, liquidations and more for 50+ exchanges
+- [Product updates](https://docs.tardis.dev/changelog.md): New exchange coverage, channels, clients and API changes
+- [Market Data Primer](https://docs.tardis.dev/market-data-primer.md): Start here if you are new to crypto exchange market data
+- [General](https://docs.tardis.dev/faq/general.md): Common questions about exchanges, API access and infrastructure
+- [Data](https://docs.tardis.dev/faq/data.md): Common questions about data types, formats and collection
+- [Order Books](https://docs.tardis.dev/faq/order-books.md): Common questions about order book depth, snapshots and reconstruction
+- [Billing and Subscriptions](https://docs.tardis.dev/faq/billing-and-subscriptions.md): Common questions about plans, pricing and invoices
+- [Quickstart](https://docs.tardis.dev/downloadable-csv-files/overview.md): Get started with downloading CSV datasets via Python, Node.js or cURL
+- [Data Types](https://docs.tardis.dev/downloadable-csv-files/data-types.md): CSV column schemas, sample rows and download links
+- [API Reference](https://docs.tardis.dev/downloadable-csv-files/api.md): Endpoints, path parameters, authentication and sample requests
+- [Quickstart](https://docs.tardis.dev/api/quickstart.md): Python, Node.js, HTTP API and tardis-machine — choose the right access method
+- [Instruments Metadata API](https://docs.tardis.dev/api/instruments-metadata-api.md): Tick sizes, contract multipliers, base/quote currencies and expiration dates
+- [HTTP API Reference](https://docs.tardis.dev/api/http-api-reference.md): Historical market data feeds, exchange metadata and more
+- [API Rate Limits](https://docs.tardis.dev/api/rate-limits.md): Account-level API request and data transfer limits
+- [Quickstart](https://docs.tardis.dev/node-client/quickstart.md): Install, configure and get started with the tardis-dev npm package
+- [Replaying Historical Data](https://docs.tardis.dev/node-client/replaying-historical-data.md): Replaying historical market data in exchange-native and normalized formats
+- [Streaming Real-Time Data](https://docs.tardis.dev/node-client/streaming-real-time-data.md): Streaming real-time market data from exchanges' WebSocket feeds
+- [Normalization](https://docs.tardis.dev/node-client/normalization.md): Normalizers, order book reconstruction, combine and compute
+- [Quickstart](https://docs.tardis.dev/tardis-machine/quickstart.md): Install via Docker or npm and run your first replay
+- [Replaying Historical Data](https://docs.tardis.dev/tardis-machine/replaying-historical-data.md): HTTP and WebSocket replay endpoints with options and response formats
+- [Streaming Real-Time Data](https://docs.tardis.dev/tardis-machine/streaming-real-time-data.md): WebSocket endpoint for consolidated real-time normalized market data streaming
+- [Data Types](https://docs.tardis.dev/tardis-machine/data-types.md): Normalized schemas for trade, book\_change, book\_snapshot and more
+- [Quickstart](https://docs.tardis.dev/python-client/quickstart.md): Install, configure and get started with the tardis-dev Python package
+- [Replaying Historical Data](https://docs.tardis.dev/python-client/replaying-historical-data.md): Replaying historical market data in exchange-native format with the tardis-dev Python package
+- [Migration Notice](https://docs.tardis.dev/python-client/migration-notice.md): Migrate from tardis-client and tardis\_dev.datasets to the unified tardis-dev package
+- [Overview](https://docs.tardis.dev/historical-data-details/overview.md): Historical market data details for each supported exchange — available symbols, channels, date ranges...
+- [Binance USDS-M Futures](https://docs.tardis.dev/historical-data-details/binance-futures.md): Binance USDS-M Futures historical market data details - instruments, data coverage and data collection specifics
+- [Binance COIN Futures](https://docs.tardis.dev/historical-data-details/binance-delivery.md): Binance COIN Margined Futures historical market data details - instruments, data coverage and data collection specifics
+- [Binance European Options](https://docs.tardis.dev/historical-data-details/binance-european-options.md): Binance European Options historical market data details - instruments, data coverage and data collection specifics
+- [Binance Spot](https://docs.tardis.dev/historical-data-details/binance.md): Binance historical market data details - currency pairs, data coverage and data collection specifics
+- [Binance US](https://docs.tardis.dev/historical-data-details/binance-us.md): Binance US  historical market data details - currency pairs, data coverage and data collection specifics
+- [OKX Futures](https://docs.tardis.dev/historical-data-details/okex-futures.md): OKX Futures historical market data details - instruments, data coverage and data collection specifics
+- [OKX Swap](https://docs.tardis.dev/historical-data-details/okex-swap.md): OKX Swap historical market data details - instruments, data coverage and data collection specifics
+- [OKX Options](https://docs.tardis.dev/historical-data-details/okex-options.md): OKX Options historical market data details - instruments, data coverage and data collection specifics
+- [OKX Spot](https://docs.tardis.dev/historical-data-details/okex.md): OKX Spot historical market data details - currency pairs, data coverage and data collection specifics
+- [OKX Nitro Spreads](https://docs.tardis.dev/historical-data-details/okex-spreads.md): OKX Nitro Spreads historical market data details - instruments, data coverage and data collection specifics
+- [Coinbase Exchange](https://docs.tardis.dev/historical-data-details/coinbase.md): Coinbase Exchange historical market data details - currency pairs, data coverage and data collection specifics
+- [Coinbase International](https://docs.tardis.dev/historical-data-details/coinbase-international.md): Coinbase International historical market data details - instruments, data coverage and data collection specifics
+- [BitMEX](https://docs.tardis.dev/historical-data-details/bitmex.md): BitMEX historical market data details - available data, coverage and data collection specifics
+- [Deribit](https://docs.tardis.dev/historical-data-details/deribit.md): Deribit historical market data details - available data, coverage and data collection specifics
+- [Bybit Derivatives](https://docs.tardis.dev/historical-data-details/bybit.md): Bybit Derivatives historical market data details - available instruments, data coverage and data collection specifics
+- [Bybit Spot](https://docs.tardis.dev/historical-data-details/bybit-spot.md): Bybit Spot historical market data details - available instruments, data coverage and data collection specifics
+- [Bybit Options](https://docs.tardis.dev/historical-data-details/bybit-options.md): Bybit Options historical market data details - instruments, data coverage and data collection specifics
+- [Kraken Futures](https://docs.tardis.dev/historical-data-details/cryptofacilities.md): Kraken Futures historical market data details - available instruments, data coverage and data collection specifics
+- [Kraken](https://docs.tardis.dev/historical-data-details/kraken.md): Kraken historical market data details - currency pairs, data coverage and data collection specifics
+- [Bitfinex Derivatives](https://docs.tardis.dev/historical-data-details/bitfinex-derivatives.md): Bitfinex Derivatives historical market data details - available instruments, data coverage and data collection specifics
+- [Bitfinex](https://docs.tardis.dev/historical-data-details/bitfinex.md): Bitfinex historical market data details - currency pairs, data coverage and data collection specifics
+- [KuCoin Futures](https://docs.tardis.dev/historical-data-details/kucoin-futures.md): KuCoin Futures historical market data details - instruments, data coverage and data collection specifics
+- [KuCoin Spot](https://docs.tardis.dev/historical-data-details/kucoin.md): KuCoin Spot historical market data details - instruments, data coverage and data collection specifics
+- [Aster Futures](https://docs.tardis.dev/historical-data-details/aster-futures.md): Aster Futures historical market data details - instruments, data coverage and data collection specifics
+- [Aster Spot](https://docs.tardis.dev/historical-data-details/aster.md): Aster Spot historical market data details - currency pairs, data coverage and data collection specifics
+- [MEXC Spot](https://docs.tardis.dev/historical-data-details/mexc.md): MEXC Spot historical market data details - currency pairs, data coverage and data collection specifics
+- [MEXC Futures](https://docs.tardis.dev/historical-data-details/mexc-futures.md): MEXC Futures historical market data details - available instruments, data coverage and data collection specifics
+- [Crypto.com](https://docs.tardis.dev/historical-data-details/crypto-com.md): Crypto.com exchange historical market data details - instruments, data coverage and data collection specifics
+- [Bitstamp](https://docs.tardis.dev/historical-data-details/bitstamp.md): Bitstamp historical market data details - currency pairs, data coverage and data collection specifics
+- [Bitget Futures](https://docs.tardis.dev/historical-data-details/bitget-futures.md): Bitget Futures historical market data details - currency pairs, data coverage and data collection specifics
+- [Bitget Spot](https://docs.tardis.dev/historical-data-details/bitget.md): Bitget historical market data details - currency pairs, data coverage and data collection specifics
+- [Gate.io Futures](https://docs.tardis.dev/historical-data-details/gate-io-futures.md): Gate.io Futures historical market data details - available instruments, data coverage and data collection specifics
+- [Gate.io](https://docs.tardis.dev/historical-data-details/gate-io.md): Gate.io historical market data details - currency pairs, data coverage and data collection specifics
+- [HTX Coin-M Futures](https://docs.tardis.dev/historical-data-details/huobi-dm.md): HTX Coin-M Futures historical market data details - instruments, data coverage and data collection specifics
+- [HTX Coin-M Perpetual](https://docs.tardis.dev/historical-data-details/huobi-dm-swap.md): HTX Coin-M Perpetual historical market data details - instruments, data coverage and data collection specifics
+- [HTX USDT-M Contracts](https://docs.tardis.dev/historical-data-details/huobi-dm-linear-swap.md): HTX USDT-M Contracts historical market data details - instruments, data coverage and data collection specifics
+- [HTX Spot](https://docs.tardis.dev/historical-data-details/huobi.md): HTX Spot historical market data details - currency pairs, data coverage and data collection specifics
+- [Gemini](https://docs.tardis.dev/historical-data-details/gemini.md): Gemini historical market data details - instruments, data coverage and data collection specifics
+- [WOO X](https://docs.tardis.dev/historical-data-details/woo-x.md): WOO X historical market data details - instruments, data coverage and data collection specifics
+- [Upbit](https://docs.tardis.dev/historical-data-details/upbit.md): Upbit historical market data details - currency pairs, data coverage and data collection specifics
+- [Phemex](https://docs.tardis.dev/historical-data-details/phemex.md): Phemex historical market data details - available instruments, data coverage and data collection specifics
+- [Delta Exchange](https://docs.tardis.dev/historical-data-details/delta.md): Delta Exchange historical market data details - available instruments, data coverage and data collection specifics
+- [Blockchain.com](https://docs.tardis.dev/historical-data-details/blockchain-com.md): Blockchain.com Exchange historical market data details - instruments, data coverage and data collection specifics
+- [Bitnomial](https://docs.tardis.dev/historical-data-details/bitnomial.md): Bitnomial historical market data details - instruments, data coverage and data collection specifics
+- [bitFlyer](https://docs.tardis.dev/historical-data-details/bitflyer.md): bitFlyer historical market data details - available instruments, data coverage and data collection specifics
+- [HitBTC](https://docs.tardis.dev/historical-data-details/hitbtc.md): HitBTC historical market data details - currency pairs, data coverage and data collection specifics
+- [Poloniex](https://docs.tardis.dev/historical-data-details/poloniex.md): Poloniex historical market data details - currency pairs, data coverage and data collection specifics
+- [Hyperliquid](https://docs.tardis.dev/historical-data-details/hyperliquid.md): Hyperliquid historical market data details - currency pairs, data coverage and data collection specifics
+- [Lighter](https://docs.tardis.dev/historical-data-details/lighter.md): Lighter historical market data details - currency pairs, data coverage and data collection specifics
+- [Polymarket](https://docs.tardis.dev/historical-data-details/polymarket.md): Polymarket historical market data details - prediction market assets, data coverage and data collection specifics
+- [Bullish](https://docs.tardis.dev/historical-data-details/bullish.md): Bullish historical market data details - instruments, data coverage and data collection specifics
+- [dYdX v4](https://docs.tardis.dev/historical-data-details/dydx-v4.md): dYdX v4 historical market data details - available instruments, data coverage and data collection specifics
+- [FTX](https://docs.tardis.dev/historical-data-details/ftx.md): FTX historical market data details - available instruments, data coverage and data collection specifics
+- [FTX US](https://docs.tardis.dev/historical-data-details/ftx-us.md): FTX US historical market data details - available currency pairs, data coverage and data collection specifics
+- [OKCoin](https://docs.tardis.dev/historical-data-details/okcoin.md): OKCoin historical market data details - available instruments, data coverage and data collection specifics
+- [AscendEX (BitMax)](https://docs.tardis.dev/historical-data-details/ascendex.md): AscendEX historical market data details - available instruments, data coverage and data collection specifics
+- [CoinFLEX](https://docs.tardis.dev/historical-data-details/coinflex.md): CoinFLEX 2.0 historical market data details - instruments, data coverage and data collection specifics
+- [Binance Jersey](https://docs.tardis.dev/historical-data-details/binance-jersey.md): Binance Jersey historical market data details - currency pairs, data coverage and data collection specifics
+- [Binance DEX](https://docs.tardis.dev/historical-data-details/binance-dex.md): Binance DEX  historical market data details - currency pairs, data coverage and data collection specifics
+- [HTX Options](https://docs.tardis.dev/historical-data-details/huobi-dm-options.md): HTX Options (formerly Huobi Options) historical market data details - available instruments, data coverage and data collection specifics
+- [dYdX](https://docs.tardis.dev/historical-data-details/dydx.md): dYdX historical market data details - currency pairs, data coverage and data collection specifics
+- [Serum DEX](https://docs.tardis.dev/historical-data-details/serum.md): Serum DEX historical market data details - available instruments, data coverage and data collection specifics
+- [Mango Markets DEX](https://docs.tardis.dev/historical-data-details/mango.md): Mango Markets DEX historical market data details - available instruments, data coverage and data collection specifics
+- [Star Atlas DEX](https://docs.tardis.dev/historical-data-details/star-atlas.md): Star Atlas DEX historical market data details - available instruments, data coverage and data collection specifics
+- [Privacy Policy](https://docs.tardis.dev/legal/privacy-policy.md): Tardis.dev privacy policy — what data we collect, how we collect it and what we do with this data
+- [Terms of Service](https://docs.tardis.dev/legal/terms-of-service.md): Terms you are agreeing to when you use Tardis.dev website and its services
+
+
+---
+
+# Agent Instructions
+This documentation is published with GitBook. GitBook is the documentation platform designed so that both humans and AI agents can read, navigate, and reason over technical content effectively. Learn more at gitbook.com.
+
+## Querying This Documentation
+If you need additional information, you can query the documentation dynamically by asking a question.
+Perform an HTTP GET request on a page URL with the `ask` query parameter:
+```
+GET https://docs.tardis.dev/readme.md?ask=<question>
+```
+The question should be specific, self-contained, and written in natural language.
+The response will contain a direct answer to the question and relevant excerpts and sources from the documentation.
+Use this mechanism when the answer is not explicitly present in the current page, you need clarification or additional context, or you want to retrieve related documentation sections.

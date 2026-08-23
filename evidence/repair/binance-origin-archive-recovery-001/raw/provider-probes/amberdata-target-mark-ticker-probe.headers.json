@@ -1,0 +1,48 @@
+{
+  "headers": [
+    [
+      "Content-Type",
+      "application/json"
+    ],
+    [
+      "Content-Length",
+      "23"
+    ],
+    [
+      "Connection",
+      "close"
+    ],
+    [
+      "Date",
+      "Sun, 23 Aug 2026 10:38:16 GMT"
+    ],
+    [
+      "x-amz-apigw-id",
+      "CjUP8EQ0oAMEDkQ="
+    ],
+    [
+      "x-amzn-RequestId",
+      "3d1d95d2-bcc6-4480-9650-50bec7a2333d"
+    ],
+    [
+      "x-amzn-ErrorType",
+      "ForbiddenException"
+    ],
+    [
+      "X-Cache",
+      "Error from cloudfront"
+    ],
+    [
+      "Via",
+      "1.1 6cfe3bbb6480c049c2a656d91758aa90.cloudfront.net (CloudFront)"
+    ],
+    [
+      "X-Amz-Cf-Pop",
+      "FRA56-P13"
+    ],
+    [
+      "X-Amz-Cf-Id",
+      "TAE5GQGnTVbynxfwohHb09oU_3EKparc-cNMR6i2u82AKi7MEORfSQ=="
+    ]
+  ]
+}

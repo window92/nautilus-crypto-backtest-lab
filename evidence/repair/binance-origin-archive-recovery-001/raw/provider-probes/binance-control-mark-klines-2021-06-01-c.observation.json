@@ -1,0 +1,14 @@
+{
+  "capture_timestamp_utc": "2026-08-23T10:32:49.041768Z",
+  "request_method": "GET",
+  "request_url": "https://fapi.binance.com/fapi/v1/markPriceKlines?symbol=BTCUSDT&interval=1m&startTime=1622570400000&endTime=1622571000000&limit=1000",
+  "request_accept_encoding": "identity",
+  "final_url": "https://fapi.binance.com/fapi/v1/markPriceKlines?symbol=BTCUSDT&interval=1m&startTime=1622570400000&endTime=1622571000000&limit=1000",
+  "status_code": 200,
+  "body_path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/binance-control-mark-klines-2021-06-01-c.body",
+  "body_size_bytes": 1332,
+  "body_sha256": "da5e6c54e567b6f47dfe7bd5be86ae1ede6e1b69188ec8bcdda2aa79fdb9ec07",
+  "headers_path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/binance-control-mark-klines-2021-06-01-c.headers.json",
+  "credentials_used": false,
+  "parsed_before_body_saved": false
+}

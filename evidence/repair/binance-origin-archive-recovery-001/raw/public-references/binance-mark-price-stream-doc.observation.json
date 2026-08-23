@@ -1,0 +1,13 @@
+{
+  "capture_timestamp_utc": "2026-08-23T10:24:05.485396Z",
+  "request_method": "GET",
+  "request_url": "https://developers.binance.com/docs/derivatives/usds-margined-futures/websocket-market-streams/Mark-Price-Stream",
+  "final_url": "https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/websocket-market-streams/Mark-Price-Stream",
+  "status_code": 202,
+  "body_path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/binance-mark-price-stream-doc.body",
+  "body_size_bytes": 0,
+  "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "headers_path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/binance-mark-price-stream-doc.headers.json",
+  "credentials_used": false,
+  "parsed_before_body_saved": false
+}

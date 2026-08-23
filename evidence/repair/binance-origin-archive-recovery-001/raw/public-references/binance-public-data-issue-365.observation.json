@@ -1,0 +1,14 @@
+{
+  "capture_timestamp_utc": "2026-08-23T10:35:09.165673Z",
+  "request_method": "GET",
+  "request_url": "https://api.github.com/repos/binance/binance-public-data/issues/365",
+  "request_accept_encoding": "identity",
+  "final_url": "https://api.github.com/repos/binance/binance-public-data/issues/365",
+  "status_code": 200,
+  "body_path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/binance-public-data-issue-365.body",
+  "body_size_bytes": 5686,
+  "body_sha256": "a922d013a36e9e8d056f72b4e2ca8c3ad0b06d6346e01dae804a63b18547f71e",
+  "headers_path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/binance-public-data-issue-365.headers.json",
+  "credentials_used": false,
+  "parsed_before_body_saved": false
+}

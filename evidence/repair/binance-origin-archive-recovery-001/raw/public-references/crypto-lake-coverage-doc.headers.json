@@ -1,0 +1,72 @@
+{
+  "headers": [
+    [
+      "Date",
+      "Sun, 23 Aug 2026 10:24:42 GMT"
+    ],
+    [
+      "Content-Type",
+      "text/html; charset=utf-8"
+    ],
+    [
+      "Transfer-Encoding",
+      "chunked"
+    ],
+    [
+      "Connection",
+      "close"
+    ],
+    [
+      "x-content-type-options",
+      "nosniff"
+    ],
+    [
+      "Report-To",
+      "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=Nyd5NvNVUk9K2rAGLBd3lFt%2F0aUqP8vBeK3vW8JQypbUYcC2FS4A%2FuYIuMpy6rq8k1gunWFZb%2FlMTPBSkeODUsIl0f%2BXnayXOpQH2WzKlABMVpV5NbABLJrsmDyWY1Cy2iqZdgg2UJPbBuaAwI8%3D\"}]}"
+    ],
+    [
+      "Nel",
+      "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}"
+    ],
+    [
+      "Access-Control-Allow-Origin",
+      "*"
+    ],
+    [
+      "Cache-Control",
+      "public, max-age=600, must-revalidate"
+    ],
+    [
+      "referrer-policy",
+      "strict-origin-when-cross-origin"
+    ],
+    [
+      "Server-Timing",
+      "cfCacheStatus;desc=\"EXPIRED\""
+    ],
+    [
+      "Server-Timing",
+      "cfEdge;dur=23,cfOrigin;dur=49"
+    ],
+    [
+      "Server",
+      "cloudflare"
+    ],
+    [
+      "last-modified",
+      "Sun, 23 Aug 2026 10:24:42 GMT"
+    ],
+    [
+      "cf-cache-status",
+      "EXPIRED"
+    ],
+    [
+      "CF-RAY",
+      "a2f968b9bcc3d286-FRA"
+    ],
+    [
+      "alt-svc",
+      "h3=\":443\"; ma=86400"
+    ]
+  ]
+}

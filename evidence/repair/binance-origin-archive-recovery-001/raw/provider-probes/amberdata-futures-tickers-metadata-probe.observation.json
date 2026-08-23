@@ -1,0 +1,14 @@
+{
+  "capture_timestamp_utc": "2026-08-23T10:38:13.410558Z",
+  "request_method": "GET",
+  "request_url": "https://api.amberdata.com/markets/futures/tickers/information",
+  "request_accept_encoding": "identity",
+  "final_url": "https://api.amberdata.com/markets/futures/tickers/information",
+  "status_code": 403,
+  "body_path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/amberdata-futures-tickers-metadata-probe.body",
+  "body_size_bytes": 23,
+  "body_sha256": "12a22880bc2e59f8278b4a5e547567f0aa14d020ea456598267fa00208cfebc5",
+  "headers_path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/amberdata-futures-tickers-metadata-probe.headers.json",
+  "credentials_used": false,
+  "parsed_before_body_saved": false
+}

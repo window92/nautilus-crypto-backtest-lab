@@ -1,0 +1,50 @@
+{
+  "attestation_materialized_at_utc": "2026-08-23T13:21:30.702335Z",
+  "branch": "main",
+  "captured_before_phase_network": true,
+  "captured_before_phase_writes": true,
+  "dependency_lock_sha256": "b2765c9e33b10566fc327b48920fd1d3a73618c19622baaceab1fe9dca61df47",
+  "epoch": "FREE_OFFICIAL_BINANCE_DATA_AND_DUCKDB_REPAIR_001",
+  "existing_duckdb": {
+    "modified": false,
+    "opened_read_only": true,
+    "owner": "builder",
+    "path": "data/duckdb/binance-btcusdt-owner-smoke-001.duckdb",
+    "sha256": "932e97c446c713e8525f43b8111aced2e914b9579eba10823df7c6b0b51887b6",
+    "size_bytes": 1236807680
+  },
+  "head": "f379a411bfd45ee566fd99d72ea402776ed48a85",
+  "historical_evidence_attestations": {
+    "candidate_003_phase": {
+      "canonical_inventory_sha256": "7efe85ca4c61fd17185b5a8599710c1ea865d77cb1704224f1d6e97d7452b620",
+      "file_count": 282,
+      "path": "evidence/repair/binance-origin-archive-recovery-001",
+      "total_size_bytes": 17717366
+    },
+    "data_provenance_duckdb_001": {
+      "canonical_inventory_sha256": "3428256ba6da3a594e0d9442320bc36ba58ac60c70455d10a9f45af96cf8c999",
+      "file_count": 44,
+      "path": "evidence/repair/data-provenance-duckdb-001",
+      "total_size_bytes": 6110203
+    },
+    "owner_smoke_001": {
+      "canonical_inventory_sha256": "76f4e5a6a34df7eac001d557fb75baec1661ea978ca7f463b54c05e17bc7b798",
+      "file_count": 14,
+      "path": "evidence/research/owner-smoke-001",
+      "total_size_bytes": 292620
+    }
+  },
+  "origin_main": "f379a411bfd45ee566fd99d72ea402776ed48a85",
+  "preexisting_untracked_path_preserved": true,
+  "preexisting_untracked_paths": [
+    "evidence/repair/binance-origin-archive-recovery-001/"
+  ],
+  "repository_path": "/home/builder/projects/nautilus-crypto-backtest-lab",
+  "root_ssot_sha256": "f51971ed7a09b172c82ff5965f2899d2a302dd71a2af60eb7c920133567b4354",
+  "runtime_lock_sha256": "4032df9f355348c2a0cfa9f79f331f97c9a8d24ecc8490a573d2c7f788bafddd",
+  "schema": "free-official-binance-baseline-attestation-v1",
+  "staged_files": [],
+  "status": "PASS",
+  "tracked_modifications": [],
+  "user": "builder"
+}

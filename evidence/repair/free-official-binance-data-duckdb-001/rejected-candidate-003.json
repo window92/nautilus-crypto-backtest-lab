@@ -1,0 +1,17 @@
+{
+  "adoption_status": "REJECTED_NOT_APPLIED",
+  "candidate_diff": {
+    "path": "evidence/repair/binance-origin-archive-recovery-001/ssot-candidate-003/SSOT.candidate-003.diff",
+    "sha256": "b6940d7f1a7adf592a46984710c23579ecab6b2c8b67002ed38f2dd3e4a665c1"
+  },
+  "candidate_full_file": {
+    "path": "evidence/repair/binance-origin-archive-recovery-001/ssot-candidate-003/SSOT.candidate-003.md",
+    "sha256": "9e6e9328b40104a65ed7d4f785731032d7b1b4cd37df5d845cad2197d6db067a"
+  },
+  "candidate_manifest_sha256": "26dc5e0aa6e642db74b26e2e3f49655bc96510596e1a9b4c2084c4da221acf74",
+  "classification": "REJECTED_BY_OWNER_PAID_PROVIDER_PATH_NOT_AUTHORIZED",
+  "historical_bytes_modified": false,
+  "phase_evidence_inventory_sha256": "0bcf40dc3d51d44cf9e0f0619698d003de348c5c6789829f20cf95f25828aaf5",
+  "recorded_at_utc": "2026-08-23T13:21:30.702335Z",
+  "schema": "rejected-ssot-candidate-attestation-v1"
+}

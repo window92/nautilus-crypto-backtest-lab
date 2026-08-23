@@ -1,0 +1,200 @@
+{
+  "best_qualified_route": "Tardis.dev raw data replay with the exact Business/yearly product access described above",
+  "configured_access_search": {
+    "aws_config_file_present": false,
+    "aws_credentials_file_present": false,
+    "aws_environment_name_count": 0,
+    "provider_cli_or_local_profile_found": false,
+    "result": "NO_CONFIGURED_TARGET_ACCESS_FOUND",
+    "secret_values_read_or_logged": false,
+    "task_relevant_provider_environment_name_count": 0
+  },
+  "created_at_utc": "2026-08-23T11:07:49.151041Z",
+  "do_not_infer_impossibility": true,
+  "providers": [
+    {
+      "access_limitation": "The official lake API states that a paid plan with provider-issued AWS credentials is required outside sample data.",
+      "dataset_or_table": "funding",
+      "documented_granularity": "approximately 3 seconds on Binance",
+      "exact_target_confirmed": false,
+      "exact_target_granularity": null,
+      "exact_target_row_count": null,
+      "exchange": "BINANCE_FUTURES",
+      "full_product_coverage_statement": "BINANCE_FUTURES funding coverage is listed from 2020-01-01, but no target bytes or row-level listing was publicly accessible.",
+      "metadata_listing_first": true,
+      "order": 1,
+      "provenance_classification": "PROVIDER_NORMALIZED_RECORD",
+      "provider": "Crypto Lake",
+      "public_sample": {
+        "available_date": "2023-02-01",
+        "target_listing": {
+          "body_path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/crypto-lake-target-funding-list-eu-west-1.body",
+          "body_sha256": "962e16723fe3674b18422477ff751106738e3a43929650f80a29e9fd0f98895a",
+          "body_size_bytes": 317,
+          "capture_timestamp_utc": "2026-08-23T10:26:46.823537Z",
+          "credentials_used": false,
+          "final_url": "https://s3.eu-west-1.amazonaws.com/sample.crypto.lake/?list-type=2&prefix=funding%2Fexchange%3DBINANCE_FUTURES%2Fsymbol%3DBTC-USDT-PERP%2Fdt%3D2020-12-17%2F",
+          "headers_path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/crypto-lake-target-funding-list-eu-west-1.headers.json",
+          "observation_path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/crypto-lake-target-funding-list-eu-west-1.observation.json",
+          "raw_saved_before_parsing": true,
+          "request_url": "https://s3.eu-west-1.amazonaws.com/sample.crypto.lake/?list-type=2&prefix=funding%2Fexchange%3DBINANCE_FUTURES%2Fsymbol%3DBTC-USDT-PERP%2Fdt%3D2020-12-17%2F",
+          "status_code": 200
+        },
+        "target_prefix_key_count": 0
+      },
+      "qualification": "NOT_ACCEPTABLE_FOR_CANONICAL_MARK_TRUTH",
+      "raw_exchange_native_websocket_payload_documented": false,
+      "reason": "The documented mark_price is a provider-normalized float64 field, and the public sample contains no 2020-12-17 target object.",
+      "schema": {
+        "mark_price": "float64",
+        "origin_time": "exchange event time",
+        "received_time": "provider receive/process time"
+      },
+      "symbol": "BTC-USDT-PERP"
+    },
+    {
+      "access_limitation": {
+        "exact_required_access_for_mark": "Tardis Perpetuals data plan, Business subscription, yearly billing, provider-issued API access, raw data replay API for binance-futures markPrice. Business yearly is required for all available 2020 history; Pro is limited to four years.",
+        "exact_required_access_for_spot": "Tardis Spot data plan, Business subscription, yearly billing, provider-issued API access, raw data replay API for binance aggTrade.",
+        "http_result": "401; unauthenticated requests are limited to the first day of each month",
+        "single_scope_alternative": "Tardis All Exchanges data plan, Business subscription, yearly billing, with raw data replay API access."
+      },
+      "channel": "markPrice",
+      "channel_available_since": "2019-11-17T00:00:00.000Z",
+      "control_validation": {
+        "event_count": 5999,
+        "matched_minute_count": 100,
+        "minute_count": 100,
+        "status": "PASS",
+        "window_count": 10
+      },
+      "dataset_or_table": "/v1/data-feeds/binance-futures raw replay",
+      "documented_granularity_at_target": "1 second",
+      "exact_target_confirmed": false,
+      "exact_target_granularity": null,
+      "exact_target_row_count": null,
+      "exchange": "binance-futures",
+      "instrument_type": "perpetual",
+      "metadata": {
+        "body_path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-binance-futures-metadata.body",
+        "body_sha256": "11cbcc806e7637c43685e6a735564a0290691bfeb4b7e4993ead3b21a06b91c7",
+        "body_size_bytes": 365306,
+        "capture_timestamp_utc": "2026-08-23T10:29:08.991228Z",
+        "credentials_used": false,
+        "final_url": "https://api.tardis.dev/v1/exchanges/binance-futures",
+        "headers_path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-binance-futures-metadata.headers.json",
+        "observation_path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-binance-futures-metadata.observation.json",
+        "raw_saved_before_parsing": true,
+        "request_url": "https://api.tardis.dev/v1/exchanges/binance-futures",
+        "status_code": 200
+      },
+      "metadata_listing_first": true,
+      "one_second_speed_available_since": "2020-02-13T00:00:00Z",
+      "order": 2,
+      "ordering": "original capture line order; deterministic tie-break for equal exchange timestamps",
+      "overlapping_provider_incident_report_count": 0,
+      "provenance_classification": "ARCHIVED_BINANCE_ORIGIN_EVENT",
+      "provider": "Tardis.dev",
+      "qualification": "PROVIDER_AND_VALIDATOR_QUALIFIED_TARGET_BYTES_ACCESS_REQUIRED",
+      "reason": "Raw exchange-native semantics and controls pass, but metadata/date-range statements are not row-level target proof and the exact target response is access-gated.",
+      "schema": "provider receive timestamp followed by the exchange-native Binance WebSocket JSON payload; original numeric strings retained",
+      "subscription_stream": "@markPrice@1s",
+      "symbol": "btcusdt",
+      "target_normalized_probe": {
+        "body_path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-target-mark-normalized-dataset-probe.body",
+        "body_sha256": "fde83991689ed07208ae7c9c6a66b4e3e5e94a76453bd339c2dd3b5364b87639",
+        "body_size_bytes": 367,
+        "capture_timestamp_utc": "2026-08-23T10:34:23.313422Z",
+        "credentials_used": false,
+        "final_url": "https://datasets.tardis.dev/v1/binance-futures/derivative_ticker/2020/12/17/BTCUSDT.csv.gz",
+        "headers_path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-target-mark-normalized-dataset-probe.headers.json",
+        "observation_path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-target-mark-normalized-dataset-probe.observation.json",
+        "raw_saved_before_parsing": true,
+        "request_url": "https://datasets.tardis.dev/v1/binance-futures/derivative_ticker/2020/12/17/BTCUSDT.csv.gz",
+        "status_code": 401
+      },
+      "target_raw_probe": {
+        "body_path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-target-mark-raw-probe.body",
+        "body_sha256": "6880a845e4ff2c75eec1ce2cf999a49a6e634ebe0d687d00239ffad21d2c9e07",
+        "body_size_bytes": 190,
+        "capture_timestamp_utc": "2026-08-23T10:30:03.704173Z",
+        "credentials_used": false,
+        "final_url": "https://api.tardis.dev/v1/data-feeds/binance-futures?from=2020-12-17T07%3A30%3A00Z&to=2020-12-17T07%3A58%3A00Z&filters=%5B%7B%22channel%22%3A%22markPrice%22%2C%22symbols%22%3A%5B%22btcusdt%22%5D%7D%5D",
+        "headers_path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-target-mark-raw-probe.headers.json",
+        "observation_path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/tardis-target-mark-raw-probe.observation.json",
+        "raw_saved_before_parsing": true,
+        "request_url": "https://api.tardis.dev/v1/data-feeds/binance-futures?from=2020-12-17T07%3A30%3A00Z&to=2020-12-17T07%3A58%3A00Z&filters=%5B%7B%22channel%22%3A%22markPrice%22%2C%22symbols%22%3A%5B%22btcusdt%22%5D%7D%5D",
+        "status_code": 401
+      },
+      "timestamps": [
+        "Binance event timestamp E",
+        "Tardis local receive timestamp"
+      ]
+    },
+    {
+      "access_limitation": "The documented endpoint requires provider access and the credential-free probes returned HTTP 403.",
+      "dataset_or_table": "/markets/futures/tickers/{instrument}",
+      "documented_granularity_at_target": null,
+      "exact_target_confirmed": false,
+      "exact_target_granularity": null,
+      "exact_target_row_count": null,
+      "exchange_query": "binance",
+      "metadata_listing_first": true,
+      "metadata_probe": {
+        "body_path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/amberdata-futures-tickers-metadata-probe.body",
+        "body_sha256": "12a22880bc2e59f8278b4a5e547567f0aa14d020ea456598267fa00208cfebc5",
+        "body_size_bytes": 23,
+        "capture_timestamp_utc": "2026-08-23T10:38:13.410558Z",
+        "credentials_used": false,
+        "final_url": "https://api.amberdata.com/markets/futures/tickers/information",
+        "headers_path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/amberdata-futures-tickers-metadata-probe.headers.json",
+        "observation_path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/amberdata-futures-tickers-metadata-probe.observation.json",
+        "raw_saved_before_parsing": true,
+        "request_url": "https://api.amberdata.com/markets/futures/tickers/information",
+        "status_code": 403
+      },
+      "order": 3,
+      "provenance_classification": "PROVIDER_NORMALIZED_RECORD",
+      "provider": "Amberdata",
+      "published_exact_product_limit": "The Binance Historical Ticker section states Binance futures ticker coverage begins 2021-04-12, after the 2020-12-17 target; broader futures marketing dates do not override this product-specific limit.",
+      "qualification": "TARGET_NOT_QUALIFIED",
+      "reason": "No target bytes were obtained, the target predates the product-specific ticker coverage statement, and normalized rows are not raw exchange-native payloads.",
+      "schema": "provider-normalized ticker record with markPrice and exchangeTimestamp numeric fields",
+      "symbol_query": "BTCUSDT",
+      "target_probe": {
+        "body_path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/amberdata-target-mark-ticker-probe.body",
+        "body_sha256": "12a22880bc2e59f8278b4a5e547567f0aa14d020ea456598267fa00208cfebc5",
+        "body_size_bytes": 23,
+        "capture_timestamp_utc": "2026-08-23T10:38:16.452210Z",
+        "credentials_used": false,
+        "final_url": "https://api.amberdata.com/markets/futures/tickers/BTCUSDT?exchange=binance&startDate=2020-12-17T07%3A30%3A00Z&endDate=2020-12-17T07%3A58%3A00Z",
+        "headers_path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/amberdata-target-mark-ticker-probe.headers.json",
+        "observation_path": "evidence/repair/binance-origin-archive-recovery-001/raw/provider-probes/amberdata-target-mark-ticker-probe.observation.json",
+        "raw_saved_before_parsing": true,
+        "request_url": "https://api.amberdata.com/markets/futures/tickers/BTCUSDT?exchange=binance&startDate=2020-12-17T07%3A30%3A00Z&endDate=2020-12-17T07%3A58%3A00Z",
+        "status_code": 403
+      }
+    }
+  ],
+  "qualification_order": [
+    "Crypto Lake",
+    "Tardis.dev",
+    "Amberdata"
+  ],
+  "result": "PROVIDER_COVERAGE_DOCUMENTED_VALIDATORS_READY_TARGET_DOWNLOAD_ACCESS_REQUIRED",
+  "schema": "provider-coverage-qualification-v1",
+  "status": "PASS",
+  "target": {
+    "channel": "markPrice / btcusdt@markPrice@1s",
+    "end_exclusive": "2020-12-17T07:58:00Z",
+    "exchange": "Binance USDⓈ-M Futures",
+    "instrument": "BTCUSDT perpetual",
+    "missing_mark_minutes": {
+      "count": 24,
+      "end_exclusive": "2020-12-17T07:56:00Z",
+      "start_inclusive": "2020-12-17T07:32:00Z"
+    },
+    "start_inclusive": "2020-12-17T07:30:00Z"
+  },
+  "target_exists_as_downloaded_bytes": false
+}

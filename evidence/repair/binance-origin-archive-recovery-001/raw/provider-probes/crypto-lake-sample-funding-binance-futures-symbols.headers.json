@@ -1,0 +1,36 @@
+{
+  "headers": [
+    [
+      "x-amz-bucket-region",
+      "eu-west-1"
+    ],
+    [
+      "Server",
+      "AmazonS3"
+    ],
+    [
+      "x-amz-request-id",
+      "PF4YJ54MFR7V43RV"
+    ],
+    [
+      "x-amz-id-2",
+      "G9QwrF9TiLaVKs8SXkAbtEvUt66lz91dZFIO0gpseXAurJBleZlZ5BdeO1FdcQJYEcDfdQkXAC9IAAgrtyluQP7hXsmNSzBk"
+    ],
+    [
+      "Content-Type",
+      "application/xml"
+    ],
+    [
+      "Transfer-Encoding",
+      "chunked"
+    ],
+    [
+      "Date",
+      "Sun, 23 Aug 2026 10:26:10 GMT"
+    ],
+    [
+      "Connection",
+      "close"
+    ]
+  ]
+}

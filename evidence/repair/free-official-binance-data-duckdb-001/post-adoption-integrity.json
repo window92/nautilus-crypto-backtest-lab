@@ -1,0 +1,28 @@
+{
+  "adopted_ssot_sha256": "b4deb7048242239234de7eaa353b623b3e45247eb42f1021dbc26ffd910edb99",
+  "analysis_identity": "bf7c4d476702a6438e2940d85548943ca1b2b926f74ba64380e20bd0490c654d",
+  "base_ssot_sha256": "f51971ed7a09b172c82ff5965f2899d2a302dd71a2af60eb7c920133567b4354",
+  "candidate_003": {
+    "bytes_modified": false,
+    "decision": "REJECTED_BY_OWNER_PAID_PROVIDER_PATH_NOT_AUTHORIZED",
+    "inventory_path": "evidence/repair/binance-origin-archive-recovery-001/evidence-inventory.json",
+    "inventory_sha256": "0bcf40dc3d51d44cf9e0f0619698d003de348c5c6789829f20cf95f25828aaf5",
+    "status": "PASS_UNCHANGED_HISTORICAL_EVIDENCE",
+    "validated_file_count": 282,
+    "validation_failure_count": 0
+  },
+  "candidate_and_root_byte_equal": true,
+  "created_at_utc": "2026-08-23T16:40:24.722767Z",
+  "dependency_lock_sha256": "b2765c9e33b10566fc327b48920fd1d3a73618c19622baaceab1fe9dca61df47",
+  "historical_duckdb": {
+    "modified": false,
+    "path": "data/duckdb/binance-btcusdt-owner-smoke-001.duckdb",
+    "sha256": "932e97c446c713e8525f43b8111aced2e914b9579eba10823df7c6b0b51887b6",
+    "size_bytes": 1236807680
+  },
+  "raw_acquisition_identity": "6031d1f37a7e2687ba07988c6d2c9c74d241da368fd3baa4bfd5ffd31f1d8b40",
+  "runtime_lock_sha256": "4032df9f355348c2a0cfa9f79f331f97c9a8d24ecc8490a573d2c7f788bafddd",
+  "schema": "free-official-binance-post-adoption-integrity-v1",
+  "status": "PASS",
+  "strategy_or_official_trial_run": false
+}

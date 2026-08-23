@@ -1,0 +1,14 @@
+{
+  "capture_timestamp_utc": "2026-08-23T10:35:06.023011Z",
+  "request_method": "GET",
+  "request_url": "https://api.github.com/repos/binance/binance-public-data/issues/483",
+  "request_accept_encoding": "identity",
+  "final_url": "https://api.github.com/repos/binance/binance-public-data/issues/483",
+  "status_code": 200,
+  "body_path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/binance-public-data-issue-483.body",
+  "body_size_bytes": 5602,
+  "body_sha256": "16a9c69c5e88ac303bbc9c4817bf5103a41304d2b53ee528682e39d75d269e33",
+  "headers_path": "evidence/repair/binance-origin-archive-recovery-001/raw/public-references/binance-public-data-issue-483.headers.json",
+  "credentials_used": false,
+  "parsed_before_body_saved": false
+}

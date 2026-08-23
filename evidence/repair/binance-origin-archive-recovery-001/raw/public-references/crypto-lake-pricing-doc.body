@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<!-- Beautiful Jekyll 5.0.0 | Copyright Dean Attali 2020 -->
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <title>Page not found</title>
+  <meta name="description" content="Page does not exist
+     Continue to the main page.">
+  <link rel="alternate" type="application/rss+xml" title="Crypto Lake" href="https://crypto-lake.com/feed.xml">
+  <!-- Preconnect -->
+<link rel="dns-prefetch" href="//stackpath.bootstrapcdn.com">
+<link rel="dns-prefetch" href="//ajax.googleapis.com/ajax">
+  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+      <link rel="stylesheet" href="/assets/css/beautifuljekyll.css?v=1784385721" crossorigin="anonymous">
+  <meta property="og:site_name" content="Crypto Lake">
+  <meta property="og:title" content="Page not found">
+  <meta property="og:description" content="Page does not exist
+     Continue to the main page.">
+  <meta property="og:image" content="https://crypto-lake.com/assets/img/lake.png">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://crypto-lake.com/404.html">
+  <link rel="canonical" href="https://crypto-lake.com/404.html">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@crypto_lake_com">
+  <meta name="twitter:creator" content="@crypto_lake_com">
+  <meta property="twitter:title" content="Page not found">
+  <meta property="twitter:description" content="Page does not exist
+     Continue to the main page.">
+  <meta name="twitter:image" content="https://crypto-lake.com/assets/img/lake.png">
+  <meta name="robots" content="noarchive">
+  <script>function initApollo(){var n=Math.random().toString(36).substring(7),o=document.createElement("script");
+o.src="https://assets.apollo.io/micro/website-tracker/tracker.iife.js?nocache="+n,o.async=!0,o.defer=!0,
+o.onload=function(){window.trackingFunctions.onLoad({appId:"6718ea031dd12401b1156f07"})},
+document.head.appendChild(o)}initApollo();</script>
+  <script>
+    if (typeof dataLayer === 'undefined') dataLayer = [];
+  </script>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-light navbar-custom top-nav-regular"><a class="navbar-brand" href="/">Crypto Lake</a><button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#main-navbar" aria-controls="main-navbar" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+  <div class="collapse navbar-collapse" id="main-navbar">
+    <ul class="navbar-nav ml-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="/">Home</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/data/">Data types</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/coverage/">Coverage</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/free-data/">Free data</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/subscribe/">Pricing</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/mission/">Mission</a>
+          </li>
+</ul>
+  </div>
+</nav>
+  <div class="intro-header"></div>
+<div role="main" class=" container-md ">
+  <div class="text-center mb-5">
+    <h1>Page does not exist</h1>
+    <br> Continue to the <a href="/">main page</a>.
+</div>
+</div>
+  <footer>
+    <div class="container-md beautiful-jekyll-footer">
+        <div class="row">
+            <div class="col-xl-10 offset-xl-1 col-lg-10 offset-lg-1">
+                <p class="theme-by text-muted">
+                    <a href="/terms-of-service/">Terms of Service</a>,
+                    <a href="/privacy-policy/">Privacy policy</a>,
+                    <a href="/contact/">Contact</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.slim.min.js" integrity="sha256-4+XzXVhsDmqanXGHaHvgh1gMQKX40OUvDEBTu8JcmNs=" crossorigin="anonymous"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+<script>
+    function setCookie(name, value, days = 30) {
+        var expires = "";
+        if (days) {
+            var date = new Date();
+            date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+            expires = "; expires=" + date.toUTCString();
+        }
+        document.cookie = name + "=" + (value || "") + expires + "; path=/";
+    }
+    function getCookie(name) {
+        var nameEQ = name + "=";
+        var ca = document.cookie.split(';');
+        for (var i = 0; i < ca.length; i++) {
+            var c = ca[i];
+            while (c.charAt(0) == ' ') c = c.substring(1, c.length);
+            if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length);
+        }
+        return null;
+    }
+    var campaign = {}
+    // Remove unwanted params (twclid so far)
+    try {
+        const params = new URL(window.location.href).searchParams;
+        if (params.has('twclid')) {
+            params.delete('twclid');
+            campaign['source'] = 'twitter';
+        }
+        if (params.has('gclid')) {
+            params.delete('gclid');
+            campaign['source'] = 'google';
+        }
+        var page_location = location.protocol + '//' + location.host + location.pathname;
+        if (params.toString()) {
+            page_location += '?' + params.toString();
+        }
+        if (location.hash) {
+            page_location += location.hash;
+        }
+        console.log('Page location: ' + page_location);
+    } catch {
+        var page_location = location.href;
+    }
+    if (!getCookie('firsttime') && campaign['source']) {
+        setCookie('source', campaign['source'], 30);
+    }
+    if (!getCookie('firsttime') && campaign['medium']) {
+        setCookie('medium', campaign['medium'], 30);
+    }
+    if (!getCookie('firsttime')) {
+        setCookie('firsttime', new Date().toISOString(), 30);
+        setCookie('firstlocation', window.location.href, 30);
+        setCookie('firstreferrer', document.referrer, 30);
+    }
+    var track_click = function(url, name) {
+        dataLayer.push({
+            'event': name,
+            'event_label': url,
+            'transport_type': 'beacon'
+        });
+        document.location = url;
+    }
+    var track_event = function(name, category = '', label = '', value = '') {
+        dataLayer.push({
+            'event': name,
+            'event_category': category,
+            'event_label': label,
+            'transport_type': 'beacon'
+        });
+        if (value) {
+            dataLayer[dataLayer.length-1]['value'] = value;
+            dataLayer[dataLayer.length-1]['currency'] = 'USD';
+        }
+    }
+    var twq = function(name, category = '', label = '') {
+        dataLayer.push({
+            'event': name,
+            'event_category': category,
+            'event_label': label,
+            'transport_type': 'beacon'
+        });
+    }
+</script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"e73f46c4ed6e4a92bce53e03ab9c4b8d","r":1}' crossorigin="anonymous"></script>
+</body>
+</html>

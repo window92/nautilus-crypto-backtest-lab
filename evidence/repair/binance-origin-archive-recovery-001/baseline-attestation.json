@@ -1,0 +1,89 @@
+{
+  "attested_at_utc": "2026-08-23T11:07:49.151041Z",
+  "baseline_git_status": "CLEAN",
+  "branch": "main",
+  "checks": {
+    "branch": true,
+    "dependency_lock": true,
+    "duckdb_identity": true,
+    "head": true,
+    "historical_evidence": true,
+    "origin_main": true,
+    "repository": true,
+    "runtime_lock": true,
+    "ssot": true,
+    "user": true
+  },
+  "cold_start_completed_before_phase_write_or_network": true,
+  "complete_reads": {
+    "AGENTS.md": true,
+    "SSOT.md": true,
+    "existing_data_repair_evidence": true
+  },
+  "current_duckdb_read_only_inspection": {
+    "database_modified": false,
+    "duckdb_extensions_disabled": true,
+    "expected_sha256": "932e97c446c713e8525f43b8111aced2e914b9579eba10823df7c6b0b51887b6",
+    "line_count": null,
+    "mandatory_table_count": 21,
+    "opened_read_only": true,
+    "path": "data/duckdb/binance-btcusdt-owner-smoke-001.duckdb",
+    "sha256": "932e97c446c713e8525f43b8111aced2e914b9579eba10823df7c6b0b51887b6",
+    "size_bytes": 1236807680
+  },
+  "existing_evidence_integrity": {
+    "bound_file_count": 43,
+    "failures": [],
+    "manifest": {
+      "line_count": 1,
+      "path": "evidence/repair/data-provenance-duckdb-001/final-content-manifest.json",
+      "sha256": "7b63fedb2a2594164588839059812cdecf48671985701d888c2cf3b0eda4673e",
+      "size_bytes": 7918
+    },
+    "status": "PASS"
+  },
+  "head": "f379a411bfd45ee566fd99d72ea402776ed48a85",
+  "identity": {
+    "agents": {
+      "line_count": 16,
+      "path": "AGENTS.md",
+      "sha256": "c4c1fc1be47236b2df5380575d8fcbdc10ceebfcadc4543d48c9d3f2236cfda6",
+      "size_bytes": 950
+    },
+    "dependency_lock": {
+      "line_count": 5,
+      "path": "requirements.lock.txt",
+      "sha256": "b2765c9e33b10566fc327b48920fd1d3a73618c19622baaceab1fe9dca61df47",
+      "size_bytes": 269
+    },
+    "runtime_lock": {
+      "line_count": 26,
+      "path": "runtime.lock.json",
+      "sha256": "4032df9f355348c2a0cfa9f79f331f97c9a8d24ecc8490a573d2c7f788bafddd",
+      "size_bytes": 1090
+    },
+    "ssot": {
+      "line_count": 2514,
+      "path": "SSOT.md",
+      "sha256": "f51971ed7a09b172c82ff5965f2899d2a302dd71a2af60eb7c920133567b4354",
+      "size_bytes": 122428
+    }
+  },
+  "locked_window": {
+    "end_exclusive": "2021-07-01T00:00:00Z",
+    "start_inclusive": "2020-12-01T00:00:00Z"
+  },
+  "origin_main": "f379a411bfd45ee566fd99d72ea402776ed48a85",
+  "phase": "BINANCE_ORIGIN_ARCHIVE_RECOVERY_001",
+  "preservation_contract": {
+    "duckdb_modified": false,
+    "existing_evidence_modified": false,
+    "product_code_modified": false,
+    "root_ssot_modified": false
+  },
+  "repository": "/home/builder/projects/nautilus-crypto-backtest-lab",
+  "schema": "binance-origin-archive-recovery-baseline-attestation-v1",
+  "status": "PASS",
+  "uid": 1000,
+  "user": "builder"
+}

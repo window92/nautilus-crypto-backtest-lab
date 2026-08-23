@@ -1,0 +1,258 @@
+> For the complete documentation index, see [llms.txt](https://docs.tardis.dev/llms.txt). Markdown versions of documentation pages are available by appending `.md` to page URLs; this page is available as [Markdown](https://docs.tardis.dev/downloadable-csv-files/overview.md).
+
+# Quickstart
+
+CSV datasets are available via [dedicated datasets API](/downloadable-csv-files/api.md#datasets-api-details) that allows downloading tick level [incremental order book L2 updates](/downloadable-csv-files/data-types.md#incremental_book_l2), order book snapshots ([top 25](/downloadable-csv-files/data-types.md#book_snapshot_25) and [top 5](/downloadable-csv-files/data-types.md#book_snapshot_5)), [trades](/downloadable-csv-files/data-types.md#trades), [options chains](/downloadable-csv-files/data-types.md#options_chain), [quotes](/downloadable-csv-files/data-types.md#quotes), [book tickers](/downloadable-csv-files/data-types.md#book_ticker), [derivative tickers](/downloadable-csv-files/data-types.md#derivative_ticker) and [liquidations](/downloadable-csv-files/data-types.md#liquidations) data.
+
+* For ongoing data, CSV datasets for a given day are available on the next day around 06:00 UTC. Historical datasets for the first day of each month are available to download without API key.
+* CSV datasets are exported from exchanges' [real-time WebSocket feeds data](/faq/data.md#why-data-source-matters-websocket-feeds-vs-rest-endpoints) we collected and also provide via our [API](/api/quickstart.md) as historical data in [exchange-native format](/faq/data.md#what-is-a-difference-between-exchange-native-and-normalized-data-format).
+* Row order in CSV files reflects the original capture order. When multiple events share the same millisecond exchange timestamp, use row position as the tie-breaker — see [event ordering FAQ](/faq/data.md#how-are-events-ordered-when-multiple-messages-share-the-same-timestamp).
+
+## Download via client libraries
+
+{% tabs %}
+{% tab title="Python" %}
+
+```python
+# pip install tardis-dev
+# requires Python >=3.9
+from tardis_dev import download_datasets
+
+download_datasets(
+    exchange="deribit",
+    data_types=[
+        "incremental_book_L2",
+        "trades",
+        "quotes",
+        "derivative_ticker",
+        "book_snapshot_25",
+        "liquidations"
+    ],
+    from_date="2019-11-01",
+    to_date="2019-11-02",
+    symbols=["BTC-PERPETUAL", "ETH-PERPETUAL"],
+    api_key="YOUR API KEY (optionally)",
+)
+```
+
+{% endtab %}
+
+{% tab title="Node.js" %}
+
+```javascript
+// npm install tardis-dev
+// requires Node.js v24+
+import { downloadDatasets } from 'tardis-dev'
+
+await downloadDatasets({
+  exchange: 'deribit',
+  dataTypes: [
+    'incremental_book_L2',
+    'trades',
+    'quotes',
+    'derivative_ticker',
+    'book_snapshot_25',
+    'liquidations'
+  ],
+  from: '2019-11-01',
+  to: '2019-11-02',
+  symbols: ['BTC-PERPETUAL', 'ETH-PERPETUAL'],
+  apiKey: 'YOUR API KEY (optionally)'
+})
+```
+
+{% endtab %}
+
+{% tab title="cURL" %}
+
+```bash
+curl -L -o deribit_trades_2019-11-01_BTC-PERPETUAL.csv.gz https://datasets.tardis.dev/v1/deribit/trades/2019/11/01/BTC-PERPETUAL.csv.gz
+
+```
+
+{% endtab %}
+{% endtabs %}
+
+{% content-ref url="/pages/tVvKgm0JyGa2InwT2YKH" %}
+[Data Types](/downloadable-csv-files/data-types.md)
+{% endcontent-ref %}
+
+{% content-ref url="/pages/qqtWvA83hsjBsfDmZ6Jg" %}
+[API Reference](/downloadable-csv-files/api.md)
+{% endcontent-ref %}
+
+## How to download all exchange CSV datasets
+
+The examples above download data for specific symbols. To download **all available datasets for every instrument** of a given exchange, use the exchange metadata API to iterate over all symbols automatically.
+
+{% tabs %}
+{% tab title="Python" %}
+
+```python
+# requires Python >=3.9
+# pip install tardis-dev
+
+from tardis_dev import download_datasets, get_exchange_details
+import logging
+
+# optionally enable debug logs
+# logging.basicConfig(level=logging.DEBUG)
+
+# change to any exchange id from https://api.tardis.dev/v1/exchanges with supportsDatasets:true
+exchange = "deribit"
+exchange_details = get_exchange_details(exchange)
+
+# iterate over and download all data for every symbol
+for symbol in exchange_details["datasets"]["symbols"]:
+    # alternatively specify data types explicitly ['trades', 'incremental_book_L2', 'quotes'] etc
+    # see available options https://docs.tardis.dev/downloadable-csv-files/data-types#data-types
+    data_types = symbol["dataTypes"]
+    symbol_id = symbol["id"]
+    from_date = symbol["availableSince"]
+    to_date = symbol["availableTo"]
+
+    # skip grouped symbols like PERPETUALS, SPOT, FUTURES, OPTIONS, COMBOS, PREDICTIONS
+    if symbol_id in ["PERPETUALS", "SPOT", "FUTURES", "OPTIONS", "COMBOS", "PREDICTIONS"]:
+        continue
+
+    print(f"Downloading {exchange} {data_types} for {symbol_id} from {from_date} to {to_date}")
+
+    # each CSV dataset format is documented at https://docs.tardis.dev/downloadable-csv-files/data-types#data-types
+    download_datasets(
+        exchange=exchange,
+        data_types=data_types,
+        from_date=from_date,
+        to_date=to_date,
+        symbols=[symbol_id],
+        # TODO set your API key here
+        api_key="YOUR_API_KEY",
+        # path where CSV data will be downloaded into
+        download_dir="./datasets",
+    )
+```
+
+{% endtab %}
+
+{% tab title="Node.js" %}
+
+```javascript
+// npm install tardis-dev
+// requires Node.js v24+
+import { downloadDatasets, getExchangeDetails } from 'tardis-dev'
+
+// change to any exchange id from https://api.tardis.dev/v1/exchanges with supportsDatasets:true
+const exchange = 'deribit'
+const exchangeDetails = await getExchangeDetails(exchange)
+
+// iterate over and download all data for every symbol
+for (const symbol of exchangeDetails.datasets.symbols) {
+  // alternatively specify dataTypes explicitly ['trades', 'incremental_book_L2', 'quotes'] etc
+  // see available options https://docs.tardis.dev/downloadable-csv-files/data-types#data-types
+  const dataTypes = symbol.dataTypes
+  const symbolId = symbol.id
+  const from = symbol.availableSince
+  const to = symbol.availableTo
+
+  // skip grouped symbols like PERPETUALS, SPOT, FUTURES, OPTIONS, COMBOS, PREDICTIONS
+  if (['PERPETUALS', 'SPOT', 'FUTURES', 'OPTIONS', 'COMBOS', 'PREDICTIONS'].includes(symbolId)) {
+    continue
+  }
+
+  console.log(`Downloading ${exchange} ${dataTypes} for ${symbolId} from ${from} to ${to}`)
+
+  // each CSV dataset format is documented at https://docs.tardis.dev/downloadable-csv-files/data-types#data-types
+  await downloadDatasets({
+    exchange,
+    dataTypes,
+    from,
+    to,
+    symbols: [symbolId],
+    // TODO: set your API key here
+    apiKey: 'YOUR_API_KEY',
+    // path where CSV data will be downloaded into
+    downloadDir: './datasets'
+  })
+}
+```
+
+{% endtab %}
+
+{% tab title="cURL" %}
+
+```bash
+curl -L -o deribit_trades_2019-11-01_BTC-PERPETUAL.csv.gz https://datasets.tardis.dev/v1/deribit/trades/2019/11/01/BTC-PERPETUAL.csv.gz
+```
+
+{% endtab %}
+{% endtabs %}
+
+## Grouped symbols
+
+In addition to standard currency pairs & instrument symbols available via the [CSV datasets API](/downloadable-csv-files/api.md#datasets-api-reference), each exchange has special grouped symbols depending on which market types it supports: **SPOT**, **FUTURES**, **OPTIONS**, **PERPETUALS**, **COMBOS**, and **PREDICTIONS**. When you request a grouped symbol, the downloaded file contains data for all instruments of that market type. This is especially useful for options, where specifying each symbol one by one would be tedious — using `OPTIONS` as a symbol gives data for all options available at a given time. `PREDICTIONS` is available only for `trades` datasets.
+
+{% hint style="info" %}
+See [what is the difference between futures and perpetual swaps contracts](/faq/data.md#what-is-the-difference-between-futures-and-perpetual-swaps-contracts).
+{% endhint %}
+
+* [incremental\_book\_L2](/downloadable-csv-files/data-types.md#incremental_book_l2) - available for FUTURES, OPTIONS ([Deribit](/historical-data-details/deribit.md), [OKX Options](/historical-data-details/okex-options.md), [Binance European Options](/historical-data-details/binance-european-options.md))
+  * Examples:
+    * <https://datasets.tardis.dev/v1/ftx/incremental_book_L2/2020/09/01/FUTURES.csv.gz>
+    * <https://datasets.tardis.dev/v1/deribit/incremental_book_L2/2020/09/01/OPTIONS.csv.gz>
+* [trades](/downloadable-csv-files/data-types.md#trades) - available for SPOT, FUTURES, OPTIONS, PERPETUALS, COMBOS, PREDICTIONS
+  * Examples:
+    * <https://datasets.tardis.dev/v1/binance/trades/2020/09/01/SPOT.csv.gz>
+    * <https://datasets.tardis.dev/v1/deribit/trades/2020/09/01/FUTURES.csv.gz>
+    * <https://datasets.tardis.dev/v1/okex-options/trades/2020/09/01/OPTIONS.csv.gz>
+    * <https://datasets.tardis.dev/v1/ftx/trades/2020/09/01/PERPETUALS.csv.gz>
+    * <https://datasets.tardis.dev/v1/deribit/trades/2023/01/01/COMBOS.csv.gz>
+* [derivative\_ticker](/downloadable-csv-files/data-types.md#derivative_ticker) - available for FUTURES, PERPETUALS, COMBOS
+  * Examples:
+    * <https://datasets.tardis.dev/v1/ftx/derivative_ticker/2020/09/01/FUTURES.csv.gz>
+    * <https://datasets.tardis.dev/v1/bitmex/derivative_ticker/2020/09/01/PERPETUALS.csv.gz>
+    * <https://datasets.tardis.dev/v1/deribit/derivative_ticker/2023/01/01/COMBOS.csv.gz>
+* [options\_chain](/downloadable-csv-files/data-types.md#options_chain) - available for OPTIONS
+  * Examples:
+    * <https://datasets.tardis.dev/v1/deribit/options_chain/2020/09/01/OPTIONS.csv.gz>
+    * <https://datasets.tardis.dev/v1/okex-options/options_chain/2020/09/01/OPTIONS.csv.gz>
+* [quotes](/downloadable-csv-files/data-types.md#quotes) - available for OPTIONS
+  * Examples:
+    * <https://datasets.tardis.dev/v1/deribit/quotes/2020/09/01/OPTIONS.csv.gz>
+    * <https://datasets.tardis.dev/v1/okex-options/quotes/2020/09/01/OPTIONS.csv.gz>
+* [liquidations](/downloadable-csv-files/data-types.md#liquidations) - available for FUTURES, PERPETUALS, OPTIONS
+  * Examples:
+    * <https://datasets.tardis.dev/v1/deribit/liquidations/2021/09/01/PERPETUALS.csv.gz>
+    * <https://datasets.tardis.dev/v1/ftx/liquidations/2021/09/01/FUTURES.csv.gz>
+    * <https://datasets.tardis.dev/v1/deribit/liquidations/2021/09/01/OPTIONS.csv.gz>
+* [book\_snapshot\_25](/downloadable-csv-files/data-types.md#book_snapshot_25) - available for OPTIONS ([Deribit](/historical-data-details/deribit.md), [OKX Options](/historical-data-details/okex-options.md), [Binance European Options](/historical-data-details/binance-european-options.md))
+  * Examples:
+    * <https://datasets.tardis.dev/v1/deribit/book_snapshot_25/2025/03/01/OPTIONS.csv.gz>
+* [book\_snapshot\_5](/downloadable-csv-files/data-types.md#book_snapshot_5) - available for OPTIONS ([Deribit](/historical-data-details/deribit.md), [OKX Options](/historical-data-details/okex-options.md), [Binance European Options](/historical-data-details/binance-european-options.md))
+  * Examples:
+    * <https://datasets.tardis.dev/v1/deribit/book_snapshot_5/2025/03/01/OPTIONS.csv.gz>
+* [book\_ticker](/downloadable-csv-files/data-types.md#book_ticker) - available for OPTIONS ([Deribit](/historical-data-details/deribit.md), [OKX Options](/historical-data-details/okex-options.md), [Binance European Options](/historical-data-details/binance-european-options.md))
+  * Examples:
+    * <https://datasets.tardis.dev/v1/deribit/book_ticker/2025/03/01/OPTIONS.csv.gz>
+
+Those special symbols are also listed in response to [/exchanges/:exchange](/api/http-api-reference.md#exchanges-exchange) API call.
+
+
+---
+
+# Agent Instructions
+This documentation is published with GitBook. GitBook is the documentation platform designed so that both humans and AI agents can read, navigate, and reason over technical content effectively. Learn more at gitbook.com.
+
+## Querying This Documentation
+If you need additional information that is not directly available in this page, you can query the documentation dynamically by asking a question.
+
+Perform an HTTP GET request on the current page URL with the `ask` query parameter, and the optional `goal` query parameter:
+
+```
+GET https://docs.tardis.dev/downloadable-csv-files/overview.md?ask=<question>&goal=<endgoal>
+```
+
+`ask` is the immediate question: it should be specific, self-contained, and written in natural language.
+`goal` is optional and describes the broader end goal you are ultimately trying to accomplish on behalf of the user. GitBook uses it to tailor the answer towards what is most useful for that goal.
+
+The response will contain a direct answer to the question and relevant excerpts and sources from the documentation.
+
+Use this mechanism when the answer is not explicitly present in the current page, you need clarification or additional context, or you want to retrieve related documentation sections.
