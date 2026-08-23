@@ -1,0 +1,64 @@
+{
+  "affected_sections": [
+    "1.4 V1 execution-data class",
+    "4.1 Source",
+    "4.3 Dataset Release",
+    "4.5 Completeness",
+    "4.6 Higher timeframes",
+    "4.8 Spot data roles",
+    "4.11 Catalog is derived data",
+    "new 4.12 DuckDB derived validation store",
+    "8.3 G04",
+    "M2 Frozen Binance data",
+    "Appendix A.5 and new A.6"
+  ],
+  "baseline_head": "02ed33d9ca44e920eb326dfeb527caf05666ee12",
+  "candidate": {
+    "byte_size": 15048,
+    "exact_diff_format": "apply_patch",
+    "path": "SSOT-amendment-candidate.patch",
+    "sha256": "7fcd919364e6bccf35fcf80c6ad6e1884adeb6b6b0a74ef738748b5bbd8b4fc6"
+  },
+  "current_ssot_sha256": "7bb2fc68d9b73b168a582d890a6f952fd0c4eb20fc0e31857903909f27dfaa8f",
+  "epoch": "DATA_PROVENANCE_DUCKDB_REPAIR_001",
+  "locked_owner_smoke_window": {
+    "end_exclusive": "2021-07-01T00:00:00Z",
+    "start_inclusive": "2020-12-01T00:00:00Z"
+  },
+  "owner_adoption_required_before_implementation": true,
+  "prohibited_actions_not_taken": [
+    "SSOT.md was not modified",
+    "no network acquisition was attempted",
+    "DuckDB was not installed",
+    "no DuckDB database or DatasetRelease was built",
+    "no strategy or Official Trial was run",
+    "no optimization or Final Holdout was started",
+    "no T3 or agent configuration was modified"
+  ],
+  "schema": "data-provenance-duckdb-ssot-amendment-candidate-v1",
+  "targeted_scope": [
+    "distinguish unexplained missing data from verified no-trade intervals",
+    "resolve authority among independent official Binance observations",
+    "permit deterministic Decimal-exact reconstruction from official trades",
+    "permit DuckDB only as a derived validation and query store"
+  ],
+  "verdict": "SSOT_AMENDMENT_REQUIRED_FOR_DATA_REPAIR",
+  "why_current_bytes_block_implementation": [
+    {
+      "current_rule": "Section 4.5: For each expected minute, exactly one valid execution bar MUST exist.",
+      "conflict": "The Owner contract requires VERIFIED_NO_TRADE_INTERVAL to contain no OHLCV, never become a Nautilus Bar, and still complete coverage."
+    },
+    {
+      "current_rule": "Section 4.8 requires external 1m Spot price bars from the exact daily or monthly kline prefixes.",
+      "conflict": "The Owner contract permits a canonical bar deterministically derived from official aggTrades and requires REST, daily, monthly, and trades to be reconciled as independent observations."
+    },
+    {
+      "current_rule": "Section 4.6 says a missing required source minute MUST prevent a higher-timeframe bar from becoming valid Official input.",
+      "conflict": "The Owner contract requires sparse accepted real bars across proven no-trade minutes and daily resampling from real completed bars only, with no synthetic minute."
+    },
+    {
+      "current_rule": "G04 and Appendix A.5 classify a missing execution minute as BLOCKED without a verified-no-trade exception.",
+      "conflict": "A new positive no-trade qualification and an ID-continuity negative control are required to change this normative failure behavior."
+    }
+  ]
+}
