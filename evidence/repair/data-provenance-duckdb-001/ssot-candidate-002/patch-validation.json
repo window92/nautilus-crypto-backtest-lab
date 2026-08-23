@@ -1,0 +1,109 @@
+{
+  "base_bytes_match_reverse_result": true,
+  "base_ssot_sha256": "7bb2fc68d9b73b168a582d890a6f952fd0c4eb20fc0e31857903909f27dfaa8f",
+  "broken_internal_references": [],
+  "candidate_bytes_match_forward_result": true,
+  "candidate_id": "DATA_PROVENANCE_SSOT_CANDIDATE_002",
+  "candidate_ssot_sha256": "f51971ed7a09b172c82ff5965f2899d2a302dd71a2af60eb7c920133567b4354",
+  "duplicate_failure_codes": [],
+  "duplicate_golden_contract_ids": [],
+  "duplicate_headings": [],
+  "forward_apply_verified": true,
+  "generated_patch_matches_generation_pipeline": true,
+  "generation_command": [
+    "diff -U4 --label a/SSOT.md --label b/SSOT.md SSOT.md evidence/repair/data-provenance-duckdb-001/ssot-candidate-002/SSOT.data-provenance-candidate.md",
+    "awk converts each single-space empty context record to the equivalent empty context record and changes no other diff record",
+    "apply_patch writes the generated stream as SSOT.data-provenance-candidate.patch"
+  ],
+  "generation_method": "AUTOMATIC_UNIFIED_DIFF_WITH_DETERMINISTIC_EMPTY_CONTEXT_NORMALIZATION",
+  "git_diff_check": "PASS_IN_BOTH_FORWARD_CHECKOUTS",
+  "golden_contract_ids": [
+    "G01",
+    "G02",
+    "G03",
+    "G04",
+    "G05",
+    "G06",
+    "G07",
+    "G08",
+    "G09",
+    "G10",
+    "G11",
+    "G12",
+    "G13",
+    "G14",
+    "G15",
+    "G16",
+    "G17",
+    "G18",
+    "G19",
+    "G20",
+    "G21",
+    "G22"
+  ],
+  "heading_count": 143,
+  "automatic_offset_observed_in_final_validation": false,
+  "manual_offset_used": false,
+  "no_partial_application": true,
+  "newline_style": "LF",
+  "normalized_empty_context_records": 60,
+  "patch_format": "UNIFIED_DIFF_GIT_APPLY_VALIDATED",
+  "patch_hunk_count": 13,
+  "patch_sha256": "513e2c6ca3ce4047af469593911cf46979d83c38c0b7fa2a6f722bce752d73d8",
+  "patch_size_bytes": 30420,
+  "reverse_apply_verified": true,
+  "root_ssot_unchanged": true,
+  "schema": "data-provenance-ssot-patch-validation-v2",
+  "status": "PASS",
+  "superseded_generation_attempts": [
+    {
+      "committed": false,
+      "reason": "A context-bearing generated diff represented empty context lines with a required leading space, which failed artifact-level git diff --check.",
+      "status": "REGENERATED_BEFORE_COMMIT"
+    },
+    {
+      "committed": false,
+      "reason": "A zero-context generated diff applied forward exactly but git apply reported automatic offsets during reverse validation.",
+      "status": "REGENERATED_BEFORE_COMMIT"
+    },
+    {
+      "committed": false,
+      "reason": "A single-hunk full-file generated patch passed exact application checks but was superseded before commit because it obscured the targeted semantic diff by representing every unchanged line as delete and add.",
+      "status": "SUPERSEDED_VALID_NONMINIMAL"
+    },
+    {
+      "committed": false,
+      "reason": "The first compact empty-context-normalized patch applied exactly but its final hunk ended on an empty context record that triggered a git apply whitespace warning; regeneration with four context lines removed the warning without changing Candidate bytes.",
+      "status": "REGENERATED_BEFORE_COMMIT"
+    }
+  ],
+  "utf8_bom_present": false,
+  "utf8_validation": "PASS",
+  "validation_processes": [
+    {
+      "base_head": "0d7694b26cccdd966ac0d44347dc8b7fc3626ec0",
+      "base_sha256_before": "7bb2fc68d9b73b168a582d890a6f952fd0c4eb20fc0e31857903909f27dfaa8f",
+      "candidate_sha256_after_forward": "f51971ed7a09b172c82ff5965f2899d2a302dd71a2af60eb7c920133567b4354",
+      "checkout": "/tmp/ssot-candidate-002-validation-a.n7IweJ/checkout",
+      "clean_after_reverse": true,
+      "clean_before_forward": true,
+      "git_apply_report": "Applied patch SSOT.md cleanly.",
+      "id": "INDEPENDENT_PROCESS_A",
+      "reverse_sha256": "7bb2fc68d9b73b168a582d890a6f952fd0c4eb20fc0e31857903909f27dfaa8f"
+    },
+    {
+      "base_head": "0d7694b26cccdd966ac0d44347dc8b7fc3626ec0",
+      "base_sha256_before": "7bb2fc68d9b73b168a582d890a6f952fd0c4eb20fc0e31857903909f27dfaa8f",
+      "candidate_sha256_after_forward": "f51971ed7a09b172c82ff5965f2899d2a302dd71a2af60eb7c920133567b4354",
+      "checkout": "/tmp/ssot-candidate-002-validation-b.alKOjK/checkout",
+      "clean_after_reverse": true,
+      "clean_before_forward": true,
+      "git_apply_report": "Applied patch SSOT.md cleanly.",
+      "id": "INDEPENDENT_PROCESS_B",
+      "reverse_sha256": "7bb2fc68d9b73b168a582d890a6f952fd0c4eb20fc0e31857903909f27dfaa8f"
+    }
+  ],
+  "whitespace_validation": "PASS",
+  "git_apply_requires_unidiff_zero": false,
+  "fuzz_used": false
+}

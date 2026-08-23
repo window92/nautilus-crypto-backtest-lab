@@ -1,0 +1,142 @@
+{
+  "allowed_official_source_contract": {
+    "perpetual": [
+      "GET /fapi/v1/klines",
+      "GET /fapi/v1/markPriceKlines",
+      "GET /fapi/v1/fundingRate",
+      "GET /fapi/v1/fundingInfo when applicable",
+      "official USDⓈ-M daily and monthly archives",
+      "publisher checksums"
+    ],
+    "spot": [
+      "GET /api/v3/klines",
+      "GET /api/v3/aggTrades",
+      "official daily and monthly kline archives",
+      "official daily and monthly aggTrades archives",
+      "publisher checksums",
+      "official archive-update manifests"
+    ],
+    "third_party_data_allowed": false
+  },
+  "candidate_id": "DATA_PROVENANCE_SSOT_CANDIDATE_002",
+  "coverage_dispositions": {
+    "accepted_bar_states": [
+      "REAL_OFFICIAL_BAR",
+      "DERIVED_FROM_OFFICIAL_TRADES"
+    ],
+    "blocking_states": [
+      "SOURCE_CONFLICT",
+      "SOURCE_INCOMPLETE",
+      "UNRESOLVED_GAP"
+    ],
+    "coverage_only_state": "VERIFIED_NO_TRADE_INTERVAL",
+    "exactly_one_per_expected_utc_minute": true
+  },
+  "derived_bar_contract": {
+    "arithmetic": "EXACT_DECIMAL",
+    "event_order": [
+      "timestamp",
+      "aggregate_trade_id"
+    ],
+    "fields": [
+      "open from first event",
+      "high maximum price",
+      "low minimum price",
+      "close from last event",
+      "base volume exact quantity sum",
+      "quote volume exact price-times-quantity sum",
+      "trade count exact underlying trade-range sum",
+      "taker-buy base and quote volume where buyer_is_maker=false",
+      "exact UTC minute open and inclusive close identity"
+    ],
+    "integrity_requirements": [
+      "unique and ordered aggregate IDs",
+      "coherent non-overlapping contiguous underlying trade-ID ranges",
+      "no missing underlying trade IDs",
+      "timestamps inside the exact minute",
+      "exact symbol, profile, role, and interval bindings",
+      "field-by-field comparison with available official klines"
+    ],
+    "interpolation": false,
+    "synthetic_price": false,
+    "third_party_substitution": false
+  },
+  "duckdb_boundary": {
+    "allowed_roles": [
+      "source inventory",
+      "raw-object bindings",
+      "parsing",
+      "validation",
+      "conflict analysis",
+      "minute coverage",
+      "canonical Dataset Release materialization",
+      "deterministic query and audit",
+      "deterministic export"
+    ],
+    "data_tool_lock_separate_from_nautilus_runtime_lock": true,
+    "forbidden_roles": [
+      "alternative raw source",
+      "Matching Engine",
+      "Order Engine",
+      "Position Engine",
+      "Account Engine",
+      "Ledger",
+      "Fee Engine",
+      "Funding Engine",
+      "PnL Engine",
+      "Portfolio Engine",
+      "Nautilus substitute"
+    ],
+    "nautilus_remains_financial_truth_owner": true
+  },
+  "nautilus_export_contract": {
+    "allowed": [
+      "REAL_OFFICIAL_BAR",
+      "DERIVED_FROM_OFFICIAL_TRADES"
+    ],
+    "forbidden": [
+      "VERIFIED_NO_TRADE_INTERVAL",
+      "SOURCE_CONFLICT",
+      "SOURCE_INCOMPLETE",
+      "UNRESOLVED_GAP",
+      "superseded observations",
+      "synthetic OHLC"
+    ],
+    "sparse_market_qualification_required": true
+  },
+  "normative_contradictions": [],
+  "scope_status": "PASS",
+  "source_reconciliation": {
+    "automatic_rest_daily_or_monthly_precedence": false,
+    "monthly_conflict_preserved": true,
+    "monthly_only_without_trade_support_canonical": false,
+    "rest_daily_aggtrade_consensus_can_supersede_monthly": true,
+    "unresolved_official_conflict_blocks": true
+  },
+  "status": "PASS",
+  "unchanged_contracts": [
+    "NautilusTrader 2.0.0rc2 runtime identity and wheel",
+    "Runtime Lock and dependency lock bytes",
+    "60-second causal latency",
+    "Fill Model and Fill ownership",
+    "order lifecycle and terminal policy",
+    "Spot CASH and Perpetual NETTING semantics",
+    "fees and native funding settlement",
+    "Perpetual mark valuation ownership and fallback prohibition",
+    "account, position, PnL, Equity, and portfolio ownership",
+    "locked Market Profiles",
+    "research protocol, Trial Journal, Holdout, and claim governance",
+    "Official Run offline boundary",
+    "M3 and M4 financial and research contracts",
+    "Owner workflow and historical evidence"
+  ],
+  "verified_no_trade_contract": {
+    "aggregate_id_continuity_required": true,
+    "contains_ohlc": false,
+    "contains_synthetic_volume": false,
+    "exported_as_nautilus_bar": false,
+    "fill_eligible": false,
+    "incomplete_proof_blocks": true,
+    "trade_id_continuity_required": true
+  }
+}
