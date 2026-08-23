@@ -1,0 +1,2 @@
+event_index,ts_event,account_id,account_type,currency,total,locked,free,reported
+0,1609459200000000000,BINANCE-001,MARGIN,USDT,10000.00000000,0.00000000,10000.00000000,True
