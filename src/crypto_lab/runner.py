@@ -435,46 +435,47 @@ def _preflight_data(
             # sparse projection only when the exact catalog identity binds the
             # complete coverage identity and all observed Bars remain aligned
             # inside the frozen release window.
-            role_results = tuple(release.completeness_result.role_results)
-            spot_roles = tuple(
-                item
-                for item in role_results
-                if item.source_role is SourceRole.SPOT_EXECUTION_1M
-            )
-            release_binding = (
-                resolved.semantic_inventory.get("release_binding")
-                if resolved is not None
-                else None
-            )
-            expected_binding = {
-                "data_window_identity": release.data_window_identity,
-                "partition_geometry_identity": release.partition_geometry_identity,
-                "minute_coverage_identity": release.minute_coverage_identity,
-                "normalized_time_range": release.normalized_time_range.to_builtins(),
-            }
-            sparse_grid_ok = bool(
-                catalog_bound
-                and release.completeness_result.status == "PASS"
-                and release.completeness_result.no_repairs is True
-                and len(spot_roles) == 1
-                and spot_roles[0].expected_count == len(expected)
-                and spot_roles[0].actual_count == len(expected)
-                and release_binding == expected_binding
-                and bar_timestamps
-                and len(bar_timestamps) <= len(expected)
-                and all(
-                    release.normalized_time_range.start_ns < timestamp
-                    <= release.normalized_time_range.end_ns
-                    and (
-                        timestamp - release.normalized_time_range.start_ns
-                    )
-                    % ONE_MINUTE_NS
-                    == 0
-                    for timestamp in bar_timestamps
+            if bar_timestamps != expected:
+                role_results = tuple(release.completeness_result.role_results)
+                spot_roles = tuple(
+                    item
+                    for item in role_results
+                    if item.source_role is SourceRole.SPOT_EXECUTION_1M
                 )
-            )
-            if not sparse_grid_ok:
-                failures.append(FailureCode.DATA_GAP.value)
+                release_binding = (
+                    resolved.semantic_inventory.get("release_binding")
+                    if resolved is not None
+                    else None
+                )
+                expected_binding = {
+                    "data_window_identity": release.data_window_identity,
+                    "partition_geometry_identity": release.partition_geometry_identity,
+                    "minute_coverage_identity": release.minute_coverage_identity,
+                    "normalized_time_range": release.normalized_time_range.to_builtins(),
+                }
+                sparse_grid_ok = bool(
+                    catalog_bound
+                    and release.completeness_result.status == "PASS"
+                    and release.completeness_result.no_repairs is True
+                    and len(spot_roles) == 1
+                    and spot_roles[0].expected_count == len(expected)
+                    and spot_roles[0].actual_count == len(expected)
+                    and release_binding == expected_binding
+                    and bar_timestamps
+                    and len(bar_timestamps) < len(expected)
+                    and all(
+                        release.normalized_time_range.start_ns < timestamp
+                        <= release.normalized_time_range.end_ns
+                        and (
+                            timestamp - release.normalized_time_range.start_ns
+                        )
+                        % ONE_MINUTE_NS
+                        == 0
+                        for timestamp in bar_timestamps
+                    )
+                )
+                if not sparse_grid_ok:
+                    failures.append(FailureCode.DATA_GAP.value)
         elif bar_timestamps != expected:
             # Perpetual execution retains an exact 1m Bar grid; the Spot
             # verified-no-trade exception never applies to this profile.

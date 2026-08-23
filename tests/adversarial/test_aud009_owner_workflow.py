@@ -74,6 +74,20 @@ class Aud009OwnerWorkflowTests(unittest.TestCase):
             )
             copied_anchor = repository / "research/history_anchors.jsonl"
             copied_anchor.unlink(missing_ok=True)
+            # This is an isolated qualification repository, not a clone of the
+            # caller's authoritative research history.  Once the real project
+            # contains Trial records, copying those records while deleting only
+            # their anchors creates a contradictory fixture and makes the
+            # expected single-Trial lifecycle state-dependent.
+            (repository / "research/trials.jsonl").write_bytes(b"")
+            (repository / "research/holdout_lock.json").write_text("{}\n", encoding="utf-8")
+            for relative in (
+                "runs",
+                "research/workflows",
+                "research/replays",
+                "research/reports",
+            ):
+                shutil.rmtree(repository / relative, ignore_errors=True)
             _run("git", "init", "-b", "main", cwd=repository)
             _run("git", "config", "user.name", "Owner Workflow Test", cwd=repository)
             _run(
@@ -133,10 +147,17 @@ class Aud009OwnerWorkflowTests(unittest.TestCase):
                 text=True,
                 env=environment,
             )
+            retained_statuses = {
+                str(path.relative_to(repository)): json.loads(path.read_text(encoding="utf-8"))
+                for path in sorted((repository / "runs").glob("**/status.json"))
+            }
             self.assertEqual(
                 process.returncode,
                 0,
-                process.stderr + process.stdout + output_path.read_text(encoding="utf-8"),
+                process.stderr
+                + process.stdout
+                + output_path.read_text(encoding="utf-8")
+                + json.dumps(retained_statuses, sort_keys=True),
             )
             result = json.loads(output_path.read_text(encoding="utf-8"))
             self.assertEqual(result["status"], "PASS")

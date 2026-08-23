@@ -33,6 +33,10 @@ class OwnerSmokeSma20GoldenTests(unittest.TestCase):
 
         self.assertEqual(Decimal(str(indicator.value)), independently_calculated)
 
+        indicator.update_raw(21.0)
+        self.assertEqual(indicator.count, 20)
+        self.assertTrue(indicator.initialized)
+
     def test_first_signal_requires_exactly_twenty_completed_daily_closes(self) -> None:
         indicator = SimpleMovingAverage(20)
         for close in range(1, 20):

@@ -32,6 +32,7 @@ class OwnerSmoke002SparsePreflightTests(unittest.TestCase):
         *,
         include_middle: bool = False,
         volume: str = "1000.000000",
+        minute_disposition_binding: bool = True,
     ) -> list[str]:
         instrument_id = SPOT_ID if profile is MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY else PERP_ID
         rows = [
@@ -89,15 +90,16 @@ class OwnerSmoke002SparsePreflightTests(unittest.TestCase):
             ],
             "mark_price_updates": [],
             "funding_rate_updates": [],
-            "release_binding": release_binding,
         }
+        if minute_disposition_binding:
+            inventory["release_binding"] = release_binding
         release = SimpleNamespace(
             market_profile=profile,
             normalized_time_range=TimeRange(start_inclusive=start, end_exclusive=end),
             completeness_result=completeness,
-            data_window_identity="a" * 64,
-            partition_geometry_identity="b" * 64,
-            minute_coverage_identity="c" * 64,
+            data_window_identity="a" * 64 if minute_disposition_binding else None,
+            partition_geometry_identity="b" * 64 if minute_disposition_binding else None,
+            minute_coverage_identity="c" * 64 if minute_disposition_binding else None,
             catalog_identity=canonical_sha256(inventory),
             mark_data_identity="NOT_APPLICABLE",
             funding_data_identity="NOT_APPLICABLE",
@@ -130,6 +132,16 @@ class OwnerSmoke002SparsePreflightTests(unittest.TestCase):
 
     def test_current_spot_release_accepts_sparse_bars_bound_to_complete_minute_dispositions(self) -> None:
         self.assertEqual(self._preflight(MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY), [])
+
+    def test_legacy_complete_spot_bar_grid_remains_accepted_without_sparse_binding(self) -> None:
+        self.assertEqual(
+            self._preflight(
+                MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY,
+                include_middle=True,
+                minute_disposition_binding=False,
+            ),
+            [],
+        )
 
     def test_perpetual_execution_grid_still_rejects_a_missing_minute(self) -> None:
         self.assertIn(

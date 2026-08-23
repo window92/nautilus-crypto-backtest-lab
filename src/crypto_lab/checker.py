@@ -492,14 +492,15 @@ def check_evidence_directory(
     if is_owner_smoke_sma20:
         daily = observations.get("daily_signal_bars", [])
         signals = observations.get("signals", [])
+        sma_lookback = int(strategy_spec["parameters"]["sma_lookback"])
         daily_ok = bool(daily) and all(
             int(item["interval_end_exclusive_ns"]) % DAY_NS == 0
             and int(item["interval_end_exclusive_ns"])
             - int(item["interval_start_ns"])
             == DAY_NS
             and int(item["available_at_ns"]) == int(item["interval_end_exclusive_ns"])
-            and int(item["sma_count"]) == index
-            and bool(item["sma_initialized"]) == (index >= 20)
+            and int(item["sma_count"]) == min(index, sma_lookback)
+            and bool(item["sma_initialized"]) == (index >= sma_lookback)
             for index, item in enumerate(daily, start=1)
         )
         close_by_end = {
@@ -511,8 +512,10 @@ def check_evidence_directory(
         expected_signals = 0
         for index, end_ns in enumerate(ends):
             start_ns = end_ns - DAY_NS
-            if index >= 19 and start_ns >= int(config.scoring_start.timestamp() * 1e9) and end_ns <= int(
-                config.scoring_end_exclusive.timestamp() * 1e9,
+            if (
+                index >= sma_lookback - 1
+                and start_ns >= int(config.scoring_start.timestamp() * 1e9)
+                and end_ns <= int(config.scoring_end_exclusive.timestamp() * 1e9)
             ):
                 expected_signals += 1
         if len(signals) != expected_signals:
@@ -522,9 +525,12 @@ def check_evidence_directory(
                 end_ns = int(signal["signal_bar_interval_end_exclusive_ns"])
                 index = ends.index(end_ns)
                 exact_sma = sum(
-                    (close_by_end[item] for item in ends[index - 19 : index + 1]),
+                    (
+                        close_by_end[item]
+                        for item in ends[index - sma_lookback + 1 : index + 1]
+                    ),
                     Decimal(0),
-                ) / Decimal(20)
+                ) / Decimal(sma_lookback)
                 close = close_by_end[end_ns]
                 native_sma = Decimal(str(signal["sma20"]))
                 expected_target = (
@@ -538,8 +544,9 @@ def check_evidence_directory(
                     )
                 )
                 signal_ok = signal_ok and bool(
-                    index >= 19
-                    and int(signal["completed_daily_bar_count"]) == index + 1
+                    index >= sma_lookback - 1
+                    and int(signal["completed_daily_bar_count"])
+                    == min(index + 1, sma_lookback)
                     and abs(native_sma - exact_sma) <= Decimal("0.0000000001")
                     and signal["target"] == expected_target
                     and int(signal["signal_timestamp_ns"]) >= end_ns
@@ -553,7 +560,7 @@ def check_evidence_directory(
                 "daily_completed_bars": len(daily),
                 "expected_scored_signals": expected_signals,
                 "actual_scored_signals": len(signals),
-                "first_signal_requires_at_least_completed_bars": 20,
+                "first_signal_requires_at_least_completed_bars": sma_lookback,
             },
         )
         if not signal_ok:
