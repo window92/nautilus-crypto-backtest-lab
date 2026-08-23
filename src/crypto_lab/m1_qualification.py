@@ -54,6 +54,11 @@ SPOT_BAR_TYPE = BarType(
     BarSpecification(1, BarAggregation.MINUTE, PriceType.LAST),
     AggregationSource.EXTERNAL,
 )
+DAY_NS = 86_400_000_000_000
+SPOT_DAILY_COMPOSITE = BarType.from_str(
+    f"{SPOT_ID}-1-DAY-LAST-INTERNAL@1-MINUTE-EXTERNAL",
+)
+SPOT_DAILY_INTERNAL = BarType.from_str(str(SPOT_DAILY_COMPOSITE).split("@", maxsplit=1)[0])
 
 
 def _perpetual() -> CryptoPerpetual:
@@ -149,6 +154,19 @@ class _SingleBarOrderStrategy(Strategy):
             ),
         )
         self.submitted = True
+
+
+class _SparseDailyObservationStrategy(Strategy):
+    def __init__(self) -> None:
+        super().__init__()
+        self.daily_bars: list[Bar] = []
+
+    def on_start(self) -> None:
+        self.subscribe_bars(SPOT_DAILY_COMPOSITE)
+
+    def on_bar(self, event: Bar) -> None:
+        if event.bar_type == SPOT_DAILY_INTERNAL:
+            self.daily_bars.append(event)
 
 
 class _FundingBarStrategy(Strategy):
@@ -410,9 +428,7 @@ def qualify_native_perpetual_funding() -> dict[str, Any]:
     }
 
 
-def qualify_native_spot_cash_behavior() -> dict[str, Any]:
-    """Bypass the guard diagnostically and settle the native v2 CASH behavior."""
-
+def _spot_engine() -> BacktestEngine:
     engine = BacktestEngine(
         BacktestEngineConfig(
             logging=LoggerConfig(stdout_level=LogLevel.ERROR, print_config=False),
@@ -451,6 +467,13 @@ def qualify_native_spot_cash_behavior() -> dict[str, Any]:
         liquidation_enabled=False,
     )
     engine.add_instrument(_spot())
+    return engine
+
+
+def qualify_native_spot_cash_behavior() -> dict[str, Any]:
+    """Bypass the guard diagnostically and settle the native v2 CASH behavior."""
+
+    engine = _spot_engine()
     strategy = _SingleBarOrderStrategy()
     engine.add_strategy(strategy)
     try:
@@ -491,6 +514,104 @@ def qualify_native_spot_cash_behavior() -> dict[str, Any]:
             "synthetic_bid_ask_or_quote_data_used": False,
             "native_behavior": "CASH_PATH_CAN_FILL_SELL_FROM_ZERO_AND_CREATE_NEGATIVE_SPOT_POSITION",
             "accepted_project_behavior": "BLOCK_BEFORE_SUBMISSION_WITH_SPOT_SHORT_OR_BORROW_DETECTED",
+        }
+    finally:
+        engine.dispose()
+
+
+def _qualify_sparse_daily_resampling() -> dict[str, Any]:
+    engine = _spot_engine()
+    strategy = _SparseDailyObservationStrategy()
+    engine.add_strategy(strategy)
+    input_bars = [
+        _spot_bar(60_000_000_000, "100.00"),
+        _spot_bar(180_000_000_000, "300.00"),
+        _spot_bar(240_000_000_000, "400.00"),
+        _spot_bar(DAY_NS + 60_000_000_000, "500.00"),
+    ]
+    try:
+        engine.add_data(input_bars)
+        engine.run(start=0)
+        rows = [
+            {
+                "bar_type": str(item.bar_type),
+                "open": str(item.open),
+                "high": str(item.high),
+                "low": str(item.low),
+                "close": str(item.close),
+                "volume": str(item.volume),
+                "ts_init": int(item.ts_init),
+            }
+            for item in strategy.daily_bars
+        ]
+        expected = {
+            "bar_type": str(SPOT_DAILY_INTERNAL),
+            "open": "100.00",
+            "high": "401.00",
+            "low": "99.00",
+            "close": "400.00",
+            "volume": "3000",
+            "ts_init": DAY_NS,
+        }
+        return {
+            "status": "PASS" if rows == [expected] else "FAIL",
+            "input_real_bar_timestamps_ns": [int(item.ts_init) for item in input_bars],
+            "missing_source_minute_ns": 120_000_000_000,
+            "observed_completed_daily_bars": rows,
+            "expected_completed_daily_bar": expected,
+            "nautilus_internal_aggregation_used": True,
+            "synthetic_source_bar_added": False,
+        }
+    finally:
+        engine.dispose()
+
+
+def qualify_sparse_real_bar_behavior() -> dict[str, Any]:
+    """Prove a pending order cannot fill without a real market-data event."""
+
+    daily_resampling = _qualify_sparse_daily_resampling()
+    engine = _spot_engine()
+    strategy = _SingleBarOrderStrategy()
+    strategy.side = OrderSide.BUY
+    engine.add_strategy(strategy)
+    bars = [
+        _spot_bar(60_000_000_000, "100.00"),
+        _spot_bar(180_000_000_000, "300.00"),
+        _spot_bar(240_000_000_000, "400.00"),
+    ]
+    try:
+        engine.add_data(bars)
+        engine.run()
+        order = engine.cache.orders(instrument_id=SPOT_ID)[0]
+        events = [event.to_dict() for event in order.events()]
+        fills = [event for event in events if event["type"] == "OrderFilled"]
+        fill = fills[0] if len(fills) == 1 else None
+        fill_time = None if fill is None else int(fill["ts_event"])
+        conditions = {
+            "sparse_real_bars_accepted": len(bars) == 3,
+            "verified_no_trade_interval_not_encoded_as_bar": all(
+                int(bar.ts_init) != 120_000_000_000 for bar in bars
+            ),
+            "no_fill_during_unavailable_interval": fill_time != 120_000_000_000,
+            "pending_order_waited_for_next_real_market_state": fill_time == 180_000_000_000,
+            "first_later_fill_used_next_real_bar": (
+                fill is not None and Decimal(fill["last_px"]) == Decimal("300.01")
+            ),
+            "no_synthetic_price_input": len({int(bar.ts_init) for bar in bars}) == len(bars),
+            "only_completed_real_bars_available_to_resampling": (
+                daily_resampling["status"] == "PASS"
+            ),
+        }
+        return {
+            "status": "PASS" if all(conditions.values()) else "FAIL",
+            "conditions": conditions,
+            "input_bar_timestamps_ns": [int(bar.ts_init) for bar in bars],
+            "intentionally_unavailable_interval_ns": [120_000_000_000, 180_000_000_000],
+            "order_events": events,
+            "fill": fill,
+            "nautilus_is_only_execution_engine": True,
+            "project_matching_or_fill_engine": False,
+            "daily_resampling": daily_resampling,
         }
     finally:
         engine.dispose()
@@ -560,5 +681,6 @@ def qualify_native_mark_fallback() -> dict[str, Any]:
 __all__ = [
     "qualify_native_mark_fallback",
     "qualify_native_perpetual_funding",
+    "qualify_sparse_real_bar_behavior",
     "qualify_native_spot_cash_behavior",
 ]

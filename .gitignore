@@ -1,4 +1,6 @@
 .venv/
+.data-venv/
+.data-wheelhouse/
 __pycache__/
 *.py[cod]
 .pytest_cache/
@@ -20,3 +22,5 @@ data/raw/*
 !data/raw/.gitkeep
 data/catalog/*
 !data/catalog/.gitkeep
+data/duckdb/*
+!data/duckdb/.gitkeep
