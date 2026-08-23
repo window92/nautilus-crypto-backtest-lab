@@ -1,0 +1,19 @@
+{
+  "adopted_at_utc": "2026-08-23T14:05:01.844118Z",
+  "adopted_ssot_sha256": "b4deb7048242239234de7eaa353b623b3e45247eb42f1021dbc26ffd910edb99",
+  "base_ssot_sha256": "f51971ed7a09b172c82ff5965f2899d2a302dd71a2af60eb7c920133567b4354",
+  "candidate_003_status": "REJECTED_BY_OWNER_PAID_PROVIDER_PATH_NOT_AUTHORIZED",
+  "candidate_004_diff_sha256": "19ff0232d938c320ee9d9cf549a754f244ae00f357be1d3d738b4f303ff74577",
+  "candidate_004_manifest_sha256": "10788f3dd425cf2f94563034b44959b3f5b64a7b76a5fce86ea6cb0e44cf2ccc",
+  "candidate_004_path": "evidence/repair/free-official-binance-data-duckdb-001/ssot-candidate-004/SSOT.candidate-004.md",
+  "candidate_bytes_equal_resulting_root_ssot": true,
+  "dependency_lock_sha256": "b2765c9e33b10566fc327b48920fd1d3a73618c19622baaceab1fe9dca61df47",
+  "duckdb_role_limitation": "DERIVED_CANONICAL_VALIDATION_AND_STORAGE_ONLY; IMMUTABLE_RAW_BINANCE_BYTES_REMAIN_PROVENANCE_AUTHORITY; NAUTILUS_REMAINS_SOLE_FINANCIAL_ENGINE",
+  "epoch": "FREE_OFFICIAL_BINANCE_DATA_AND_DUCKDB_REPAIR_001",
+  "exact_owner_adoption_statement": "OWNER_ADOPTS_SSOT_CANDIDATE_004_SHA256=b4deb7048242239234de7eaa353b623b3e45247eb42f1021dbc26ffd910edb99",
+  "owner_authorized_any_other_ssot_change": false,
+  "root_ssot_modified_only_by_authorized_diff": true,
+  "runtime_lock_sha256": "4032df9f355348c2a0cfa9f79f331f97c9a8d24ecc8490a573d2c7f788bafddd",
+  "schema": "free-official-binance-owner-adoption-v1",
+  "synthetic_ohlc_authorized": false
+}

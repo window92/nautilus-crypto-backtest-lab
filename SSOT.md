@@ -437,7 +437,7 @@ A network attempt during an Official Run makes the Run `BLOCKED`.
 
 The V1 Official market-data source is Binance Public Data.
 
-Use official Binance public archives and public market-data endpoints only for V1 Dataset Releases.
+Use only free official Binance public archives and free public market-data endpoints for V1 Dataset Releases. A paid provider, subscription, provider-normalized dataset, third-party archive, or repaired external dataset is not an allowed V1 source.
 
 For the V1 historical source roles, the allowed official Binance public endpoints and Binance Public Data prefixes are:
 
@@ -451,6 +451,10 @@ Spot official trade events:
 GET /api/v3/aggTrades
 data/spot/daily/aggTrades/{SYMBOL}/
 data/spot/monthly/aggTrades/{SYMBOL}/
+
+Spot official raw trades:
+data/spot/daily/trades/{SYMBOL}/
+data/spot/monthly/trades/{SYMBOL}/
 
 USDⓈ-M Perpetual execution 1m:
 GET /fapi/v1/klines
@@ -468,11 +472,11 @@ GET /fapi/v1/fundingInfo when applicable
 data/futures/um/monthly/fundingRate/{SYMBOL}/
 ```
 
-Publisher `.CHECKSUM` objects, official archive-update manifests, and official Binance source-contract documentation are allowed provenance evidence. Each endpoint, archive prefix, and object MUST retain its exact source role; one official role MUST NOT silently substitute for another.
+Publisher `.CHECKSUM` objects, official archive-update manifests, and official Binance source-contract documentation are allowed provenance evidence. Each endpoint, archive prefix, and object MUST retain its exact source role; one official role MUST NOT silently substitute for another. Official issue reports or documentation can identify an investigation target or source contract, but they are not price observations and MUST NOT replace preserved exchange bytes.
 
 `indexPriceKlines`, `premiumIndexKlines`, Spot prices, last prices, and third-party datasets MUST NOT substitute for the Perpetual mark or funding roles above.
 
-Do not use a third-party repaired dataset as Official input.
+Do not use a third-party repaired dataset as Official input. V1 data acquisition MUST NOT require credentials, payment, a subscription, or contact with an archival provider.
 
 ### 4.2 Raw bytes are immutable
 
@@ -510,6 +514,8 @@ market_profile
 instrument_id
 source_objects
 normalized_time_range
+data_window_identity
+partition_geometry_identity
 execution_bar_interval
 available_signal_bar_intervals
 minute_coverage_identity
@@ -521,13 +527,14 @@ normalizer_version
 catalog_identity
 derived_validation_identity or NOT_APPLICABLE
 data_tool_lock_identity or NOT_APPLICABLE
+data_quality_exposure_identity
 completeness_result
 created_at_utc
 ```
 
 The release ID MUST be a SHA-256 over canonical JSON for the material fields. `created_at_utc` and physical storage paths are evidence metadata and are excluded from the content identity. JSON keys are sorted. Decimal values are strings. NaN and Infinity are forbidden.
 
-Changing any raw object, parser rule, timestamp rule, source-reconciliation rule, minute-coverage disposition, instrument metadata, derived-validation identity, Data Tool Lock used for material normalization, or derived catalog creates a new Dataset Release.
+Changing any raw object, parser rule, timestamp rule, source-reconciliation rule, minute-coverage disposition, data window or partition binding, data-quality exposure record, instrument metadata, derived-validation identity, Data Tool Lock used for material normalization, or derived catalog creates a new Dataset Release.
 
 ### 4.4 Time semantics
 
@@ -584,7 +591,19 @@ UNRESOLVED_GAP
 
 Only `REAL_OFFICIAL_BAR` and `DERIVED_FROM_OFFICIAL_TRADES` produce canonical execution bars. `SOURCE_CONFLICT`, `SOURCE_INCOMPLETE`, and `UNRESOLVED_GAP` are terminal blocking dispositions for the affected Dataset Release. A successful Dataset Release MUST contain exactly one non-blocking coverage disposition for every expected execution minute and no terminal blocking disposition.
 
-For a Perpetual Dataset Release, the required `markPriceKlines` role MUST also satisfy an exact one-minute UTC grid for every interval in which Official valuation can occur. Each required minute MUST resolve to exactly one valid mark bar.
+Observation and delivery-role classifications are distinct from minute dispositions:
+
+``` text
+SOURCE_CONFLICT_SUPERSEDED_OBSERVATION
+REDUNDANT_OFFICIAL_DELIVERY_ROLE_UNAVAILABLE
+IRRECOVERABLE_OFFICIAL_MARK_DELIVERY_GAP
+```
+
+`SOURCE_CONFLICT_SUPERSEDED_OBSERVATION` preserves an official observation that independent official evidence has decisively excluded from canonical data. `REDUNDANT_OFFICIAL_DELIVERY_ROLE_UNAVAILABLE` preserves an official packaging or delivery route that returned no object or whose checksum-valid object is semantically incomplete, while at least two other independent allowed official representations are complete and agree exactly for every affected material row. Neither classification deletes evidence or creates market data.
+
+`IRRECOVERABLE_OFFICIAL_MARK_DELIVERY_GAP` means every allowed free official Binance representation lacks the same required Perpetual mark minute. It is a blocking data-window classification, never a permission to reconstruct, interpolate, substitute, or reduce the required Mark grid.
+
+For a Perpetual Dataset Release, the required `markPriceKlines` role MUST also satisfy an exact one-minute UTC grid for every interval in which Official valuation can occur. Each required minute MUST resolve to exactly one valid original Binance mark bar. A missing or semantically incomplete redundant delivery route does not by itself mean the market minute is missing only when at least two other independent allowed official Binance representations are complete, agree exactly in every material field for that minute, and no present official representation conflicts. Preserve the unavailable or incomplete route as `REDUNDANT_OFFICIAL_DELIVERY_ROLE_UNAVAILABLE`; do not let it become canonical and do not treat its publisher checksum as semantic-completeness proof.
 
 For Perpetual funding, the release builder MUST derive the expected funding-event schedule only from verified official Binance funding data or metadata for the exact Instrument and historical interval. V1 MUST NOT hard-code an eight-hour cadence unless the official evidence proves that cadence for the tested interval. Every expected funding slot in `[start_inclusive, end_exclusive)` MUST resolve to exactly one funding event. If the expected schedule itself cannot be proven, the Dataset Release is `BLOCKED` with `FUNDING_AMBIGUOUS`; if a proven required event is absent, it is `BLOCKED` with `FUNDING_MISSING`.
 
@@ -600,25 +619,29 @@ The project MUST NOT:
 - copy a last-price row into a mark-price role;
 - silently deduplicate conflicting rows.
 
-For execution coverage, `SOURCE_CONFLICT` blocks with `DATA_DUPLICATE_CONFLICT` unless a more specific role-conflict code applies; `SOURCE_INCOMPLETE` blocks with `DATA_SOURCE_INVALID`, `DATA_HASH_MISMATCH`, or `DATA_GAP` as the preserved evidence requires; and `UNRESOLVED_GAP` blocks with `DATA_GAP`. A required unusable mark minute also blocks with `DATA_GAP` unless a more specific mark-role code applies. A conflicting or semantically unresolved funding event is `FUNDING_AMBIGUOUS`; a proven missing required funding event is `FUNDING_MISSING`.
+For execution coverage, `SOURCE_CONFLICT` blocks with `DATA_DUPLICATE_CONFLICT` unless a more specific role-conflict code applies; `SOURCE_INCOMPLETE` blocks with `DATA_SOURCE_INVALID`, `DATA_HASH_MISMATCH`, or `DATA_GAP` as the preserved evidence requires; and `UNRESOLVED_GAP` blocks with `DATA_GAP`. A required mark minute absent from every allowed free official representation blocks the window with `IRRECOVERABLE_OFFICIAL_MARK_DELIVERY_GAP`; any other unusable required mark minute blocks with `DATA_GAP` unless a more specific mark-role code applies. A conflicting or semantically unresolved funding event is `FUNDING_AMBIGUOUS`; a proven missing required funding event is `FUNDING_MISSING`.
 
 #### 4.5.1 Official source reconciliation
 
-REST kline pages, daily kline archives, monthly kline archives, and official trade-event objects are independent official observations. Preserve every observation, raw byte object, source locator, response or archive identity, publisher checksum when available, and parser result. REST, daily, and monthly observations have no automatic priority over one another, and a source row MUST NOT become canonical merely because it completes the grid.
+REST kline pages, daily kline archives, monthly kline archives, official raw-trade objects, and official `aggTrades` objects are independent official observations. Preserve every observation, raw byte object, source locator, response or archive identity, publisher checksum when available, and parser result before parsing or reconciliation. REST, daily, monthly, raw-trade, and aggregate-trade observations have no automatic priority over one another, and a source row MUST NOT become canonical merely because it completes the grid.
 
 For a Spot open timestamp, a `REAL_OFFICIAL_BAR` MAY be accepted when REST `/api/v3/klines` and the daily archive match semantically in every material kline field and available complete official trade-event evidence does not contradict them.
 
-If only the monthly observation differs while REST and daily match and the deterministic bar derived from complete official `aggTrades` also matches them, the matching value is canonical. Preserve the original monthly row and classify that observation as `SOURCE_CONFLICT_SUPERSEDED_OBSERVATION`; this observation-level status does not replace the minute's coverage disposition. Do not call the row corrupted without separate evidence, delete it, hide it, or export it.
+If only the monthly observation differs while REST and daily match and the deterministic bar derived from complete official raw trades or `aggTrades` also matches them, the matching value is canonical. Preserve the original monthly row and classify that observation as `SOURCE_CONFLICT_SUPERSEDED_OBSERVATION`; this observation-level status does not replace the minute's coverage disposition. Do not call the row corrupted without separate evidence, delete it, hide it, or export it.
 
-If REST and daily differ, official `aggTrades` MAY arbitrate only as independent event-level evidence. Resolving the conflict requires a decisive semantic match from at least two independent official observations. Otherwise the minute is `SOURCE_CONFLICT` and blocks the Dataset Release.
+If REST and daily differ, official raw trades or `aggTrades` MAY arbitrate only as independent event-level evidence. Resolving the conflict requires a decisive semantic match from at least two independent official observations. When both raw trades and `aggTrades` are available, their event boundaries, trade identities, buyer-maker semantics, and derived material values MUST agree exactly before they can jointly resolve a conflict. Otherwise the minute is `SOURCE_CONFLICT` and blocks the Dataset Release.
 
-A complete official `aggTrades` event stream MAY independently produce a `DERIVED_FROM_OFFICIAL_TRADES` bar when no competing kline observation exists and all Section 4.5.2 integrity checks pass. If any available official kline contradicts that derived bar, the conflict rule above applies; event derivation MUST NOT be used as silent precedence.
+A complete official raw-trade or `aggTrades` event stream MAY independently produce a `DERIVED_FROM_OFFICIAL_TRADES` bar when no competing kline observation exists and all Section 4.5.2 integrity checks pass. If any available official kline contradicts that derived bar, the conflict rule above applies; event derivation MUST NOT be used as silent precedence.
 
-A monthly-only row with no supporting official trade event cannot become canonical. When REST and daily are absent and complete trade-ID continuity proves no trade under Section 4.5.3, preserve the monthly row as a superseded historical conflict and record `VERIFIED_NO_TRADE_INTERVAL` for minute coverage. Without that complete proof, block with `SOURCE_CONFLICT` or `UNRESOLVED_GAP` as the evidence requires.
+An official kline observation with an invalid close timestamp MAY be superseded for that minute only when complete official raw trades and complete official `aggTrades` independently agree exactly on every material OHLCV, trade-count, and taker-volume value and their ID sequences are coherent. Build the accepted Bar solely from events whose timestamps lie inside the half-open minute, normalize its close boundary under Section 4.4, preserve every invalid kline observation, and add no price, trade, or volume after the final real event. Any event-level disagreement remains `SOURCE_CONFLICT`.
+
+A published kline row that reports zero trades and zero volume during an interval proven to contain no trades is an official delivery observation, not event evidence and not a canonical Bar. Its inherited or repeated OHLC does not contradict a complete raw-trade and aggregate-trade no-event proof when every trade and volume field is exactly zero; preserve and exclude the row as a superseded observation. A kline claiming any trade, non-zero volume, or different event fact contradicts the no-trade proof and keeps the minute fail-closed.
+
+A monthly-only row with no supporting official trade event cannot become canonical. When REST and daily are absent and complete raw-trade, aggregate-ID, and underlying trade-ID continuity proves no trade under Section 4.5.3, preserve the monthly row as a superseded historical conflict and record `VERIFIED_NO_TRADE_INTERVAL` for minute coverage. Without that complete proof, block with `SOURCE_CONFLICT` or `UNRESOLVED_GAP` as the evidence requires.
 
 #### 4.5.2 Deterministic reconstruction from official Spot trades
 
-A `DERIVED_FROM_OFFICIAL_TRADES` bar MAY be created only from official Binance trade or `aggTrades` events inside that UTC minute. Use exact Decimal arithmetic and order aggregate events by `(timestamp, aggregate_trade_id)`:
+A `DERIVED_FROM_OFFICIAL_TRADES` bar MAY be created only from official Binance raw-trade or `aggTrades` events inside that UTC minute. Prefer complete raw trades as the most granular event observation when available, without giving their delivery role silent authority over contradictory official evidence. Use exact Decimal arithmetic. Order raw trades by `(timestamp, trade_id)` and aggregate events by `(timestamp, aggregate_trade_id)`:
 
 ``` text
 open = price of first event
@@ -627,14 +650,16 @@ low = minimum price
 close = price of last event
 base_volume = exact sum(quantity)
 quote_volume = exact sum(price * quantity)
-trade_count = exact sum(last_trade_id - first_trade_id + 1)
+trade_count = exact raw-trade count, or exact sum(last_trade_id - first_trade_id + 1) for aggTrades
 taker_buy_base_volume = exact sum(quantity where buyer_is_maker = false)
 taker_buy_quote_volume = exact sum(price * quantity where buyer_is_maker = false)
 open_time = UTC minute start
 close_time = open_time + 60 seconds - locked runtime timestamp unit
 ```
 
-Before acceptance, aggregate IDs MUST be strictly ordered and unique; underlying first/last trade-ID ranges MUST be coherent, non-overlapping, and contiguous; no underlying trade ID may be missing; every event timestamp MUST lie inside the minute; and symbol, Market Profile, source role, and interval MUST match exactly. Preserve the original Decimal strings and exact parsed values. Apply no rounding except representational normalization required by the locked Instrument precision.
+Before acceptance, raw trade IDs MUST be strictly ordered, unique, and contiguous across every sequence used. Aggregate IDs MUST be strictly ordered and unique; underlying first/last trade-ID ranges MUST be coherent, non-overlapping, and contiguous; no underlying trade ID may be missing. Every event timestamp MUST lie inside the minute; symbol, Market Profile, source role, and interval MUST match exactly. Preserve the original Decimal strings and exact parsed values. Apply no rounding except representational normalization required by the locked Instrument precision.
+
+For Binance `buyer_is_maker`, taker-buy volume is the exact sum of events where `buyer_is_maker = false`. When raw trades and `aggTrades` are both used, the first and last underlying trade identities, complete trade-ID coverage, OHLCV, trade count, and taker-buy values MUST agree exactly. A partial event-bearing minute around a venue interruption is accepted only if continuity proves the complete event sequence through the last trade before the interruption and from that trade to the first later trade; the Bar contains only actual events inside the minute and no synthetic remainder.
 
 Compare every derived material field against every available official kline observation and preserve the field-by-field comparison and raw-object bindings. A duplicate aggregate ID, overlap, ID gap, incomplete page or archive, or unresolved contradiction produces `SOURCE_INCOMPLETE` or `SOURCE_CONFLICT` and blocks release. This deterministic normalization of official event truth is not interpolation and is not a second financial engine.
 
@@ -642,18 +667,19 @@ Compare every derived material field against every available official kline obse
 
 A Spot minute MAY be `VERIFIED_NO_TRADE_INTERVAL` only when all of these are proven for the exact symbol, Market Profile, UTC boundaries, and timestamp units:
 
-1. Official REST `/api/v3/klines` returns no bar for the minute.
-2. The official daily kline archive contains no row for the minute.
+1. Each available REST, daily, and monthly kline role either has no row or has only a preserved zero-event observation whose trade count and every volume field are exactly zero; any event or non-zero volume claim is contradictory.
+2. Complete official raw-trade observations contain no event inside the minute.
 3. Complete official `aggTrades` observations contain no event inside the minute.
-4. The last aggregate event before and first aggregate event after the interval prove aggregate-ID continuity.
-5. Their underlying first/last trade-ID ranges prove no missing underlying trade ID.
-6. Every required archive or API object is complete and every published checksum used by the source contract matches.
-7. No other allowed official Binance trade observation contradicts the no-trade finding.
-8. The temporal boundaries, pagination boundaries, source roles, and source timestamp units are proven exactly.
+4. The last raw trade before and first raw trade after the interval prove raw trade-ID continuity.
+5. The last aggregate event before and first aggregate event after the interval prove aggregate-ID continuity.
+6. Their underlying first/last trade-ID ranges prove no missing underlying trade ID, and the raw-trade and aggregate-trade boundary identities agree.
+7. Every required archive or API object is complete and every published checksum used by the source contract matches.
+8. No other allowed official Binance trade observation contradicts the no-trade finding.
+9. The temporal boundaries, pagination boundaries, source roles, and source timestamp units are proven exactly.
 
 The evidence MAY describe the interval as `NO_TRADE_OBSERVED`, `PROBABLE_VENUE_OUTAGE`, or `OFFICIALLY_ANNOUNCED_MAINTENANCE`. The last description requires a matching official Binance announcement for the exact interval.
 
-If aggregate-ID continuity, underlying trade-ID continuity, or another required proof is absent, classify the minute as `SOURCE_INCOMPLETE` or `UNRESOLVED_GAP` and block the Dataset Release. A verified interval MUST NOT carry OHLC, volume, previous close, nearest value, or any proxy price and MUST NOT be transformed into a bar by forward fill, backward fill, interpolation, another Binance role, another venue, or a third party.
+If raw trade-ID continuity, aggregate-ID continuity, underlying trade-ID continuity, or another required proof is absent, classify the minute as `SOURCE_INCOMPLETE` or `UNRESOLVED_GAP` and block the Dataset Release. A preserved zero-event kline observation does not supply OHLC for coverage. A verified interval MUST NOT carry OHLC, volume, previous close, nearest value, or any proxy price and MUST NOT be transformed into a bar by forward fill, backward fill, interpolation, another Binance role, another venue, or a third party.
 
 This verified-no-trade mechanism is defined for the allowed Spot official event stream. A Perpetual execution gap cannot use Spot events or an unlisted event role to claim no trading; without an equally explicit adopted official-event contract it remains blocking. Mark data always retain their separate exact-grid requirement, and mark prices MUST NOT be derived from trades.
 
@@ -693,13 +719,13 @@ A current instrument definition MUST NOT be silently presented as a historical p
 
 A Spot Dataset Release requires:
 
-- the independent official REST, daily, monthly, and official trade-event observations required to reconcile the complete window under Sections 4.5.1 through 4.5.3;
+- the independent official REST, daily, monthly, raw-trade, and aggregate-trade observations required to reconcile the complete window under Sections 4.5.1 through 4.5.3;
 - canonical `1m` execution bars containing only accepted `REAL_OFFICIAL_BAR` and `DERIVED_FROM_OFFICIAL_TRADES` rows;
 - exactly one non-blocking coverage disposition for every expected UTC minute;
 - the instrument definition;
 - the source checksums or locally calculated SHA-256 values.
 
-The Spot parser MUST apply the timestamp-unit transition in Section 4.4.
+The Spot execution grid is a sparse event-bearing Bar grid over a complete minute-disposition grid: a proven no-trade minute has no Bar, while every event-bearing minute has exactly one accepted canonical Bar. The Spot parser MUST apply the timestamp-unit transition in Section 4.4.
 
 Funding and derivative mark-price roles are forbidden for Spot.
 
@@ -717,7 +743,9 @@ The funding and mark roles MUST pass the completeness rules in Section 4.5 befor
 
 A missing or ambiguous funding or mark event MUST NOT be replaced with a last price, index price, premium-index price, nearest mark, or synthetic value.
 
-REST, daily, and monthly Perpetual observations have no automatic precedence. Preserve conflicting observations and block unless independent allowed official evidence resolves them. Execution price MUST NOT substitute for mark, mark MUST NOT substitute for execution, and mark prices MUST NOT be reconstructed from trades.
+REST, daily, and monthly Perpetual observations have no automatic precedence. Preserve conflicting observations and block unless independent allowed official evidence resolves them. An unavailable or semantically incomplete redundant packaging route is governed only by the two-independent-representation rule in Section 4.5 and MUST remain preserved as `REDUNDANT_OFFICIAL_DELIVERY_ROLE_UNAVAILABLE`. Execution price MUST NOT substitute for mark, mark MUST NOT substitute for execution, and mark prices MUST NOT be reconstructed from trades.
+
+If REST, daily, and monthly free official Binance roles all omit the same required mark minute, record `IRRECOVERABLE_OFFICIAL_MARK_DELIVERY_GAP` and reject that data window. Do not reconstruct Mark from execution, index, premium index, last price, Spot, funding, neighboring marks, or any event stream.
 
 ### 4.10 Funding identity and duplicates
 
@@ -752,6 +780,35 @@ DuckDB is not an alternative source of raw truth, a Matching Engine, Order Engin
 The exact DuckDB version, wheel filename, wheel SHA-256, wheel size, Python version and ABI, platform and architecture, complete dependency set, and reproducible installation command MUST be frozen in a separate Data Tool Lock. Merely using a data tool MUST NOT change or broaden the Nautilus Runtime Lock.
 
 DuckDB MUST NOT acquire source data or access the network. It MUST use no extension to change the adopted data contract. Financial truth columns MUST use exact integer or Decimal representations, never binary floating-point representations. Derived-store construction and deterministic exports MUST remain reproducible from the immutable raw objects and frozen parser, reconciliation, schema, and Data Tool Lock identities.
+
+An adopted DuckDB database MUST NOT be mutated in place. Build each candidate database transactionally at a new versioned path, preserve raw-object foreign bindings for every canonical row or release member, roll back the whole build on failure, and make accepted release rows immutable. The logical store MUST bind raw objects, source observations and checksums, conflicts, minute dispositions, exact Spot trade events and execution bars, Perpetual execution and mark bars, funding events, instrument metadata, data windows and partitions, Dataset Releases and members, validation results, and build manifests.
+
+Rebuild determinism is semantic. Two independent builds from the same immutable raw bytes and locked inputs MUST have identical schema identity, ordered row counts, per-table canonical semantic hashes, conflict and minute dispositions, Dataset Release identities, and Nautilus catalog semantic inventories. Preserve each physical DuckDB file hash, but physical-file hash equality is not required. Any semantic difference blocks with `DETERMINISTIC_REBUILD_MISMATCH`.
+
+### 4.13 Data-quality-only window qualification
+
+When an exposed research window is blocked solely by an irrecoverable official-data defect, a replacement data window MAY be selected only by this mechanical procedure before any strategy performance is inspected:
+
+1. Extract every dataset, warmup, scoring, and partition boundary from the frozen study evidence.
+2. Preserve every partition duration, order, relative boundary, warmup duration, and half-open interval semantic.
+3. Shift all boundaries together by `N` whole calendar months, starting at `N = 1` and increasing in chronological order.
+4. Run the complete Spot and Perpetual data-quality gates for each candidate without running a strategy or inspecting price-dependent selection criteria, Signals, trades, PnL, metrics, or claims.
+5. Select the first candidate for which both Market Profiles pass. Do not inspect later candidates after that selection.
+
+The blocked original window is recorded as `EXPOSED_DATA_BLOCKED_NOT_FINAL_HOLDOUT`. Every candidate examined only for data quality is recorded as `DATA_QUALITY_INSPECTED_NOT_FINAL_HOLDOUT`, with its `N`, exact boundaries, profile verdicts, and reason. This procedure neither designates nor consumes a Final Holdout and does not weaken Section 9.7: prior result-bearing exposure still consumes overlapping Holdout eligibility exactly as before.
+
+The selected window and its unchanged partition geometry MUST be content-bound in the `DatasetRelease`, derived DuckDB data-window records, and Nautilus catalog inventory. If no chronological candidate in the available free official Binance history passes both profiles, stop with `DATA_WINDOW_QUALITY_EXHAUSTED`; do not choose by strategy outcome or lower a coverage denominator.
+
+For `FREE_OFFICIAL_BINANCE_DATA_AND_DUCKDB_REPAIR_001`, the preserved Phase-A analysis identity `bf7c4d476702a6438e2940d85548943ca1b2b926f74ba64380e20bd0490c654d` applied that procedure without strategy execution. It records the prior dataset window `[2020-12-01T00:00:00Z, 2021-07-01T00:00:00Z)` as `EXPOSED_DATA_BLOCKED_NOT_FINAL_HOLDOUT` and selects the first passing shift, `N = 1`, with these exact bindings:
+
+``` text
+dataset_start_inclusive = warmup_start_inclusive = 2021-01-01T00:00:00Z
+scoring_start_inclusive = 2021-02-01T00:00:00Z
+scoring_end_exclusive = dataset_end_exclusive = 2021-08-01T00:00:00Z
+classification = DATA_QUALITY_INSPECTED_NOT_FINAL_HOLDOUT
+```
+
+These bytes freeze a data-quality selection only. They authorize no Strategy Run, Official Trial, optimization, or profitability result and do not designate a Final Holdout.
 
 ------------------------------------------------------------------------
 
@@ -1135,7 +1192,7 @@ The build MUST include at least these tests:
 | `G01` | A bar is not visible before its completion boundary.                                                                                                   |
 | `G02` | A signal from bar `N` cannot Fill against bar `N`.                                                                                                     |
 | `G03` | Removing the causal latency guard makes `G02` fail.                                                                                                    |
-| `G04` | An unexplained missing required one-minute execution bar produces `BLOCKED`; a fully proven no-trade minute produces no Bar and no synthetic Fill.          |
+| `G04` | An unexplained missing required one-minute execution bar produces `BLOCKED`; a fully proven no-trade minute, including one with only preserved zero-event kline observations, produces no Bar and no synthetic Fill. |
 | `G05` | A published Nautilus Fill remains byte-for-byte unchanged in project evidence.                                                                         |
 | `G06` | Two fresh runs with the same frozen inputs produce the same semantic order and Fill sequence.                                                          |
 | `G07` | Spot CASH cannot create short inventory or borrowing.                                                                                                  |
@@ -1154,6 +1211,9 @@ The build MUST include at least these tests:
 | `G20` | A runtime wheel or dependency-lock mismatch blocks before data loading.                                                                                |
 | `G21` | An eligible scored intent whose effective insert latency reaches or crosses `scoring_end_exclusive` is not submitted, and no Fill occurs at or after the boundary. |
 | `G22` | Sparse accepted bars across a verified no-trade minute produce no Bar or Fill in that minute; a pending order receives no synthetic price, and the fixture's later Fill uses the next accepted real market state under locked latency. |
+| `G23` | A partial event-bearing Spot minute is accepted only when complete raw trades and `aggTrades` agree exactly; a missing or duplicate trade ID blocks, and no synthetic remainder is added. |
+| `G24` | A missing redundant Mark delivery role is non-blocking only with two complete exactly agreeing official representations; a Mark minute absent from all allowed roles blocks without reconstruction. |
+| `G25` | Data-window candidates shift all frozen boundaries by increasing whole months and select the first both-profile data-quality PASS without loading a strategy or inspecting performance. |
 
 ### 8.4 Invariant checker
 
@@ -1878,8 +1938,9 @@ Build:
 - checksum verification;
 - timestamp normalization;
 - independent official-source observation and reconciliation;
-- deterministic Decimal-exact Spot kline derivation from complete official trade events when required;
+- deterministic Decimal-exact Spot kline derivation from complete official raw trades and aggregate-trade events when required;
 - one-minute coverage dispositions and verified no-trade proofs;
+- mechanical data-quality-only window qualification and immutable window/partition bindings;
 - instrument metadata records;
 - Dataset Release manifests;
 - an optional derived DuckDB validation store governed by a separate Data Tool Lock;
@@ -1891,8 +1952,10 @@ Verify:
 - raw hashes are stable;
 - an unexplained missing minute blocks;
 - a fully evidenced no-trade minute produces coverage without a Bar;
-- broken aggregate-ID or underlying trade-ID continuity rejects no-trade classification;
+- a preserved zero-event kline observation cannot become a Bar and does not defeat a complete raw-trade and aggregate-trade no-event proof;
+- broken raw-trade, aggregate-ID, or underlying trade-ID continuity rejects no-trade classification;
 - official-trade reconstruction is Decimal-exact, deterministic, and source-bound;
+- a partial event-bearing minute is derived only when complete raw trades and `aggTrades` agree exactly, with no fabricated remainder;
 - REST, daily, monthly, and official trade observations receive no silent precedence;
 - a stale monthly conflict remains preserved and cannot enter canonical data;
 - a conflicting duplicate blocks;
@@ -1903,8 +1966,11 @@ Verify:
 - sparse Nautilus qualification proves no Bar or Fill during a verified no-trade interval and the next later Fill uses only the next accepted real market state under locked latency;
 - Spot and Perpetual roles cannot collide;
 - Perpetual mark data satisfy the required one-minute grid;
+- a redundant unavailable or semantically incomplete mark delivery route is non-blocking only when two other complete official representations agree exactly, while a mark minute missing from every allowed free official representation blocks and is never reconstructed;
 - the expected funding schedule is proven from official evidence, a removed required funding event produces `FUNDING_MISSING`, and an unprovable schedule produces `FUNDING_AMBIGUOUS`;
 - required mark and funding roles cannot be substituted.
+- independent DuckDB rebuilds match on schema identity, ordered row counts, canonical per-table semantic hashes, dispositions, Dataset Release identities, and Nautilus semantic catalog inventories even when physical file hashes differ;
+- the first chronological whole-month shifted window passing both profiles is selected without strategy execution or performance inspection, and all inspected or blocked data-quality exposures remain recorded.
 
 M2 exports only `DatasetRelease` objects to M3 and M4.
 
@@ -2146,6 +2212,8 @@ DATA_GAP
 DATA_DUPLICATE_CONFLICT
 DATA_ROLE_MISMATCH
 DATASET_RELEASE_STALE
+IRRECOVERABLE_OFFICIAL_MARK_DELIVERY_GAP
+DATA_WINDOW_QUALITY_EXHAUSTED
 INSTRUMENT_METADATA_INVALID
 TIMEFRAME_AGGREGATION_UNRESOLVED
 CAUSAL_EXECUTION_UNRESOLVED
@@ -2163,6 +2231,7 @@ FUNDING_AMBIGUOUS
 FUNDING_DOUBLE_COUNT
 MARK_ROLE_INVALID
 DETERMINISM_FAILURE
+DETERMINISTIC_REBUILD_MISMATCH
 CHECKER_FAILURE
 CHECKER_BLOCKED
 TRIAL_HISTORY_INCOMPLETE
@@ -2432,7 +2501,7 @@ The engine MUST NOT jump to a later minute and pretend the unexplained missing m
 
 ### A.6 Verified no-trade fixture
 
-Remove a one-minute Spot kline from REST and the daily archive, provide no official `aggTrades` event inside the minute, and provide adjacent official aggregate events whose aggregate IDs and underlying trade-ID ranges are exactly contiguous across the interval. Provide complete source pages or archives, matching required publisher checksums, exact UTC boundaries, and no contradictory official trade observation.
+Provide no official raw-trade or `aggTrades` event inside a one-minute Spot interval. Provide adjacent official raw trades with contiguous trade IDs and adjacent official aggregate events whose aggregate IDs and underlying trade-ID ranges are exactly contiguous across the interval; require their boundary identities to agree. REST, daily, and monthly klines may be absent or may contain only preserved observations whose trade count and every volume field are exactly zero. Provide complete source pages or archives, matching required publisher checksums, exact UTC boundaries, and no contradictory official trade observation.
 
 Expected result:
 
@@ -2446,7 +2515,7 @@ Dataset Release completeness = PASS for this minute
 
 Supply accepted real bars before and after the verified interval and a pending order whose causal arrival does not have a real market state inside the interval. The pinned Nautilus qualification MUST emit no Fill during the interval, MUST emit the fixture's later Fill from the next accepted real market state under the locked latency contract, and MUST NOT source that Fill from a synthetic price.
 
-The positive fixture MUST fail if aggregate-ID continuity, underlying trade-ID continuity, source completeness, checksum integrity, or the no-contradiction condition is broken.
+The positive fixture MUST fail if raw trade-ID continuity, aggregate-ID continuity, underlying trade-ID continuity, cross-role boundary agreement, source completeness, checksum integrity, or the no-contradiction condition is broken. A preserved zero-event kline's repeated OHLC MUST NOT enter the canonical catalog.
 
 ------------------------------------------------------------------------
 
