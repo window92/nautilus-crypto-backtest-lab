@@ -16,6 +16,7 @@ from crypto_lab.config import LabRunConfig
 from crypto_lab.config import MarketProfile
 from crypto_lab.config import SourceRevision
 from crypto_lab.data import DatasetRelease
+from crypto_lab.data import HISTORICAL_NORMALIZER_VERSIONS
 from crypto_lab.data import NORMALIZER_VERSION
 from crypto_lab.data import SyntheticQualificationDatasetRelease
 from crypto_lab.hashing import canonical_sha256
@@ -242,7 +243,7 @@ def check_evidence_directory(
     raw_material.pop("dataset_release_id", None)
     if "qualification_scope" not in dataset_raw:
         raw_material.pop("created_at_utc", None)
-        if dataset_raw.get("normalizer_version") != NORMALIZER_VERSION:
+        if dataset_raw.get("normalizer_version") in HISTORICAL_NORMALIZER_VERSIONS:
             for source_object in raw_material.get("source_objects", []):
                 if isinstance(source_object, dict):
                     source_object.pop("conflicts_with_sha256", None)

@@ -127,24 +127,45 @@ def known_events(
 
 
 class DataProvenanceContractTests(unittest.TestCase):
-    def test_required_daily_mark_role_cannot_be_replaced_by_rest_monthly_consensus(self) -> None:
+    def test_missing_redundant_daily_mark_role_requires_exact_rest_monthly_consensus(self) -> None:
         accepted, reason = reconcile_required_mark_roles(
             rest_monthly_valid=True,
             daily_archive_available=False,
             daily_row_present=False,
             daily_row_valid=False,
         )
-        self.assertFalse(accepted)
-        self.assertEqual(reason, "SOURCE_INCOMPLETE_REQUIRED_DAILY_MARK_ROLE")
+        self.assertTrue(accepted)
+        self.assertEqual(reason, "REDUNDANT_OFFICIAL_DELIVERY_ROLE_UNAVAILABLE")
+        conflicting, conflict_reason = reconcile_required_mark_roles(
+            rest_monthly_valid=False,
+            daily_archive_available=False,
+            daily_row_present=False,
+            daily_row_valid=False,
+        )
+        self.assertFalse(conflicting)
+        self.assertEqual(conflict_reason, "SOURCE_CONFLICT_MARK_OBSERVATIONS_NOT_EXACT")
 
-    def test_candidate_002_and_adopted_root_bytes_are_identical(self) -> None:
+    def test_candidate_002_historical_identity_is_preserved(self) -> None:
         candidate_dir = ROOT / "evidence/repair/data-provenance-duckdb-001/ssot-candidate-002"
-        root_bytes = (ROOT / "SSOT.md").read_bytes()
         candidate_bytes = (candidate_dir / "SSOT.data-provenance-candidate.md").read_bytes()
         manifest = json.loads((candidate_dir / "manifest.json").read_text(encoding="utf-8"))
+        digest = hashlib.sha256(candidate_bytes).hexdigest()
+        self.assertEqual(digest, "f51971ed7a09b172c82ff5965f2899d2a302dd71a2af60eb7c920133567b4354")
+        self.assertEqual(manifest["candidate_ssot_sha256"], digest)
+
+    def test_candidate_004_and_adopted_root_bytes_are_identical(self) -> None:
+        candidate_dir = (
+            ROOT
+            / "evidence/repair/free-official-binance-data-duckdb-001/ssot-candidate-004"
+        )
+        root_bytes = (ROOT / "SSOT.md").read_bytes()
+        candidate_bytes = (candidate_dir / "SSOT.candidate-004.md").read_bytes()
+        manifest = json.loads(
+            (candidate_dir / "candidate-004-manifest.json").read_text(encoding="utf-8"),
+        )
         digest = hashlib.sha256(root_bytes).hexdigest()
         self.assertEqual(root_bytes, candidate_bytes)
-        self.assertEqual(digest, "f51971ed7a09b172c82ff5965f2899d2a302dd71a2af60eb7c920133567b4354")
+        self.assertEqual(digest, "b4deb7048242239234de7eaa353b623b3e45247eb42f1021dbc26ffd910edb99")
         self.assertEqual(manifest["candidate_ssot_sha256"], digest)
 
     def test_three_way_official_kline_agreement(self) -> None:
@@ -184,6 +205,27 @@ class DataProvenanceContractTests(unittest.TestCase):
             no_trade_proof=None,
         )
         self.assertEqual(decision.disposition, CoverageDisposition.SOURCE_CONFLICT)
+
+    def test_forward_filled_or_interpolated_ohlc_cannot_arbitrate_official_conflict(self) -> None:
+        rest = kline(KlineSource.SPOT_REST, source_sha=SOURCE_A, close="0.30")
+        daily = kline(KlineSource.SPOT_DAILY, source_sha=SOURCE_B, close="0.20")
+        for prohibited_candidate in ("0.20", "0.25", "0.30"):
+            with self.subTest(prohibited_candidate=prohibited_candidate):
+                monthly = kline(
+                    KlineSource.SPOT_MONTHLY,
+                    source_sha=SOURCE_C,
+                    close=prohibited_candidate,
+                )
+                decision = reconcile_spot_minute(
+                    minute_start_ms=0,
+                    rest=rest,
+                    daily=daily,
+                    monthly=monthly,
+                    derived=None,
+                    no_trade_proof=None,
+                )
+                self.assertEqual(decision.disposition, CoverageDisposition.SOURCE_CONFLICT)
+                self.assertTrue(decision.blocking)
         self.assertTrue(decision.blocking)
 
     def test_known_aggtrades_derive_exact_decimal_kline(self) -> None:
@@ -307,7 +349,7 @@ class DataProvenanceContractTests(unittest.TestCase):
             store = HttpRawStore(Path(temporary))
             with patch("crypto_lab.data_provenance.urllib.request.urlopen", return_value=Response()):
                 observation = store.capture(
-                    "https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1m&startTime=0&endTime=59999&limit=1000",
+                    "https://data-api.binance.vision/api/v3/klines?symbol=BTCUSDT&interval=1m&startTime=0&endTime=59999&limit=1000",
                     source_role="SPOT_REST_KLINES",
                     pagination_position="page:0",
                 )

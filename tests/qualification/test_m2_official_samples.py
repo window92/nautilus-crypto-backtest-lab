@@ -101,7 +101,7 @@ class M2OfficialSampleQualificationTests(unittest.TestCase):
     def test_locked_ssot_and_runtime_were_not_changed(self) -> None:
         self.assertEqual(
             sha256_file(ROOT / "SSOT.md"),
-            "f51971ed7a09b172c82ff5965f2899d2a302dd71a2af60eb7c920133567b4354",
+            "b4deb7048242239234de7eaa353b623b3e45247eb42f1021dbc26ffd910edb99",
         )
         self.assertEqual(
             sha256_file(ROOT / "runtime.lock.json"),

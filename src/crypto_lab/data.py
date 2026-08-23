@@ -66,12 +66,18 @@ ONE_MINUTE_NS = 60_000_000_000
 SPOT_MICROSECOND_TRANSITION = date(2025, 1, 1)
 NOT_APPLICABLE = "NOT_APPLICABLE"
 NOT_AVAILABLE = "NOT_AVAILABLE"
-NORMALIZER_VERSION = "binance-public-data-v1-m2.2"
+NORMALIZER_VERSION = "binance-public-data-v1-m2.3"
 FUNDING_NATIVE_BINDING_SINGLE = "SINGLE_SOURCE_EVENT"
 FUNDING_NATIVE_BINDING_RC2_INTERVAL_BOUNDARY = (
     "NAUTILUS_2_0_0RC2_INTERVAL_BOUNDARY_REPEAT_ONCE"
 )
 HISTORICAL_NORMALIZER_VERSIONS = frozenset({"binance-public-data-v1-m2.1"})
+ACTIVE_NORMALIZER_VERSIONS = frozenset(
+    {"binance-public-data-v1-m2.2", NORMALIZER_VERSION},
+)
+LEGACY_RELEASE_SCHEMA_VERSIONS = frozenset(
+    {"binance-public-data-v1-m2.1", "binance-public-data-v1-m2.2"},
+)
 
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 _INTEGER = re.compile(r"0|[1-9][0-9]*\Z")
@@ -123,6 +129,15 @@ class SourceRole(StrEnum):
 class TimestampUnit(StrEnum):
     MILLISECONDS = "MILLISECONDS"
     MICROSECONDS = "MICROSECONDS"
+
+
+class CoverageDisposition(StrEnum):
+    REAL_OFFICIAL_BAR = "REAL_OFFICIAL_BAR"
+    DERIVED_FROM_OFFICIAL_TRADES = "DERIVED_FROM_OFFICIAL_TRADES"
+    VERIFIED_NO_TRADE_INTERVAL = "VERIFIED_NO_TRADE_INTERVAL"
+    SOURCE_CONFLICT = "SOURCE_CONFLICT"
+    SOURCE_INCOMPLETE = "SOURCE_INCOMPLETE"
+    UNRESOLVED_GAP = "UNRESOLVED_GAP"
 
 
 class TimeRange(StrictModel):
@@ -256,6 +271,41 @@ class RoleCompleteness(StrictModel):
             raise ConfigError("role_completeness: count mismatch")
         if self.start_inclusive_ns >= self.end_exclusive_ns:
             raise ConfigError("role_completeness: invalid half-open range")
+
+
+class MinuteDisposition(StrictModel):
+    """One exact minute of execution coverage; verified no-trade is not a Bar."""
+
+    open_time_ns: int
+    disposition: CoverageDisposition
+    canonical_bar_identity: str
+    proof_identity: str
+    source_reconciliation_identity: str
+
+    def __post_init__(self) -> None:
+        if self.open_time_ns < 0 or self.open_time_ns % ONE_MINUTE_NS:
+            raise ConfigError("minute_disposition.open_time_ns: must be an aligned UTC minute")
+        if self.disposition in {
+            CoverageDisposition.REAL_OFFICIAL_BAR,
+            CoverageDisposition.DERIVED_FROM_OFFICIAL_TRADES,
+        }:
+            _require_sha256(
+                self.canonical_bar_identity,
+                "minute_disposition.canonical_bar_identity",
+            )
+            if self.proof_identity != NOT_APPLICABLE:
+                raise ConfigError("minute_disposition: accepted Bar cannot carry no-trade proof")
+        elif self.disposition is CoverageDisposition.VERIFIED_NO_TRADE_INTERVAL:
+            if self.canonical_bar_identity != NOT_APPLICABLE:
+                raise ConfigError("minute_disposition: verified no-trade cannot carry a Bar identity")
+            _require_sha256(self.proof_identity, "minute_disposition.proof_identity")
+        else:
+            if self.canonical_bar_identity != NOT_APPLICABLE:
+                raise ConfigError("minute_disposition: blocking minute cannot carry a Bar identity")
+        _require_sha256(
+            self.source_reconciliation_identity,
+            "minute_disposition.source_reconciliation_identity",
+        )
 
 
 class CompletenessResult(StrictModel):
@@ -535,6 +585,13 @@ class DatasetRelease(StrictModel):
     catalog_identity: str
     completeness_result: CompletenessResult
     created_at_utc: datetime
+    data_window_identity: str = NOT_APPLICABLE
+    partition_geometry_identity: str = NOT_APPLICABLE
+    minute_coverage_identity: str = NOT_APPLICABLE
+    source_reconciliation_identity: str = NOT_APPLICABLE
+    derived_validation_identity: str = NOT_APPLICABLE
+    data_tool_lock_identity: str = NOT_APPLICABLE
+    data_quality_exposure_identity: str = NOT_APPLICABLE
 
     def __post_init__(self) -> None:
         if self.schema_version != 1:
@@ -550,8 +607,24 @@ class DatasetRelease(StrictModel):
             raise ConfigError("dataset_release.created_at_utc: must use UTC")
         if self.execution_bar_interval != "1m":
             raise ConfigError("dataset_release.execution_bar_interval: V1 requires 1m")
-        if self.normalizer_version not in {NORMALIZER_VERSION, *HISTORICAL_NORMALIZER_VERSIONS}:
+        if self.normalizer_version not in {
+            *ACTIVE_NORMALIZER_VERSIONS,
+            *HISTORICAL_NORMALIZER_VERSIONS,
+        }:
             raise ConfigError("dataset_release.normalizer_version: unsupported version")
+        if self.normalizer_version == NORMALIZER_VERSION:
+            for name in (
+                "data_window_identity",
+                "partition_geometry_identity",
+                "minute_coverage_identity",
+                "source_reconciliation_identity",
+                "data_quality_exposure_identity",
+            ):
+                _require_sha256(getattr(self, name), f"dataset_release.{name}")
+            for name in ("derived_validation_identity", "data_tool_lock_identity"):
+                value = getattr(self, name)
+                if value != NOT_APPLICABLE:
+                    _require_sha256(value, f"dataset_release.{name}")
         if not self.source_objects or not self.available_signal_bar_intervals:
             raise ConfigError("dataset_release: source objects and signal intervals are required")
         ordering = tuple(
@@ -562,7 +635,7 @@ class DatasetRelease(StrictModel):
         )
         if ordering != self.source_objects:
             raise ConfigError("dataset_release.source_objects: canonical ordering required")
-        if self.normalizer_version == NORMALIZER_VERSION:
+        if self.normalizer_version in ACTIVE_NORMALIZER_VERSIONS:
             _validate_source_bindings(
                 market_profile=self.market_profile,
                 instrument_id=self.instrument_id,
@@ -611,7 +684,7 @@ class DatasetRelease(StrictModel):
                 for source in sources:
                     if isinstance(source, dict):
                         source.setdefault("conflicts_with_sha256", [])
-        elif normalizer == NORMALIZER_VERSION:
+        elif normalizer in ACTIVE_NORMALIZER_VERSIONS:
             sources = value.get("source_objects")
             if isinstance(sources, list) and any(
                 not isinstance(source, dict) or "conflicts_with_sha256" not in source
@@ -624,6 +697,17 @@ class DatasetRelease(StrictModel):
         payload = self.to_builtins()
         payload.pop("dataset_release_id", None)
         payload.pop("created_at_utc", None)
+        if self.normalizer_version in LEGACY_RELEASE_SCHEMA_VERSIONS:
+            for name in (
+                "data_window_identity",
+                "partition_geometry_identity",
+                "minute_coverage_identity",
+                "source_reconciliation_identity",
+                "derived_validation_identity",
+                "data_tool_lock_identity",
+                "data_quality_exposure_identity",
+            ):
+                payload.pop(name, None)
         if self.normalizer_version in HISTORICAL_NORMALIZER_VERSIONS:
             for source in payload["source_objects"]:
                 source.pop("conflicts_with_sha256", None)
@@ -634,7 +718,7 @@ class DatasetRelease(StrictModel):
 
     @property
     def is_current_contract(self) -> bool:
-        return self.normalizer_version == NORMALIZER_VERSION
+        return self.normalizer_version in ACTIVE_NORMALIZER_VERSIONS
 
     def resolve_runtime_data(self, data_root: Path) -> ResolvedDatasetRelease:
         """Resolve physical derived data without putting its path in content identity."""
@@ -775,7 +859,7 @@ def _validate_source_locator(role: SourceRole, locator: str) -> None:
     elif role is SourceRole.SPOT_INSTRUMENT_METADATA:
         query = parse_qs(parsed.query, keep_blank_values=True)
         valid = (
-            parsed.netloc == "api.binance.com"
+            parsed.netloc in {"api.binance.com", "data-api.binance.vision"}
             and path == "/api/v3/exchangeInfo"
             and set(query) == {"symbol"}
             and len(query["symbol"]) == 1
@@ -1138,6 +1222,99 @@ def validate_one_minute_grid(
         source_role=source_role,
         expected_count=len(expected),
         actual_count=len(ordered),
+        start_inclusive_ns=time_range.start_ns,
+        end_exclusive_ns=time_range.end_ns,
+        status="PASS",
+    )
+
+
+def minute_coverage_identity(
+    dispositions: tuple[MinuteDisposition, ...] | list[MinuteDisposition],
+) -> str:
+    ordered = sorted(dispositions, key=lambda item: item.open_time_ns)
+    return canonical_sha256([item.to_builtins() for item in ordered])
+
+
+def validate_sparse_one_minute_grid(
+    bars: tuple[NormalizedBar, ...] | list[NormalizedBar],
+    *,
+    source_role: SourceRole,
+    time_range: TimeRange,
+    dispositions: tuple[MinuteDisposition, ...] | list[MinuteDisposition],
+) -> RoleCompleteness:
+    """Validate a complete minute-disposition grid over sparse real Spot Bars."""
+
+    if time_range.start_ns % ONE_MINUTE_NS or time_range.end_ns % ONE_MINUTE_NS:
+        raise DataContractError(FailureCode.DATA_TIMESTAMP_INVALID, "grid endpoints are not minute aligned")
+    expected = tuple(range(time_range.start_ns, time_range.end_ns, ONE_MINUTE_NS))
+    by_minute: dict[int, MinuteDisposition] = {}
+    for item in dispositions:
+        if item.open_time_ns in by_minute:
+            raise DataContractError(
+                FailureCode.DATA_DUPLICATE_CONFLICT,
+                f"duplicate minute disposition {item.open_time_ns}",
+            )
+        by_minute[item.open_time_ns] = item
+    missing = [minute for minute in expected if minute not in by_minute]
+    extras = sorted(set(by_minute) - set(expected))
+    if missing or extras:
+        raise DataContractError(
+            FailureCode.DATA_GAP,
+            f"minute-disposition grid mismatch missing={missing} extras={extras}",
+        )
+    blocking = [
+        item.open_time_ns
+        for item in by_minute.values()
+        if item.disposition in {
+            CoverageDisposition.SOURCE_CONFLICT,
+            CoverageDisposition.SOURCE_INCOMPLETE,
+            CoverageDisposition.UNRESOLVED_GAP,
+        }
+    ]
+    if blocking:
+        raise DataContractError(FailureCode.DATA_GAP, f"blocking minute dispositions: {blocking}")
+
+    by_bar_time: dict[int, NormalizedBar] = {}
+    for item in bars:
+        if item.source_role is not source_role:
+            raise DataContractError(FailureCode.DATA_ROLE_MISMATCH, "grid contains a different source role")
+        if item.interval_start_ns in by_bar_time:
+            raise DataContractError(
+                FailureCode.DATA_DUPLICATE_CONFLICT,
+                f"duplicate execution Bar {item.interval_start_ns}",
+            )
+        if (
+            item.available_at_ns != item.interval_end_exclusive_ns
+            or item.interval_end_exclusive_ns != item.interval_start_ns + ONE_MINUTE_NS
+        ):
+            raise DataContractError(
+                FailureCode.DATA_TIMESTAMP_INVALID,
+                "available_at is not the completion boundary",
+            )
+        by_bar_time[item.interval_start_ns] = item
+    expected_bar_minutes = {
+        minute
+        for minute, item in by_minute.items()
+        if item.disposition in {
+            CoverageDisposition.REAL_OFFICIAL_BAR,
+            CoverageDisposition.DERIVED_FROM_OFFICIAL_TRADES,
+        }
+    }
+    if set(by_bar_time) != expected_bar_minutes:
+        raise DataContractError(
+            FailureCode.DATA_GAP,
+            "canonical Bar inventory does not exactly match accepted minute dispositions",
+        )
+    for minute, bar in by_bar_time.items():
+        if bar.source_row_sha256 != by_minute[minute].canonical_bar_identity:
+            raise DataContractError(
+                FailureCode.DATA_HASH_MISMATCH,
+                f"canonical Bar identity mismatch at {minute}",
+            )
+    return RoleCompleteness(
+        source_role=source_role,
+        expected_count=len(expected),
+        actual_count=len(by_minute),
         start_inclusive_ns=time_range.start_ns,
         end_exclusive_ns=time_range.end_ns,
         status="PASS",
@@ -1635,6 +1812,7 @@ def parse_spot_instrument_metadata(
     maker_fee_rate: Decimal,
     taker_fee_rate: Decimal,
     fee_rate_basis: str,
+    official_source: str | None = None,
 ) -> InstrumentMetadata:
     data = _strict_json(payload)
     definitions = data.get("symbols")
@@ -1672,7 +1850,8 @@ def parse_spot_instrument_metadata(
         "market_profile": MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY,
         "instrument_id": instrument_id,
         "raw_symbol": raw_symbol,
-        "official_source": f"https://api.binance.com/api/v3/exchangeInfo?symbol={raw_symbol}",
+        "official_source": official_source
+        or f"https://api.binance.com/api/v3/exchangeInfo?symbol={raw_symbol}",
         "source_object_sha256": source_object_sha256,
         "observed_at_utc": _official_server_time(data.get("serverTime")),
         "historical_exact": False,
@@ -1950,8 +2129,21 @@ def to_nautilus_execution_bars(
     metadata: InstrumentMetadata,
 ) -> tuple[Bar, ...]:
     bar_type = _bar_type(metadata.instrument_id)
+    material = tuple(bars)
+    price_precision = max(
+        (
+            _source_precision(value)
+            for item in material
+            for value in (item.open, item.high, item.low, item.close)
+        ),
+        default=metadata.price_precision,
+    )
+    volume_precision = max(
+        (_source_precision(item.volume) for item in material),
+        default=metadata.size_precision,
+    )
     result: list[Bar] = []
-    for item in bars:
+    for item in material:
         if item.instrument_id != metadata.instrument_id or item.source_role not in {
             SourceRole.SPOT_EXECUTION_1M,
             SourceRole.USDM_PERPETUAL_EXECUTION_1M,
@@ -1960,12 +2152,12 @@ def to_nautilus_execution_bars(
         result.append(
             Bar(
                 bar_type,
-                Price.from_str(_decimal_string(item.open, metadata.price_precision, field="open")),
-                Price.from_str(_decimal_string(item.high, metadata.price_precision, field="high")),
-                Price.from_str(_decimal_string(item.low, metadata.price_precision, field="low")),
-                Price.from_str(_decimal_string(item.close, metadata.price_precision, field="close")),
+                Price.from_str(_decimal_string(item.open, price_precision, field="open")),
+                Price.from_str(_decimal_string(item.high, price_precision, field="high")),
+                Price.from_str(_decimal_string(item.low, price_precision, field="low")),
+                Price.from_str(_decimal_string(item.close, price_precision, field="close")),
                 Quantity.from_str(
-                    _decimal_string(item.volume, metadata.size_precision, field="volume"),
+                    _decimal_string(item.volume, volume_precision, field="volume"),
                 ),
                 item.available_at_ns,
                 item.available_at_ns,
@@ -2083,17 +2275,21 @@ def catalog_semantic_inventory(
     instrument_id: str,
     bar_type: str,
     funding_updates: tuple[FundingRateUpdate, ...] = (),
+    semantic_binding: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     instruments = catalog.instruments([instrument_id])
     bars = catalog.query_bars([bar_type])
     marks = catalog.query_mark_price_updates([instrument_id])
-    return {
+    result = {
         "schema": "nautilus-semantic-inventory-v1",
         "instruments": [item.to_dict() for item in instruments],
         "execution_bars": [_bar_projection(item) for item in bars],
         "mark_price_updates": [_mark_projection(item) for item in marks],
         "funding_rate_updates": [_funding_projection(item) for item in funding_updates],
     }
+    if semantic_binding is not None:
+        result["release_binding"] = semantic_binding
+    return result
 
 
 def build_nautilus_catalog(
@@ -2104,6 +2300,7 @@ def build_nautilus_catalog(
     mark_bars: tuple[NormalizedBar, ...] | list[NormalizedBar] = (),
     funding_events: tuple[FundingEvent, ...] | list[FundingEvent] = (),
     funding_native_binding: str = FUNDING_NATIVE_BINDING_SINGLE,
+    semantic_binding: dict[str, Any] | None = None,
 ) -> CatalogBuildResult:
     root = Path(catalog_root)
     if root.exists() and any(root.iterdir()):
@@ -2135,6 +2332,7 @@ def build_nautilus_catalog(
         instrument_id=metadata.instrument_id,
         bar_type=str(_bar_type(metadata.instrument_id)),
         funding_updates=native_funding,
+        semantic_binding=semantic_binding,
     )
     return CatalogBuildResult(
         catalog_identity=canonical_sha256(inventory),
@@ -2264,6 +2462,17 @@ def _resolve_dataset_release_runtime(
         instrument_id=release.instrument_id,
         bar_type=str(_bar_type(release.instrument_id)),
         funding_updates=funding_updates,
+        semantic_binding=(
+            {
+                "data_window_identity": release.data_window_identity,
+                "partition_geometry_identity": release.partition_geometry_identity,
+                "minute_coverage_identity": release.minute_coverage_identity,
+                "normalized_time_range": release.normalized_time_range.to_builtins(),
+            }
+            if release.normalizer_version == NORMALIZER_VERSION
+            and release.data_tool_lock_identity != NOT_APPLICABLE
+            else None
+        ),
     )
     verify_catalog_identity(release, inventory)
     priorities = {MarkPriceUpdate: 0, FundingRateUpdate: 1, Bar: 2}
@@ -2499,6 +2708,14 @@ def build_dataset_release(
     funding_events: tuple[FundingEvent, ...] | list[FundingEvent] = (),
     funding_schedule: FundingScheduleEvidence | None = None,
     funding_native_binding: str = FUNDING_NATIVE_BINDING_SINGLE,
+    minute_dispositions: tuple[MinuteDisposition, ...] | list[MinuteDisposition] = (),
+    data_window_identity: str | None = None,
+    partition_geometry_identity: str | None = None,
+    minute_coverage_identity_value: str | None = None,
+    source_reconciliation_identity: str | None = None,
+    derived_validation_identity: str = NOT_APPLICABLE,
+    data_tool_lock_identity: str = NOT_APPLICABLE,
+    data_quality_exposure_identity: str | None = None,
 ) -> DatasetRelease:
     if instrument_metadata.market_profile is not market_profile or instrument_metadata.instrument_id != instrument_id:
         raise DataContractError(
@@ -2524,13 +2741,35 @@ def build_dataset_release(
         if market_profile is MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY
         else SourceRole.USDM_PERPETUAL_EXECUTION_1M
     )
-    role_results = [
-        validate_one_minute_grid(
-            execution_bars,
-            source_role=execution_role,
-            time_range=normalized_time_range,
-        ),
-    ]
+    if minute_dispositions:
+        calculated_coverage_identity = minute_coverage_identity(minute_dispositions)
+        if (
+            minute_coverage_identity_value is not None
+            and minute_coverage_identity_value != calculated_coverage_identity
+        ):
+            raise DataContractError(
+                FailureCode.DATA_HASH_MISMATCH,
+                "declared minute-coverage identity does not match dispositions",
+            )
+        role_results = [
+            validate_sparse_one_minute_grid(
+                execution_bars,
+                source_role=execution_role,
+                time_range=normalized_time_range,
+                dispositions=minute_dispositions,
+            ),
+        ]
+    else:
+        calculated_coverage_identity = canonical_sha256(
+            [item.semantic_payload() for item in execution_bars],
+        )
+        role_results = [
+            validate_one_minute_grid(
+                execution_bars,
+                source_role=execution_role,
+                time_range=normalized_time_range,
+            ),
+        ]
     if market_profile is MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY:
         if mark_bars or funding_events or funding_schedule is not None:
             raise DataContractError(
@@ -2588,6 +2827,21 @@ def build_dataset_release(
         "timestamp_rules_identity": timestamp_rules_identity(),
         "catalog_identity": catalog_identity,
         "completeness_result": completeness,
+        "data_window_identity": data_window_identity or canonical_sha256(
+            {"normalized_time_range": normalized_time_range},
+        ),
+        "partition_geometry_identity": partition_geometry_identity or canonical_sha256(
+            {"normalized_time_range": normalized_time_range, "partition_geometry": "LEGACY_SINGLE_RANGE"},
+        ),
+        "minute_coverage_identity": minute_coverage_identity_value or calculated_coverage_identity,
+        "source_reconciliation_identity": source_reconciliation_identity or canonical_sha256(
+            [item.to_builtins() for item in bindings],
+        ),
+        "derived_validation_identity": derived_validation_identity,
+        "data_tool_lock_identity": data_tool_lock_identity,
+        "data_quality_exposure_identity": data_quality_exposure_identity or canonical_sha256(
+            {"classification": "NO_ADDITIONAL_DATA_QUALITY_EXPOSURE"},
+        ),
     }
     identity = canonical_sha256(values)
     return DatasetRelease(dataset_release_id=identity, created_at_utc=created_at_utc, **values)

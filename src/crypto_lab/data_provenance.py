@@ -178,7 +178,7 @@ def validate_official_url(url: str) -> None:
     valid = False
     if host == "data.binance.vision":
         valid = path.startswith("/data/") and not parsed.query
-    elif host == "api.binance.com":
+    elif host in {"api.binance.com", "data-api.binance.vision"}:
         if path == "/api/v3/klines":
             valid = set(query) == {"symbol", "interval", "startTime", "endTime", "limit"}
         elif path == "/api/v3/aggTrades":
@@ -1243,11 +1243,19 @@ def reconcile_required_mark_roles(
     daily_row_present: bool,
     daily_row_valid: bool,
 ) -> tuple[bool, str]:
-    """Require all three official mark roles without a price-role fallback."""
+    """Reconcile original Binance Mark bars without a price-role fallback.
 
+    A missing redundant Daily packaging route is non-blocking only when the
+    REST and Monthly representations are both complete and exactly agree.
+    A present but invalid Daily row remains a source conflict; it is never
+    silently treated as unavailable.
+    """
+
+    if not rest_monthly_valid:
+        return False, "SOURCE_CONFLICT_MARK_OBSERVATIONS_NOT_EXACT"
     if not daily_archive_available or not daily_row_present:
-        return False, "SOURCE_INCOMPLETE_REQUIRED_DAILY_MARK_ROLE"
-    if not rest_monthly_valid or not daily_row_valid:
+        return True, "REDUNDANT_OFFICIAL_DELIVERY_ROLE_UNAVAILABLE"
+    if not daily_row_valid:
         return False, "SOURCE_CONFLICT_MARK_OBSERVATIONS_NOT_EXACT"
     return True, "REST_DAILY_MONTHLY_MARK_EXACT_AGREEMENT"
 

@@ -24,3 +24,7 @@ data/catalog/*
 !data/catalog/.gitkeep
 data/duckdb/*
 !data/duckdb/.gitkeep
+
+# Superseded local v2 release artifacts are retained as failed-attempt evidence.
+data/releases/8cadd74d6bca29795cc57bd41f6160a48136588f230dcd1d32e553e92fd021f5.metadata.json
+data/releases/fd14b3475678e07c51f5fff4b0e85bdc0efbfcd225d57047017736899aca4fc4.json
