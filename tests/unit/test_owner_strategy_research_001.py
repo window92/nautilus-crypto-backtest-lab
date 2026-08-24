@@ -6,7 +6,9 @@ from dataclasses import replace
 from datetime import UTC
 from datetime import datetime
 from decimal import Decimal
+from hashlib import sha256
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -43,6 +45,7 @@ from crypto_lab.strategies import momentum_28d
 from crypto_lab.strategies import registered_strategy_identity_matches_frozen_source
 from crypto_lab.strategies import resolve_registered_strategy_identity
 from crypto_lab.strategies import volatility_target_fraction
+from scripts.validate_owner_smoke_002_replacement_evidence import source_binding_matches
 
 
 DAY_NS = 86_400_000_000_000
@@ -56,6 +59,24 @@ def _interval(day: int) -> UtcInterval:
 
 
 class OwnerStrategyResearch001Tests(unittest.TestCase):
+    def test_historical_journal_binding_accepts_only_an_immutable_prefix(self) -> None:
+        historical = b'{"state":"COMPLETED"}\n'
+        entry = {
+            "path": "research/trials.jsonl",
+            "sha256": sha256(historical).hexdigest(),
+            "size_bytes": len(historical),
+        }
+        with TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            path = root / entry["path"]
+            path.parent.mkdir(parents=True)
+            path.write_bytes(historical + b'{"state":"PLANNED"}\n')
+            self.assertTrue(source_binding_matches(root, entry))
+            path.write_bytes(b"X" + historical[1:] + b'{"state":"PLANNED"}\n')
+            self.assertFalse(source_binding_matches(root, entry))
+            path.write_bytes(historical[:-1])
+            self.assertFalse(source_binding_matches(root, entry))
+
     def test_historical_registered_identity_is_bound_to_its_own_git_bytes(self) -> None:
         root = Path(__file__).resolve().parents[2]
         run_dir = (

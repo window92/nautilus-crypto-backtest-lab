@@ -56,6 +56,10 @@ EXPECTED_LOCKS = {
     "runtime.lock.json": "4032df9f355348c2a0cfa9f79f331f97c9a8d24ecc8490a573d2c7f788bafddd",
     "requirements.lock.txt": "b2765c9e33b10566fc327b48920fd1d3a73618c19622baaceab1fe9dca61df47",
 }
+APPEND_ONLY_SOURCE_PATHS = {
+    "research/history_anchors.jsonl",
+    "research/trials.jsonl",
+}
 EXPECTED = {
     "spot": {
         "dataset_release_id": "fd8542c109cfbf7d6b19d5b7bbb7705c6a161efc807695f3671978c381e34eca",
@@ -89,6 +93,27 @@ def sha256_file(path: Path) -> str:
         for block in iter(lambda: stream.read(1024 * 1024), b""):
             digest.update(block)
     return digest.hexdigest()
+
+
+def source_binding_matches(repository_root: Path, entry: dict[str, Any]) -> bool:
+    """Validate exact sources or an immutable historical prefix of append-only journals."""
+    source_path = repository_root / entry["path"]
+    if not source_path.is_file() or source_path.stat().st_size < entry["size_bytes"]:
+        return False
+    if source_path.stat().st_size == entry["size_bytes"]:
+        return sha256_file(source_path) == entry["sha256"]
+    if entry["path"] not in APPEND_ONLY_SOURCE_PATHS:
+        return False
+    digest = hashlib.sha256()
+    remaining = int(entry["size_bytes"])
+    with source_path.open("rb") as stream:
+        while remaining:
+            block = stream.read(min(1024 * 1024, remaining))
+            if not block:
+                return False
+            digest.update(block)
+            remaining -= len(block)
+    return digest.hexdigest() == entry["sha256"]
 
 
 def load(relative: str) -> Any:
@@ -153,12 +178,7 @@ def main() -> int:
     evidence_inventory = load("evidence-inventory.json")
     source_entries = evidence_inventory.get("source_entries", {})
     for entry in source_entries.values():
-        source_path = ROOT / entry["path"]
-        if (
-            not source_path.is_file()
-            or source_path.stat().st_size != entry["size_bytes"]
-            or sha256_file(source_path) != entry["sha256"]
-        ):
+        if not source_binding_matches(ROOT, entry):
             failures.append(f"stale_source_binding:{entry['path']}")
     generated_expected = evidence_inventory.get("generated_entries", {})
     generated_actual = {
