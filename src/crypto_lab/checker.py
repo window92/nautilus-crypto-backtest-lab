@@ -27,6 +27,11 @@ from crypto_lab.status import FailureCode
 from crypto_lab.strategies import RegisteredStrategyIdentity
 from crypto_lab.strategies import StrategySpec
 from crypto_lab.strategies import resolve_registered_strategy_identity
+from crypto_lab.strategies import annualized_realized_volatility_28d
+from crypto_lab.strategies import is_monday_utc_boundary
+from crypto_lab.strategies import momentum_28d
+from crypto_lab.strategies import volatility_target_fraction
+from crypto_lab.strategies import weekly_target
 
 
 class CheckerOutcome(StrEnum):
@@ -69,6 +74,13 @@ ROOT = Path(__file__).resolve().parents[2]
 ONE_MINUTE_NS = 60_000_000_000
 DAY_NS = 86_400_000_000_000
 OWNER_SMOKE_STRATEGY_FAMILY = "BTCUSDT_DAILY_PRICE_VS_SMA20_TREND"
+WEEKLY_TSMOM_STRATEGY_FAMILY = "BTCUSDT_WEEKLY_TSMOM28_V1"
+BUY_AND_HOLD_STRATEGY_FAMILY = "BUY_AND_HOLD_1X_V1"
+NATIVE_RESEARCH_FAMILIES = {
+    OWNER_SMOKE_STRATEGY_FAMILY,
+    WEEKLY_TSMOM_STRATEGY_FAMILY,
+    BUY_AND_HOLD_STRATEGY_FAMILY,
+}
 MAX_FUNDING_MARK_STALENESS_NS = ONE_MINUTE_NS
 
 
@@ -572,10 +584,10 @@ def check_evidence_directory(
         blocked.append(FailureCode.INSTRUMENT_METADATA_INVALID.value)
 
     strategy_spec = _read_json(run_dir / "strategy_spec.json")
-    is_owner_smoke_sma20 = (
-        strategy_spec.get("parameters", {}).get("strategy_family")
-        == OWNER_SMOKE_STRATEGY_FAMILY
-    )
+    strategy_family = strategy_spec.get("parameters", {}).get("strategy_family")
+    is_owner_smoke_sma20 = strategy_family == OWNER_SMOKE_STRATEGY_FAMILY
+    is_weekly_tsmom = strategy_family == WEEKLY_TSMOM_STRATEGY_FAMILY
+    is_buy_and_hold = strategy_family == BUY_AND_HOLD_STRATEGY_FAMILY
     strategy_material = dict(strategy_spec)
     strategy_material.pop("strategy_id", None)
     strategy_ok = canonical_sha256(strategy_material) == config.strategy_spec_id
@@ -622,7 +634,7 @@ def check_evidence_directory(
         )
         if not official_identity_ok:
             blocked.append(FailureCode.CONFIG_HASH_MISMATCH.value)
-    if is_owner_smoke_sma20:
+    if strategy_family in NATIVE_RESEARCH_FAMILIES:
         native_paths = {
             "native_completed_trades.json": "native_completed_trades_sha256",
             "native_portfolio_snapshots.jsonl": "native_portfolio_snapshots_sha256",
@@ -832,6 +844,105 @@ def check_evidence_directory(
         if not signal_ok:
             failures.append(FailureCode.LOOKAHEAD_DETECTED.value)
 
+    if is_weekly_tsmom:
+        daily = observations.get("daily_signal_bars", [])
+        signals = observations.get("signals", [])
+        daily_ok = bool(daily) and all(
+            int(item["interval_end_exclusive_ns"]) % DAY_NS == 0
+            and int(item["interval_end_exclusive_ns"])
+            - int(item["interval_start_ns"])
+            == DAY_NS
+            and int(item["available_at_ns"]) == int(item["interval_end_exclusive_ns"])
+            and int(item["completed_close_count"]) == min(index, 29)
+            for index, item in enumerate(daily, start=1)
+        )
+        ends = [int(item["interval_end_exclusive_ns"]) for item in daily]
+        closes = [Decimal(str(item["close"])) for item in daily]
+        scoring_start_ns = int(config.scoring_start.timestamp() * 1_000_000_000)
+        scoring_end_ns = int(config.scoring_end_exclusive.timestamp() * 1_000_000_000)
+        expected_indices = [
+            index
+            for index, end_ns in enumerate(ends)
+            if index >= 28
+            and scoring_start_ns <= end_ns < scoring_end_ns
+            and is_monday_utc_boundary(end_ns)
+        ]
+        signal_ok = daily_ok and len(signals) == len(expected_indices)
+        mode = strategy_spec["parameters"].get("candidate_mode")
+        for signal, index in zip(signals, expected_indices, strict=False):
+            try:
+                window = tuple(closes[index - 28 : index + 1])
+                exact_momentum = momentum_28d(window)
+                expected_target = weekly_target(exact_momentum, config.market_profile)
+                if mode == "TSMOM28_VOLATILITY_TARGET_20":
+                    exact_volatility = annualized_realized_volatility_28d(window)
+                    exact_fraction = volatility_target_fraction(exact_volatility)
+                    if exact_volatility == 0:
+                        expected_target = type(expected_target).FLAT
+                    volatility_ok = bool(
+                        Decimal(str(signal["annualized_realized_volatility"]))
+                        == exact_volatility
+                    )
+                elif mode == "TSMOM28_FULL_NOTIONAL":
+                    exact_fraction = Decimal(1)
+                    volatility_ok = signal["annualized_realized_volatility"] == "NOT_APPLICABLE"
+                else:
+                    signal_ok = False
+                    continue
+                if expected_target.value == "FLAT":
+                    exact_fraction = Decimal(0)
+                end_ns = ends[index]
+                signal_ok = signal_ok and bool(
+                    int(signal["signal_bar_interval_end_exclusive_ns"]) == end_ns
+                    and int(signal["signal_bar_available_at_ns"]) == end_ns
+                    and int(signal["decision_timestamp_ns"]) == end_ns
+                    and int(signal["signal_timestamp_ns"]) >= end_ns
+                    and int(signal["completed_close_count"]) == 29
+                    and Decimal(str(signal["momentum_28d"])) == exact_momentum
+                    and Decimal(str(signal["target_fraction"])) == exact_fraction
+                    and signal["target"] == expected_target.value
+                    and volatility_ok
+                )
+            except Exception:
+                signal_ok = False
+        checks.append(
+            {
+                "name": "weekly_tsmom28_daily_causality",
+                "pass": signal_ok,
+                "daily_completed_bars": len(daily),
+                "expected_weekly_decisions": len(expected_indices),
+                "actual_weekly_decisions": len(signals),
+                "completed_closes_required": 29,
+            },
+        )
+        if not signal_ok:
+            failures.append(FailureCode.LOOKAHEAD_DETECTED.value)
+
+    if is_buy_and_hold:
+        entries = observations.get("benchmark_entries", [])
+        submitted_entries = [
+            item
+            for item in observations.get("submitted_intents", [])
+            if item.get("reason") == "BUY_AND_HOLD_1X_INITIAL_ENTRY"
+        ]
+        benchmark_ok = bool(
+            len(entries) == 1
+            and len(submitted_entries) == 1
+            and int(entries[0]["signal_bar_interval_start_ns"])
+            == int(config.scoring_start.timestamp() * 1_000_000_000)
+            and Decimal(str(entries[0]["target_quantity"])) > 0
+        )
+        checks.append(
+            {
+                "name": "registered_buy_and_hold_first_eligible_entry",
+                "pass": benchmark_ok,
+                "entry_count": len(entries),
+                "submitted_entry_count": len(submitted_entries),
+            },
+        )
+        if not benchmark_ok:
+            failures.append(FailureCode.CAUSAL_EXECUTION_UNRESOLVED.value)
+
     submitted = {
         item["client_order_id"]: item
         for item in observations.get("submitted_intents", [])
@@ -839,8 +950,12 @@ def check_evidence_directory(
     scoring_start_ns = int(config.scoring_start.timestamp() * 1e9)
     scoring_end_ns = int(config.scoring_end_exclusive.timestamp() * 1e9)
     eligibility_ok = all(
-        int(item["signal_bar_interval_start_ns"]) >= scoring_start_ns
-        and int(item["signal_bar_interval_end_exclusive_ns"]) <= scoring_end_ns
+        int(item.get("decision_timestamp_ns", item["signal_bar_interval_start_ns"]))
+        >= scoring_start_ns
+        and int(item.get("decision_timestamp_ns", item["signal_bar_interval_end_exclusive_ns"]))
+        < scoring_end_ns
+        and int(item["signal_bar_interval_end_exclusive_ns"])
+        <= int(item.get("decision_timestamp_ns", item["signal_bar_interval_end_exclusive_ns"]))
         and int(item["signal_timestamp_ns"]) >= int(item["signal_bar_available_at_ns"])
         for item in submitted.values()
     )
@@ -860,7 +975,11 @@ def check_evidence_directory(
     instrument_ok = True
     for fill in fills:
         intent = submitted.get(fill["client_order_id"])
-        if intent is None or int(fill["ts_event"]) <= int(intent["signal_bar_available_at_ns"]):
+        if (
+            intent is None
+            or int(fill["ts_event"]) < int(intent["effective_insert_at_ns"])
+            or int(fill["ts_event"]) <= int(intent["signal_bar_available_at_ns"])
+        ):
             causal_ok = False
         if int(fill["ts_event"]) >= scoring_end_ns:
             terminal_ok = False
@@ -1040,7 +1159,7 @@ def check_evidence_directory(
         checks.append({"name": "no_submitted_cross_zero_order", "pass": cross_zero_ok})
         if not one_way_ok or not cross_zero_ok:
             failures.append(FailureCode.PERP_PROFILE_INVALID.value)
-        if is_owner_smoke_sma20:
+        if is_owner_smoke_sma20 or is_weekly_tsmom:
             reversal = observations.get("reversal_sequence", [])
             triples_ok = len(reversal) % 3 == 0
             for offset in range(0, len(reversal), 3):
@@ -1060,14 +1179,19 @@ def check_evidence_directory(
                     and int(group[0].get("observed_at_ns"))
                     < int(group[2].get("observed_at_ns"))
                 )
+            close_prefix = (
+                "SMA20_CLOSE_TO_FLAT_BEFORE_"
+                if is_owner_smoke_sma20
+                else "TSMOM28_CLOSE_TO_FLAT_BEFORE_"
+            )
             expected_closes = sum(
-                str(item.get("reason", "")).startswith("SMA20_CLOSE_TO_FLAT_BEFORE_")
+                str(item.get("reason", "")).startswith(close_prefix)
                 for item in observations.get("submitted_intents", [])
             )
             triples_ok = triples_ok and len(reversal) // 3 == expected_closes
             checks.append(
                 {
-                    "name": "owner_smoke_separate_close_then_reverse",
+                    "name": "registered_separate_close_then_reverse",
                     "pass": triples_ok,
                     "reversal_count": len(reversal) // 3,
                     "close_to_flat_orders": expected_closes,

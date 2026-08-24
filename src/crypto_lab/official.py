@@ -44,6 +44,7 @@ from crypto_lab.research import TERMINAL_TRIAL_STATES
 from crypto_lab.research import TrialRecord
 from crypto_lab.research import TrialState
 from crypto_lab.research import _evaluate_claim_from_resolved_evidence
+from crypto_lab.research import benchmark_trial_candidate_id
 from crypto_lab.strategies import RegisteredStrategyIdentity
 from crypto_lab.strategies import StrategySpec
 from crypto_lab.strategies import resolve_registered_strategy_identity
@@ -53,7 +54,10 @@ def _candidate_schedule_complete(
     protocol: ResearchProtocol,
     records: tuple[TrialRecord, ...],
 ) -> bool:
-    observed = tuple(record.candidate_id for record in records)
+    candidate_ids = {candidate.candidate_id for candidate in protocol.ordered_candidates}
+    observed = tuple(
+        record.candidate_id for record in records if record.candidate_id in candidate_ids
+    )
     expected = tuple(
         candidate.candidate_id
         for candidate in protocol.ordered_candidates[: protocol.search_budget]
@@ -420,10 +424,7 @@ class OfficialEvidenceResolver:
             raise ResearchError("EVIDENCE_INCOMPLETE", "selected trial has no resolved Run evidence")
         run_dir, config, source, strategy_identity, manifest_sha = resolved_runs[selected.trial_id]
         replay_evidence_path: Path | None = None
-        if (
-            strategy_identity.strategy_spec.get("parameters", {}).get("strategy_family")
-            == "BTCUSDT_DAILY_PRICE_VS_SMA20_TREND"
-        ):
+        if not strategy_identity.qualification_fixture_only:
             replay_evidence_path = self._resolve_replay_evidence(
                 record=selected,
                 primary_run_dir=run_dir,
@@ -449,7 +450,15 @@ class OfficialEvidenceResolver:
             if not performance_path.is_file():
                 raise ResearchError("EVIDENCE_INCOMPLETE", "selected performance evidence is missing")
             performance = PerformanceDiagnostics.from_json_bytes(performance_path.read_bytes())
-            if performance != derive_performance_diagnostics(run_dir=run_dir, protocol=protocol):
+            strategy_family = strategy_identity.strategy_spec.get("parameters", {}).get(
+                "strategy_family",
+            )
+            if performance != derive_performance_diagnostics(
+                run_dir=run_dir,
+                protocol=protocol,
+                benchmark_directory=self.repository_root / "research/benchmarks",
+                resolve_benchmark=(strategy_family != "BUY_AND_HOLD_1X_V1"),
+            ):
                 raise ResearchError("EVIDENCE_INCOMPLETE", "selected performance evidence is stale")
         holdout = self.history.holdout.read()
         matching_holdout = next(
@@ -510,7 +519,7 @@ class OfficialEvidenceResolver:
         protocol_frozen = bool(exact_protocol_trials) and all(
             record.protocol_id == protocol.protocol_id
             and protocol.frozen_at_utc <= record.started_at_utc
-            for record in (latest[trial_id] for trial_id in started_ids)
+            for record in exact_protocol_trials
         )
         candidates = {candidate.candidate_id: candidate for candidate in protocol.ordered_candidates}
         candidate_schedule_complete = _candidate_schedule_complete(
@@ -521,17 +530,36 @@ class OfficialEvidenceResolver:
         for record in exact_protocol_trials:
             candidate = candidates.get(record.candidate_id)
             resolved = resolved_runs.get(record.trial_id)
-            if candidate is None or resolved is None:
+            if resolved is None:
                 partitions_valid = False
                 continue
             trial_config = resolved[1]
             expected_interval = self._partition_interval(protocol, record.partition_role)
+            if candidate is None:
+                benchmark_record = bool(
+                    record.candidate_id
+                    == benchmark_trial_candidate_id(
+                        protocol.required_benchmark,
+                        strategy_spec_id=record.strategy_spec_id,
+                    )
+                    and record.scored_interval == protocol.required_benchmark.scored_interval
+                    and resolved[3].strategy_spec.get("parameters", {}).get("strategy_family")
+                    == "BUY_AND_HOLD_1X_V1"
+                    and record.candidate_parameters_sha256
+                    == canonical_sha256(
+                        dict(resolved[3].strategy_spec.get("parameters", {})),
+                    )
+                )
+                partitions_valid = partitions_valid and benchmark_record
+            else:
+                partitions_valid = partitions_valid and bool(
+                    record.scored_interval == expected_interval
+                    and record.candidate_parameters_sha256
+                    == canonical_sha256(dict(candidate.parameter_values))
+                    and record.strategy_spec_id == candidate.strategy_spec_id
+                )
             partitions_valid = partitions_valid and bool(
-                record.scored_interval == expected_interval
-                and record.candidate_parameters_sha256
-                == canonical_sha256(dict(candidate.parameter_values))
-                and record.strategy_spec_id == candidate.strategy_spec_id
-                and record.dataset_release_id in protocol.dataset_release_ids
+                record.dataset_release_id in protocol.dataset_release_ids
                 and record.seed in protocol.random_seeds
                 and trial_config.config_sha256 == record.config_sha256
                 and trial_config.research_protocol_id == protocol.protocol_id

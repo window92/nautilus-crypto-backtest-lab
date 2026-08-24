@@ -38,9 +38,11 @@ from crypto_lab.config import SourceRevision
 from crypto_lab.config import StrictModel
 from crypto_lab.data import DatasetRelease
 from crypto_lab.diagnostics import DiagnosticResolution
+from crypto_lab.diagnostics import derive_benchmark_evidence
 from crypto_lab.diagnostics import derive_diagnostic_resolution
 from crypto_lab.diagnostics import derive_performance_diagnostics
 from crypto_lab.diagnostics import write_diagnostic_resolution
+from crypto_lab.diagnostics import write_benchmark_evidence
 from crypto_lab.diagnostics import write_performance_diagnostics
 from crypto_lab.exposure import AuthoritativeExposureResolver
 from crypto_lab.git_identity import capture_actual_source_revision
@@ -73,6 +75,7 @@ from crypto_lab.research import TrialDefinition
 from crypto_lab.research import TrialRecord
 from crypto_lab.research import TrialState
 from crypto_lab.research import UtcInterval
+from crypto_lab.research import benchmark_trial_candidate_id
 from crypto_lab.runner import OfficialLabRunRequest
 from crypto_lab.runner import run_official_lab
 from crypto_lab.strategies import StrategySpec
@@ -82,6 +85,7 @@ from crypto_lab.status import RunState
 
 class OwnerWorkflowPurpose(StrEnum):
     OWNER_STUDY = "OWNER_STUDY"
+    BENCHMARK_STUDY = "BENCHMARK_STUDY"
     QUALIFICATION_INTERFACE_FIXTURE = "QUALIFICATION_INTERFACE_FIXTURE"
 
 
@@ -168,6 +172,58 @@ def _load_terminal_run(path: Path) -> tuple[dict[str, Any], dict[str, Any]]:
     if not isinstance(status, dict) or not isinstance(result, dict):
         raise ResearchError("EVIDENCE_INCOMPLETE", "terminal Run evidence must be JSON objects")
     return status, result
+
+
+def _write_research_diagnostics(
+    value: OwnerWorkflowInput,
+    *,
+    repository: Path,
+    run_dir: Path,
+    result_ref: str,
+) -> tuple[DiagnosticResolution, tuple[Path, ...]]:
+    """Derive benchmark/performance/diagnostic artifacts in dependency order."""
+
+    protocol = value.protocol
+    benchmark_directory = repository / "research/benchmarks"
+    benchmark_path = benchmark_directory / f"{protocol.required_benchmark.benchmark_id}.json"
+    performance_path = repository / "research/performance" / f"{value.run_id}.json"
+    paths: list[Path] = []
+    family = value.strategy_spec.parameters.get("strategy_family")
+    if family in {
+        "BTCUSDT_DAILY_PRICE_VS_SMA20_TREND",
+        "BTCUSDT_WEEKLY_TSMOM28_V1",
+        "BUY_AND_HOLD_1X_V1",
+    }:
+        performance = derive_performance_diagnostics(
+            run_dir=run_dir,
+            protocol=protocol,
+            benchmark_directory=benchmark_directory,
+            resolve_benchmark=(
+                value.workflow_purpose is not OwnerWorkflowPurpose.BENCHMARK_STUDY
+                and benchmark_path.is_file()
+            ),
+        )
+        write_performance_diagnostics(performance, performance_path)
+        paths.append(performance_path)
+        if value.workflow_purpose is OwnerWorkflowPurpose.BENCHMARK_STUDY:
+            benchmark = derive_benchmark_evidence(
+                run_dir=run_dir,
+                protocol=protocol,
+                trial_id=value.trial_id,
+                result_ref=result_ref,
+                performance_path=performance_path,
+            )
+            write_benchmark_evidence(benchmark, benchmark_path)
+            paths.append(benchmark_path)
+    diagnostic = derive_diagnostic_resolution(
+        run_dir=run_dir,
+        protocol=protocol,
+        benchmark_directory=benchmark_directory,
+    )
+    diagnostic_path = repository / "research/diagnostics" / f"{value.run_id}.json"
+    write_diagnostic_resolution(diagnostic, diagnostic_path)
+    paths.insert(0, diagnostic_path)
+    return diagnostic, tuple(paths)
 
 
 def _replay_material(
@@ -591,7 +647,8 @@ def build_official_request(
     spec = value.strategy_spec
     expected_signal_type = (
         f"{release.instrument_id}-1-MINUTE-LAST-EXTERNAL"
-        if value.registered_strategy_id == "qualification_fixture_first_eligible_bar_v1"
+        if value.registered_strategy_id
+        in {"qualification_fixture_first_eligible_bar_v1", "buy_and_hold_1x_v1"}
         else f"{release.instrument_id}-1-DAY-LAST-INTERNAL@1-MINUTE-EXTERNAL"
     )
     if (
@@ -669,14 +726,35 @@ def build_official_request(
 def _definition(value: OwnerWorkflowInput, config: LabRunConfig) -> TrialDefinition:
     protocol = value.protocol
     candidates = {candidate.candidate_id: candidate for candidate in protocol.ordered_candidates}
-    candidate = candidates.get(value.candidate_id)
     expected_interval = _interval(protocol, value.partition_role)
-    if candidate is None:
-        raise ResearchError("RESEARCH_PROTOCOL_INVALID", "candidate is outside frozen protocol")
+    if value.workflow_purpose is OwnerWorkflowPurpose.BENCHMARK_STUDY:
+        expected_candidate_id = benchmark_trial_candidate_id(
+            protocol.required_benchmark,
+            strategy_spec_id=value.strategy_spec.strategy_spec_id,
+        )
+        if (
+            value.candidate_id != expected_candidate_id
+            or value.strategy_spec.parameters.get("benchmark_id")
+            != protocol.required_benchmark.benchmark_id
+            or value.strategy_spec.parameters.get("strategy_family") != "BUY_AND_HOLD_1X_V1"
+            or protocol.required_benchmark.scored_interval != expected_interval
+        ):
+            raise ResearchError("RESEARCH_PROTOCOL_INVALID", "benchmark differs from frozen protocol")
+        candidate_id = expected_candidate_id
+        parameter_hash = canonical_sha256(dict(value.strategy_spec.parameters))
+    else:
+        candidate = candidates.get(value.candidate_id)
+        if candidate is None:
+            raise ResearchError("RESEARCH_PROTOCOL_INVALID", "candidate is outside frozen protocol")
+        if (
+            candidate.strategy_spec_id != value.strategy_spec.strategy_spec_id
+            or dict(candidate.parameter_values) != dict(value.strategy_spec.parameters)
+        ):
+            raise ResearchError("RESEARCH_PROTOCOL_INVALID", "trial changed frozen candidate inputs")
+        candidate_id = candidate.candidate_id
+        parameter_hash = canonical_sha256(dict(candidate.parameter_values))
     if (
-        candidate.strategy_spec_id != value.strategy_spec.strategy_spec_id
-        or dict(candidate.parameter_values) != dict(value.strategy_spec.parameters)
-        or value.seed not in protocol.random_seeds
+        value.seed not in protocol.random_seeds
         or expected_interval.start_inclusive != value.scoring_start
         or expected_interval.end_exclusive != value.scoring_end_exclusive
     ):
@@ -686,8 +764,8 @@ def _definition(value: OwnerWorkflowInput, config: LabRunConfig) -> TrialDefinit
         research_family_id=protocol.research_family_id,
         hypothesis_id=protocol.hypothesis_id,
         protocol_id=protocol.protocol_id,
-        candidate_id=candidate.candidate_id,
-        candidate_parameters_sha256=canonical_sha256(dict(candidate.parameter_values)),
+        candidate_id=candidate_id,
+        candidate_parameters_sha256=parameter_hash,
         run_id=value.run_id,
         config_sha256=config.config_sha256,
         strategy_spec_id=value.strategy_spec.strategy_spec_id,
@@ -705,11 +783,53 @@ def _validate_candidate_order(
     value: OwnerWorkflowInput,
 ) -> None:
     records = history.journal.read_records()
-    started = [
+    candidate_ids = {candidate.candidate_id for candidate in value.protocol.ordered_candidates}
+    benchmark_id = benchmark_trial_candidate_id(
+        value.protocol.required_benchmark,
+        strategy_spec_id=value.strategy_spec.strategy_spec_id,
+    )
+    protocol_records = [
         record
         for record in records
         if record.protocol_id == value.protocol.protocol_id and record.state is TrialState.STARTED
     ]
+    if value.workflow_purpose is OwnerWorkflowPurpose.BENCHMARK_STUDY:
+        if protocol_records:
+            raise ResearchError(
+                "RESEARCH_PROTOCOL_INVALID",
+                "benchmark must be the first result-bearing protocol Trial",
+            )
+        if value.candidate_id != benchmark_id:
+            raise ResearchError("RESEARCH_PROTOCOL_INVALID", "benchmark journal identity diverged")
+        return
+    if (
+        value.workflow_purpose is OwnerWorkflowPurpose.QUALIFICATION_INTERFACE_FIXTURE
+        or value.protocol.strategy_family != "BTCUSDT_WEEKLY_TSMOM28_V1"
+    ):
+        started = [record for record in protocol_records if record.candidate_id in candidate_ids]
+        if len(started) >= value.protocol.search_budget:
+            raise ResearchError("RESEARCH_PROTOCOL_INVALID", "frozen search budget exhausted")
+        expected = value.protocol.ordered_candidates[len(started)]
+        if expected.candidate_id != value.candidate_id:
+            raise ResearchError("RESEARCH_PROTOCOL_INVALID", "candidate order diverged from protocol")
+        return
+    benchmark_records = [
+        record for record in protocol_records if record.candidate_id not in candidate_ids
+    ]
+    if (
+        len(benchmark_records) != 1
+        or benchmark_records[0].state is not TrialState.STARTED
+        or benchmark_records[0].candidate_id
+        != benchmark_trial_candidate_id(
+            value.protocol.required_benchmark,
+            strategy_spec_id=benchmark_records[0].strategy_spec_id,
+        )
+    ):
+        raise ResearchError(
+            "RESEARCH_PROTOCOL_INVALID",
+            "frozen benchmark must be executed before candidate result access",
+        )
+    started = [record for record in protocol_records if record.candidate_id in candidate_ids]
     if len(started) >= value.protocol.search_budget:
         raise ResearchError("RESEARCH_PROTOCOL_INVALID", "frozen search budget exhausted")
     expected = value.protocol.ordered_candidates[len(started)]
@@ -1123,7 +1243,10 @@ def _resume_completed_workflow(
         raise ResearchError("EVIDENCE_INCOMPLETE", "terminal Run checker is stale or forged")
     replay = (
         _read_replay_evidence(repository, value.trial_id)
-        if value.workflow_purpose is OwnerWorkflowPurpose.OWNER_STUDY
+        if value.workflow_purpose in {
+            OwnerWorkflowPurpose.OWNER_STUDY,
+            OwnerWorkflowPurpose.BENCHMARK_STUDY,
+        }
         else None
     )
     if replay is not None and replay["primary_run_ref"] != terminal.result_ref:
@@ -1163,42 +1286,29 @@ def _resume_completed_workflow(
                 entry_id=matching.entry_id,
             )
 
-    diagnostic = derive_diagnostic_resolution(
-        run_dir=run_dir,
-        protocol=value.protocol,
-        benchmark_directory=repository / "research/benchmarks",
+    possible_paths = (
+        repository / "research/diagnostics" / f"{value.run_id}.json",
+        repository / "research/performance" / f"{value.run_id}.json",
+        repository / "research/benchmarks" / f"{value.protocol.required_benchmark.benchmark_id}.json",
     )
-    diagnostic_path = repository / "research/diagnostics" / f"{value.run_id}.json"
-    performance_path = repository / "research/performance" / f"{value.run_id}.json"
-    if diagnostic_path.exists():
-        persisted_diagnostic = DiagnosticResolution.from_json_bytes(
-            diagnostic_path.read_bytes(),
-        )
-        if persisted_diagnostic != diagnostic:
-            raise ResearchError("EVIDENCE_INCOMPLETE", "persisted diagnostics are forged")
-    else:
-        write_diagnostic_resolution(diagnostic, diagnostic_path)
+    prior = {path: path.read_bytes() for path in possible_paths if path.is_file()}
+    diagnostic, derived_paths = _write_research_diagnostics(
+        value,
+        repository=repository,
+        run_dir=run_dir,
+        result_ref=terminal.result_ref,
+    )
+    if any(path.read_bytes() != payload for path, payload in prior.items()):
+        raise ResearchError("EVIDENCE_INCOMPLETE", "persisted research diagnostics are forged")
+    recovered_paths = tuple(path for path in derived_paths if path not in prior)
+    if recovered_paths:
         commits.append(
             _checkpoint(
                 repository,
-                paths=(diagnostic_path,),
+                paths=recovered_paths,
                 message=f"research(owner): recover diagnostics for {value.trial_id}",
             ),
         )
-    if diagnostic.performance_diagnostics_status == "COMPLETE":
-        performance = derive_performance_diagnostics(run_dir=run_dir, protocol=value.protocol)
-        if performance_path.exists():
-            if performance_path.read_bytes().strip() != performance.to_json_bytes():
-                raise ResearchError("EVIDENCE_INCOMPLETE", "persisted performance is forged")
-        else:
-            write_performance_diagnostics(performance, performance_path)
-            commits.append(
-                _checkpoint(
-                    repository,
-                    paths=(performance_path,),
-                    message=f"research(owner): recover performance for {value.trial_id}",
-                ),
-            )
 
     anchor = history.anchors.reconcile_committed()
     locator = OfficialEvidenceLocator(
@@ -1343,7 +1453,10 @@ def execute_owner_workflow(
     replay_path: Path | None = None
     replay_evidence: dict[str, Any] | None = None
     run_name = f"{value.run_id}-{definition.config_sha256[:12]}"
-    if value.workflow_purpose is OwnerWorkflowPurpose.OWNER_STUDY:
+    if value.workflow_purpose in {
+        OwnerWorkflowPurpose.OWNER_STUDY,
+        OwnerWorkflowPurpose.BENCHMARK_STUDY,
+    }:
         staging = repository / ".owner-runtime" / value.trial_id
         primary_root = staging / "primary"
         replay_root = staging / "replay"
@@ -1518,7 +1631,10 @@ def execute_owner_workflow(
         )
     replay = (
         _read_replay_evidence(repository, value.trial_id)
-        if value.workflow_purpose is OwnerWorkflowPurpose.OWNER_STUDY
+        if value.workflow_purpose in {
+            OwnerWorkflowPurpose.OWNER_STUDY,
+            OwnerWorkflowPurpose.BENCHMARK_STUDY,
+        }
         else None
     )
 
@@ -1555,19 +1671,12 @@ def execute_owner_workflow(
     )
     if checker.to_builtins() != persisted_checker:
         raise ResearchError("EVIDENCE_INCOMPLETE", "read-only checker differs from Run evidence")
-    diagnostic = derive_diagnostic_resolution(
+    diagnostic, diagnostic_paths = _write_research_diagnostics(
+        value,
+        repository=repository,
         run_dir=run_dir,
-        protocol=protocol,
-        benchmark_directory=repository / "research/benchmarks",
+        result_ref=result_ref,
     )
-    diagnostic_path = repository / "research/diagnostics" / f"{value.run_id}.json"
-    write_diagnostic_resolution(diagnostic, diagnostic_path)
-    diagnostic_paths = [diagnostic_path]
-    if diagnostic.performance_diagnostics_status == "COMPLETE":
-        performance = derive_performance_diagnostics(run_dir=run_dir, protocol=protocol)
-        performance_path = repository / "research/performance" / f"{value.run_id}.json"
-        write_performance_diagnostics(performance, performance_path)
-        diagnostic_paths.append(performance_path)
     commits.append(
         _checkpoint(
             repository,

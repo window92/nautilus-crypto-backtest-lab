@@ -207,10 +207,11 @@ class ResearchProtocolTests(unittest.TestCase):
 
     def test_benchmark_must_be_frozen_on_same_interval_with_explicit_cost_basis(self) -> None:
         protocol = valid_protocol()
+        outside = interval("2021-01-01T00:00:00Z", "2021-02-01T00:00:00Z")
         for change in (
             {"frozen_before_result_exposure": False},
             {"cost_basis": "UNKNOWN"},
-            {"scored_interval": VALIDATION},
+            {"scored_interval": outside},
         ):
             with self.subTest(change=change):
                 with self.assertRaisesRegex(ResearchError, "RESEARCH_PROTOCOL_INVALID"):
@@ -218,6 +219,17 @@ class ResearchProtocolTests(unittest.TestCase):
                         protocol,
                         required_benchmark=replace(protocol.required_benchmark, **change),
                     )
+        development_benchmark = ResearchProtocol.create_from(
+            protocol,
+            required_benchmark=replace(
+                protocol.required_benchmark,
+                scored_interval=protocol.development_interval,
+            ),
+        )
+        self.assertEqual(
+            development_benchmark.required_benchmark.scored_interval,
+            protocol.development_interval,
+        )
 
     def test_decimal_and_timestamp_shape_rejects_noncanonical_material(self) -> None:
         raw = json.loads(valid_protocol().to_json_bytes())

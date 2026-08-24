@@ -376,12 +376,24 @@ class GuardedCausalStrategy(Strategy):
             },
         )
 
-    def _submit_guarded(self, intent: OrderIntent, bar: Bar) -> None:
+    def _submit_guarded(
+        self,
+        intent: OrderIntent,
+        bar: Bar,
+        *,
+        decision_timestamp_ns: int | None = None,
+    ) -> None:
         assert self._instrument_id is not None
         assert self._profile is not None
         now = int(self.clock.timestamp_ns())
         interval_end = int(bar.ts_init)
         interval_start = interval_end - int(bar.bar_type.spec.get_interval_ns())
+        decision_at = interval_end if decision_timestamp_ns is None else decision_timestamp_ns
+        scoring_eligibility_at = (
+            interval_start if decision_timestamp_ns is None else decision_timestamp_ns
+        )
+        if decision_at < interval_end:
+            raise ValueError("decision timestamp precedes signal availability")
         record = {
             "side": intent.side,
             "quantity": intent.quantity,
@@ -391,10 +403,15 @@ class GuardedCausalStrategy(Strategy):
             "signal_bar_interval_end_exclusive_ns": interval_end,
             "signal_bar_available_at_ns": interval_end,
             "signal_timestamp_ns": now,
+            "decision_timestamp_ns": decision_at,
         }
         self.observations["intents"].append(record)
 
-        if interval_start < self._scoring_start_ns or interval_end > self._scoring_end_exclusive_ns:
+        if (
+            scoring_eligibility_at < self._scoring_start_ns
+            or scoring_eligibility_at >= self._scoring_end_exclusive_ns
+            or interval_end > decision_at
+        ):
             self.observations["suppressed_intents"].append(
                 {**record, "reason_code": "SIGNAL_BAR_NOT_SCORING_ELIGIBLE"},
             )

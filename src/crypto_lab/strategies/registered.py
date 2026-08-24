@@ -17,6 +17,11 @@ from crypto_lab.strategies.base import FirstEligibleBarQualificationFixture
 from crypto_lab.strategies.base import GuardedCausalStrategy
 from crypto_lab.strategies.base import StrategySpec
 from crypto_lab.strategies.daily_sma_trend import BtcusdtDailyPriceVsSma20Trend
+from crypto_lab.strategies.weekly_tsmom import BUY_AND_HOLD_REGISTRATION_ID
+from crypto_lab.strategies.weekly_tsmom import TSMOM_FULL_REGISTRATION_ID
+from crypto_lab.strategies.weekly_tsmom import TSMOM_VOL20_REGISTRATION_ID
+from crypto_lab.strategies.weekly_tsmom import BtcusdtBuyAndHold1x
+from crypto_lab.strategies.weekly_tsmom import BtcusdtWeeklyTsmom28
 
 
 class RegisteredStrategyIdentity(StrictModel):
@@ -102,6 +107,30 @@ _REGISTRY = {
         implementation_source_filename="daily_sma_trend.py",
         qualification_fixture_only=False,
         profitability_claim_eligible=True,
+    ),
+    TSMOM_FULL_REGISTRATION_ID: _RegisteredDefinition(
+        registration_id=TSMOM_FULL_REGISTRATION_ID,
+        implementation=BtcusdtWeeklyTsmom28,
+        implementation_revision=BtcusdtWeeklyTsmom28.IMPLEMENTATION_REVISION,
+        implementation_source_filename="weekly_tsmom.py",
+        qualification_fixture_only=False,
+        profitability_claim_eligible=True,
+    ),
+    TSMOM_VOL20_REGISTRATION_ID: _RegisteredDefinition(
+        registration_id=TSMOM_VOL20_REGISTRATION_ID,
+        implementation=BtcusdtWeeklyTsmom28,
+        implementation_revision=BtcusdtWeeklyTsmom28.IMPLEMENTATION_REVISION,
+        implementation_source_filename="weekly_tsmom.py",
+        qualification_fixture_only=False,
+        profitability_claim_eligible=True,
+    ),
+    BUY_AND_HOLD_REGISTRATION_ID: _RegisteredDefinition(
+        registration_id=BUY_AND_HOLD_REGISTRATION_ID,
+        implementation=BtcusdtBuyAndHold1x,
+        implementation_revision=BtcusdtBuyAndHold1x.IMPLEMENTATION_REVISION,
+        implementation_source_filename="weekly_tsmom.py",
+        qualification_fixture_only=False,
+        profitability_claim_eligible=False,
     ),
 }
 

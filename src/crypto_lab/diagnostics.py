@@ -31,6 +31,69 @@ from crypto_lab.research import SampleAdequacy
 from crypto_lab.research import evaluate_sample_adequacy
 
 
+SUPPORTED_RESEARCH_STRATEGY_FAMILIES = {
+    "BTCUSDT_DAILY_PRICE_VS_SMA20_TREND",
+    "BTCUSDT_WEEKLY_TSMOM28_V1",
+    "BUY_AND_HOLD_1X_V1",
+}
+
+
+class BenchmarkEvidence(StrictModel):
+    """Typed result of one registered benchmark Run."""
+
+    schema_version: int
+    benchmark_evidence_id: str
+    benchmark_id: str
+    protocol_id: str
+    market_profile: str
+    instrument_id: str
+    dataset_release_id: str
+    scored_start: datetime
+    scoring_end_exclusive: datetime
+    source_trial_id: str
+    source_run_id: str
+    source_result_ref: str
+    strategy_spec_id: str
+    strategy_identity_sha256: str
+    run_manifest_sha256: str
+    performance_diagnostics_id: str
+    performance_evidence_sha256: str
+    total_return: Decimal
+    cost_basis: str
+    final_holdout_used: bool
+
+    def __post_init__(self) -> None:
+        if self.schema_version != 1:
+            raise ResearchError("EVIDENCE_INCOMPLETE", "invalid benchmark evidence schema")
+        for name in (
+            "benchmark_evidence_id",
+            "protocol_id",
+            "dataset_release_id",
+            "strategy_spec_id",
+            "strategy_identity_sha256",
+            "run_manifest_sha256",
+            "performance_diagnostics_id",
+            "performance_evidence_sha256",
+        ):
+            _require_sha256(getattr(self, name), f"benchmark.{name}")
+        if not self.total_return.is_finite() or self.final_holdout_used:
+            raise ResearchError("EVIDENCE_INCOMPLETE", "benchmark return/holdout status is invalid")
+        if canonical_sha256(self.material_payload()) != self.benchmark_evidence_id:
+            raise ResearchError("EVIDENCE_INCOMPLETE", "benchmark evidence identity mismatch")
+
+    def material_payload(self) -> dict[str, Any]:
+        return {
+            field.name: getattr(self, field.name)
+            for field in fields(self)
+            if field.name != "benchmark_evidence_id"
+        }
+
+    @classmethod
+    def create(cls, **values: Any) -> BenchmarkEvidence:
+        material = {"schema_version": 1, **values}
+        return cls(benchmark_evidence_id=canonical_sha256(material), **material)
+
+
 class DiagnosticResolution(StrictModel):
     schema_version: int
     diagnostic_resolution_id: str
@@ -158,10 +221,112 @@ def _money_total(items: Any, currency: str) -> Decimal:
     return total
 
 
+def _load_benchmark_evidence(
+    *,
+    protocol: ResearchProtocol,
+    benchmark_directory: Path,
+) -> tuple[BenchmarkEvidence, Path]:
+    path = Path(benchmark_directory) / f"{protocol.required_benchmark.benchmark_id}.json"
+    if not path.is_file():
+        raise ResearchError("EVIDENCE_INCOMPLETE", "frozen benchmark evidence is missing")
+    value = BenchmarkEvidence.from_json_bytes(path.read_bytes())
+    benchmark = protocol.required_benchmark
+    if (
+        value.benchmark_id != benchmark.benchmark_id
+        or value.protocol_id != protocol.protocol_id
+        or value.market_profile != protocol.market_profile.value
+        or value.instrument_id not in protocol.instrument_ids
+        or value.dataset_release_id not in protocol.dataset_release_ids
+        or value.scored_start != benchmark.scored_interval.start_inclusive
+        or value.scoring_end_exclusive != benchmark.scored_interval.end_exclusive
+        or value.cost_basis != benchmark.cost_basis
+    ):
+        raise ResearchError("EVIDENCE_INCOMPLETE", "benchmark evidence binding mismatch")
+    performance_path = path.parent.parent / "performance" / f"{value.source_run_id}.json"
+    if not performance_path.is_file() or sha256_file(performance_path) != value.performance_evidence_sha256:
+        raise ResearchError("EVIDENCE_INCOMPLETE", "benchmark performance binding is stale")
+    performance = PerformanceDiagnostics.from_json_bytes(performance_path.read_bytes())
+    if (
+        performance.diagnostics_id != value.performance_diagnostics_id
+        or performance.run_id != value.source_run_id
+        or performance.total_return.status == "UNDEFINED"
+        or Decimal(str(performance.total_return.value)) != value.total_return
+    ):
+        raise ResearchError("EVIDENCE_INCOMPLETE", "benchmark total return is stale")
+    return value, path
+
+
+def derive_benchmark_evidence(
+    *,
+    run_dir: Path,
+    protocol: ResearchProtocol,
+    trial_id: str,
+    result_ref: str,
+    performance_path: Path,
+) -> BenchmarkEvidence:
+    """Bind a registered Buy-and-Hold result to its frozen protocol benchmark."""
+
+    run_dir = Path(run_dir)
+    config = LabRunConfig.from_json_bytes((run_dir / "lab_run_config.json").read_bytes())
+    spec = json.loads((run_dir / "strategy_spec.json").read_text(encoding="utf-8"))
+    identity = json.loads((run_dir / "strategy_identity.json").read_text(encoding="utf-8"))
+    performance = PerformanceDiagnostics.from_json_bytes(Path(performance_path).read_bytes())
+    benchmark = protocol.required_benchmark
+    if (
+        config.research_protocol_id != protocol.protocol_id
+        or config.scoring_start != benchmark.scored_interval.start_inclusive
+        or config.scoring_end_exclusive != benchmark.scored_interval.end_exclusive
+        or spec.get("parameters", {}).get("strategy_family") != "BUY_AND_HOLD_1X_V1"
+        or spec.get("parameters", {}).get("benchmark_id") != benchmark.benchmark_id
+        or performance.run_id != config.run_id
+        or performance.total_return.status == "UNDEFINED"
+    ):
+        raise ResearchError("EVIDENCE_INCOMPLETE", "benchmark Run is not the frozen benchmark")
+    return BenchmarkEvidence.create(
+        benchmark_id=benchmark.benchmark_id,
+        protocol_id=protocol.protocol_id,
+        market_profile=config.market_profile.value,
+        instrument_id=config.instrument_id,
+        dataset_release_id=config.dataset_release_id,
+        scored_start=config.scoring_start,
+        scoring_end_exclusive=config.scoring_end_exclusive,
+        source_trial_id=trial_id,
+        source_run_id=config.run_id,
+        source_result_ref=result_ref,
+        strategy_spec_id=config.strategy_spec_id,
+        strategy_identity_sha256=str(identity["strategy_identity_sha256"]),
+        run_manifest_sha256=sha256_file(run_dir / "evidence_manifest.json"),
+        performance_diagnostics_id=performance.diagnostics_id,
+        performance_evidence_sha256=sha256_file(performance_path),
+        total_return=Decimal(str(performance.total_return.value)),
+        cost_basis=benchmark.cost_basis,
+        final_holdout_used=False,
+    )
+
+
+def write_benchmark_evidence(value: BenchmarkEvidence, path: Path) -> None:
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    handle = tempfile.NamedTemporaryFile(mode="wb", dir=path.parent, delete=False)
+    temporary = Path(handle.name)
+    try:
+        handle.write(value.to_json_bytes() + b"\n")
+        handle.flush()
+        os.fsync(handle.fileno())
+        handle.close()
+        os.replace(temporary, path)
+    finally:
+        if not handle.closed:
+            handle.close()
+        temporary.unlink(missing_ok=True)
+
+
 def derive_performance_diagnostics(
     *,
     run_dir: Path,
     protocol: ResearchProtocol,
+    benchmark_directory: Path | None = None,
+    resolve_benchmark: bool = True,
 ) -> PerformanceDiagnostics:
     """Derive SSOT diagnostics from the finest persisted Nautilus Equity snapshots."""
 
@@ -170,10 +335,11 @@ def derive_performance_diagnostics(
     if config.research_protocol_id != protocol.protocol_id:
         raise ResearchError("EVIDENCE_INCOMPLETE", "performance protocol binding mismatch")
     spec = json.loads((run_dir / "strategy_spec.json").read_text(encoding="utf-8"))
-    if spec.get("parameters", {}).get("strategy_family") != "BTCUSDT_DAILY_PRICE_VS_SMA20_TREND":
+    strategy_family = spec.get("parameters", {}).get("strategy_family")
+    if strategy_family not in SUPPORTED_RESEARCH_STRATEGY_FAMILIES:
         raise ResearchError(
             "EVIDENCE_INCOMPLETE",
-            "performance resolver is qualified only for OWNER_SMOKE SMA20 evidence",
+            "performance resolver does not recognize the registered research family",
         )
     snapshot_path = run_dir / "native_portfolio_snapshots.jsonl"
     statistics_path = run_dir / "native_statistics.json"
@@ -236,6 +402,17 @@ def derive_performance_diagnostics(
         if protocol.monte_carlo_spec.resampling_method is ResamplingMethod.NOT_APPLICABLE
         else MonteCarloStatus.MC_LOW_CONFIDENCE
     )
+    benchmark_return = None
+    benchmark_hashes: dict[str, str] = {}
+    if resolve_benchmark and benchmark_directory is not None:
+        benchmark_evidence, benchmark_path = _load_benchmark_evidence(
+            protocol=protocol,
+            benchmark_directory=benchmark_directory,
+        )
+        benchmark_return = benchmark_evidence.total_return
+        benchmark_hashes[f"benchmark:{benchmark_evidence.benchmark_id}"] = sha256_file(
+            benchmark_path,
+        )
     return generate_performance_diagnostics(
         run_id=config.run_id,
         scored_start=config.scoring_start,
@@ -249,7 +426,7 @@ def derive_performance_diagnostics(
         equity_observations=observations,
         native_metrics={},
         completed_trades=completed,
-        benchmark_return=None,
+        benchmark_return=benchmark_return,
         sample_adequacy=sample,
         monte_carlo_status=monte_carlo,
         claim_scope=protocol.intended_claim_scope.value,
@@ -257,6 +434,7 @@ def derive_performance_diagnostics(
             snapshot_path.name: sha256_file(snapshot_path),
             statistics_path.name: sha256_file(statistics_path),
             completed_path.name: sha256_file(completed_path),
+            **benchmark_hashes,
         },
     )
 
@@ -308,23 +486,30 @@ def derive_diagnostic_resolution(
     )
     benchmark_path = Path(benchmark_directory) / f"{protocol.required_benchmark.benchmark_id}.json"
     if benchmark_path.exists():
-        # No V1 repair qualification established an authoritative benchmark
-        # execution/result schema.  A caller-created JSON file is not evidence.
-        raise ResearchError(
-            "EVIDENCE_INCOMPLETE",
-            "benchmark evidence requires a separately qualified typed resolver",
+        benchmark_evidence, benchmark_path = _load_benchmark_evidence(
+            protocol=protocol,
+            benchmark_directory=benchmark_directory,
         )
-    benchmark_status = "MISSING"
+        benchmark_status = "COMPLETE"
+        benchmark_hash = sha256_file(benchmark_path)
+    else:
+        benchmark_evidence = None
+        benchmark_status = "MISSING"
+        benchmark_hash = None
     spec = json.loads((run_dir / "strategy_spec.json").read_text(encoding="utf-8"))
-    is_owner_smoke_sma20 = (
-        spec.get("parameters", {}).get("strategy_family")
-        == "BTCUSDT_DAILY_PRICE_VS_SMA20_TREND"
-    )
-    if is_owner_smoke_sma20:
+    strategy_family = spec.get("parameters", {}).get("strategy_family")
+    if strategy_family in SUPPORTED_RESEARCH_STRATEGY_FAMILIES:
         # This also fails closed on stale/unpriced native snapshots or missing
         # scoring boundaries.  The returned value is written separately by the
         # public Owner workflow and never feeds back into Run state.
-        derive_performance_diagnostics(run_dir=run_dir, protocol=protocol)
+        derive_performance_diagnostics(
+            run_dir=run_dir,
+            protocol=protocol,
+            benchmark_directory=benchmark_directory,
+            resolve_benchmark=(
+                benchmark_status == "COMPLETE" and strategy_family != "BUY_AND_HOLD_1X_V1"
+            ),
+        )
         performance_status = "COMPLETE"
         extra_inputs = (
             "native_portfolio_snapshots.jsonl",
@@ -354,13 +539,16 @@ def derive_diagnostic_resolution(
         and monte_carlo is MonteCarloStatus.COMPLETED
         and benchmark_status == "COMPLETE"
     )
+    evidence_hashes = {
+        name: sha256_file(run_dir / name)
+        for name in (*_RUN_DIAGNOSTIC_INPUTS, *extra_inputs)
+    }
+    if benchmark_hash is not None:
+        evidence_hashes[f"benchmark:{protocol.required_benchmark.benchmark_id}"] = benchmark_hash
     return DiagnosticResolution.create(
         run_id=config.run_id,
         protocol_id=protocol.protocol_id,
-        run_evidence_hashes={
-            name: sha256_file(run_dir / name)
-            for name in (*_RUN_DIAGNOSTIC_INPUTS, *extra_inputs)
-        },
+        run_evidence_hashes=evidence_hashes,
         native_completed_trades_status="AVAILABLE" if available else "UNAVAILABLE",
         native_completed_trade_count=(
             completed.native_completed_unit_count if available else "UNDEFINED"
@@ -420,10 +608,13 @@ def reconcile_diagnostic_resolution(
 
 
 __all__ = [
+    "BenchmarkEvidence",
     "DiagnosticResolution",
+    "derive_benchmark_evidence",
     "derive_diagnostic_resolution",
     "derive_performance_diagnostics",
     "reconcile_diagnostic_resolution",
     "write_diagnostic_resolution",
+    "write_benchmark_evidence",
     "write_performance_diagnostics",
 ]

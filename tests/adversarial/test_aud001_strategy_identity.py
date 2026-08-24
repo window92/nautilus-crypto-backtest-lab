@@ -29,6 +29,9 @@ from tests.m1_helpers import make_request
 
 REGISTRATION = "qualification_fixture_first_eligible_bar_v1"
 SMA20_REGISTRATION = "btcusdt_daily_price_vs_sma20_trend_v1"
+TSMOM_FULL_REGISTRATION = "btcusdt_weekly_tsmom28_full_v1"
+TSMOM_VOL20_REGISTRATION = "btcusdt_weekly_tsmom28_vol20_v1"
+BUY_AND_HOLD_REGISTRATION = "buy_and_hold_1x_v1"
 
 
 def source() -> SourceRevision:
@@ -125,7 +128,16 @@ class Aud001StrategyIdentityTests(unittest.TestCase):
             self.assertEqual(list(Path(temporary).iterdir()), [])
 
     def test_only_closed_registered_identifiers_are_accepted(self) -> None:
-        self.assertEqual(registered_strategy_ids(), (SMA20_REGISTRATION, REGISTRATION))
+        self.assertEqual(
+            registered_strategy_ids(),
+            (
+                SMA20_REGISTRATION,
+                TSMOM_FULL_REGISTRATION,
+                TSMOM_VOL20_REGISTRATION,
+                BUY_AND_HOLD_REGISTRATION,
+                REGISTRATION,
+            ),
+        )
         with self.assertRaises(ValueError):
             resolve_registered_strategy_identity(
                 "module:dynamic_callable",

@@ -190,6 +190,23 @@ class BenchmarkSpec(StrictModel):
             )
 
 
+def benchmark_trial_candidate_id(
+    benchmark: BenchmarkSpec,
+    *,
+    strategy_spec_id: str,
+) -> str:
+    """Return the journal identity for a benchmark without consuming candidate budget."""
+
+    _require_sha256(strategy_spec_id, "benchmark.strategy_spec_id")
+    return canonical_sha256(
+        {
+            "benchmark": benchmark.to_builtins(),
+            "strategy_spec_id": strategy_spec_id,
+            "trial_role": "REGISTERED_BENCHMARK_NOT_RESEARCH_CANDIDATE",
+        },
+    )
+
+
 class UniverseMembershipDecision(StrictModel):
     instrument_id: str
     selected: bool
@@ -502,8 +519,16 @@ class ResearchProtocol(StrictModel):
             self.final_holdout_interval,
             self.purge_embargo_rule,
         )
-        if self.required_benchmark.scored_interval != self.final_holdout_interval:
-            raise ResearchError("RESEARCH_PROTOCOL_INVALID", "benchmark interval must match scored Holdout")
+        if self.required_benchmark.scored_interval not in (
+            self.development_interval,
+            self.validation_interval,
+            self.oos_interval,
+            self.final_holdout_interval,
+        ):
+            raise ResearchError(
+                "RESEARCH_PROTOCOL_INVALID",
+                "benchmark interval must match one declared scored partition",
+            )
         if self.time_series_split != "CHRONOLOGICAL":
             raise ResearchError("PARTITION_LEAKAGE", "random time-series shuffling is forbidden")
         if self.research_intent is ResearchIntent.CONFIRMATORY and not isinstance(
@@ -1735,6 +1760,7 @@ __all__ = [
     "UniverseMembershipDecision",
     "UniverseMembershipEvidence",
     "UtcInterval",
+    "benchmark_trial_candidate_id",
     "evaluate_claim",
     "evaluate_sample_adequacy",
     "run_monte_carlo",
