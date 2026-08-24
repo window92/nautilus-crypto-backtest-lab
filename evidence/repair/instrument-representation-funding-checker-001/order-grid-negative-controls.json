@@ -1,0 +1,81 @@
+{
+  "cases": [
+    {
+      "case": "SPOT_BELOW_EFFECTIVE_MINIMUM",
+      "detail": "INSTRUMENT_METADATA_INVALID: MARKET quantity 0.000001 is below native minimum 0.000010",
+      "exception_type": "DataContractError",
+      "fill_created": false,
+      "order_created": false,
+      "status": "PASS_REJECTED_BEFORE_SUBMISSION"
+    },
+    {
+      "case": "SPOT_ABOVE_EFFECTIVE_MARKET_MAXIMUM",
+      "detail": "INSTRUMENT_METADATA_INVALID: MARKET quantity 115.630200 is above native maximum 115.630197",
+      "exception_type": "DataContractError",
+      "fill_created": false,
+      "order_created": false,
+      "status": "PASS_REJECTED_BEFORE_SUBMISSION"
+    },
+    {
+      "case": "SPOT_FINER_THAN_LOSSLESS_SIZE_REPRESENTATION",
+      "detail": "INSTRUMENT_METADATA_INVALID: MARKET quantity precision differs from the native Instrument",
+      "exception_type": "DataContractError",
+      "fill_created": false,
+      "order_created": false,
+      "status": "PASS_REJECTED_BEFORE_SUBMISSION"
+    },
+    {
+      "case": "SPOT_LIMIT_OUTSIDE_TICK_GRID",
+      "detail": "INSTRUMENT_METADATA_INVALID: LIMIT price precision differs from the native Instrument",
+      "exception_type": "DataContractError",
+      "fill_created": false,
+      "order_created": false,
+      "status": "PASS_REJECTED_BEFORE_SUBMISSION"
+    },
+    {
+      "case": "PERPETUAL_ABOVE_MARKET_MAXIMUM",
+      "detail": "INSTRUMENT_METADATA_INVALID: MARKET quantity 120.001 is above native maximum 120.000",
+      "exception_type": "DataContractError",
+      "fill_created": false,
+      "order_created": false,
+      "status": "PASS_REJECTED_BEFORE_SUBMISSION"
+    },
+    {
+      "case": "PERPETUAL_FINER_THAN_SIZE_GRID",
+      "detail": "INSTRUMENT_METADATA_INVALID: MARKET quantity precision differs from the native Instrument",
+      "exception_type": "DataContractError",
+      "fill_created": false,
+      "order_created": false,
+      "status": "PASS_REJECTED_BEFORE_SUBMISSION"
+    },
+    {
+      "case": "PERPETUAL_PRECISION_COMPATIBLE_TICK_INCOMPATIBLE_PRICE",
+      "detail": "INSTRUMENT_METADATA_INVALID: LIMIT price 50000.00000001 is not on native grid 0.01000000",
+      "exception_type": "DataContractError",
+      "fill_created": false,
+      "order_created": false,
+      "status": "PASS_REJECTED_BEFORE_SUBMISSION"
+    }
+  ],
+  "direct_cross_zero_control": {
+    "status": "PASS_REJECTED_BEFORE_SUBMISSION",
+    "test_id": "tests.integration.test_owner_smoke_daily_strategy.OwnerSmokeDailyStrategyIntegrationTests.test_perpetual_reversal_closes_flat_then_reopens_separately"
+  },
+  "perpetual": {
+    "precision_3_non_multiple_control": "MATHEMATICALLY_EMPTY_DOMAIN: every exact non-negative Decimal with at most three fractional digits is an integer multiple of the proven 0.001 step; the immediately finer 0.1001 control is rejected losslessly",
+    "price_increment": "0.01000000",
+    "price_precision": 8,
+    "size_increment": "0.001",
+    "size_precision": 3
+  },
+  "representation_is_not_grid": true,
+  "schema": "instrument-repair-order-grid-negative-controls-v1",
+  "spot": {
+    "precision_6_non_multiple_control": "MATHEMATICALLY_EMPTY_DOMAIN: every exact non-negative Decimal with at most six fractional digits is an integer multiple of the proven 0.000001 step; the immediately finer 0.1000001 control is rejected losslessly",
+    "price_increment": "0.01",
+    "price_precision": 2,
+    "size_increment": "0.000001",
+    "size_precision": 6
+  },
+  "status": "PASS"
+}

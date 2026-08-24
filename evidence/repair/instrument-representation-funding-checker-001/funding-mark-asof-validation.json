@@ -1,0 +1,18 @@
+{
+  "covered_controls": [
+    "millisecond-offset funding timestamp",
+    "exact-boundary funding timestamp",
+    "missing prior Mark",
+    "future Mark only",
+    "stale prior Mark",
+    "position opened after boundary"
+  ],
+  "future_mark_allowed": false,
+  "interpolation_allowed": false,
+  "maximum_staleness_ns": 60000000000,
+  "nearest_neighbor_allowed": false,
+  "schema": "funding-mark-asof-validation-v1",
+  "selection": "LATEST_CAUSAL_AT_OR_BEFORE_FUNDING_TIMESTAMP",
+  "status": "PASS",
+  "test_module_status": "PASS"
+}

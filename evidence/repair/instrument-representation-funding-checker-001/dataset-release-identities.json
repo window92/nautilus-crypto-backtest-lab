@@ -1,0 +1,20 @@
+{
+  "normalizer_version": "binance-public-data-v1-m2.4",
+  "numeric_market_values_changed": false,
+  "perpetual": {
+    "funding_data_identity": "0adf7b5c358563f35455170a2fbe9aa359e900d3eb582487306a830a1a8b525a",
+    "instrument_metadata_identity": "b4579742d10d7e1e529689ae07c3db2b6a9362430d0b8cd7112a4d9846eef226",
+    "market_state_acceptance_identity": "0dcd61d786039fa7bc96e31a9e878c6a466cedcbc370b78c273fee0c34e68999",
+    "replacement": "b6c8f5d659f3441c924b613d770342796c90b90a970f42a3dc8227c856198917",
+    "superseded": "9c8a5f679f38852119d1d2054b0711965f0a6d89d5dd0e0ebedaa8d8df66b503"
+  },
+  "schema": "instrument-repair-dataset-release-identities-v1",
+  "spot": {
+    "instrument_metadata_identity": "9c7ba442a19cb74f8059983ae56db23b8c341ac47c3ba77e2fb8da05a661e3ea",
+    "market_state_acceptance_identity": "d9e7f025d5350be9041750775c9836a4fd5a8db998dc0e375fdcb0166fb4a20c",
+    "replacement": "fd8542c109cfbf7d6b19d5b7bbb7705c6a161efc807695f3671978c381e34eca",
+    "superseded": "95e04adb076be05eba0a970aa0978f1a4d1f41ad3caf04e9cd5859dd408ac099"
+  },
+  "status": "PASS",
+  "supersession_classification": "SUPERSEDED_INSTRUMENT_REPRESENTATION_INCOMPATIBLE_WITH_PINNED_NAUTILUS"
+}

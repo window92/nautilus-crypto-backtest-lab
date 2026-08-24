@@ -1,0 +1,461 @@
+{
+  "catalog_validation": {
+    "BINANCE_SPOT_CASH_LONG_ONLY": {
+      "catalog_identity": "db0971d28caba547378e3acba5ad8df1cbd0d6d5be963d153248928a729e374f",
+      "execution": {
+        "row_count": 304596,
+        "semantic_projection_sha256": "c803a24783c3e018b62305e3a733f849f29ba9c6103cb57b60e5c0b1b772e877"
+      },
+      "instrument_id": "BTCUSDT.BINANCE",
+      "market_state_acceptance": {
+        "accepted_executable_bars": 304596,
+        "accepted_mark_updates": 0,
+        "all_data_event_count": 304596,
+        "catalog_identity": "db0971d28caba547378e3acba5ad8df1cbd0d6d5be963d153248928a729e374f",
+        "dataset_profile": "BINANCE_SPOT_CASH_LONG_ONLY",
+        "engine_error": null,
+        "engine_iterations": 304596,
+        "expected_executable_bars": 304596,
+        "expected_mark_updates": 0,
+        "fatal_runtime_diagnostics": 0,
+        "financial_performance_evaluated": false,
+        "gate": "NAUTILUS_EXECUTABLE_MARKET_STATE_ACCEPTANCE",
+        "instrument_id": "BTCUSDT.BINANCE",
+        "instrument_metadata_identity": "9c7ba442a19cb74f8059983ae56db23b8c341ac47c3ba77e2fb8da05a661e3ea",
+        "lab_run_config_sha256": "8a09aee98d9f824edd309234fc5b0c3ea6870391e487f0fdb482a6a192460cf4",
+        "missing_market_state": 0,
+        "native_funding_cache_count": 0,
+        "native_mark_cache_count": 0,
+        "no_market_data_precision_warnings": 0,
+        "pinned_nautilus_version": "2.0.0rc2",
+        "precision_skipped_bars": 0,
+        "raw_numeric_values_mutated": false,
+        "rejected_precision_events": 0,
+        "runtime_diagnostics": {
+          "error_patterns": [],
+          "fatal_runtime_diagnostics": 0,
+          "log_byte_size": 0,
+          "log_created": true,
+          "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "schema": "nautilus-executable-market-state-acceptance-v1",
+        "sentinel_fills": [
+          {
+            "diagnostics": {
+              "error_patterns": [],
+              "fatal_runtime_diagnostics": 0,
+              "log_byte_size": 0,
+              "log_created": false,
+              "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "effective_insert_latency_ns": 60000000000,
+            "fill_count": 1,
+            "fill_price": "28989.31",
+            "fill_quantity": "0.100000",
+            "fill_ts_event": 1609459380000000000,
+            "guard_failure_count": 0,
+            "order_count": 1,
+            "performance_research": false,
+            "rejected_order_count": 0,
+            "role": "WINDOW_START",
+            "same_bar_fill": false,
+            "signal_bar_ts_init": 1609459320000000000,
+            "status": "PASS"
+          },
+          {
+            "diagnostics": {
+              "error_patterns": [],
+              "fatal_runtime_diagnostics": 0,
+              "log_byte_size": 0,
+              "log_created": false,
+              "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "effective_insert_latency_ns": 60000000000,
+            "fill_count": 1,
+            "fill_price": "61720.28",
+            "fill_quantity": "0.100000",
+            "fill_ts_event": 1618612200000000000,
+            "guard_failure_count": 0,
+            "order_count": 1,
+            "performance_research": false,
+            "rejected_order_count": 0,
+            "role": "WINDOW_MIDPOINT",
+            "same_bar_fill": false,
+            "signal_bar_ts_init": 1618612140000000000,
+            "status": "PASS"
+          },
+          {
+            "diagnostics": {
+              "error_patterns": [],
+              "fatal_runtime_diagnostics": 0,
+              "log_byte_size": 0,
+              "log_created": false,
+              "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "effective_insert_latency_ns": 60000000000,
+            "fill_count": 1,
+            "fill_price": "41692.33",
+            "fill_quantity": "0.100000",
+            "fill_ts_event": 1627775880000000000,
+            "guard_failure_count": 0,
+            "order_count": 1,
+            "performance_research": false,
+            "rejected_order_count": 0,
+            "role": "WINDOW_END",
+            "same_bar_fill": false,
+            "signal_bar_ts_init": 1627775820000000000,
+            "status": "PASS"
+          },
+          {
+            "diagnostics": {
+              "error_patterns": [],
+              "fatal_runtime_diagnostics": 0,
+              "log_byte_size": 0,
+              "log_created": false,
+              "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "effective_insert_latency_ns": 60000000000,
+            "fill_count": 1,
+            "fill_price": "44731.73",
+            "fill_quantity": "0.100000",
+            "fill_ts_event": 1613019720000000000,
+            "guard_failure_count": 0,
+            "order_count": 1,
+            "performance_research": false,
+            "rejected_order_count": 0,
+            "role": "AFTER_VERIFIED_NO_TRADE",
+            "same_bar_fill": false,
+            "signal_bar_ts_init": 1613019660000000000,
+            "status": "PASS"
+          }
+        ],
+        "static_precision_and_grid": {
+          "execution_price_precision_mismatches": 0,
+          "execution_tick_grid_mismatches": 0,
+          "execution_volume_precision_mismatches": 0,
+          "mark_precision_mismatches": 0
+        },
+        "status": "PASS",
+        "strategy_research_run": false,
+        "zero_latency_negative_control": {
+          "accepted_for_release": false,
+          "diagnostics": {
+            "error_patterns": [],
+            "fatal_runtime_diagnostics": 0,
+            "log_byte_size": 0,
+            "log_created": false,
+            "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "effective_insert_latency_ns": 0,
+          "fill_count": 1,
+          "fill_price": "29009.92",
+          "fill_quantity": "0.100000",
+          "fill_ts_event": 1609459320000000000,
+          "guard_failure_count": 0,
+          "order_count": 1,
+          "performance_research": false,
+          "reason": "LOCKED_LATENCY_IS_60_SECONDS",
+          "rejected_order_count": 0,
+          "role": "ZERO_LATENCY_NEGATIVE_CONTROL",
+          "same_bar_fill": true,
+          "signal_bar_ts_init": 1609459320000000000,
+          "status": "FAIL"
+        },
+        "zero_padding_only": true
+      },
+      "release_time_range": {
+        "end_exclusive": "2021-08-01T00:00:00Z",
+        "start_inclusive": "2021-01-01T00:00:00Z"
+      },
+      "status": "PASS",
+      "verified_no_trade_exported_as_bar_count": 0
+    },
+    "BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING": {
+      "catalog_identity": "7c96897a8e1ea3c02198238a277fb8c3d995f54dd90dc381e534a5f21b017ae0",
+      "execution": {
+        "row_count": 305280,
+        "semantic_projection_sha256": "852764c5cf56c20e7077f3cc12ce6b4d6fe2e9367cb9d54d3cf164cc9970e70b"
+      },
+      "funding": {
+        "native_binding": "NAUTILUS_2_0_0RC2_EXPLICIT_SOURCE_BOUNDARY_PAIR",
+        "official_source_event_count": 636,
+        "runtime_update_count": 1272,
+        "schedule_invented": false
+      },
+      "instrument_id": "BTCUSDT-PERP.BINANCE",
+      "mark": {
+        "binding": "ORIGINAL_OFFICIAL_MARK_BAR_CLOSE_AT_COMPLETION",
+        "mark_price_update_count": 305280,
+        "mark_reconstructed": false,
+        "source_mark_bar_count": 305280,
+        "substitution_used": false
+      },
+      "market_state_acceptance": {
+        "accepted_executable_bars": 305280,
+        "accepted_mark_updates": 305280,
+        "all_data_event_count": 611832,
+        "catalog_identity": "7c96897a8e1ea3c02198238a277fb8c3d995f54dd90dc381e534a5f21b017ae0",
+        "dataset_profile": "BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING",
+        "engine_error": null,
+        "engine_iterations": 611832,
+        "expected_executable_bars": 305280,
+        "expected_mark_updates": 305280,
+        "fatal_runtime_diagnostics": 0,
+        "financial_performance_evaluated": false,
+        "gate": "NAUTILUS_EXECUTABLE_MARKET_STATE_ACCEPTANCE",
+        "instrument_id": "BTCUSDT-PERP.BINANCE",
+        "instrument_metadata_identity": "b4579742d10d7e1e529689ae07c3db2b6a9362430d0b8cd7112a4d9846eef226",
+        "lab_run_config_sha256": "11882dd8dabbefb520ac2b128eb274f5a578aa1ee5f560209396ac5537c32c2c",
+        "missing_market_state": 0,
+        "native_funding_cache_count": 1272,
+        "native_mark_cache_count": 10000,
+        "no_market_data_precision_warnings": 0,
+        "pinned_nautilus_version": "2.0.0rc2",
+        "precision_skipped_bars": 0,
+        "raw_numeric_values_mutated": false,
+        "rejected_precision_events": 0,
+        "runtime_diagnostics": {
+          "error_patterns": [],
+          "fatal_runtime_diagnostics": 0,
+          "log_byte_size": 0,
+          "log_created": false,
+          "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "schema": "nautilus-executable-market-state-acceptance-v1",
+        "sentinel_fills": [
+          {
+            "diagnostics": {
+              "error_patterns": [],
+              "fatal_runtime_diagnostics": 0,
+              "log_byte_size": 0,
+              "log_created": false,
+              "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "effective_insert_latency_ns": 60000000000,
+            "fill_count": 1,
+            "fill_price": "29035.19000000",
+            "fill_quantity": "0.100",
+            "fill_ts_event": 1609459380000000000,
+            "guard_failure_count": 0,
+            "order_count": 1,
+            "performance_research": false,
+            "rejected_order_count": 0,
+            "role": "WINDOW_START",
+            "same_bar_fill": false,
+            "signal_bar_ts_init": 1609459320000000000,
+            "status": "PASS"
+          },
+          {
+            "diagnostics": {
+              "error_patterns": [],
+              "fatal_runtime_diagnostics": 0,
+              "log_byte_size": 0,
+              "log_created": false,
+              "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "effective_insert_latency_ns": 60000000000,
+            "fill_count": 1,
+            "fill_price": "61479.21000000",
+            "fill_quantity": "0.100",
+            "fill_ts_event": 1618617720000000000,
+            "guard_failure_count": 0,
+            "order_count": 1,
+            "performance_research": false,
+            "rejected_order_count": 0,
+            "role": "WINDOW_MIDPOINT",
+            "same_bar_fill": false,
+            "signal_bar_ts_init": 1618617660000000000,
+            "status": "PASS"
+          },
+          {
+            "diagnostics": {
+              "error_patterns": [],
+              "fatal_runtime_diagnostics": 0,
+              "log_byte_size": 0,
+              "log_created": false,
+              "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "effective_insert_latency_ns": 60000000000,
+            "fill_count": 1,
+            "fill_price": "41694.16000000",
+            "fill_quantity": "0.100",
+            "fill_ts_event": 1627775880000000000,
+            "guard_failure_count": 0,
+            "order_count": 1,
+            "performance_research": false,
+            "rejected_order_count": 0,
+            "role": "WINDOW_END",
+            "same_bar_fill": false,
+            "signal_bar_ts_init": 1627775820000000000,
+            "status": "PASS"
+          },
+          {
+            "diagnostics": {
+              "error_patterns": [],
+              "fatal_runtime_diagnostics": 0,
+              "log_byte_size": 0,
+              "log_created": false,
+              "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "effective_insert_latency_ns": 60000000000,
+            "fill_count": 1,
+            "fill_price": "61424.68000000",
+            "fill_quantity": "0.100",
+            "fill_ts_event": 1618617660000000000,
+            "guard_failure_count": 0,
+            "order_count": 1,
+            "performance_research": false,
+            "rejected_order_count": 0,
+            "role": "AROUND_FUNDING_BOUNDARY",
+            "same_bar_fill": false,
+            "signal_bar_ts_init": 1618617600000000000,
+            "status": "PASS"
+          }
+        ],
+        "static_precision_and_grid": {
+          "execution_price_precision_mismatches": 0,
+          "execution_tick_grid_mismatches": 0,
+          "execution_volume_precision_mismatches": 0,
+          "mark_precision_mismatches": 0
+        },
+        "status": "PASS",
+        "strategy_research_run": false,
+        "zero_latency_negative_control": {
+          "accepted_for_release": false,
+          "diagnostics": {
+            "error_patterns": [],
+            "fatal_runtime_diagnostics": 0,
+            "log_byte_size": 0,
+            "log_created": false,
+            "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "effective_insert_latency_ns": 0,
+          "fill_count": 1,
+          "fill_price": "29035.19000000",
+          "fill_quantity": "0.100",
+          "fill_ts_event": 1609459320000000000,
+          "guard_failure_count": 0,
+          "order_count": 1,
+          "performance_research": false,
+          "reason": "LOCKED_LATENCY_IS_60_SECONDS",
+          "rejected_order_count": 0,
+          "role": "ZERO_LATENCY_NEGATIVE_CONTROL",
+          "same_bar_fill": true,
+          "signal_bar_ts_init": 1609459320000000000,
+          "status": "FAIL"
+        },
+        "zero_padding_only": true
+      },
+      "release_time_range": {
+        "end_exclusive": "2021-08-01T00:00:00Z",
+        "start_inclusive": "2021-01-01T00:00:00Z"
+      },
+      "status": "PASS"
+    }
+  },
+  "independent": {
+    "path": "data/duckdb/instrument-representation-funding-checker-001/independent-v3.duckdb",
+    "physical_sha256": "7c6bc679a651757235942f186eb113d22c503b41fe82018550a1c494f86a00b9",
+    "row_counts": {
+      "build_manifests": 1,
+      "data_windows": 2,
+      "dataset_release_supersessions": 2,
+      "dataset_releases": 2,
+      "instrument_metadata": 2,
+      "instrument_metadata_source_bindings": 6,
+      "minute_dispositions": 610560,
+      "nautilus_market_state_acceptance": 2,
+      "perpetual_execution_bars_1m": 305280,
+      "perpetual_funding_events": 636,
+      "perpetual_mark_bars_1m": 305280,
+      "publisher_checksums": 630,
+      "raw_objects": 2243,
+      "release_members": 1528585,
+      "schema_metadata": 1,
+      "source_conflicts": 166,
+      "source_observations": 2670038,
+      "spot_agg_trades": 414003,
+      "spot_execution_bars_1m": 304596,
+      "validation_results": 8,
+      "verified_no_trade_intervals": 684
+    },
+    "size_bytes": 1758474240
+  },
+  "physical_hash_equality_required": false,
+  "physical_hashes_equal": false,
+  "primary": {
+    "path": "data/duckdb/instrument-representation-funding-checker-001/primary-v6.duckdb",
+    "physical_sha256": "bf8413f38cf9c7a4a8238e17680404e36c94dd3b757cbb3581e297b49240e5fb",
+    "row_counts": {
+      "build_manifests": 1,
+      "data_windows": 2,
+      "dataset_release_supersessions": 2,
+      "dataset_releases": 2,
+      "instrument_metadata": 2,
+      "instrument_metadata_source_bindings": 6,
+      "minute_dispositions": 610560,
+      "nautilus_market_state_acceptance": 2,
+      "perpetual_execution_bars_1m": 305280,
+      "perpetual_funding_events": 636,
+      "perpetual_mark_bars_1m": 305280,
+      "publisher_checksums": 630,
+      "raw_objects": 2243,
+      "release_members": 1528585,
+      "schema_metadata": 1,
+      "source_conflicts": 166,
+      "source_observations": 2670038,
+      "spot_agg_trades": 414003,
+      "spot_execution_bars_1m": 304596,
+      "validation_results": 8,
+      "verified_no_trade_intervals": 684
+    },
+    "size_bytes": 1755852800
+  },
+  "schema": "instrument-repair-deterministic-rebuild-v1",
+  "schema_identity": "74276cca97b16757602a2d90f140891fa08d1463c901d5b75ad69d7f23ffa4da",
+  "semantic_comparison": {
+    "catalog_identities": [
+      "7c96897a8e1ea3c02198238a277fb8c3d995f54dd90dc381e534a5f21b017ae0",
+      "db0971d28caba547378e3acba5ad8df1cbd0d6d5be963d153248928a729e374f"
+    ],
+    "dataset_release_ids": [
+      "b6c8f5d659f3441c924b613d770342796c90b90a970f42a3dc8227c856198917",
+      "fd8542c109cfbf7d6b19d5b7bbb7705c6a161efc807695f3671978c381e34eca"
+    ],
+    "exact_keys_compared": [
+      "status",
+      "schema_identity",
+      "source_inventory_identity",
+      "semantic_database_identity",
+      "semantic_export_contract",
+      "pre_manifest_table_hashes",
+      "readonly_table_hashes",
+      "row_counts",
+      "readonly_row_counts",
+      "dataset_release_ids",
+      "releases",
+      "catalogs",
+      "spot",
+      "perpetual",
+      "funding",
+      "window_contracts",
+      "data_tool_lock_identity",
+      "network_used_during_build",
+      "strategy_run",
+      "official_trial",
+      "source_precision_audit",
+      "instrument_metadata_identities",
+      "market_state_acceptance",
+      "superseded_dataset_releases"
+    ],
+    "independent_file_sha256": "7c6bc679a651757235942f186eb113d22c503b41fe82018550a1c494f86a00b9",
+    "independent_size_bytes": 1758474240,
+    "physical_file_hashes_equal": false,
+    "primary_file_sha256": "bf8413f38cf9c7a4a8238e17680404e36c94dd3b757cbb3581e297b49240e5fb",
+    "primary_size_bytes": 1755852800,
+    "semantic_database_identity": "11329c1497ff6bf3a68c5d3ba994f5ac2bbd0ece51cf489f9fa3f681a01ecbff",
+    "status": "PASS"
+  },
+  "semantic_database_identity": "11329c1497ff6bf3a68c5d3ba994f5ac2bbd0ece51cf489f9fa3f681a01ecbff",
+  "status": "PASS"
+}

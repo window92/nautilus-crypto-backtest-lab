@@ -1,0 +1,213 @@
+{
+  "canonical_market_numeric_values_changed": false,
+  "canonical_table_comparisons": {
+    "minute_dispositions": {
+      "exact_rows_equal": true,
+      "historical_minus_repaired": 0,
+      "historical_row_count": 610560,
+      "repaired_minus_historical": 0,
+      "repaired_row_count": 610560
+    },
+    "perpetual_execution_bars_1m": {
+      "exact_rows_equal": true,
+      "historical_minus_repaired": 0,
+      "historical_row_count": 305280,
+      "repaired_minus_historical": 0,
+      "repaired_row_count": 305280
+    },
+    "perpetual_funding_events": {
+      "exact_rows_equal": true,
+      "historical_minus_repaired": 0,
+      "historical_row_count": 636,
+      "repaired_minus_historical": 0,
+      "repaired_row_count": 636
+    },
+    "perpetual_mark_bars_1m": {
+      "exact_rows_equal": true,
+      "historical_minus_repaired": 0,
+      "historical_row_count": 305280,
+      "repaired_minus_historical": 0,
+      "repaired_row_count": 305280
+    },
+    "source_conflicts": {
+      "exact_rows_equal": true,
+      "historical_minus_repaired": 0,
+      "historical_row_count": 166,
+      "repaired_minus_historical": 0,
+      "repaired_row_count": 166
+    },
+    "spot_agg_trades": {
+      "exact_rows_equal": true,
+      "historical_minus_repaired": 0,
+      "historical_row_count": 414003,
+      "repaired_minus_historical": 0,
+      "repaired_row_count": 414003
+    },
+    "spot_execution_bars_1m": {
+      "exact_rows_equal": true,
+      "historical_minus_repaired": 0,
+      "historical_row_count": 304596,
+      "repaired_minus_historical": 0,
+      "repaired_row_count": 304596
+    },
+    "verified_no_trade_intervals": {
+      "exact_rows_equal": true,
+      "historical_minus_repaired": 0,
+      "historical_row_count": 684,
+      "repaired_minus_historical": 0,
+      "repaired_row_count": 684
+    }
+  },
+  "historical_database": {
+    "path": "/home/builder/projects/nautilus-crypto-backtest-lab/data/duckdb/free-official-binance-data-duckdb-001/primary-v4.duckdb",
+    "sha256": "965dea1cfb4dadf189448e1cb34a58dedbba111727d075fd633a6d41c4400fc6",
+    "size_bytes": 1757949952
+  },
+  "instrument_metadata": {
+    "BINANCE_SPOT_CASH_LONG_ONLY": {
+      "after": {
+        "instrument_id": "BTCUSDT.BINANCE",
+        "instrument_metadata_identity": "9c7ba442a19cb74f8059983ae56db23b8c341ac47c3ba77e2fb8da05a661e3ea",
+        "lot_size_max_quantity": "9000.00000000",
+        "lot_size_min_quantity": "0.00001000",
+        "lot_size_step_size": "0.000001",
+        "market_lot_size_max_quantity": "115.63019741",
+        "market_lot_size_min_quantity": "0E-8",
+        "market_lot_size_step_size": "0E-8",
+        "market_profile": "BINANCE_SPOT_CASH_LONG_ONLY",
+        "max_notional": "9000000.00000000",
+        "max_price": "1000000.00000000",
+        "max_quantity": "115.630197",
+        "min_notional": "5.00000000",
+        "min_price": "0.01000000",
+        "min_quantity": "0.000010",
+        "price_increment": "0.01",
+        "price_precision": 2,
+        "size_increment": "0.000001",
+        "size_precision": 6
+      },
+      "before": {
+        "instrument_id": "BTCUSDT.BINANCE",
+        "instrument_metadata_identity": "44b14e49d0799f12cfa6492b3b56fe38a650e05852f4f8602c0038514c69106e",
+        "lot_size_max_quantity": "9000.00000000",
+        "lot_size_min_quantity": "0.00001000",
+        "lot_size_step_size": "0.00001000",
+        "market_lot_size_max_quantity": "115.63019741",
+        "market_lot_size_min_quantity": "0E-8",
+        "market_lot_size_step_size": "0E-8",
+        "market_profile": "BINANCE_SPOT_CASH_LONG_ONLY",
+        "max_notional": "9000000.00000000",
+        "max_price": "1000000.00000000",
+        "max_quantity": "115.63019000",
+        "min_notional": "5.00000000",
+        "min_price": "0.01000000",
+        "min_quantity": "0.00001000",
+        "price_increment": "0.01000000",
+        "price_precision": 2,
+        "size_increment": "0.00001000",
+        "size_precision": 5
+      },
+      "economic_order_grid": {
+        "evidence": {
+          "historical_exact_for_window": false,
+          "historical_numeric_increments_proven": true,
+          "limits": "CURRENT_OFFICIAL_FILTERS_FAIL_CLOSED_FOR_QUALIFICATION",
+          "price_increment": {
+            "authority": "CURRENT_OFFICIAL_FILTER_PLUS_NO_RELEVANT_BINANCE_CHANGE_IN_OFFICIAL_ANNOUNCEMENT_AUDIT",
+            "source_raw_object_sha256s": [
+              "307b4b3adc864bde63fb63f3cd5d51e353bd355a215ff1a3f68e0ed38b81cb4c",
+              "89e0fb77408dde49f342bfb7929f7adb08af6c73e26eaf203143641ede99ea9a"
+            ],
+            "value": "0.01"
+          },
+          "size_increment": {
+            "authority": "OFFICIAL_BINANCE_BEFORE_AFTER_STEP_SIZE_TABLE_EFFECTIVE_2021_08_26",
+            "source_raw_object_sha256": "89e0fb77408dde49f342bfb7929f7adb08af6c73e26eaf203143641ede99ea9a",
+            "value": "0.000001"
+          }
+        },
+        "price_increment": "0.01",
+        "size_increment": "0.000001",
+        "validation": "NUMERIC_INCREMENT_AND_LIMITS_BEFORE_NAUTILUS_SUBMISSION"
+      },
+      "raw_source_identity_preserved": true,
+      "runtime_normalization": "LOSSLESS_ZERO_PADDING_ONLY"
+    },
+    "BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING": {
+      "after": {
+        "instrument_id": "BTCUSDT-PERP.BINANCE",
+        "instrument_metadata_identity": "b4579742d10d7e1e529689ae07c3db2b6a9362430d0b8cd7112a4d9846eef226",
+        "lot_size_max_quantity": "1000",
+        "lot_size_min_quantity": "0.001",
+        "lot_size_step_size": "0.001",
+        "market_lot_size_max_quantity": "120",
+        "market_lot_size_min_quantity": "0.001",
+        "market_lot_size_step_size": "0.001",
+        "market_profile": "BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING",
+        "max_notional": "NOT_APPLICABLE",
+        "max_price": "4529764",
+        "max_quantity": "120",
+        "min_notional": "50",
+        "min_price": "556.80",
+        "min_quantity": "0.001",
+        "price_increment": "0.01",
+        "price_precision": 8,
+        "size_increment": "0.001",
+        "size_precision": 3
+      },
+      "before": {
+        "instrument_id": "BTCUSDT-PERP.BINANCE",
+        "instrument_metadata_identity": "24ffafc364399f2f44dd893976c18561d6c131f68ba9429636e0d3fd86e6a615",
+        "lot_size_max_quantity": "1000",
+        "lot_size_min_quantity": "0.001",
+        "lot_size_step_size": "0.001",
+        "market_lot_size_max_quantity": "120",
+        "market_lot_size_min_quantity": "0.001",
+        "market_lot_size_step_size": "0.001",
+        "market_profile": "BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING",
+        "max_notional": "NOT_APPLICABLE",
+        "max_price": "4529764",
+        "max_quantity": "120",
+        "min_notional": "50",
+        "min_price": "556.80",
+        "min_quantity": "0.001",
+        "price_increment": "0.10",
+        "price_precision": 1,
+        "size_increment": "0.001",
+        "size_precision": 3
+      },
+      "economic_order_grid": {
+        "evidence": {
+          "historical_exact_for_window": false,
+          "historical_numeric_increments_proven": true,
+          "limits": "CURRENT_OFFICIAL_FILTERS_FAIL_CLOSED_FOR_QUALIFICATION",
+          "price_increment": {
+            "authority": "OFFICIAL_BINANCE_BEFORE_AFTER_TICK_SIZE_TABLE_EFFECTIVE_2022_02_15",
+            "source_raw_object_sha256": "ca85fd9286601514fdb00610aef15f7ee43b5e0657c865ad18e97c0763e8b5d1",
+            "value": "0.01"
+          },
+          "size_increment": {
+            "authority": "OFFICIAL_EXCHANGE_INFO_AND_LOCKED_QUANTITY_REPRESENTATION",
+            "source_raw_object_sha256": "23fba8a309fe4ef559dec3cb81c8db6b315b600653527dfdf25310e34f022cd8",
+            "value": "0.001"
+          }
+        },
+        "price_increment": "0.01",
+        "size_increment": "0.001",
+        "validation": "NUMERIC_INCREMENT_AND_LIMITS_BEFORE_NAUTILUS_SUBMISSION"
+      },
+      "raw_source_identity_preserved": true,
+      "runtime_normalization": "LOSSLESS_ZERO_PADDING_ONLY"
+    }
+  },
+  "permitted_runtime_transformation": "LOSSLESS_ZERO_PADDING_ONLY",
+  "raw_canonical_decimal_spellings_changed": false,
+  "repaired_database": {
+    "path": "/home/builder/projects/nautilus-crypto-backtest-lab/data/duckdb/instrument-representation-funding-checker-001/primary-v6.duckdb",
+    "sha256": "bf8413f38cf9c7a4a8238e17680404e36c94dd3b757cbb3581e297b49240e5fb",
+    "size_bytes": 1755852800
+  },
+  "rounding_or_truncation_used": false,
+  "schema": "instrument-representation-value-continuity-v1",
+  "status": "PASS"
+}

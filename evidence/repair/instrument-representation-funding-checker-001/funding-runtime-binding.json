@@ -1,0 +1,18 @@
+{
+  "financial_cardinality_source": "PositionAdjusted(FUNDING) plus AccountState cash effect",
+  "native_binding": "NAUTILUS_2_0_0RC2_EXPLICIT_SOURCE_BOUNDARY_PAIR",
+  "negative_controls": [
+    "two runtime updates map to one source event",
+    "duplicate source event fails FUNDING_AMBIGUOUS",
+    "duplicate runtime pair fails FUNDING_AMBIGUOUS",
+    "genuine second native settlement fails FUNDING_DOUBLE_COUNT",
+    "long debit and short credit",
+    "no-position boundary has zero settlements"
+  ],
+  "runtime_pair_is_not_two_settlements": true,
+  "runtime_update_count": 1272,
+  "schema": "funding-runtime-binding-v1",
+  "source_event_count": 636,
+  "status": "PASS",
+  "test_module_status": "PASS"
+}

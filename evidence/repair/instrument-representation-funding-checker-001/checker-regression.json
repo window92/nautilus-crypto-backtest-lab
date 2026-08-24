@@ -1,0 +1,71 @@
+{
+  "classification": "INSTRUMENT_REPRESENTATION_PREVENTED_EXECUTABLE_MARKET_STATE",
+  "historical_trials_preserved": true,
+  "records": {
+    "perpetual": {
+      "historical_bytes_after": {
+        "checker.json": "0efe0ee1dd6cbea3c28c0f9e9b01201e96451be719c27e4fb9565fde95075aed",
+        "fills.csv": "cb6dc08297c5d8c5cdd5fa1986389e1a36eb20dc471b77206afa6be847f7a062",
+        "nautilus_result.json": "d4fbd0065ba0fb4b05f4e16cc73bb57b231476c2b5943060fb906b11ddecc45d",
+        "orders.csv": "b69d716ca94c7790685200c1ba6af83419de509a2ed5fdd72284443db9a895fb"
+      },
+      "historical_bytes_before": {
+        "checker.json": "0efe0ee1dd6cbea3c28c0f9e9b01201e96451be719c27e4fb9565fde95075aed",
+        "fills.csv": "cb6dc08297c5d8c5cdd5fa1986389e1a36eb20dc471b77206afa6be847f7a062",
+        "nautilus_result.json": "d4fbd0065ba0fb4b05f4e16cc73bb57b231476c2b5943060fb906b11ddecc45d",
+        "orders.csv": "b69d716ca94c7790685200c1ba6af83419de509a2ed5fdd72284443db9a895fb"
+      },
+      "historical_bytes_mutated": false,
+      "market_state_check": {
+        "fill_count": 0,
+        "name": "orders_reach_executable_market_state",
+        "no_market_rejection_count": 180,
+        "order_count": 180,
+        "pass": false,
+        "rejected_order_count": 180
+      },
+      "persisted_failure_codes": [
+        "FUNDING_DOUBLE_COUNT"
+      ],
+      "persisted_outcome": "CHECK_FAIL",
+      "regenerated_current_failure_codes": [
+        "CAUSAL_EXECUTION_UNRESOLVED",
+        "FUNDING_AMBIGUOUS"
+      ],
+      "regenerated_current_outcome": "CHECK_FAIL",
+      "run_path": "runs/owner-smoke-002-perpetual-run-11882dd8dabb"
+    },
+    "spot": {
+      "historical_bytes_after": {
+        "checker.json": "8177bbe423bac731f667b6678a1919b811263443746ce26d47c9fa91643cbf5b",
+        "fills.csv": "cb6dc08297c5d8c5cdd5fa1986389e1a36eb20dc471b77206afa6be847f7a062",
+        "nautilus_result.json": "ab48b0c1ae4b1484f5efda09464a051525aee1f481ad84f59e218388c4b6fddc",
+        "orders.csv": "1d50c1053b2f18a152b322c61bcbffaa2d55b40658d1adbee3b1926cdb91fd59"
+      },
+      "historical_bytes_before": {
+        "checker.json": "8177bbe423bac731f667b6678a1919b811263443746ce26d47c9fa91643cbf5b",
+        "fills.csv": "cb6dc08297c5d8c5cdd5fa1986389e1a36eb20dc471b77206afa6be847f7a062",
+        "nautilus_result.json": "ab48b0c1ae4b1484f5efda09464a051525aee1f481ad84f59e218388c4b6fddc",
+        "orders.csv": "1d50c1053b2f18a152b322c61bcbffaa2d55b40658d1adbee3b1926cdb91fd59"
+      },
+      "historical_bytes_mutated": false,
+      "market_state_check": {
+        "fill_count": 0,
+        "name": "orders_reach_executable_market_state",
+        "no_market_rejection_count": 89,
+        "order_count": 89,
+        "pass": false,
+        "rejected_order_count": 89
+      },
+      "persisted_failure_codes": [],
+      "persisted_outcome": "CHECK_PASS",
+      "regenerated_current_failure_codes": [
+        "CAUSAL_EXECUTION_UNRESOLVED"
+      ],
+      "regenerated_current_outcome": "CHECK_FAIL",
+      "run_path": "runs/owner-smoke-002-spot-run-retry-001-8a09aee98d9f"
+    }
+  },
+  "schema": "instrument-repair-checker-regression-v1",
+  "status": "PASS"
+}

@@ -1,0 +1,22 @@
+{
+  "attestation_recorded_at_utc": "2026-08-23T22:57:32.437421Z",
+  "branch": "main",
+  "cold_start_observed_before_any_repair_write": true,
+  "epoch": "NAUTILUS_INSTRUMENT_REPRESENTATION_AND_FUNDING_CHECKER_REPAIR_001",
+  "git_status": "CLEAN",
+  "hashes": {
+    "SSOT.md": "b4deb7048242239234de7eaa353b623b3e45247eb42f1021dbc26ffd910edb99",
+    "requirements.lock.txt": "b2765c9e33b10566fc327b48920fd1d3a73618c19622baaceab1fe9dca61df47",
+    "runtime.lock.json": "4032df9f355348c2a0cfa9f79f331f97c9a8d24ecc8490a573d2c7f788bafddd"
+  },
+  "head": "07432371c82cc62b1ff05ed5900a4d50c91df385",
+  "locks_modified_by_repair": false,
+  "origin_main": "07432371c82cc62b1ff05ed5900a4d50c91df385",
+  "repository": "/home/builder/projects/nautilus-crypto-backtest-lab",
+  "schema": "instrument-repair-baseline-attestation-v1",
+  "staged_files": [],
+  "status": "PASS",
+  "tracked_modifications": [],
+  "untracked_files": [],
+  "user": "builder"
+}

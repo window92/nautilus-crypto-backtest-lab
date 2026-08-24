@@ -1,0 +1,20 @@
+{
+  "payloads_committed": false,
+  "perpetual": {
+    "catalog_identity": "7c96897a8e1ea3c02198238a277fb8c3d995f54dd90dc381e534a5f21b017ae0",
+    "execution_bar_count": 305280,
+    "funding_source_event_count": 636,
+    "funding_update_count": 1272,
+    "identity": "7c96897a8e1ea3c02198238a277fb8c3d995f54dd90dc381e534a5f21b017ae0",
+    "mark_update_count": 305280
+  },
+  "schema": "instrument-repair-catalog-identities-v1",
+  "spot": {
+    "catalog_identity": "db0971d28caba547378e3acba5ad8df1cbd0d6d5be963d153248928a729e374f",
+    "execution_bar_count": 304596,
+    "funding_update_count": 0,
+    "identity": "db0971d28caba547378e3acba5ad8df1cbd0d6d5be963d153248928a729e374f",
+    "mark_update_count": 0
+  },
+  "status": "PASS"
+}

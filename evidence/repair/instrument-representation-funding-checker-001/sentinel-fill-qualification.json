@@ -1,0 +1,236 @@
+{
+  "performance_evaluated": false,
+  "perpetual": [
+    {
+      "diagnostics": {
+        "error_patterns": [],
+        "fatal_runtime_diagnostics": 0,
+        "log_byte_size": 0,
+        "log_created": false,
+        "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "effective_insert_latency_ns": 60000000000,
+      "fill_count": 1,
+      "fill_price": "29035.19000000",
+      "fill_quantity": "0.100",
+      "fill_ts_event": 1609459380000000000,
+      "guard_failure_count": 0,
+      "order_count": 1,
+      "performance_research": false,
+      "rejected_order_count": 0,
+      "role": "WINDOW_START",
+      "same_bar_fill": false,
+      "signal_bar_ts_init": 1609459320000000000,
+      "status": "PASS"
+    },
+    {
+      "diagnostics": {
+        "error_patterns": [],
+        "fatal_runtime_diagnostics": 0,
+        "log_byte_size": 0,
+        "log_created": false,
+        "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "effective_insert_latency_ns": 60000000000,
+      "fill_count": 1,
+      "fill_price": "61479.21000000",
+      "fill_quantity": "0.100",
+      "fill_ts_event": 1618617720000000000,
+      "guard_failure_count": 0,
+      "order_count": 1,
+      "performance_research": false,
+      "rejected_order_count": 0,
+      "role": "WINDOW_MIDPOINT",
+      "same_bar_fill": false,
+      "signal_bar_ts_init": 1618617660000000000,
+      "status": "PASS"
+    },
+    {
+      "diagnostics": {
+        "error_patterns": [],
+        "fatal_runtime_diagnostics": 0,
+        "log_byte_size": 0,
+        "log_created": false,
+        "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "effective_insert_latency_ns": 60000000000,
+      "fill_count": 1,
+      "fill_price": "41694.16000000",
+      "fill_quantity": "0.100",
+      "fill_ts_event": 1627775880000000000,
+      "guard_failure_count": 0,
+      "order_count": 1,
+      "performance_research": false,
+      "rejected_order_count": 0,
+      "role": "WINDOW_END",
+      "same_bar_fill": false,
+      "signal_bar_ts_init": 1627775820000000000,
+      "status": "PASS"
+    },
+    {
+      "diagnostics": {
+        "error_patterns": [],
+        "fatal_runtime_diagnostics": 0,
+        "log_byte_size": 0,
+        "log_created": false,
+        "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "effective_insert_latency_ns": 60000000000,
+      "fill_count": 1,
+      "fill_price": "61424.68000000",
+      "fill_quantity": "0.100",
+      "fill_ts_event": 1618617660000000000,
+      "guard_failure_count": 0,
+      "order_count": 1,
+      "performance_research": false,
+      "rejected_order_count": 0,
+      "role": "AROUND_FUNDING_BOUNDARY",
+      "same_bar_fill": false,
+      "signal_bar_ts_init": 1618617600000000000,
+      "status": "PASS"
+    }
+  ],
+  "schema": "sentinel-fill-qualification-v1",
+  "spot": [
+    {
+      "diagnostics": {
+        "error_patterns": [],
+        "fatal_runtime_diagnostics": 0,
+        "log_byte_size": 0,
+        "log_created": false,
+        "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "effective_insert_latency_ns": 60000000000,
+      "fill_count": 1,
+      "fill_price": "28989.31",
+      "fill_quantity": "0.100000",
+      "fill_ts_event": 1609459380000000000,
+      "guard_failure_count": 0,
+      "order_count": 1,
+      "performance_research": false,
+      "rejected_order_count": 0,
+      "role": "WINDOW_START",
+      "same_bar_fill": false,
+      "signal_bar_ts_init": 1609459320000000000,
+      "status": "PASS"
+    },
+    {
+      "diagnostics": {
+        "error_patterns": [],
+        "fatal_runtime_diagnostics": 0,
+        "log_byte_size": 0,
+        "log_created": false,
+        "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "effective_insert_latency_ns": 60000000000,
+      "fill_count": 1,
+      "fill_price": "61720.28",
+      "fill_quantity": "0.100000",
+      "fill_ts_event": 1618612200000000000,
+      "guard_failure_count": 0,
+      "order_count": 1,
+      "performance_research": false,
+      "rejected_order_count": 0,
+      "role": "WINDOW_MIDPOINT",
+      "same_bar_fill": false,
+      "signal_bar_ts_init": 1618612140000000000,
+      "status": "PASS"
+    },
+    {
+      "diagnostics": {
+        "error_patterns": [],
+        "fatal_runtime_diagnostics": 0,
+        "log_byte_size": 0,
+        "log_created": false,
+        "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "effective_insert_latency_ns": 60000000000,
+      "fill_count": 1,
+      "fill_price": "41692.33",
+      "fill_quantity": "0.100000",
+      "fill_ts_event": 1627775880000000000,
+      "guard_failure_count": 0,
+      "order_count": 1,
+      "performance_research": false,
+      "rejected_order_count": 0,
+      "role": "WINDOW_END",
+      "same_bar_fill": false,
+      "signal_bar_ts_init": 1627775820000000000,
+      "status": "PASS"
+    },
+    {
+      "diagnostics": {
+        "error_patterns": [],
+        "fatal_runtime_diagnostics": 0,
+        "log_byte_size": 0,
+        "log_created": false,
+        "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "effective_insert_latency_ns": 60000000000,
+      "fill_count": 1,
+      "fill_price": "44731.73",
+      "fill_quantity": "0.100000",
+      "fill_ts_event": 1613019720000000000,
+      "guard_failure_count": 0,
+      "order_count": 1,
+      "performance_research": false,
+      "rejected_order_count": 0,
+      "role": "AFTER_VERIFIED_NO_TRADE",
+      "same_bar_fill": false,
+      "signal_bar_ts_init": 1613019660000000000,
+      "status": "PASS"
+    }
+  ],
+  "status": "PASS",
+  "strategy_research": false,
+  "zero_latency_negative_controls": {
+    "perpetual": {
+      "accepted_for_release": false,
+      "diagnostics": {
+        "error_patterns": [],
+        "fatal_runtime_diagnostics": 0,
+        "log_byte_size": 0,
+        "log_created": false,
+        "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "effective_insert_latency_ns": 0,
+      "fill_count": 1,
+      "fill_price": "29035.19000000",
+      "fill_quantity": "0.100",
+      "fill_ts_event": 1609459320000000000,
+      "guard_failure_count": 0,
+      "order_count": 1,
+      "performance_research": false,
+      "reason": "LOCKED_LATENCY_IS_60_SECONDS",
+      "rejected_order_count": 0,
+      "role": "ZERO_LATENCY_NEGATIVE_CONTROL",
+      "same_bar_fill": true,
+      "signal_bar_ts_init": 1609459320000000000,
+      "status": "FAIL"
+    },
+    "spot": {
+      "accepted_for_release": false,
+      "diagnostics": {
+        "error_patterns": [],
+        "fatal_runtime_diagnostics": 0,
+        "log_byte_size": 0,
+        "log_created": false,
+        "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "effective_insert_latency_ns": 0,
+      "fill_count": 1,
+      "fill_price": "29009.92",
+      "fill_quantity": "0.100000",
+      "fill_ts_event": 1609459320000000000,
+      "guard_failure_count": 0,
+      "order_count": 1,
+      "performance_research": false,
+      "reason": "LOCKED_LATENCY_IS_60_SECONDS",
+      "rejected_order_count": 0,
+      "role": "ZERO_LATENCY_NEGATIVE_CONTROL",
+      "same_bar_fill": true,
+      "signal_bar_ts_init": 1609459320000000000,
+      "status": "FAIL"
+    }
+  }
+}

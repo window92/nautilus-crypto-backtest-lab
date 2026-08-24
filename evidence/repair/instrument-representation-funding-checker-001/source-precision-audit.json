@@ -1,0 +1,443 @@
+{
+  "numeric_market_value_changed": false,
+  "perpetual": {
+    "bar_volume_and_order_quantity_representation_precision": 3,
+    "economic_order_quantity_contract": {
+      "max_quantity": "120",
+      "min_quantity": "0.001",
+      "representation_precision": 3,
+      "size_increment": "0.001"
+    },
+    "execution_fields": {
+      "close": {
+        "affected_row_count": 256955,
+        "field": "close",
+        "first_affected_timestamp_ns": 1609459200000000000,
+        "last_affected_timestamp_ns": 1627775940000000000,
+        "lossless_zero_padding_possible": true,
+        "maximum_exact_required_decimal_precision": 2,
+        "previous_representation_precision": 1,
+        "required_precision_distribution": {
+          "0": 22080,
+          "1": 26245,
+          "2": 256955
+        },
+        "rounding_required": false,
+        "row_count": 305280,
+        "source_spelling_precision_distribution": {
+          "0": 22080,
+          "1": 26245,
+          "2": 256955
+        },
+        "source_spellings_with_trailing_zeros_only_above_previous_precision": 0,
+        "values_requiring_non_zero_digits_above_previous_precision": 256955
+      },
+      "high": {
+        "affected_row_count": 212505,
+        "field": "high",
+        "first_affected_timestamp_ns": 1609459200000000000,
+        "last_affected_timestamp_ns": 1627775940000000000,
+        "lossless_zero_padding_possible": true,
+        "maximum_exact_required_decimal_precision": 2,
+        "previous_representation_precision": 1,
+        "required_precision_distribution": {
+          "0": 68106,
+          "1": 24669,
+          "2": 212505
+        },
+        "rounding_required": false,
+        "row_count": 305280,
+        "source_spelling_precision_distribution": {
+          "0": 68106,
+          "1": 24669,
+          "2": 212505
+        },
+        "source_spellings_with_trailing_zeros_only_above_previous_precision": 0,
+        "values_requiring_non_zero_digits_above_previous_precision": 212505
+      },
+      "low": {
+        "affected_row_count": 213200,
+        "field": "low",
+        "first_affected_timestamp_ns": 1609459260000000000,
+        "last_affected_timestamp_ns": 1627775940000000000,
+        "lossless_zero_padding_possible": true,
+        "maximum_exact_required_decimal_precision": 2,
+        "previous_representation_precision": 1,
+        "required_precision_distribution": {
+          "0": 67304,
+          "1": 24776,
+          "2": 213200
+        },
+        "rounding_required": false,
+        "row_count": 305280,
+        "source_spelling_precision_distribution": {
+          "0": 67304,
+          "1": 24776,
+          "2": 213200
+        },
+        "source_spellings_with_trailing_zeros_only_above_previous_precision": 0,
+        "values_requiring_non_zero_digits_above_previous_precision": 213200
+      },
+      "open": {
+        "affected_row_count": 258633,
+        "field": "open",
+        "first_affected_timestamp_ns": 1609459200000000000,
+        "last_affected_timestamp_ns": 1627775940000000000,
+        "lossless_zero_padding_possible": true,
+        "maximum_exact_required_decimal_precision": 2,
+        "previous_representation_precision": 1,
+        "required_precision_distribution": {
+          "0": 20424,
+          "1": 26223,
+          "2": 258633
+        },
+        "rounding_required": false,
+        "row_count": 305280,
+        "source_spelling_precision_distribution": {
+          "0": 20424,
+          "1": 26223,
+          "2": 258633
+        },
+        "source_spellings_with_trailing_zeros_only_above_previous_precision": 0,
+        "values_requiring_non_zero_digits_above_previous_precision": 258633
+      },
+      "volume": {
+        "affected_row_count": 0,
+        "field": "volume",
+        "first_affected_timestamp_ns": null,
+        "last_affected_timestamp_ns": null,
+        "lossless_zero_padding_possible": true,
+        "maximum_exact_required_decimal_precision": 3,
+        "previous_representation_precision": 3,
+        "required_precision_distribution": {
+          "0": 347,
+          "1": 2734,
+          "2": 27620,
+          "3": 274579
+        },
+        "rounding_required": false,
+        "row_count": 305280,
+        "source_spelling_precision_distribution": {
+          "0": 347,
+          "1": 2734,
+          "2": 27620,
+          "3": 274579
+        },
+        "source_spellings_with_trailing_zeros_only_above_previous_precision": 0,
+        "values_requiring_non_zero_digits_above_previous_precision": 0
+      }
+    },
+    "execution_price_maximum_exact_precision": 2,
+    "funding_fields": {
+      "funding_rate": {
+        "affected_row_count": 636,
+        "field": "funding_rate",
+        "first_affected_timestamp_ns": 1609459200002000000,
+        "last_affected_timestamp_ns": 1627747200003000000,
+        "lossless_zero_padding_possible": true,
+        "maximum_exact_required_decimal_precision": 8,
+        "previous_representation_precision": 0,
+        "required_precision_distribution": {
+          "4": 198,
+          "5": 1,
+          "6": 3,
+          "7": 37,
+          "8": 397
+        },
+        "rounding_required": false,
+        "row_count": 636,
+        "source_spelling_precision_distribution": {
+          "4": 198,
+          "5": 1,
+          "6": 3,
+          "7": 37,
+          "8": 397
+        },
+        "source_spellings_with_trailing_zeros_only_above_previous_precision": 0,
+        "values_requiring_non_zero_digits_above_previous_precision": 636
+      }
+    },
+    "instrument_price_representation_precision": 8,
+    "mark_fields": {
+      "close": {
+        "affected_row_count": 283652,
+        "field": "close",
+        "first_affected_timestamp_ns": 1609459200000000000,
+        "last_affected_timestamp_ns": 1627775880000000000,
+        "lossless_zero_padding_possible": true,
+        "maximum_exact_required_decimal_precision": 8,
+        "previous_representation_precision": 1,
+        "required_precision_distribution": {
+          "0": 9816,
+          "1": 11812,
+          "2": 116881,
+          "3": 5,
+          "4": 31,
+          "5": 183,
+          "6": 1584,
+          "7": 14946,
+          "8": 150022
+        },
+        "rounding_required": false,
+        "row_count": 305280,
+        "source_spelling_precision_distribution": {
+          "0": 9816,
+          "1": 11812,
+          "2": 116881,
+          "3": 5,
+          "4": 31,
+          "5": 183,
+          "6": 1584,
+          "7": 14946,
+          "8": 150022
+        },
+        "source_spellings_with_trailing_zeros_only_above_previous_precision": 0,
+        "values_requiring_non_zero_digits_above_previous_precision": 283652
+      },
+      "high": {
+        "affected_row_count": 282933,
+        "field": "high",
+        "first_affected_timestamp_ns": 1609459200000000000,
+        "last_affected_timestamp_ns": 1627775940000000000,
+        "lossless_zero_padding_possible": true,
+        "maximum_exact_required_decimal_precision": 8,
+        "previous_representation_precision": 1,
+        "required_precision_distribution": {
+          "0": 12964,
+          "1": 9383,
+          "2": 91283,
+          "3": 8,
+          "4": 41,
+          "5": 206,
+          "6": 1783,
+          "7": 17201,
+          "8": 172411
+        },
+        "rounding_required": false,
+        "row_count": 305280,
+        "source_spelling_precision_distribution": {
+          "0": 12964,
+          "1": 9383,
+          "2": 91283,
+          "3": 8,
+          "4": 41,
+          "5": 206,
+          "6": 1783,
+          "7": 17201,
+          "8": 172411
+        },
+        "source_spellings_with_trailing_zeros_only_above_previous_precision": 0,
+        "values_requiring_non_zero_digits_above_previous_precision": 282933
+      },
+      "low": {
+        "affected_row_count": 274259,
+        "field": "low",
+        "first_affected_timestamp_ns": 1609459260000000000,
+        "last_affected_timestamp_ns": 1627775940000000000,
+        "lossless_zero_padding_possible": true,
+        "maximum_exact_required_decimal_precision": 8,
+        "previous_representation_precision": 1,
+        "required_precision_distribution": {
+          "0": 17302,
+          "1": 13719,
+          "2": 129677,
+          "3": 4,
+          "4": 19,
+          "5": 152,
+          "6": 1429,
+          "7": 13194,
+          "8": 129784
+        },
+        "rounding_required": false,
+        "row_count": 305280,
+        "source_spelling_precision_distribution": {
+          "0": 17302,
+          "1": 13719,
+          "2": 129677,
+          "3": 4,
+          "4": 19,
+          "5": 152,
+          "6": 1429,
+          "7": 13194,
+          "8": 129784
+        },
+        "source_spellings_with_trailing_zeros_only_above_previous_precision": 0,
+        "values_requiring_non_zero_digits_above_previous_precision": 274259
+      },
+      "open": {
+        "affected_row_count": 283478,
+        "field": "open",
+        "first_affected_timestamp_ns": 1609459200000000000,
+        "last_affected_timestamp_ns": 1627775940000000000,
+        "lossless_zero_padding_possible": true,
+        "maximum_exact_required_decimal_precision": 8,
+        "previous_representation_precision": 1,
+        "required_precision_distribution": {
+          "0": 9978,
+          "1": 11824,
+          "2": 116999,
+          "3": 10,
+          "4": 31,
+          "5": 150,
+          "6": 1606,
+          "7": 15089,
+          "8": 149593
+        },
+        "rounding_required": false,
+        "row_count": 305280,
+        "source_spelling_precision_distribution": {
+          "0": 9978,
+          "1": 11824,
+          "2": 116999,
+          "3": 10,
+          "4": 31,
+          "5": 150,
+          "6": 1606,
+          "7": 15089,
+          "8": 149593
+        },
+        "source_spellings_with_trailing_zeros_only_above_previous_precision": 0,
+        "values_requiring_non_zero_digits_above_previous_precision": 283478
+      }
+    },
+    "mark_price_maximum_exact_precision": 8
+  },
+  "raw_canonical_decimal_text_changed": false,
+  "rounding_or_truncation_used": false,
+  "schema": "source-precision-audit-v1",
+  "source_precision_audit_identity": "684b46f92a15d2126791f872a31e9e9062ca62fb325f615fb5a984313a386b40",
+  "spot": {
+    "bar_volume_representation_precision": 6,
+    "economic_order_quantity_contract": {
+      "max_quantity": "115.63019000",
+      "min_quantity": "0.00001000",
+      "representation_precision": 6,
+      "size_increment": "0.00001000"
+    },
+    "execution_price_representation_precision": 2,
+    "fields": {
+      "close": {
+        "affected_row_count": 0,
+        "field": "close",
+        "first_affected_timestamp_ns": null,
+        "last_affected_timestamp_ns": null,
+        "lossless_zero_padding_possible": true,
+        "maximum_exact_required_decimal_precision": 2,
+        "previous_representation_precision": 2,
+        "required_precision_distribution": {
+          "0": 15064,
+          "1": 25414,
+          "2": 264118
+        },
+        "rounding_required": false,
+        "row_count": 304596,
+        "source_spelling_precision_distribution": {
+          "0": 15064,
+          "1": 25414,
+          "2": 264118
+        },
+        "source_spellings_with_trailing_zeros_only_above_previous_precision": 0,
+        "values_requiring_non_zero_digits_above_previous_precision": 0
+      },
+      "high": {
+        "affected_row_count": 0,
+        "field": "high",
+        "first_affected_timestamp_ns": null,
+        "last_affected_timestamp_ns": null,
+        "lossless_zero_padding_possible": true,
+        "maximum_exact_required_decimal_precision": 2,
+        "previous_representation_precision": 2,
+        "required_precision_distribution": {
+          "0": 43320,
+          "1": 23267,
+          "2": 238009
+        },
+        "rounding_required": false,
+        "row_count": 304596,
+        "source_spelling_precision_distribution": {
+          "0": 43320,
+          "1": 23267,
+          "2": 238009
+        },
+        "source_spellings_with_trailing_zeros_only_above_previous_precision": 0,
+        "values_requiring_non_zero_digits_above_previous_precision": 0
+      },
+      "low": {
+        "affected_row_count": 0,
+        "field": "low",
+        "first_affected_timestamp_ns": null,
+        "last_affected_timestamp_ns": null,
+        "lossless_zero_padding_possible": true,
+        "maximum_exact_required_decimal_precision": 2,
+        "previous_representation_precision": 2,
+        "required_precision_distribution": {
+          "0": 41453,
+          "1": 23638,
+          "2": 239505
+        },
+        "rounding_required": false,
+        "row_count": 304596,
+        "source_spelling_precision_distribution": {
+          "0": 41453,
+          "1": 23638,
+          "2": 239505
+        },
+        "source_spellings_with_trailing_zeros_only_above_previous_precision": 0,
+        "values_requiring_non_zero_digits_above_previous_precision": 0
+      },
+      "open": {
+        "affected_row_count": 0,
+        "field": "open",
+        "first_affected_timestamp_ns": null,
+        "last_affected_timestamp_ns": null,
+        "lossless_zero_padding_possible": true,
+        "maximum_exact_required_decimal_precision": 2,
+        "previous_representation_precision": 2,
+        "required_precision_distribution": {
+          "0": 14724,
+          "1": 25223,
+          "2": 264649
+        },
+        "rounding_required": false,
+        "row_count": 304596,
+        "source_spelling_precision_distribution": {
+          "0": 14724,
+          "1": 25223,
+          "2": 264649
+        },
+        "source_spellings_with_trailing_zeros_only_above_previous_precision": 0,
+        "values_requiring_non_zero_digits_above_previous_precision": 0
+      },
+      "volume": {
+        "affected_row_count": 274195,
+        "field": "volume",
+        "first_affected_timestamp_ns": 1609459200000000000,
+        "last_affected_timestamp_ns": 1627775940000000000,
+        "lossless_zero_padding_possible": true,
+        "maximum_exact_required_decimal_precision": 6,
+        "previous_representation_precision": 5,
+        "required_precision_distribution": {
+          "1": 4,
+          "2": 25,
+          "3": 254,
+          "4": 2816,
+          "5": 27302,
+          "6": 274195
+        },
+        "rounding_required": false,
+        "row_count": 304596,
+        "source_spelling_precision_distribution": {
+          "1": 4,
+          "2": 25,
+          "3": 254,
+          "4": 2816,
+          "5": 27302,
+          "6": 274195
+        },
+        "source_spellings_with_trailing_zeros_only_above_previous_precision": 0,
+        "values_requiring_non_zero_digits_above_previous_precision": 274195
+      }
+    },
+    "instrument_size_representation_precision": 6
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "findings": {
+    "bar_ohlc": "matching engine requires exact Instrument price precision",
+    "bar_volume": "matching engine requires exact Instrument size precision",
+    "funding": "one settlement key produces one FundingSettlement and one PositionAdjusted(FUNDING); no eligible position produces no financial settlement",
+    "mark": "MarkPriceUpdate must be exactly representable at Instrument price precision",
+    "matching_orders": "matching engine validates order precision and uses price_increment",
+    "project_guard": "numeric tick/step and LOT_SIZE/MARKET_LOT_SIZE are checked before submission",
+    "risk_engine": "checks precision and native min/max; it does not prove Binance increment multiples"
+  },
+  "schema": "pinned-nautilus-precision-contract-v1",
+  "source_commit": "27a8e54e7ac3c57d6cbf8891f0283dfbaee97317",
+  "source_file_sha256s": {
+    "crates/backtest/src/engine.rs": "66ee96a7a6bcb65b2ab6cafbed9f92e8329180c349ce8fe955de84f0bdc8738a",
+    "crates/backtest/src/exchange.rs": "26d2e417b0a580924911a8de95749dca69816fcd35f475de43eef884def88626",
+    "crates/execution/src/matching_engine/engine.rs": "1f2e393785f9682a6ac6fd673197bb8f3d165bc47743291143508e16e1ea265f",
+    "nautilus_trader/backtest/engine.pyx": "eb404e3558cf00ab9a13e3a1c67b05aab1d1d02647ac67409faa8350d33a1fbb",
+    "nautilus_trader/data/engine.pyx": "c26e3189860c1573c65099cd6aff07ab546a60a3d44e72482ca181f4cb8878f2",
+    "nautilus_trader/model/events/position.pyx": "056251c44afe56957a83b7e22f57bec300aa1cda6297b6db2a0475c4e1f21205",
+    "nautilus_trader/risk/engine.pyx": "bf51d0d886d98c4e95c1ef1aa74e4dd24a236a9fc149fb646a1f038d7dfb8d84"
+  },
+  "source_line_anchors": {
+    "bar_precision": "nautilus_trader/backtest/engine.pyx:4763-4779",
+    "funding_dedup_and_financial_event": "crates/backtest/src/exchange.rs:1071-1418",
+    "funding_timer": "crates/backtest/src/engine.rs:1539-1660",
+    "order_precision": "nautilus_trader/backtest/engine.pyx:5109-5147",
+    "risk_precision": "nautilus_trader/risk/engine.pyx:1041-1057"
+  },
+  "source_repository": "nautechsystems/nautilus_trader",
+  "status": "PASS",
+  "version": "2.0.0rc2",
+  "wheel_filename": "nautilus_trader-2.0.0rc2-cp312-cp312-manylinux_2_34_x86_64.whl",
+  "wheel_sha256": "716169aca15bfb615a27610a9230e670dec5be3d4606fea591fe64eca145a5ac"
+}

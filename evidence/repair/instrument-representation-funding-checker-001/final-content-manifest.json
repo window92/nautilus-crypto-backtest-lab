@@ -1,0 +1,93 @@
+{
+  "catalog_payloads_committed": false,
+  "created_at_utc": "2026-08-23T22:57:32.437421Z",
+  "duckdb_payloads_committed": false,
+  "epoch": "NAUTILUS_INSTRUMENT_REPRESENTATION_AND_FUNDING_CHECKER_REPAIR_001",
+  "file_count_excluding_manifest": 20,
+  "files": {
+    "baseline-attestation.json": {
+      "sha256": "b03c6dae41f915f616e0450bac3b14deb96572d6c6bc2a9d83780c4875b2d98f",
+      "size_bytes": 937
+    },
+    "before-repair-reproduction.json": {
+      "sha256": "0362c70815e8712b38f513d8275f57dfb5789933b9cb4d4537ca74be97348869",
+      "size_bytes": 3747
+    },
+    "catalog-identities.json": {
+      "sha256": "df708fa78055df8056b266e7596d15e0aabb433e1b5001cf1f584eef70e929b8",
+      "size_bytes": 733
+    },
+    "checker-regression.json": {
+      "sha256": "e14768f947049147547fccf66232226c6ffa78eafa90f6d2563b0730b276460e",
+      "size_bytes": 3147
+    },
+    "dataset-release-identities.json": {
+      "sha256": "9589d43fecf34b05f7f6b34a76ed7a0a501710591333f1123aa594615af1e63a",
+      "size_bytes": 1194
+    },
+    "deterministic-rebuild.json": {
+      "sha256": "a58d94c4b08875d530e65c7d8406024c32eb8f49e952ea059841c37c3d875948",
+      "size_bytes": 17943
+    },
+    "failed-attempts.jsonl": {
+      "sha256": "ca54e3f182414a2b9093604be12340f4e10e85ca78839366da9b62636d4d9b3f",
+      "size_bytes": 1664
+    },
+    "full-nautilus-ingestion.json": {
+      "sha256": "c534567146d4f0800f51e3fbebbc54d9d32e2829aca0eb1af5bc3693c02f4f75",
+      "size_bytes": 11542
+    },
+    "funding-mark-asof-validation.json": {
+      "sha256": "8dfc8f870217aa5ce914c8dd46e1ca6fb623e5972e1a921e580b0270cb7da7b7",
+      "size_bytes": 531
+    },
+    "funding-runtime-binding.json": {
+      "sha256": "1f0192f683ab7305afd5113bd75f82edad45a8bd5991358ca68c8b70873c2ca2",
+      "size_bytes": 708
+    },
+    "instrument-metadata-before-after.json": {
+      "sha256": "bc400125a1db0c261ba5f059678d64644508be504a11b69c2b5e3f60fee72029",
+      "size_bytes": 6213
+    },
+    "order-grid-negative-controls.json": {
+      "sha256": "919dfb9818572b56b6fb5f007a8767d8430f6dcc8130cec7ba7fba5087ce068d",
+      "size_bytes": 3470
+    },
+    "owner-report/README.md": {
+      "sha256": "87c4685d3fd912fbafb4d46fb1b0682f5898d0b8ccf47ab38961c2bc09ce526d",
+      "size_bytes": 6065
+    },
+    "pinned-nautilus-precision-contract.json": {
+      "sha256": "8b8b6f45aa47a3e2d234da907ccd9b629cf83da899ac726112225bf2e68ffac8",
+      "size_bytes": 2312
+    },
+    "representation-vs-order-grid.json": {
+      "sha256": "daa0c2790c60422622f219246a660cdad75118ee20bdc8e2ee91dbd9a1ff7276",
+      "size_bytes": 5982
+    },
+    "sentinel-fill-qualification.json": {
+      "sha256": "d4bd5d684be4180f33951258e40ce393b49f75280479b6506d75ab4040821c4c",
+      "size_bytes": 7494
+    },
+    "source-precision-audit.json": {
+      "sha256": "e618f8228baf129ecc58f4a139d5d06e6ba5d1635e1b597484754dc2a117b7c1",
+      "size_bytes": 14624
+    },
+    "test-output.txt": {
+      "sha256": "3a924926cca73bd010e3318cf58fdae7c398869f81b76d37c0913b0e20630c78",
+      "size_bytes": 140889
+    },
+    "test-results.json": {
+      "sha256": "b24cdefbb05b205af0d977da06c4f54ed2d62fc95448dc9953472c439b8f54f9",
+      "size_bytes": 135384
+    },
+    "value-continuity.json": {
+      "sha256": "81d3da07c7f9996a3cc8b7b0f05e15c22a8d17bc455cfddc90f283fb2896094b",
+      "size_bytes": 8506
+    }
+  },
+  "raw_archives_committed": false,
+  "schema": "instrument-repair-final-content-manifest-v1",
+  "secrets_present": false,
+  "status": "PASS"
+}
