@@ -12,6 +12,7 @@ from crypto_lab.strategies.daily_sma_trend import locked_sma20_parameters
 from crypto_lab.strategies.daily_sma_trend import locked_sma20_strategy_spec
 from crypto_lab.strategies.registered import RegisteredStrategyIdentity
 from crypto_lab.strategies.registered import create_registered_strategy
+from crypto_lab.strategies.registered import registered_strategy_identity_matches_frozen_source
 from crypto_lab.strategies.registered import registered_strategy_ids
 from crypto_lab.strategies.registered import resolve_registered_strategy_identity
 from crypto_lab.strategies.weekly_tsmom import BUY_AND_HOLD_FAMILY
@@ -45,6 +46,7 @@ __all__ = [
     "locked_sma20_parameters",
     "locked_sma20_strategy_spec",
     "create_registered_strategy",
+    "registered_strategy_identity_matches_frozen_source",
     "registered_strategy_ids",
     "resolve_registered_strategy_identity",
     "BUY_AND_HOLD_FAMILY",

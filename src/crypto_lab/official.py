@@ -3,8 +3,6 @@
 from __future__ import annotations
 
 import json
-import hashlib
-import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -49,6 +47,7 @@ from crypto_lab.research import _evaluate_claim_from_resolved_evidence
 from crypto_lab.research import benchmark_trial_candidate_id
 from crypto_lab.strategies import RegisteredStrategyIdentity
 from crypto_lab.strategies import StrategySpec
+from crypto_lab.strategies import registered_strategy_identity_matches_frozen_source
 
 
 def _candidate_schedule_complete(
@@ -112,51 +111,6 @@ def _historical_failed_checker_is_retained(
         and persisted_checker.get("outcome") == status.get("checker_outcome")
         and persisted_checker.get("mutated_run_evidence") is False
         and failures_match
-    )
-
-
-def _strategy_identity_matches_frozen_source(
-    identity: RegisteredStrategyIdentity,
-    spec: StrategySpec,
-    source: SourceRevision,
-    *,
-    repository_root: Path,
-) -> bool:
-    """Verify implementation identity against its frozen Git bytes, not HEAD.
-
-    A later additive Product fix is expected to change the current module hash.
-    Re-resolving historical identities from the current checkout would make
-    valid retained Runs look forged. The immutable identity is instead bound
-    to the exact module bytes at its own verified SourceRevision.
-    """
-
-    module_parts = identity.implementation_module.split(".")
-    if (
-        len(module_parts) < 3
-        or module_parts[:2] != ["crypto_lab", "strategies"]
-        or any(not part.isidentifier() for part in module_parts)
-    ):
-        return False
-    if (
-        identity.strategy_spec_id != spec.strategy_spec_id
-        or identity.strategy_spec != spec.to_builtins()
-        or identity.parameters_sha256 != canonical_sha256(dict(spec.parameters))
-        or identity.source_repository != source.repository
-        or identity.source_branch_ref != source.branch_ref
-        or identity.source_git_commit != source.git_commit
-        or identity.source_git_tree != source.git_tree
-    ):
-        return False
-    relative = "src/" + "/".join(module_parts) + ".py"
-    process = subprocess.run(
-        ["git", "show", f"{source.git_commit}:{relative}"],
-        cwd=repository_root,
-        check=False,
-        capture_output=True,
-    )
-    return bool(
-        process.returncode == 0
-        and hashlib.sha256(process.stdout).hexdigest() == identity.implementation_code_sha256
     )
 
 
@@ -360,7 +314,7 @@ class OfficialEvidenceResolver:
             require_current_head=False,
             require_clean=True,
         )
-        if not _strategy_identity_matches_frozen_source(
+        if not registered_strategy_identity_matches_frozen_source(
             identity,
             spec,
             source,

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import hashlib
+import subprocess
 from dataclasses import dataclass
 from dataclasses import fields
 from pathlib import Path
@@ -174,6 +176,47 @@ def resolve_registered_strategy_identity(
     )
 
 
+def registered_strategy_identity_matches_frozen_source(
+    identity: RegisteredStrategyIdentity,
+    strategy_spec: StrategySpec,
+    source_revision: SourceRevision,
+    *,
+    repository_root: Path,
+) -> bool:
+    """Verify a persisted identity against its exact frozen Git module bytes."""
+
+    module_parts = identity.implementation_module.split(".")
+    if (
+        len(module_parts) < 3
+        or module_parts[:2] != ["crypto_lab", "strategies"]
+        or any(not part.isidentifier() for part in module_parts)
+    ):
+        return False
+    if (
+        identity.strategy_spec_id != strategy_spec.strategy_spec_id
+        or identity.strategy_spec != strategy_spec.to_builtins()
+        or identity.parameters_sha256
+        != canonical_sha256(dict(strategy_spec.parameters))
+        or identity.source_repository != source_revision.repository
+        or identity.source_branch_ref != source_revision.branch_ref
+        or identity.source_git_commit != source_revision.git_commit
+        or identity.source_git_tree != source_revision.git_tree
+    ):
+        return False
+    relative = "src/" + "/".join(module_parts) + ".py"
+    process = subprocess.run(
+        ["git", "show", f"{source_revision.git_commit}:{relative}"],
+        cwd=repository_root,
+        check=False,
+        capture_output=True,
+    )
+    return bool(
+        process.returncode == 0
+        and hashlib.sha256(process.stdout).hexdigest()
+        == identity.implementation_code_sha256
+    )
+
+
 def create_registered_strategy(
     identity: RegisteredStrategyIdentity,
     *,
@@ -197,6 +240,7 @@ def create_registered_strategy(
 __all__ = [
     "RegisteredStrategyIdentity",
     "create_registered_strategy",
+    "registered_strategy_identity_matches_frozen_source",
     "registered_strategy_ids",
     "resolve_registered_strategy_identity",
 ]

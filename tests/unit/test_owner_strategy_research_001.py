@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import unittest
 from dataclasses import replace
 from datetime import UTC
@@ -7,13 +8,14 @@ from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import patch
 
 from crypto_lab.config import MarketProfile
 from crypto_lab.config import NOT_APPLICABLE
 from crypto_lab.config import SourceRevision
+from crypto_lab.checker import check_evidence_directory
 from crypto_lab.owner import OwnerWorkflowPurpose
 from crypto_lab.owner import _validate_candidate_order
-from crypto_lab.official import _strategy_identity_matches_frozen_source
 from crypto_lab.research import BenchmarkSpec
 from crypto_lab.research import CandidateSpec
 from crypto_lab.research import ClaimScope
@@ -38,6 +40,7 @@ from crypto_lab.strategies import is_monday_utc_boundary
 from crypto_lab.strategies import locked_buy_and_hold_strategy_spec
 from crypto_lab.strategies import locked_weekly_tsmom_strategy_spec
 from crypto_lab.strategies import momentum_28d
+from crypto_lab.strategies import registered_strategy_identity_matches_frozen_source
 from crypto_lab.strategies import resolve_registered_strategy_identity
 from crypto_lab.strategies import volatility_target_fraction
 
@@ -67,7 +70,7 @@ class OwnerStrategyResearch001Tests(unittest.TestCase):
         )
         source = SourceRevision.from_json_bytes((run_dir / "source_revision.json").read_bytes())
         self.assertTrue(
-            _strategy_identity_matches_frozen_source(
+            registered_strategy_identity_matches_frozen_source(
                 identity,
                 spec,
                 source,
@@ -83,13 +86,35 @@ class OwnerStrategyResearch001Tests(unittest.TestCase):
             implementation_code_sha256="0" * 64,
         )
         self.assertFalse(
-            _strategy_identity_matches_frozen_source(
+            registered_strategy_identity_matches_frozen_source(
                 forged,
                 spec,
                 source,
                 repository_root=root,
             ),
         )
+
+    def test_historical_completed_checker_revalidates_exactly(self) -> None:
+        root = Path(__file__).resolve().parents[2]
+        run_dir = (
+            root
+            / "runs/owner-strategy-research-001-spot-benchmark-run-ef60cf17606c"
+        )
+        persisted = json.loads((run_dir / "checker.json").read_text(encoding="utf-8"))
+        with patch(
+            "crypto_lab.checker.verify_source_revision",
+            return_value=SimpleNamespace(
+                frozen_commit_tree_valid=True,
+                frozen_commit_on_branch=True,
+            ),
+        ):
+            regenerated = check_evidence_directory(
+                run_dir,
+                repository_root=root,
+                official_source_required=True,
+                source_revision_current_head_required=False,
+            )
+        self.assertEqual(regenerated.to_builtins(), persisted)
 
     def test_exact_momentum_golden_and_29_close_requirement(self) -> None:
         closes = tuple(Decimal(100 + index) for index in range(29))

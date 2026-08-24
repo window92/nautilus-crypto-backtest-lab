@@ -26,7 +26,7 @@ from crypto_lab.git_identity import verify_source_revision
 from crypto_lab.status import FailureCode
 from crypto_lab.strategies import RegisteredStrategyIdentity
 from crypto_lab.strategies import StrategySpec
-from crypto_lab.strategies import resolve_registered_strategy_identity
+from crypto_lab.strategies import registered_strategy_identity_matches_frozen_source
 from crypto_lab.strategies import annualized_realized_volatility_28d
 from crypto_lab.strategies import is_monday_utc_boundary
 from crypto_lab.strategies import momentum_28d
@@ -607,13 +607,13 @@ def check_evidence_directory(
             declared_identity = (run_dir / "strategy_identity.sha256").read_text(
                 encoding="utf-8",
             ).strip()
-            resolved_identity = resolve_registered_strategy_identity(
-                identity.registration_id,
-                strategy_spec=parsed_spec,
-                source_revision=source,
-            )
             official_identity_ok = (
-                identity == resolved_identity
+                registered_strategy_identity_matches_frozen_source(
+                    identity,
+                    parsed_spec,
+                    source,
+                    repository_root=repository_root,
+                )
                 and identity.strategy_spec == strategy_spec
                 and identity.strategy_spec_id == config.strategy_spec_id
                 and declared_identity == identity.strategy_identity_sha256
