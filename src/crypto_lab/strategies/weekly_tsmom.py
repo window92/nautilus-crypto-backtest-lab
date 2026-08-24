@@ -579,7 +579,7 @@ class BtcusdtWeeklyTsmom28(_NativeEquityTargetStrategy):
                 "interval_end_exclusive_ns": end_ns,
                 "available_at_ns": end_ns,
                 "close": str(close),
-                "completed_close_count": min(len(self.observations["daily_signal_bars"]), LOOKBACK_CLOSES),
+                "completed_close_count": min(len(self._closes), LOOKBACK_CLOSES),
             },
         )
         if (

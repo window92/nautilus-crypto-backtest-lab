@@ -55,9 +55,14 @@ def _candidate_schedule_complete(
     records: tuple[TrialRecord, ...],
 ) -> bool:
     candidate_ids = {candidate.candidate_id for candidate in protocol.ordered_candidates}
-    observed = tuple(
-        record.candidate_id for record in records if record.candidate_id in candidate_ids
-    )
+    observed_values: list[str] = []
+    for record in records:
+        if (
+            record.candidate_id in candidate_ids
+            and record.candidate_id not in observed_values
+        ):
+            observed_values.append(record.candidate_id)
+    observed = tuple(observed_values)
     expected = tuple(
         candidate.candidate_id
         for candidate in protocol.ordered_candidates[: protocol.search_budget]

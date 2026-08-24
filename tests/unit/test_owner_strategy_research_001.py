@@ -5,10 +5,13 @@ from dataclasses import replace
 from datetime import UTC
 from datetime import datetime
 from decimal import Decimal
+from types import SimpleNamespace
 
 from crypto_lab.config import MarketProfile
 from crypto_lab.config import NOT_APPLICABLE
 from crypto_lab.config import SourceRevision
+from crypto_lab.owner import OwnerWorkflowPurpose
+from crypto_lab.owner import _validate_candidate_order
 from crypto_lab.research import BenchmarkSpec
 from crypto_lab.research import CandidateSpec
 from crypto_lab.research import ClaimScope
@@ -21,11 +24,14 @@ from crypto_lab.research import ResearchProtocol
 from crypto_lab.research import ResamplingMethod
 from crypto_lab.research import SampleAdequacyRule
 from crypto_lab.research import UtcInterval
+from crypto_lab.research import TrialState
+from crypto_lab.research import benchmark_trial_candidate_id
 from crypto_lab.strategies import TSMOM_FULL_REGISTRATION_ID
 from crypto_lab.strategies import TSMOM_VOL20_REGISTRATION_ID
 from crypto_lab.strategies import annualized_realized_volatility_28d
 from crypto_lab.strategies import floor_to_increment
 from crypto_lab.strategies import is_monday_utc_boundary
+from crypto_lab.strategies import locked_buy_and_hold_strategy_spec
 from crypto_lab.strategies import locked_weekly_tsmom_strategy_spec
 from crypto_lab.strategies import momentum_28d
 from crypto_lab.strategies import resolve_registered_strategy_identity
@@ -215,6 +221,69 @@ class OwnerStrategyResearch001Tests(unittest.TestCase):
                     ),
                 ),
             )
+
+        benchmark_spec = locked_buy_and_hold_strategy_spec(
+            profile,
+            protocol.required_benchmark.benchmark_id,
+        )
+        benchmark_candidate_id = benchmark_trial_candidate_id(
+            protocol.required_benchmark,
+            strategy_spec_id=benchmark_spec.strategy_spec_id,
+        )
+
+        def record(
+            trial_id: str,
+            candidate_id: str,
+            strategy_spec_id: str,
+            state: TrialState,
+        ) -> SimpleNamespace:
+            return SimpleNamespace(
+                trial_id=trial_id,
+                protocol_id=protocol.protocol_id,
+                candidate_id=candidate_id,
+                strategy_spec_id=strategy_spec_id,
+                state=state,
+            )
+
+        retained = [
+            record("benchmark", benchmark_candidate_id, benchmark_spec.strategy_spec_id, TrialState.STARTED),
+            record("benchmark", benchmark_candidate_id, benchmark_spec.strategy_spec_id, TrialState.COMPLETED),
+            record("candidate-a-failed", candidates[0].candidate_id, specs[0].strategy_spec_id, TrialState.STARTED),
+            record("candidate-a-failed", candidates[0].candidate_id, specs[0].strategy_spec_id, TrialState.FAILED),
+        ]
+        history = SimpleNamespace(journal=SimpleNamespace(read_records=lambda: tuple(retained)))
+        retry_a = SimpleNamespace(
+            protocol=protocol,
+            workflow_purpose=OwnerWorkflowPurpose.OWNER_STUDY,
+            candidate_id=candidates[0].candidate_id,
+            strategy_spec=specs[0],
+        )
+        _validate_candidate_order(history, retry_a)
+        with self.assertRaisesRegex(ResearchError, "candidate order"):
+            _validate_candidate_order(
+                history,
+                SimpleNamespace(
+                    protocol=protocol,
+                    workflow_purpose=OwnerWorkflowPurpose.OWNER_STUDY,
+                    candidate_id=candidates[1].candidate_id,
+                    strategy_spec=specs[1],
+                ),
+            )
+        retained.extend(
+            (
+                record("candidate-a-pass", candidates[0].candidate_id, specs[0].strategy_spec_id, TrialState.STARTED),
+                record("candidate-a-pass", candidates[0].candidate_id, specs[0].strategy_spec_id, TrialState.COMPLETED),
+            ),
+        )
+        _validate_candidate_order(
+            history,
+            SimpleNamespace(
+                protocol=protocol,
+                workflow_purpose=OwnerWorkflowPurpose.OWNER_STUDY,
+                candidate_id=candidates[1].candidate_id,
+                strategy_spec=specs[1],
+            ),
+        )
 
 
 if __name__ == "__main__":

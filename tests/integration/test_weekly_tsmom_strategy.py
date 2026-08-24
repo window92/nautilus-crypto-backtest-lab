@@ -209,6 +209,8 @@ class WeeklyTsmomStrategyIntegrationTests(unittest.TestCase):
             self.assertEqual([item["target"] for item in observations["signals"]], ["LONG", "FLAT" if profile is MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY else "SHORT"])
             self.assertEqual(len(orders), 2 if profile is MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY else 3)
             self.assertEqual(len(fills), len(orders))
+            self.assertEqual(observations["guard_failures"], [])
+            self.assertEqual(observations["daily_signal_bars"][0]["completed_close_count"], 1)
             self.assertGreaterEqual(signed, 0) if profile is MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY else self.assertLess(signed, 0)
             for fill in fills:
                 intent = next(

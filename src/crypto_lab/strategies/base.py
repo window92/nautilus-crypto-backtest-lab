@@ -306,7 +306,20 @@ class GuardedCausalStrategy(Strategy):
     def _signed_position(self) -> Decimal:
         assert self._instrument_id is not None
         positions = self.cache.positions_open(instrument_id=self._instrument_id)
-        return sum((Decimal(str(position.signed_qty)) for position in positions), Decimal(0))
+        values: list[Decimal] = []
+        for position in positions:
+            # ``signed_qty`` is a float in the pinned 2.0.0rc2 public API and
+            # cannot be used by an exact order guard. ``quantity`` preserves
+            # the native fixed-point value; direction is a separate native
+            # property. This changes no market or order-grid value.
+            quantity = Decimal(str(position.quantity.as_decimal()))
+            if position.is_long:
+                values.append(quantity)
+            elif position.is_short:
+                values.append(-quantity)
+            else:
+                raise RuntimeError("open native Position has no LONG/SHORT direction")
+        return sum(values, Decimal(0))
 
     def _refresh_live_order(self) -> None:
         if self._live_client_order_id is None:

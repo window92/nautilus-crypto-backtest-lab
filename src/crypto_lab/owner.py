@@ -788,16 +788,44 @@ def _validate_candidate_order(
         value.protocol.required_benchmark,
         strategy_spec_id=value.strategy_spec.strategy_spec_id,
     )
-    protocol_records = [
+    all_protocol_records = [
         record
         for record in records
-        if record.protocol_id == value.protocol.protocol_id and record.state is TrialState.STARTED
+        if record.protocol_id == value.protocol.protocol_id
     ]
+    protocol_records = [
+        record for record in all_protocol_records if record.state is TrialState.STARTED
+    ]
+    terminal_by_trial = {
+        record.trial_id: record
+        for record in all_protocol_records
+        if record.state in TERMINAL_TRIAL_STATES
+    }
+    candidate_records = [
+        record for record in protocol_records if record.candidate_id in candidate_ids
+    ]
+    benchmark_records = [
+        record for record in protocol_records if record.candidate_id not in candidate_ids
+    ]
+    valid_benchmark_records = [
+        record
+        for record in benchmark_records
+        if record.candidate_id
+        == benchmark_trial_candidate_id(
+            value.protocol.required_benchmark,
+            strategy_spec_id=record.strategy_spec_id,
+        )
+    ]
+    benchmark_completed = any(
+        terminal_by_trial.get(record.trial_id) is not None
+        and terminal_by_trial[record.trial_id].state is TrialState.COMPLETED
+        for record in valid_benchmark_records
+    )
     if value.workflow_purpose is OwnerWorkflowPurpose.BENCHMARK_STUDY:
-        if protocol_records:
+        if candidate_records or benchmark_completed:
             raise ResearchError(
                 "RESEARCH_PROTOCOL_INVALID",
-                "benchmark must be the first result-bearing protocol Trial",
+                "benchmark retry is allowed only before candidates and until one completed attempt",
             )
         if value.candidate_id != benchmark_id:
             raise ResearchError("RESEARCH_PROTOCOL_INVALID", "benchmark journal identity diverged")
@@ -813,26 +841,27 @@ def _validate_candidate_order(
         if expected.candidate_id != value.candidate_id:
             raise ResearchError("RESEARCH_PROTOCOL_INVALID", "candidate order diverged from protocol")
         return
-    benchmark_records = [
-        record for record in protocol_records if record.candidate_id not in candidate_ids
-    ]
-    if (
-        len(benchmark_records) != 1
-        or benchmark_records[0].state is not TrialState.STARTED
-        or benchmark_records[0].candidate_id
-        != benchmark_trial_candidate_id(
-            value.protocol.required_benchmark,
-            strategy_spec_id=benchmark_records[0].strategy_spec_id,
-        )
-    ):
+    if len(valid_benchmark_records) != len(benchmark_records) or not benchmark_completed:
         raise ResearchError(
             "RESEARCH_PROTOCOL_INVALID",
-            "frozen benchmark must be executed before candidate result access",
+            "one frozen benchmark attempt must complete before candidate result access",
         )
-    started = [record for record in protocol_records if record.candidate_id in candidate_ids]
-    if len(started) >= value.protocol.search_budget:
+
+    expected = None
+    for candidate in value.protocol.ordered_candidates[: value.protocol.search_budget]:
+        attempts = [
+            record for record in candidate_records if record.candidate_id == candidate.candidate_id
+        ]
+        completed = any(
+            terminal_by_trial.get(record.trial_id) is not None
+            and terminal_by_trial[record.trial_id].state is TrialState.COMPLETED
+            for record in attempts
+        )
+        if not completed:
+            expected = candidate
+            break
+    if expected is None:
         raise ResearchError("RESEARCH_PROTOCOL_INVALID", "frozen search budget exhausted")
-    expected = value.protocol.ordered_candidates[len(started)]
     if expected.candidate_id != value.candidate_id:
         raise ResearchError("RESEARCH_PROTOCOL_INVALID", "candidate order diverged from protocol")
 
