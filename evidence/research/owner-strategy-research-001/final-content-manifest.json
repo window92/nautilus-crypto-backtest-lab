@@ -1,0 +1,189 @@
+{
+  "content_identity": "9757f5edef476db27c1da51c7d5b6e98762014c66893a988a38ebed0d556f437",
+  "file_count_excluding_manifest": 44,
+  "files": {
+    "authoritative-history.json": {
+      "sha256": "652469d92bc05e9456ccf1d0527c3423148a5c4ef5f368d32f50450ce499fde2",
+      "size_bytes": 38542
+    },
+    "baseline-attestation.json": {
+      "sha256": "a06852d3874885f8a7dd161af956f134c6631a8e5e0003aa9e3f2292e112d896",
+      "size_bytes": 772
+    },
+    "data-and-profile-identities.json": {
+      "sha256": "620ef02dc9de456ef9ba7392a07f35c4b3bcb3bab6eeea08b0f4ee311136a4cb",
+      "size_bytes": 924
+    },
+    "deterministic-replay.json": {
+      "sha256": "e538adb7a4f57d29175645d6fa2beb45a3d8a499a58cfcd44698c63f1fd8a73b",
+      "size_bytes": 2206
+    },
+    "deterministic-replay/README.md": {
+      "sha256": "bb3ac294fcca9c95e39b70073930d1b2a582e49dc420af30b380e147a6df6778",
+      "size_bytes": 1366
+    },
+    "evidence-inventory.json": {
+      "sha256": "d39db79bbe31cf4ad608a59151a957223aa50109114cc4f52ae03e2d49acae3e",
+      "size_bytes": 7701
+    },
+    "failed-attempts.jsonl": {
+      "sha256": "26957b3772b31fa70212f1a766d02ac7224738a77e5153da6d9b88940b069fcd",
+      "size_bytes": 4645
+    },
+    "frozen-input-manifest.json": {
+      "sha256": "ff773b136426f0ffeedf18a54c1de464a066003684d32d9258e7268d1b981741",
+      "size_bytes": 3558
+    },
+    "frozen-protocols/perpetual.json": {
+      "sha256": "923bbe1fd5fd19e63e5a46c3468fc9ae3631d019079d840bbed89cb0b22a561a",
+      "size_bytes": 7067
+    },
+    "frozen-protocols/spot.json": {
+      "sha256": "b7328b97a719139a7987a5bd327a1b56048c0f0f0cf04dfc9d9b17f70f1f178c",
+      "size_bytes": 6959
+    },
+    "frozen-workflows/owner-strategy-research-001-perpetual-benchmark-buy-and-hold-1x-development.json": {
+      "sha256": "c36fd85c5344a9e2e74aad0a170c9556af22aa0407b40397fa1ba326b815837d",
+      "size_bytes": 9421
+    },
+    "frozen-workflows/owner-strategy-research-001-perpetual-candidate-a-development.json": {
+      "sha256": "1ac6718c84f36d8c12ffab1b5a446dc5db539f89a634fb7d696d960e3e467415",
+      "size_bytes": 9810
+    },
+    "frozen-workflows/owner-strategy-research-001-perpetual-candidate-b-development.json": {
+      "sha256": "778d70fd3fbc9b36f43637470bffc55543074e44033f7eacf20f0121dcb0899c",
+      "size_bytes": 9941
+    },
+    "frozen-workflows/owner-strategy-research-001-spot-benchmark-buy-and-hold-1x-development.json": {
+      "sha256": "01d56e26e1f0d3094debb1e8ee9df0c6fa3b821f28f6c4713d32ce3bfb8fe6c9",
+      "size_bytes": 9228
+    },
+    "frozen-workflows/owner-strategy-research-001-spot-candidate-a-development.json": {
+      "sha256": "3bc1a2d53859058a80d669d977d0726aeb62e59c16ca0ce170be8c385ffd7126",
+      "size_bytes": 9598
+    },
+    "frozen-workflows/owner-strategy-research-001-spot-candidate-b-development.json": {
+      "sha256": "9acb45e5dff9c08c1b45581b0197447f5609c3c1f8f361df44006035024af2c4",
+      "size_bytes": 9729
+    },
+    "historical-sma20-comparison.json": {
+      "sha256": "c7ac34892ccb85cd8811ef4d85cb44a67d4e45515f677dd7862434e3f63cb496",
+      "size_bytes": 305
+    },
+    "mechanical-integrity.json": {
+      "sha256": "39b200df9fc4f0b7b76912c4aefd7b4d99e0f7ef4b6da1bbc17c5379d589a333",
+      "size_bytes": 42576
+    },
+    "mechanical-integrity/README.md": {
+      "sha256": "fcac6071a6b80da704c751b4c3087fbfd602e5bcabc54b6a593b8f094f860621",
+      "size_bytes": 893
+    },
+    "multiple-testing.json": {
+      "sha256": "02ed51ebc28e30f5e173093b4419a4ab601f37666e36685630c5fd661261013f",
+      "size_bytes": 460
+    },
+    "native-research-metrics.json": {
+      "sha256": "4dc882442128b2f30bef3c9b31049b1a493097bcca74cb8a0883a2cf18101e8e",
+      "size_bytes": 17192
+    },
+    "owner-authorization.json": {
+      "sha256": "cf0ead1807c75a4c0dc35f8ce5f05005e87a4140bc5c4f3048517098fc2d8d18",
+      "size_bytes": 511
+    },
+    "owner-report/README.md": {
+      "sha256": "8ba6c5e6d87c65c92a1f3592e74302c4cd56cd5708624cce859d16e83159773f",
+      "size_bytes": 5530
+    },
+    "perpetual-report/README.md": {
+      "sha256": "9a707853aa4329edabf3227817c3be5916219bfd0b0c6af9e09b1ac5e0238845",
+      "size_bytes": 2361
+    },
+    "research-basis.json": {
+      "sha256": "17c1d38a3ef72a94c51d496d16bc50794db78809d7395b8a32cb9135d9151553",
+      "size_bytes": 2418
+    },
+    "research-eligibility.json": {
+      "sha256": "6e9ea4ef54da190b4603bf76d8c1e81f19c88a51ce044ab700e2d6e39decaaab",
+      "size_bytes": 965
+    },
+    "retry-workflows/owner-strategy-research-001-spot-candidate-a-development-retry-001.json": {
+      "sha256": "4b5322bc194887d336d2634ab7a5425413e6ab9f0d34428462d6d10ea4b72d59",
+      "size_bytes": 9618
+    },
+    "retry-workflows/owner-strategy-research-001-spot-candidate-a-development-retry-001.manifest.json": {
+      "sha256": "6dbb40160b420920c00a9ed741225227ead2d6ba55f41bf918592ef16467b75b",
+      "size_bytes": 1359
+    },
+    "run-results/perpetual_benchmark.json": {
+      "sha256": "2dcc932bfd43d6299c28ede6f95f75150b53f0ca7b0e3784d53311bf14d3f0ad",
+      "size_bytes": 17247
+    },
+    "run-results/perpetual_candidate_a.json": {
+      "sha256": "6fcece376f48609aecc24ceaebf2d2a0762af03398a9dc2bdf924b32ca0d6e14",
+      "size_bytes": 17148
+    },
+    "run-results/perpetual_candidate_b.json": {
+      "sha256": "eb20fc08ba78de732bf27a2d0594717f55fae02f7697a9c4b225fd28f7837aed",
+      "size_bytes": 17150
+    },
+    "run-results/spot_benchmark.json": {
+      "sha256": "91a44564721ce1c823e0cda40aceb08897cd258dd6c3dceb67839c9a9614a021",
+      "size_bytes": 16591
+    },
+    "run-results/spot_candidate_a.json": {
+      "sha256": "96cab70c7d3e57684d8c9eeee1bbdbd6c622309f29b2ec624a76c356fb976fec",
+      "size_bytes": 16806
+    },
+    "run-results/spot_candidate_b.json": {
+      "sha256": "30617938b05bf1d0f29da49041d86370175f607b34cb3350bea5a0881b0a7c71",
+      "size_bytes": 16611
+    },
+    "spot-report/README.md": {
+      "sha256": "84f3e472590735202058b8a375f349232576792aafed3a0caf6b0a42606e08ae",
+      "size_bytes": 2382
+    },
+    "strategy-identities.json": {
+      "sha256": "274896ab30ffa8b6dfe045bcd84d13d63ff488a3ea8ecd5d11e31b7c2f6d8894",
+      "size_bytes": 4723
+    },
+    "strategy-specs/owner-strategy-research-001-perpetual-benchmark-buy-and-hold-1x-development.json": {
+      "sha256": "09d4082ed667e2d0042089a3ddf687dbf9ac88281c295d913c01256363bf3512",
+      "size_bytes": 1399
+    },
+    "strategy-specs/owner-strategy-research-001-perpetual-candidate-a-development.json": {
+      "sha256": "bc90528c4611be60c0cb6a322225805ef2b54874704809d87a96b7306df15f04",
+      "size_bytes": 1792
+    },
+    "strategy-specs/owner-strategy-research-001-perpetual-candidate-b-development.json": {
+      "sha256": "458fb8044b4fe6f270d67c7e50cb2013e93100e41832b6d5de589fd54fe315aa",
+      "size_bytes": 1922
+    },
+    "strategy-specs/owner-strategy-research-001-spot-benchmark-buy-and-hold-1x-development.json": {
+      "sha256": "71ea92d3b50bb7e2a38bf8b77054ef44d260c009fbfee6891db6fdb04d900674",
+      "size_bytes": 1324
+    },
+    "strategy-specs/owner-strategy-research-001-spot-candidate-a-development.json": {
+      "sha256": "ab15c2031e3e16ba6318d2dab36398c06630ae084dda703c6d64b9f04d24687f",
+      "size_bytes": 1698
+    },
+    "strategy-specs/owner-strategy-research-001-spot-candidate-b-development.json": {
+      "sha256": "eb6426e27b5410af546daad14d91ea88c16306eced5d4b694692535147afce00",
+      "size_bytes": 1828
+    },
+    "test-output.txt": {
+      "sha256": "6877e772242de549beb67cacd4a35b4df46d100e3d052a55502738926792c674",
+      "size_bytes": 124339
+    },
+    "test-results.json": {
+      "sha256": "77b1c580d2732e544f84b1ea4ca7aeeb228bbb93d34d1b65c1886d3beef5af4a",
+      "size_bytes": 112133
+    }
+  },
+  "final_holdout_used": false,
+  "generated_at_utc": "2026-08-24T12:08:23.275950Z",
+  "optimization_performed": false,
+  "real_profitability_claim": false,
+  "schema": "owner-strategy-research-001-final-content-manifest-v1",
+  "source_head": "74fcbbd725c40f2863c9abc0f6a9f3261530c31a",
+  "status": "PASS"
+}

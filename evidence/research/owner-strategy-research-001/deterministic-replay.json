@@ -1,0 +1,42 @@
+{
+  "results": {
+    "perpetual_benchmark": {
+      "primary_semantic_digest": "0b3fe471c3a6dd54f93cec7953b726d2a9c1e98b5e85a390269e5f8aa4518882",
+      "replay_identity": "a0a53f01ec34a0316d28b41570fd08e4e1704ed9b74a98672c2feffa3ba2a1b3",
+      "replay_semantic_digest": "0b3fe471c3a6dd54f93cec7953b726d2a9c1e98b5e85a390269e5f8aa4518882",
+      "result": "PASS"
+    },
+    "perpetual_candidate_a": {
+      "primary_semantic_digest": "e96c436955c217632d8174afc460c46fcaf3e77fe59a35a9f6335e457764e623",
+      "replay_identity": "e613b0db5f83b44fdbcf3806b28f7e93d04316bdbd79d00d6d53191b10b3cbac",
+      "replay_semantic_digest": "e96c436955c217632d8174afc460c46fcaf3e77fe59a35a9f6335e457764e623",
+      "result": "PASS"
+    },
+    "perpetual_candidate_b": {
+      "primary_semantic_digest": "c4fc1f569c831b7c8786e599c1106645015cf670a7c75b97d86d8716665dc142",
+      "replay_identity": "dbd8486bfdabc4a7df596edbc7d05c68d1dccb1bbfedb76f459d31b4403ccc26",
+      "replay_semantic_digest": "c4fc1f569c831b7c8786e599c1106645015cf670a7c75b97d86d8716665dc142",
+      "result": "PASS"
+    },
+    "spot_benchmark": {
+      "primary_semantic_digest": "9e77fd3563e269a16479bd340cb720b590933a7c5a70b836120a2340e4931b34",
+      "replay_identity": "b491ddef5edde0dadd25a57cabba3b649c1dbbed6526df716561088b49395ac6",
+      "replay_semantic_digest": "9e77fd3563e269a16479bd340cb720b590933a7c5a70b836120a2340e4931b34",
+      "result": "PASS"
+    },
+    "spot_candidate_a": {
+      "primary_semantic_digest": "17021d2178e4f783dbdebc54902fb4fc8250f378eb3bb16f296bafba9bbc9259",
+      "replay_identity": "3e641dd958d65bcec16581d4ae23d5dd8de67dcb2cefd1f6d71a0a797179fe26",
+      "replay_semantic_digest": "17021d2178e4f783dbdebc54902fb4fc8250f378eb3bb16f296bafba9bbc9259",
+      "result": "PASS"
+    },
+    "spot_candidate_b": {
+      "primary_semantic_digest": "60e481a2bffa5587cbc8601f42b6a00e6651b095230fbaa1058d2384dee08b75",
+      "replay_identity": "d0dd6a1d06d0da8e5163a4abaa684489d4cc9969138903ceb3cfc5a12972748d",
+      "replay_semantic_digest": "60e481a2bffa5587cbc8601f42b6a00e6651b095230fbaa1058d2384dee08b75",
+      "result": "PASS"
+    }
+  },
+  "schema": "owner-strategy-research-001-replay-v1",
+  "status": "PASS"
+}

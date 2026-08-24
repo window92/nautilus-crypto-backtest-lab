@@ -1,0 +1,27 @@
+{
+  "final_holdout_used": false,
+  "monte_carlo": {
+    "perpetual_benchmark": "NOT_APPLICABLE",
+    "perpetual_candidate_a": "NOT_APPLICABLE",
+    "perpetual_candidate_b": "NOT_APPLICABLE",
+    "spot_benchmark": "NOT_APPLICABLE",
+    "spot_candidate_a": "NOT_APPLICABLE",
+    "spot_candidate_b": "NOT_APPLICABLE"
+  },
+  "next_family_or_holdout_authorized": false,
+  "optimization_performed": false,
+  "real_profitability_claim": false,
+  "research_intent": "EXPLORATORY",
+  "research_purpose": "EXPLORATORY_OPERATIONAL_VALIDATION",
+  "sample_adequacy": {
+    "perpetual_benchmark": "NOT_APPLICABLE",
+    "perpetual_candidate_a": "NOT_APPLICABLE",
+    "perpetual_candidate_b": "NOT_APPLICABLE",
+    "spot_benchmark": "NOT_APPLICABLE",
+    "spot_candidate_a": "NOT_APPLICABLE",
+    "spot_candidate_b": "NOT_APPLICABLE"
+  },
+  "schema": "owner-strategy-research-001-eligibility-v1",
+  "status": "INELIGIBLE_FOR_REAL_PROFITABILITY_CLAIM",
+  "winner_selected": false
+}

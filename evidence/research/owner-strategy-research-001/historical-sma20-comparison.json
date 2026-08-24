@@ -1,0 +1,9 @@
+{
+  "perpetual_net_pnl": "-3010.78713375 USDT",
+  "rerun": false,
+  "schema": "owner-strategy-research-001-historical-sma20-comparison-v1",
+  "spot_net_pnl": "-751.78721000 USDT",
+  "status": "DISCLOSED_EXPOSED_BENCHMARK_ONLY",
+  "used_for_parameter_change": false,
+  "used_for_winner_selection": false
+}

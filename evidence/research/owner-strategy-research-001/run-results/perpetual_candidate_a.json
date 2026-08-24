@@ -1,0 +1,423 @@
+{
+  "candidate_or_benchmark_name": "TSMOM28_FULL_NOTIONAL",
+  "catalog_identity": "7c96897a8e1ea3c02198238a277fb8c3d995f54dd90dc381e534a5f21b017ae0",
+  "claim_evaluation_id": "5febdb7c624dc1ec845f81cd4aa5a9fde37e11ee54ea782fae56bde7224e823b",
+  "dataset_release_id": "b6c8f5d659f3441c924b613d770342796c90b90a970f42a3dc8227c856198917",
+  "final_holdout_used": false,
+  "implementation_code_sha256": "84b4a8171953b8ff5970851a9463fb019d178fc4c48a8136152175147a09eaf4",
+  "key": "perpetual_candidate_a",
+  "market_state_acceptance": {
+    "accepted_executable_bars": 305280,
+    "accepted_mark_updates": 305280,
+    "all_data_event_count": 611832,
+    "catalog_identity": "7c96897a8e1ea3c02198238a277fb8c3d995f54dd90dc381e534a5f21b017ae0",
+    "dataset_profile": "BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING",
+    "engine_error": null,
+    "engine_iterations": 611832,
+    "expected_executable_bars": 305280,
+    "expected_mark_updates": 305280,
+    "fatal_runtime_diagnostics": 0,
+    "financial_performance_evaluated": false,
+    "gate": "NAUTILUS_EXECUTABLE_MARKET_STATE_ACCEPTANCE",
+    "instrument_id": "BTCUSDT-PERP.BINANCE",
+    "instrument_metadata_identity": "b4579742d10d7e1e529689ae07c3db2b6a9362430d0b8cd7112a4d9846eef226",
+    "lab_run_config_sha256": "11882dd8dabbefb520ac2b128eb274f5a578aa1ee5f560209396ac5537c32c2c",
+    "missing_market_state": 0,
+    "native_funding_cache_count": 1272,
+    "native_mark_cache_count": 10000,
+    "no_market_data_precision_warnings": 0,
+    "pinned_nautilus_version": "2.0.0rc2",
+    "precision_skipped_bars": 0,
+    "raw_numeric_values_mutated": false,
+    "rejected_precision_events": 0,
+    "runtime_diagnostics": {
+      "error_patterns": [],
+      "fatal_runtime_diagnostics": 0,
+      "log_byte_size": 0,
+      "log_created": false,
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "schema": "nautilus-executable-market-state-acceptance-v1",
+    "sentinel_fills": [
+      {
+        "diagnostics": {
+          "error_patterns": [],
+          "fatal_runtime_diagnostics": 0,
+          "log_byte_size": 0,
+          "log_created": false,
+          "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "effective_insert_latency_ns": 60000000000,
+        "fill_count": 1,
+        "fill_price": "29035.19000000",
+        "fill_quantity": "0.100",
+        "fill_ts_event": 1609459380000000000,
+        "guard_failure_count": 0,
+        "order_count": 1,
+        "performance_research": false,
+        "rejected_order_count": 0,
+        "role": "WINDOW_START",
+        "same_bar_fill": false,
+        "signal_bar_ts_init": 1609459320000000000,
+        "status": "PASS"
+      },
+      {
+        "diagnostics": {
+          "error_patterns": [],
+          "fatal_runtime_diagnostics": 0,
+          "log_byte_size": 0,
+          "log_created": false,
+          "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "effective_insert_latency_ns": 60000000000,
+        "fill_count": 1,
+        "fill_price": "61479.21000000",
+        "fill_quantity": "0.100",
+        "fill_ts_event": 1618617720000000000,
+        "guard_failure_count": 0,
+        "order_count": 1,
+        "performance_research": false,
+        "rejected_order_count": 0,
+        "role": "WINDOW_MIDPOINT",
+        "same_bar_fill": false,
+        "signal_bar_ts_init": 1618617660000000000,
+        "status": "PASS"
+      },
+      {
+        "diagnostics": {
+          "error_patterns": [],
+          "fatal_runtime_diagnostics": 0,
+          "log_byte_size": 0,
+          "log_created": false,
+          "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "effective_insert_latency_ns": 60000000000,
+        "fill_count": 1,
+        "fill_price": "41694.16000000",
+        "fill_quantity": "0.100",
+        "fill_ts_event": 1627775880000000000,
+        "guard_failure_count": 0,
+        "order_count": 1,
+        "performance_research": false,
+        "rejected_order_count": 0,
+        "role": "WINDOW_END",
+        "same_bar_fill": false,
+        "signal_bar_ts_init": 1627775820000000000,
+        "status": "PASS"
+      },
+      {
+        "diagnostics": {
+          "error_patterns": [],
+          "fatal_runtime_diagnostics": 0,
+          "log_byte_size": 0,
+          "log_created": false,
+          "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "effective_insert_latency_ns": 60000000000,
+        "fill_count": 1,
+        "fill_price": "61424.68000000",
+        "fill_quantity": "0.100",
+        "fill_ts_event": 1618617660000000000,
+        "guard_failure_count": 0,
+        "order_count": 1,
+        "performance_research": false,
+        "rejected_order_count": 0,
+        "role": "AROUND_FUNDING_BOUNDARY",
+        "same_bar_fill": false,
+        "signal_bar_ts_init": 1618617600000000000,
+        "status": "PASS"
+      }
+    ],
+    "static_precision_and_grid": {
+      "execution_price_precision_mismatches": 0,
+      "execution_tick_grid_mismatches": 0,
+      "execution_volume_precision_mismatches": 0,
+      "mark_precision_mismatches": 0
+    },
+    "status": "PASS",
+    "strategy_research_run": false,
+    "zero_latency_negative_control": {
+      "accepted_for_release": false,
+      "diagnostics": {
+        "error_patterns": [],
+        "fatal_runtime_diagnostics": 0,
+        "log_byte_size": 0,
+        "log_created": false,
+        "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "effective_insert_latency_ns": 0,
+      "fill_count": 1,
+      "fill_price": "29035.19000000",
+      "fill_quantity": "0.100",
+      "fill_ts_event": 1609459320000000000,
+      "guard_failure_count": 0,
+      "order_count": 1,
+      "performance_research": false,
+      "reason": "LOCKED_LATENCY_IS_60_SECONDS",
+      "rejected_order_count": 0,
+      "role": "ZERO_LATENCY_NEGATIVE_CONTROL",
+      "same_bar_fill": true,
+      "signal_bar_ts_init": 1609459320000000000,
+      "status": "FAIL"
+    },
+    "zero_padding_only": true
+  },
+  "metrics": {
+    "average_native_realized_pnl": "1644.16919129",
+    "average_native_realized_return": "0.13688431",
+    "calmar": "10.195926114079079",
+    "calmar_status": "NATIVE",
+    "calmar_undefined_reason": "NOT_APPLICABLE",
+    "checker": "CHECK_PASS",
+    "completed_daily_bars": 212,
+    "ending_equity": "23269.12210696",
+    "exposure_active_ns": 15637980000000000,
+    "exposure_ratio": "0.999973143033",
+    "fees": "267.36610393",
+    "fills": 32,
+    "funding": "-1594.62877912",
+    "funding_settlement_count": 542,
+    "gross_pnl": "UNDEFINED_NATIVE_GROSS_PNL_NOT_EXPOSED",
+    "long_entries": 4,
+    "maximum_drawdown": "0.21977610",
+    "monte_carlo_status": "NOT_APPLICABLE",
+    "native_completed_units": 6,
+    "native_returns_basis": "PORTFOLIO_DAILY_ACCOUNT_RETURNS",
+    "net_pnl": "13269.12210696",
+    "orders": 32,
+    "position_exits": 6,
+    "profit_factor": "1.4117921701598692",
+    "replay": "PASS",
+    "replay_identity": "e613b0db5f83b44fdbcf3806b28f7e93d04316bdbd79d00d6d53191b10b3cbac",
+    "sample_adequacy": "NOT_APPLICABLE",
+    "sharpe": "1.8687597898197421",
+    "short_entries": 3,
+    "signals_or_benchmark_entries": 26,
+    "sortino": "2.9021499019766126",
+    "terminal_position": {
+      "open": true,
+      "side": "LONG",
+      "signed_quantity": "0.562"
+    },
+    "weekly_decisions": 26,
+    "win_rate_completed_units": "0.50000000"
+  },
+  "native_research_metrics_readiness": {
+    "average_trade_realized_pnl": {
+      "formula": "mean(native Position.realized_pnl for completed Position units)",
+      "inputs": [
+        "native_completed_position_sequence"
+      ],
+      "source": "NAUTILUS_NATIVE_POSITION_REALIZED_PNL_SEQUENCE",
+      "status": "CALCULATED",
+      "undefined_reason": "NOT_APPLICABLE",
+      "unit": "USDT",
+      "value": "1644.16919129"
+    },
+    "average_trade_realized_return": {
+      "formula": "mean(native Position.realized_return for completed Position units)",
+      "inputs": [
+        "native_completed_position_sequence"
+      ],
+      "source": "NAUTILUS_NATIVE_POSITION_REALIZED_RETURN_SEQUENCE",
+      "status": "CALCULATED",
+      "undefined_reason": "NOT_APPLICABLE",
+      "unit": "ratio",
+      "value": "0.13688431"
+    },
+    "calmar": {
+      "formula": "NAUTILUS_NATIVE_REPORT_OR_STATISTIC",
+      "inputs": [
+        "CalmarRatio(252)"
+      ],
+      "source": "NAUTILUS_NATIVE",
+      "status": "NATIVE",
+      "undefined_reason": "NOT_APPLICABLE",
+      "unit": "ratio",
+      "value": "10.195926114079079"
+    },
+    "calmar_input_returns_sha256": "f67339dd5723299a945ee05f9608fa657c6a5e3699a3c4a74dfcdffe7303d165",
+    "calmar_qualification_id": "de5497224691878247d2c3ab4895930218dd5876a7dd0be2a560c79fe2f04d7e",
+    "calmar_returns_basis": "PORTFOLIO_DAILY_ACCOUNT_RETURNS",
+    "completed_native_units": {
+      "formula": "NAUTILUS_NATIVE_REPORT_OR_STATISTIC",
+      "inputs": [
+        "cache.position_snapshots()/cache.positions_closed()"
+      ],
+      "source": "NAUTILUS_NATIVE",
+      "status": "NATIVE",
+      "undefined_reason": "NOT_APPLICABLE",
+      "unit": "NAUTILUS_NATIVE_COMPLETED_POSITIONS",
+      "value": "6"
+    },
+    "gross_pnl": {
+      "formula": "NAUTILUS_NATIVE_GROSS_PNL",
+      "inputs": [
+        "native Position.realized_pnl",
+        "native commissions",
+        "native funding"
+      ],
+      "source": "PROJECT_FALLBACK_ABSENT_NAUTILUS_NATIVE_METRIC",
+      "status": "UNDEFINED",
+      "undefined_reason": "UNDEFINED_NATIVE_GROSS_PNL_NOT_EXPOSED",
+      "unit": "USDT",
+      "value": "UNDEFINED"
+    },
+    "historical_run_evidence_mutated": false,
+    "monte_carlo_input_status": "NATIVE_NET_COMPLETED_UNIT_SEQUENCE_READY",
+    "native_sequence_evidence_sha256": "38a2c3440d5618d18fffe4a16534b24899dd37b041ac39a63a69c81793a4d08c",
+    "readiness_id": "5a04378437a685bc3495da974d266591c51abce766d82fca8c1a4f8ce4f63587",
+    "run_id": "owner-strategy-research-001-perpetual-candidate-a-run",
+    "sample_adequacy": "NOT_APPLICABLE",
+    "schema_version": 1,
+    "terminal_open_position_excluded": true
+  },
+  "offline_enforcement": {
+    "attempts": [],
+    "enforced": true,
+    "process_isolation": {
+      "architecture": "x86_64",
+      "child_dns_probe_blocked": true,
+      "child_native_probe_blocked": true,
+      "child_python_probe_errno": 1,
+      "closed_inherited_socket_descriptors": [],
+      "current_process_probe_errno": 1,
+      "external_endpoint_contacted": false,
+      "filters_after": 1,
+      "filters_before": 0,
+      "inherited_by_fork_exec": true,
+      "io_uring_probe_errno": 1,
+      "mechanism": "LINUX_SECCOMP_BPF_TSYNC_ERRNO_EPERM",
+      "no_new_privs": true,
+      "schema": "process-network-isolation-v1",
+      "seccomp_mode": 2
+    },
+    "required": true
+  },
+  "optimization_performed": false,
+  "profile_group": "perpetual",
+  "protocol_id": "fc5d79a9324178cb0740e50832bb53f1f3b53ed996add829dc8d8ab3fc7daf84",
+  "real_profitability_claim": false,
+  "replay_semantic_digest": "e96c436955c217632d8174afc460c46fcaf3e77fe59a35a9f6335e457764e623",
+  "report_id": "dcb4de36ec7ff0df9aff7b25f90b62ca9c2c100255f1bc00652532d7351dad98",
+  "research_eligibility": "INELIGIBLE_FOR_REAL_PROFITABILITY_CLAIM",
+  "run_id": "owner-strategy-research-001-perpetual-candidate-a-run",
+  "schema": "owner-strategy-research-001-trial-result-v1",
+  "semantic_digest": "e96c436955c217632d8174afc460c46fcaf3e77fe59a35a9f6335e457764e623",
+  "source_bindings": {
+    "checker": {
+      "path": "runs/owner-strategy-research-001-perpetual-candidate-a-run-7c03f28261fe/checker.json",
+      "sha256": "8a25547a7988bf3bf70addb4cf1bc2fbbe3bb8eba9046ddce2aca371076e0643",
+      "size_bytes": 6901
+    },
+    "dataset_release": {
+      "path": "runs/owner-strategy-research-001-perpetual-candidate-a-run-7c03f28261fe/dataset_release.json",
+      "sha256": "2af6367a93a4a7c0d14bed4041f23ce088f55441c922692aa0949d5e11381279",
+      "size_bytes": 16581
+    },
+    "fills": {
+      "path": "runs/owner-strategy-research-001-perpetual-candidate-a-run-7c03f28261fe/fills.csv",
+      "sha256": "d2c3ee63c78f8c236ccb42894e43b7b92682cffe51c85814578935c9d9093c4d",
+      "size_bytes": 9762
+    },
+    "funding": {
+      "path": "runs/owner-strategy-research-001-perpetual-candidate-a-run-7c03f28261fe/funding.csv",
+      "sha256": "33541162270273f70005d9ebd63919b7dad27de6b0d6800b8447d5ed6cc4abda",
+      "size_bytes": 66588
+    },
+    "funding_source": {
+      "path": "runs/owner-strategy-research-001-perpetual-candidate-a-run-7c03f28261fe/funding_source.json",
+      "sha256": "ad62b3da8ed373418c173f976e088f146446584fcfb057eb8498d233f0e72a92",
+      "size_bytes": 133037
+    },
+    "native_completed_positions": {
+      "path": "runs/owner-strategy-research-001-perpetual-candidate-a-run-7c03f28261fe/native_completed_trades.json",
+      "sha256": "38a2c3440d5618d18fffe4a16534b24899dd37b041ac39a63a69c81793a4d08c",
+      "size_bytes": 6970
+    },
+    "native_result": {
+      "path": "runs/owner-strategy-research-001-perpetual-candidate-a-run-7c03f28261fe/nautilus_result.json",
+      "sha256": "a41cd67e9b649d58872f824de6664cfc6ecc5a607427da98a34fae43b95c783f",
+      "size_bytes": 2741610
+    },
+    "native_statistics": {
+      "path": "runs/owner-strategy-research-001-perpetual-candidate-a-run-7c03f28261fe/native_statistics.json",
+      "sha256": "2c5ab94fd5ac0b79df546ee4c67529e7ffba19192e24eaa333b5bb1cf3d64f98",
+      "size_bytes": 14400
+    },
+    "orders": {
+      "path": "runs/owner-strategy-research-001-perpetual-candidate-a-run-7c03f28261fe/orders.csv",
+      "sha256": "20da8bf50d1bd36b210f3cc044882b7f50db15888d8d8d65a578b1860e969286",
+      "size_bytes": 4679
+    },
+    "performance": {
+      "path": "research/performance/owner-strategy-research-001-perpetual-candidate-a-run.json",
+      "sha256": "00dddd3a032d16c2a56c94950a8958cf24b810b2b431c18f7eb5773f5357530f",
+      "size_bytes": 28897
+    },
+    "positions": {
+      "path": "runs/owner-strategy-research-001-perpetual-candidate-a-run-7c03f28261fe/positions.csv",
+      "sha256": "129f4becba8db00fc95c9454b97fa4ad421e87c075e805bd5b60a1e7907dc353",
+      "size_bytes": 3217
+    },
+    "protocol": {
+      "path": "research/protocols/fc5d79a9324178cb0740e50832bb53f1f3b53ed996add829dc8d8ab3fc7daf84.json",
+      "sha256": "923bbe1fd5fd19e63e5a46c3468fc9ae3631d019079d840bbed89cb0b22a561a",
+      "size_bytes": 7067
+    },
+    "replay": {
+      "path": "research/replays/owner-strategy-research-001-perpetual-candidate-a-development.json",
+      "sha256": "e68ab11021a097d48787991e8b6f376aef669c9d5d2be7437e7541fcb7a8595b",
+      "size_bytes": 1534
+    },
+    "report": {
+      "path": "research/reports/owner-strategy-research-001-perpetual-candidate-a-development.json",
+      "sha256": "7abf3b21bcfeee5e6d7764b6f56ef56a7209b57dc49b0f96d9f3fafa05cf270b",
+      "size_bytes": 37112
+    },
+    "run_config": {
+      "path": "runs/owner-strategy-research-001-perpetual-candidate-a-run-7c03f28261fe/lab_run_config.json",
+      "sha256": "18b61e93d349edfb2cea3187e398b5dcfad85768d533040d0c36d9f3417cf9da",
+      "size_bytes": 6208
+    },
+    "source_revision": {
+      "path": "runs/owner-strategy-research-001-perpetual-candidate-a-run-7c03f28261fe/source_revision.json",
+      "sha256": "b23f160f428f18a38a0d677d6ce9e467bbab03ed409b676b7003b002e41eb745",
+      "size_bytes": 278
+    },
+    "status": {
+      "path": "runs/owner-strategy-research-001-perpetual-candidate-a-run-7c03f28261fe/status.json",
+      "sha256": "8e07d700ae938a3dfac743e1f93b43f0d31d9b6b65e71e6553f49c8f4b924bba",
+      "size_bytes": 165
+    },
+    "strategy_identity": {
+      "path": "runs/owner-strategy-research-001-perpetual-candidate-a-run-7c03f28261fe/strategy_identity.json",
+      "sha256": "0583e4041a07c7b065f9fb787c311af3051a93335ee5fa925f6fc03d1cf9df3c",
+      "size_bytes": 2732
+    },
+    "strategy_spec": {
+      "path": "runs/owner-strategy-research-001-perpetual-candidate-a-run-7c03f28261fe/strategy_spec.json",
+      "sha256": "bc90528c4611be60c0cb6a322225805ef2b54874704809d87a96b7306df15f04",
+      "size_bytes": 1792
+    },
+    "workflow": {
+      "path": "research/workflows/owner-strategy-research-001-perpetual-candidate-a-development.json",
+      "sha256": "1ac6718c84f36d8c12ffab1b5a446dc5db539f89a634fb7d696d960e3e467415",
+      "size_bytes": 9810
+    }
+  },
+  "source_revision": {
+    "branch_ref": "main",
+    "captured_at_utc": "2026-08-24T11:09:03.752633Z",
+    "clean_worktree": true,
+    "git_commit": "49df660caf1620450665268bdb49b52e285564f4",
+    "git_tree": "2a4667f94a885683141d07cf5f165508b5fffca1",
+    "repository": "https://github.com/window92/nautilus-crypto-backtest-lab.git"
+  },
+  "status": "PASS",
+  "strategy_identity_sha256": "d41f10313f1e2f452cf71cd98df831ff67b22dfce812d9e69977a1f4e754626e",
+  "strategy_registration_id": "btcusdt_weekly_tsmom28_full_v1",
+  "strategy_spec_id": "6c1fe6096c1759fe3717bfd82a23679c405ca0769a9e85fba66a258d63cee427",
+  "trial_id": "owner-strategy-research-001-perpetual-candidate-a-development",
+  "trial_kind": "CANDIDATE_A"
+}

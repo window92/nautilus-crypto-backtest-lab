@@ -1,0 +1,413 @@
+{
+  "candidate_or_benchmark_name": "BUY_AND_HOLD_1X_V1",
+  "catalog_identity": "db0971d28caba547378e3acba5ad8df1cbd0d6d5be963d153248928a729e374f",
+  "claim_evaluation_id": "d1e7e85f52735019b4104842fb6f560dac04a88f0d9f74492c6e94af1001bb37",
+  "dataset_release_id": "fd8542c109cfbf7d6b19d5b7bbb7705c6a161efc807695f3671978c381e34eca",
+  "final_holdout_used": false,
+  "implementation_code_sha256": "1b597dd7b44b1194e342f2951061b2e7b4cf5dcf4a2cbcb771f0df243d08d8b0",
+  "key": "spot_benchmark",
+  "market_state_acceptance": {
+    "accepted_executable_bars": 304596,
+    "accepted_mark_updates": 0,
+    "all_data_event_count": 304596,
+    "catalog_identity": "db0971d28caba547378e3acba5ad8df1cbd0d6d5be963d153248928a729e374f",
+    "dataset_profile": "BINANCE_SPOT_CASH_LONG_ONLY",
+    "engine_error": null,
+    "engine_iterations": 304596,
+    "expected_executable_bars": 304596,
+    "expected_mark_updates": 0,
+    "fatal_runtime_diagnostics": 0,
+    "financial_performance_evaluated": false,
+    "gate": "NAUTILUS_EXECUTABLE_MARKET_STATE_ACCEPTANCE",
+    "instrument_id": "BTCUSDT.BINANCE",
+    "instrument_metadata_identity": "9c7ba442a19cb74f8059983ae56db23b8c341ac47c3ba77e2fb8da05a661e3ea",
+    "lab_run_config_sha256": "8a09aee98d9f824edd309234fc5b0c3ea6870391e487f0fdb482a6a192460cf4",
+    "missing_market_state": 0,
+    "native_funding_cache_count": 0,
+    "native_mark_cache_count": 0,
+    "no_market_data_precision_warnings": 0,
+    "pinned_nautilus_version": "2.0.0rc2",
+    "precision_skipped_bars": 0,
+    "raw_numeric_values_mutated": false,
+    "rejected_precision_events": 0,
+    "runtime_diagnostics": {
+      "error_patterns": [],
+      "fatal_runtime_diagnostics": 0,
+      "log_byte_size": 0,
+      "log_created": true,
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "schema": "nautilus-executable-market-state-acceptance-v1",
+    "sentinel_fills": [
+      {
+        "diagnostics": {
+          "error_patterns": [],
+          "fatal_runtime_diagnostics": 0,
+          "log_byte_size": 0,
+          "log_created": false,
+          "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "effective_insert_latency_ns": 60000000000,
+        "fill_count": 1,
+        "fill_price": "28989.31",
+        "fill_quantity": "0.100000",
+        "fill_ts_event": 1609459380000000000,
+        "guard_failure_count": 0,
+        "order_count": 1,
+        "performance_research": false,
+        "rejected_order_count": 0,
+        "role": "WINDOW_START",
+        "same_bar_fill": false,
+        "signal_bar_ts_init": 1609459320000000000,
+        "status": "PASS"
+      },
+      {
+        "diagnostics": {
+          "error_patterns": [],
+          "fatal_runtime_diagnostics": 0,
+          "log_byte_size": 0,
+          "log_created": false,
+          "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "effective_insert_latency_ns": 60000000000,
+        "fill_count": 1,
+        "fill_price": "61720.28",
+        "fill_quantity": "0.100000",
+        "fill_ts_event": 1618612200000000000,
+        "guard_failure_count": 0,
+        "order_count": 1,
+        "performance_research": false,
+        "rejected_order_count": 0,
+        "role": "WINDOW_MIDPOINT",
+        "same_bar_fill": false,
+        "signal_bar_ts_init": 1618612140000000000,
+        "status": "PASS"
+      },
+      {
+        "diagnostics": {
+          "error_patterns": [],
+          "fatal_runtime_diagnostics": 0,
+          "log_byte_size": 0,
+          "log_created": false,
+          "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "effective_insert_latency_ns": 60000000000,
+        "fill_count": 1,
+        "fill_price": "41692.33",
+        "fill_quantity": "0.100000",
+        "fill_ts_event": 1627775880000000000,
+        "guard_failure_count": 0,
+        "order_count": 1,
+        "performance_research": false,
+        "rejected_order_count": 0,
+        "role": "WINDOW_END",
+        "same_bar_fill": false,
+        "signal_bar_ts_init": 1627775820000000000,
+        "status": "PASS"
+      },
+      {
+        "diagnostics": {
+          "error_patterns": [],
+          "fatal_runtime_diagnostics": 0,
+          "log_byte_size": 0,
+          "log_created": false,
+          "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "effective_insert_latency_ns": 60000000000,
+        "fill_count": 1,
+        "fill_price": "44731.73",
+        "fill_quantity": "0.100000",
+        "fill_ts_event": 1613019720000000000,
+        "guard_failure_count": 0,
+        "order_count": 1,
+        "performance_research": false,
+        "rejected_order_count": 0,
+        "role": "AFTER_VERIFIED_NO_TRADE",
+        "same_bar_fill": false,
+        "signal_bar_ts_init": 1613019660000000000,
+        "status": "PASS"
+      }
+    ],
+    "static_precision_and_grid": {
+      "execution_price_precision_mismatches": 0,
+      "execution_tick_grid_mismatches": 0,
+      "execution_volume_precision_mismatches": 0,
+      "mark_precision_mismatches": 0
+    },
+    "status": "PASS",
+    "strategy_research_run": false,
+    "zero_latency_negative_control": {
+      "accepted_for_release": false,
+      "diagnostics": {
+        "error_patterns": [],
+        "fatal_runtime_diagnostics": 0,
+        "log_byte_size": 0,
+        "log_created": false,
+        "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "effective_insert_latency_ns": 0,
+      "fill_count": 1,
+      "fill_price": "29009.92",
+      "fill_quantity": "0.100000",
+      "fill_ts_event": 1609459320000000000,
+      "guard_failure_count": 0,
+      "order_count": 1,
+      "performance_research": false,
+      "reason": "LOCKED_LATENCY_IS_60_SECONDS",
+      "rejected_order_count": 0,
+      "role": "ZERO_LATENCY_NEGATIVE_CONTROL",
+      "same_bar_fill": true,
+      "signal_bar_ts_init": 1609459320000000000,
+      "status": "FAIL"
+    },
+    "zero_padding_only": true
+  },
+  "metrics": {
+    "average_native_realized_pnl": "UNDEFINED",
+    "average_native_realized_return": "UNDEFINED",
+    "calmar": "6.0067344883889655",
+    "calmar_status": "NATIVE",
+    "calmar_undefined_reason": "NOT_APPLICABLE",
+    "checker": "CHECK_PASS",
+    "completed_daily_bars": "NOT_APPLICABLE_BENCHMARK",
+    "ending_equity": "12536.88078799",
+    "exposure_active_ns": 15638280000000000,
+    "exposure_ratio": "0.999992326581",
+    "fees": "9.99035701",
+    "fills": 1,
+    "funding": "NOT_APPLICABLE",
+    "funding_settlement_count": 0,
+    "gross_pnl": "UNDEFINED_NATIVE_GROSS_PNL_NOT_EXPOSED",
+    "long_entries": 1,
+    "maximum_drawdown": "0.53142368",
+    "monte_carlo_status": "NOT_APPLICABLE",
+    "native_completed_units": 0,
+    "native_returns_basis": "PORTFOLIO_DAILY_ACCOUNT_RETURNS",
+    "net_pnl": "2536.88078799",
+    "orders": 1,
+    "position_exits": 0,
+    "profit_factor": "1.7251603210490092",
+    "replay": "PASS",
+    "replay_identity": "b491ddef5edde0dadd25a57cabba3b649c1dbbed6526df716561088b49395ac6",
+    "sample_adequacy": "NOT_APPLICABLE",
+    "sharpe": "1.2077086439323064",
+    "short_entries": 0,
+    "signals_or_benchmark_entries": 1,
+    "sortino": "5.545161363136624",
+    "terminal_position": {
+      "open": true,
+      "side": "LONG",
+      "signed_quantity": "0.30238"
+    },
+    "weekly_decisions": "NOT_APPLICABLE_BENCHMARK",
+    "win_rate_completed_units": "UNDEFINED"
+  },
+  "native_research_metrics_readiness": {
+    "average_trade_realized_pnl": {
+      "formula": "mean(native Position.realized_pnl for completed Position units)",
+      "inputs": [
+        "native_completed_position_sequence"
+      ],
+      "source": "PROJECT_FALLBACK_ABSENT_NAUTILUS_NATIVE_METRIC",
+      "status": "UNDEFINED",
+      "undefined_reason": "average trade is undefined for zero native completed positions",
+      "unit": "USDT",
+      "value": "UNDEFINED"
+    },
+    "average_trade_realized_return": {
+      "formula": "mean(native Position.realized_return for completed Position units)",
+      "inputs": [
+        "native_completed_position_sequence"
+      ],
+      "source": "PROJECT_FALLBACK_ABSENT_NAUTILUS_NATIVE_METRIC",
+      "status": "UNDEFINED",
+      "undefined_reason": "average trade is undefined for zero native completed positions",
+      "unit": "ratio",
+      "value": "UNDEFINED"
+    },
+    "calmar": {
+      "formula": "NAUTILUS_NATIVE_REPORT_OR_STATISTIC",
+      "inputs": [
+        "CalmarRatio(252)"
+      ],
+      "source": "NAUTILUS_NATIVE",
+      "status": "NATIVE",
+      "undefined_reason": "NOT_APPLICABLE",
+      "unit": "ratio",
+      "value": "6.0067344883889655"
+    },
+    "calmar_input_returns_sha256": "8cafbc279d3caf7f0a727de6983598e8e08f7ae334976c36ca11b893129d4516",
+    "calmar_qualification_id": "9990ffc0748c1b70f92ae41f044ddf79ebdc4efe921b17db55ed0379d495b2a7",
+    "calmar_returns_basis": "PORTFOLIO_DAILY_ACCOUNT_RETURNS",
+    "completed_native_units": {
+      "formula": "NAUTILUS_NATIVE_REPORT_OR_STATISTIC",
+      "inputs": [
+        "cache.position_snapshots()/cache.positions_closed()"
+      ],
+      "source": "NAUTILUS_NATIVE",
+      "status": "NATIVE",
+      "undefined_reason": "NOT_APPLICABLE",
+      "unit": "NAUTILUS_NATIVE_COMPLETED_POSITIONS",
+      "value": "0"
+    },
+    "gross_pnl": {
+      "formula": "NAUTILUS_NATIVE_GROSS_PNL",
+      "inputs": [
+        "native Position.realized_pnl",
+        "native commissions",
+        "native funding"
+      ],
+      "source": "PROJECT_FALLBACK_ABSENT_NAUTILUS_NATIVE_METRIC",
+      "status": "UNDEFINED",
+      "undefined_reason": "UNDEFINED_NATIVE_GROSS_PNL_NOT_EXPOSED",
+      "unit": "USDT",
+      "value": "UNDEFINED"
+    },
+    "historical_run_evidence_mutated": false,
+    "monte_carlo_input_status": "MC_LOW_CONFIDENCE",
+    "native_sequence_evidence_sha256": "6c51038030216b94e415699d49bee9268244dec9922692454a1e64d21e9f3bd5",
+    "readiness_id": "c92460b16b72978a95d7d5ff1596dd15b450eb52ba79be050a6925bf4a4d770f",
+    "run_id": "owner-strategy-research-001-spot-benchmark-run",
+    "sample_adequacy": "NOT_APPLICABLE",
+    "schema_version": 1,
+    "terminal_open_position_excluded": true
+  },
+  "offline_enforcement": {
+    "attempts": [],
+    "enforced": true,
+    "process_isolation": {
+      "architecture": "x86_64",
+      "child_dns_probe_blocked": true,
+      "child_native_probe_blocked": true,
+      "child_python_probe_errno": 1,
+      "closed_inherited_socket_descriptors": [],
+      "current_process_probe_errno": 1,
+      "external_endpoint_contacted": false,
+      "filters_after": 1,
+      "filters_before": 0,
+      "inherited_by_fork_exec": true,
+      "io_uring_probe_errno": 1,
+      "mechanism": "LINUX_SECCOMP_BPF_TSYNC_ERRNO_EPERM",
+      "no_new_privs": true,
+      "schema": "process-network-isolation-v1",
+      "seccomp_mode": 2
+    },
+    "required": true
+  },
+  "optimization_performed": false,
+  "profile_group": "spot",
+  "protocol_id": "2b0239a69faff825c7c35aa0dd372d112a49973d8076aeaf62e25f1e2abb4a12",
+  "real_profitability_claim": false,
+  "replay_semantic_digest": "9e77fd3563e269a16479bd340cb720b590933a7c5a70b836120a2340e4931b34",
+  "report_id": "aeb69f0a22a7649fdc3dfd842d5ff11bdd60139bd10974b37918337602c10429",
+  "research_eligibility": "INELIGIBLE_FOR_REAL_PROFITABILITY_CLAIM",
+  "run_id": "owner-strategy-research-001-spot-benchmark-run",
+  "schema": "owner-strategy-research-001-trial-result-v1",
+  "semantic_digest": "9e77fd3563e269a16479bd340cb720b590933a7c5a70b836120a2340e4931b34",
+  "source_bindings": {
+    "checker": {
+      "path": "runs/owner-strategy-research-001-spot-benchmark-run-ef60cf17606c/checker.json",
+      "sha256": "a34598b7c305b14eb3ee1fcaaf483d745720deef8308bd8495218f258924f728",
+      "size_bytes": 6478
+    },
+    "dataset_release": {
+      "path": "runs/owner-strategy-research-001-spot-benchmark-run-ef60cf17606c/dataset_release.json",
+      "sha256": "ae609c85a06b8eeffc0ee8ae310b5532b14e9209913b4bee6e6086b750af84b7",
+      "size_bytes": 7054
+    },
+    "fills": {
+      "path": "runs/owner-strategy-research-001-spot-benchmark-run-ef60cf17606c/fills.csv",
+      "sha256": "39dce77a7ffabebb9526da27daf41dae21f70929c799206cbc239095bee5c635",
+      "size_bytes": 471
+    },
+    "native_completed_positions": {
+      "path": "runs/owner-strategy-research-001-spot-benchmark-run-ef60cf17606c/native_completed_trades.json",
+      "sha256": "6c51038030216b94e415699d49bee9268244dec9922692454a1e64d21e9f3bd5",
+      "size_bytes": 681
+    },
+    "native_result": {
+      "path": "runs/owner-strategy-research-001-spot-benchmark-run-ef60cf17606c/nautilus_result.json",
+      "sha256": "d1215aca6ba1dd3c14f60d0fdc49c4fb4f91fb14dd2eca0f5005e5165a0e4627",
+      "size_bytes": 12850
+    },
+    "native_statistics": {
+      "path": "runs/owner-strategy-research-001-spot-benchmark-run-ef60cf17606c/native_statistics.json",
+      "sha256": "9194e3a1ad6b16dc1456626d4c7afb94fe0f44d6a61a3664c943023648783c05",
+      "size_bytes": 14376
+    },
+    "orders": {
+      "path": "runs/owner-strategy-research-001-spot-benchmark-run-ef60cf17606c/orders.csv",
+      "sha256": "c4151fdf4100b460aa69f46fb0efca599fdb3820f24b3a968724f78274c94788",
+      "size_bytes": 270
+    },
+    "performance": {
+      "path": "research/performance/owner-strategy-research-001-spot-benchmark-run.json",
+      "sha256": "e5b8d95e882636512e096f23e75ddad584cc10f877d17ed9187a1ff2821def30",
+      "size_bytes": 28127
+    },
+    "positions": {
+      "path": "runs/owner-strategy-research-001-spot-benchmark-run-ef60cf17606c/positions.csv",
+      "sha256": "a0c354631ec693c494311ddb45ef023a10c592c5c1fec471e39e630bffa4fb60",
+      "size_bytes": 295
+    },
+    "protocol": {
+      "path": "research/protocols/2b0239a69faff825c7c35aa0dd372d112a49973d8076aeaf62e25f1e2abb4a12.json",
+      "sha256": "b7328b97a719139a7987a5bd327a1b56048c0f0f0cf04dfc9d9b17f70f1f178c",
+      "size_bytes": 6959
+    },
+    "replay": {
+      "path": "research/replays/owner-strategy-research-001-spot-benchmark-buy-and-hold-1x-development.json",
+      "sha256": "b310a436fa76091892891f71233c2d4448875d047e7d74ef8e38ae08373552db",
+      "size_bytes": 1980
+    },
+    "report": {
+      "path": "research/reports/owner-strategy-research-001-spot-benchmark-buy-and-hold-1x-development.json",
+      "sha256": "ea1c9ab41db5e65165e22f03a1f2af86a9f60e8914c6a87ef9cf1c66b22d8f89",
+      "size_bytes": 34632
+    },
+    "run_config": {
+      "path": "runs/owner-strategy-research-001-spot-benchmark-run-ef60cf17606c/lab_run_config.json",
+      "sha256": "ce133f8434dcbf49aa86dfe0199b0ea3321bd0896fab38bb40148b883a7e4eb7",
+      "size_bytes": 5992
+    },
+    "source_revision": {
+      "path": "runs/owner-strategy-research-001-spot-benchmark-run-ef60cf17606c/source_revision.json",
+      "sha256": "eab6d9af190e3d7af3f2462783c87aaddab397ef52bf17334e5a2982224195cd",
+      "size_bytes": 278
+    },
+    "status": {
+      "path": "runs/owner-strategy-research-001-spot-benchmark-run-ef60cf17606c/status.json",
+      "sha256": "60b058bac5385e9dd6f255177f132083e0366a18cc44487e0bae19c47d5909e1",
+      "size_bytes": 158
+    },
+    "strategy_identity": {
+      "path": "runs/owner-strategy-research-001-spot-benchmark-run-ef60cf17606c/strategy_identity.json",
+      "sha256": "fd4b28248474cf78952b1eaf95475e9ee16a71302160fd1f3dcd4e9610b75d10",
+      "size_bytes": 2253
+    },
+    "strategy_spec": {
+      "path": "runs/owner-strategy-research-001-spot-benchmark-run-ef60cf17606c/strategy_spec.json",
+      "sha256": "71ea92d3b50bb7e2a38bf8b77054ef44d260c009fbfee6891db6fdb04d900674",
+      "size_bytes": 1324
+    },
+    "workflow": {
+      "path": "research/workflows/owner-strategy-research-001-spot-benchmark-buy-and-hold-1x-development.json",
+      "sha256": "01d56e26e1f0d3094debb1e8ee9df0c6fa3b821f28f6c4713d32ce3bfb8fe6c9",
+      "size_bytes": 9228
+    }
+  },
+  "source_revision": {
+    "branch_ref": "main",
+    "captured_at_utc": "2026-08-24T10:23:03.948890Z",
+    "clean_worktree": true,
+    "git_commit": "ab94f950257e70f29c3685a2c2454e114defceb9",
+    "git_tree": "3fb83d9129d5a79386ec79d162bc9ea91a31084c",
+    "repository": "https://github.com/window92/nautilus-crypto-backtest-lab.git"
+  },
+  "status": "PASS",
+  "strategy_identity_sha256": "22211cbd0a02f4dc583ad58c41d8a56a3356cea3af1261ceabc1bd270dab3ba9",
+  "strategy_registration_id": "buy_and_hold_1x_v1",
+  "strategy_spec_id": "3bbbae6e996f542a10816cf6f95f348eba602d24f305bfd093f5eb6d94f368e5",
+  "trial_id": "owner-strategy-research-001-spot-benchmark-buy-and-hold-1x-development",
+  "trial_kind": "BENCHMARK"
+}

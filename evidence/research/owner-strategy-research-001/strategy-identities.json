@@ -1,0 +1,90 @@
+{
+  "results": {
+    "perpetual_benchmark": {
+      "implementation_code_sha256": "84b4a8171953b8ff5970851a9463fb019d178fc4c48a8136152175147a09eaf4",
+      "source_revision": {
+        "branch_ref": "main",
+        "captured_at_utc": "2026-08-24T11:07:50.489330Z",
+        "clean_worktree": true,
+        "git_commit": "53428b911dd3491f57be50540922b57bb09b786d",
+        "git_tree": "dab9a292b7360f906cd1c4d83cda2f1fc58d578a",
+        "repository": "https://github.com/window92/nautilus-crypto-backtest-lab.git"
+      },
+      "strategy_identity_sha256": "ef6a8daff0c132cd815e69b4f6a43cf77fe65c974d3476474defec55308041ef",
+      "strategy_registration_id": "buy_and_hold_1x_v1",
+      "strategy_spec_id": "00e1bab53afa8101e794c8d0283ae5d1d57ad6bc673feae92581f15e09afd704"
+    },
+    "perpetual_candidate_a": {
+      "implementation_code_sha256": "84b4a8171953b8ff5970851a9463fb019d178fc4c48a8136152175147a09eaf4",
+      "source_revision": {
+        "branch_ref": "main",
+        "captured_at_utc": "2026-08-24T11:09:03.752633Z",
+        "clean_worktree": true,
+        "git_commit": "49df660caf1620450665268bdb49b52e285564f4",
+        "git_tree": "2a4667f94a885683141d07cf5f165508b5fffca1",
+        "repository": "https://github.com/window92/nautilus-crypto-backtest-lab.git"
+      },
+      "strategy_identity_sha256": "d41f10313f1e2f452cf71cd98df831ff67b22dfce812d9e69977a1f4e754626e",
+      "strategy_registration_id": "btcusdt_weekly_tsmom28_full_v1",
+      "strategy_spec_id": "6c1fe6096c1759fe3717bfd82a23679c405ca0769a9e85fba66a258d63cee427"
+    },
+    "perpetual_candidate_b": {
+      "implementation_code_sha256": "84b4a8171953b8ff5970851a9463fb019d178fc4c48a8136152175147a09eaf4",
+      "source_revision": {
+        "branch_ref": "main",
+        "captured_at_utc": "2026-08-24T11:10:18.371975Z",
+        "clean_worktree": true,
+        "git_commit": "2efbb4163c0715215c88aa7b09dc6c360bfa377a",
+        "git_tree": "e22b04b8a3d8ccc968ea4af4cfcc07272ad8baf3",
+        "repository": "https://github.com/window92/nautilus-crypto-backtest-lab.git"
+      },
+      "strategy_identity_sha256": "c054a35b38e2fa045722644e0cc80acfebcbd2484d018e66dcfc34fd29d8b1d9",
+      "strategy_registration_id": "btcusdt_weekly_tsmom28_vol20_v1",
+      "strategy_spec_id": "e92255ea5090a6e9aa5f24b04aacd204e330be1f8ae3dcec9af75afdd71cd113"
+    },
+    "spot_benchmark": {
+      "implementation_code_sha256": "1b597dd7b44b1194e342f2951061b2e7b4cf5dcf4a2cbcb771f0df243d08d8b0",
+      "source_revision": {
+        "branch_ref": "main",
+        "captured_at_utc": "2026-08-24T10:23:03.948890Z",
+        "clean_worktree": true,
+        "git_commit": "ab94f950257e70f29c3685a2c2454e114defceb9",
+        "git_tree": "3fb83d9129d5a79386ec79d162bc9ea91a31084c",
+        "repository": "https://github.com/window92/nautilus-crypto-backtest-lab.git"
+      },
+      "strategy_identity_sha256": "22211cbd0a02f4dc583ad58c41d8a56a3356cea3af1261ceabc1bd270dab3ba9",
+      "strategy_registration_id": "buy_and_hold_1x_v1",
+      "strategy_spec_id": "3bbbae6e996f542a10816cf6f95f348eba602d24f305bfd093f5eb6d94f368e5"
+    },
+    "spot_candidate_a": {
+      "implementation_code_sha256": "84b4a8171953b8ff5970851a9463fb019d178fc4c48a8136152175147a09eaf4",
+      "source_revision": {
+        "branch_ref": "main",
+        "captured_at_utc": "2026-08-24T10:44:53.745821Z",
+        "clean_worktree": true,
+        "git_commit": "014e3f6e37f70c67b111962e999d8eeb6120893f",
+        "git_tree": "e6707756ea35929873984067c4c12e4f8c6e50dd",
+        "repository": "https://github.com/window92/nautilus-crypto-backtest-lab.git"
+      },
+      "strategy_identity_sha256": "6b990fb1975b06ff363cdfe612aed4c2602e69bcbd7477ef49f29ebc8a128dae",
+      "strategy_registration_id": "btcusdt_weekly_tsmom28_full_v1",
+      "strategy_spec_id": "17710252cfd402588f2881cc693cc4ab4a5ae76c5ee59e71dcf877d1b418e78b"
+    },
+    "spot_candidate_b": {
+      "implementation_code_sha256": "84b4a8171953b8ff5970851a9463fb019d178fc4c48a8136152175147a09eaf4",
+      "source_revision": {
+        "branch_ref": "main",
+        "captured_at_utc": "2026-08-24T11:06:54.107736Z",
+        "clean_worktree": true,
+        "git_commit": "231382ca9d3ec28c9a6c1c20a66a198a5c00346e",
+        "git_tree": "df812c20792e08b88be67fb1c788c3ec3ab92259",
+        "repository": "https://github.com/window92/nautilus-crypto-backtest-lab.git"
+      },
+      "strategy_identity_sha256": "0634cbfe3f1674edc449fce3a49a1744dc13b0b06912f368b7263a5f63500023",
+      "strategy_registration_id": "btcusdt_weekly_tsmom28_vol20_v1",
+      "strategy_spec_id": "8d4b2afb1e289e44a5a41173238b62a01a98a617804f81823aa2c790df08c392"
+    }
+  },
+  "schema": "owner-strategy-research-001-strategy-identities-v1",
+  "status": "PASS"
+}

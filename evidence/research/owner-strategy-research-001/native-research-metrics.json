@@ -1,0 +1,427 @@
+{
+  "gross_pnl_disposition": "UNDEFINED_NATIVE_GROSS_PNL_NOT_EXPOSED",
+  "results": {
+    "perpetual_benchmark": {
+      "average_trade_realized_pnl": {
+        "formula": "mean(native Position.realized_pnl for completed Position units)",
+        "inputs": [
+          "native_completed_position_sequence"
+        ],
+        "source": "PROJECT_FALLBACK_ABSENT_NAUTILUS_NATIVE_METRIC",
+        "status": "UNDEFINED",
+        "undefined_reason": "average trade is undefined for zero native completed positions",
+        "unit": "USDT",
+        "value": "UNDEFINED"
+      },
+      "average_trade_realized_return": {
+        "formula": "mean(native Position.realized_return for completed Position units)",
+        "inputs": [
+          "native_completed_position_sequence"
+        ],
+        "source": "PROJECT_FALLBACK_ABSENT_NAUTILUS_NATIVE_METRIC",
+        "status": "UNDEFINED",
+        "undefined_reason": "average trade is undefined for zero native completed positions",
+        "unit": "ratio",
+        "value": "UNDEFINED"
+      },
+      "calmar": {
+        "formula": "NAUTILUS_NATIVE_REPORT_OR_STATISTIC",
+        "inputs": [
+          "CalmarRatio(252)"
+        ],
+        "source": "NAUTILUS_NATIVE",
+        "status": "NATIVE",
+        "undefined_reason": "NOT_APPLICABLE",
+        "unit": "ratio",
+        "value": "-0.05326088193325637"
+      },
+      "calmar_input_returns_sha256": "0cfe371480583a559d666d8ccd4fcd49696c76dc4ba22e71972a24e89eee00a1",
+      "calmar_qualification_id": "851f79bdd86890d4cae73524f374ddc208b297b876d580804bc081eec5cbc4ae",
+      "calmar_returns_basis": "PORTFOLIO_DAILY_ACCOUNT_RETURNS",
+      "completed_native_units": {
+        "formula": "NAUTILUS_NATIVE_REPORT_OR_STATISTIC",
+        "inputs": [
+          "cache.position_snapshots()/cache.positions_closed()"
+        ],
+        "source": "NAUTILUS_NATIVE",
+        "status": "NATIVE",
+        "undefined_reason": "NOT_APPLICABLE",
+        "unit": "NAUTILUS_NATIVE_COMPLETED_POSITIONS",
+        "value": "0"
+      },
+      "gross_pnl": {
+        "formula": "NAUTILUS_NATIVE_GROSS_PNL",
+        "inputs": [
+          "native Position.realized_pnl",
+          "native commissions",
+          "native funding"
+        ],
+        "source": "PROJECT_FALLBACK_ABSENT_NAUTILUS_NATIVE_METRIC",
+        "status": "UNDEFINED",
+        "undefined_reason": "UNDEFINED_NATIVE_GROSS_PNL_NOT_EXPOSED",
+        "unit": "USDT",
+        "value": "UNDEFINED"
+      },
+      "historical_run_evidence_mutated": false,
+      "monte_carlo_input_status": "MC_LOW_CONFIDENCE",
+      "native_sequence_evidence_sha256": "41ff6c969de06cf4d779a4dd6845278c98329684ac8365f00b58cb41515223fa",
+      "readiness_id": "2ec6773e7aa5f1e662d943ca29764317140702457ff68de3c8350b618d855aa4",
+      "run_id": "owner-strategy-research-001-perpetual-benchmark-run",
+      "sample_adequacy": "NOT_APPLICABLE",
+      "schema_version": 1,
+      "terminal_open_position_excluded": true
+    },
+    "perpetual_candidate_a": {
+      "average_trade_realized_pnl": {
+        "formula": "mean(native Position.realized_pnl for completed Position units)",
+        "inputs": [
+          "native_completed_position_sequence"
+        ],
+        "source": "NAUTILUS_NATIVE_POSITION_REALIZED_PNL_SEQUENCE",
+        "status": "CALCULATED",
+        "undefined_reason": "NOT_APPLICABLE",
+        "unit": "USDT",
+        "value": "1644.16919129"
+      },
+      "average_trade_realized_return": {
+        "formula": "mean(native Position.realized_return for completed Position units)",
+        "inputs": [
+          "native_completed_position_sequence"
+        ],
+        "source": "NAUTILUS_NATIVE_POSITION_REALIZED_RETURN_SEQUENCE",
+        "status": "CALCULATED",
+        "undefined_reason": "NOT_APPLICABLE",
+        "unit": "ratio",
+        "value": "0.13688431"
+      },
+      "calmar": {
+        "formula": "NAUTILUS_NATIVE_REPORT_OR_STATISTIC",
+        "inputs": [
+          "CalmarRatio(252)"
+        ],
+        "source": "NAUTILUS_NATIVE",
+        "status": "NATIVE",
+        "undefined_reason": "NOT_APPLICABLE",
+        "unit": "ratio",
+        "value": "10.195926114079079"
+      },
+      "calmar_input_returns_sha256": "f67339dd5723299a945ee05f9608fa657c6a5e3699a3c4a74dfcdffe7303d165",
+      "calmar_qualification_id": "de5497224691878247d2c3ab4895930218dd5876a7dd0be2a560c79fe2f04d7e",
+      "calmar_returns_basis": "PORTFOLIO_DAILY_ACCOUNT_RETURNS",
+      "completed_native_units": {
+        "formula": "NAUTILUS_NATIVE_REPORT_OR_STATISTIC",
+        "inputs": [
+          "cache.position_snapshots()/cache.positions_closed()"
+        ],
+        "source": "NAUTILUS_NATIVE",
+        "status": "NATIVE",
+        "undefined_reason": "NOT_APPLICABLE",
+        "unit": "NAUTILUS_NATIVE_COMPLETED_POSITIONS",
+        "value": "6"
+      },
+      "gross_pnl": {
+        "formula": "NAUTILUS_NATIVE_GROSS_PNL",
+        "inputs": [
+          "native Position.realized_pnl",
+          "native commissions",
+          "native funding"
+        ],
+        "source": "PROJECT_FALLBACK_ABSENT_NAUTILUS_NATIVE_METRIC",
+        "status": "UNDEFINED",
+        "undefined_reason": "UNDEFINED_NATIVE_GROSS_PNL_NOT_EXPOSED",
+        "unit": "USDT",
+        "value": "UNDEFINED"
+      },
+      "historical_run_evidence_mutated": false,
+      "monte_carlo_input_status": "NATIVE_NET_COMPLETED_UNIT_SEQUENCE_READY",
+      "native_sequence_evidence_sha256": "38a2c3440d5618d18fffe4a16534b24899dd37b041ac39a63a69c81793a4d08c",
+      "readiness_id": "5a04378437a685bc3495da974d266591c51abce766d82fca8c1a4f8ce4f63587",
+      "run_id": "owner-strategy-research-001-perpetual-candidate-a-run",
+      "sample_adequacy": "NOT_APPLICABLE",
+      "schema_version": 1,
+      "terminal_open_position_excluded": true
+    },
+    "perpetual_candidate_b": {
+      "average_trade_realized_pnl": {
+        "formula": "mean(native Position.realized_pnl for completed Position units)",
+        "inputs": [
+          "native_completed_position_sequence"
+        ],
+        "source": "NAUTILUS_NATIVE_POSITION_REALIZED_PNL_SEQUENCE",
+        "status": "CALCULATED",
+        "undefined_reason": "NOT_APPLICABLE",
+        "unit": "USDT",
+        "value": "272.54363361"
+      },
+      "average_trade_realized_return": {
+        "formula": "mean(native Position.realized_return for completed Position units)",
+        "inputs": [
+          "native_completed_position_sequence"
+        ],
+        "source": "NAUTILUS_NATIVE_POSITION_REALIZED_RETURN_SEQUENCE",
+        "status": "CALCULATED",
+        "undefined_reason": "NOT_APPLICABLE",
+        "unit": "ratio",
+        "value": "0.09447805"
+      },
+      "calmar": {
+        "formula": "NAUTILUS_NATIVE_REPORT_OR_STATISTIC",
+        "inputs": [
+          "CalmarRatio(252)"
+        ],
+        "source": "NAUTILUS_NATIVE",
+        "status": "NATIVE",
+        "undefined_reason": "NOT_APPLICABLE",
+        "unit": "ratio",
+        "value": "4.6051313237798945"
+      },
+      "calmar_input_returns_sha256": "03c0bd68c87d6ebadef40d54f8f1149eeb2303d314b990e851b8a1807644d9a1",
+      "calmar_qualification_id": "b1b71aab45a383485ff8f30070acdcb6b35d2ef2e8b216281334523f20ab5eb6",
+      "calmar_returns_basis": "PORTFOLIO_DAILY_ACCOUNT_RETURNS",
+      "completed_native_units": {
+        "formula": "NAUTILUS_NATIVE_REPORT_OR_STATISTIC",
+        "inputs": [
+          "cache.position_snapshots()/cache.positions_closed()"
+        ],
+        "source": "NAUTILUS_NATIVE",
+        "status": "NATIVE",
+        "undefined_reason": "NOT_APPLICABLE",
+        "unit": "NAUTILUS_NATIVE_COMPLETED_POSITIONS",
+        "value": "6"
+      },
+      "gross_pnl": {
+        "formula": "NAUTILUS_NATIVE_GROSS_PNL",
+        "inputs": [
+          "native Position.realized_pnl",
+          "native commissions",
+          "native funding"
+        ],
+        "source": "PROJECT_FALLBACK_ABSENT_NAUTILUS_NATIVE_METRIC",
+        "status": "UNDEFINED",
+        "undefined_reason": "UNDEFINED_NATIVE_GROSS_PNL_NOT_EXPOSED",
+        "unit": "USDT",
+        "value": "UNDEFINED"
+      },
+      "historical_run_evidence_mutated": false,
+      "monte_carlo_input_status": "NATIVE_NET_COMPLETED_UNIT_SEQUENCE_READY",
+      "native_sequence_evidence_sha256": "053db348be0763fd669cb7c35012488492b2b45abd8f5973d39b032156ad64f1",
+      "readiness_id": "44fde44f505ac1957a1dde970adf047ed10ebac930a886c122093510279e3d3d",
+      "run_id": "owner-strategy-research-001-perpetual-candidate-b-run",
+      "sample_adequacy": "NOT_APPLICABLE",
+      "schema_version": 1,
+      "terminal_open_position_excluded": true
+    },
+    "spot_benchmark": {
+      "average_trade_realized_pnl": {
+        "formula": "mean(native Position.realized_pnl for completed Position units)",
+        "inputs": [
+          "native_completed_position_sequence"
+        ],
+        "source": "PROJECT_FALLBACK_ABSENT_NAUTILUS_NATIVE_METRIC",
+        "status": "UNDEFINED",
+        "undefined_reason": "average trade is undefined for zero native completed positions",
+        "unit": "USDT",
+        "value": "UNDEFINED"
+      },
+      "average_trade_realized_return": {
+        "formula": "mean(native Position.realized_return for completed Position units)",
+        "inputs": [
+          "native_completed_position_sequence"
+        ],
+        "source": "PROJECT_FALLBACK_ABSENT_NAUTILUS_NATIVE_METRIC",
+        "status": "UNDEFINED",
+        "undefined_reason": "average trade is undefined for zero native completed positions",
+        "unit": "ratio",
+        "value": "UNDEFINED"
+      },
+      "calmar": {
+        "formula": "NAUTILUS_NATIVE_REPORT_OR_STATISTIC",
+        "inputs": [
+          "CalmarRatio(252)"
+        ],
+        "source": "NAUTILUS_NATIVE",
+        "status": "NATIVE",
+        "undefined_reason": "NOT_APPLICABLE",
+        "unit": "ratio",
+        "value": "6.0067344883889655"
+      },
+      "calmar_input_returns_sha256": "8cafbc279d3caf7f0a727de6983598e8e08f7ae334976c36ca11b893129d4516",
+      "calmar_qualification_id": "9990ffc0748c1b70f92ae41f044ddf79ebdc4efe921b17db55ed0379d495b2a7",
+      "calmar_returns_basis": "PORTFOLIO_DAILY_ACCOUNT_RETURNS",
+      "completed_native_units": {
+        "formula": "NAUTILUS_NATIVE_REPORT_OR_STATISTIC",
+        "inputs": [
+          "cache.position_snapshots()/cache.positions_closed()"
+        ],
+        "source": "NAUTILUS_NATIVE",
+        "status": "NATIVE",
+        "undefined_reason": "NOT_APPLICABLE",
+        "unit": "NAUTILUS_NATIVE_COMPLETED_POSITIONS",
+        "value": "0"
+      },
+      "gross_pnl": {
+        "formula": "NAUTILUS_NATIVE_GROSS_PNL",
+        "inputs": [
+          "native Position.realized_pnl",
+          "native commissions",
+          "native funding"
+        ],
+        "source": "PROJECT_FALLBACK_ABSENT_NAUTILUS_NATIVE_METRIC",
+        "status": "UNDEFINED",
+        "undefined_reason": "UNDEFINED_NATIVE_GROSS_PNL_NOT_EXPOSED",
+        "unit": "USDT",
+        "value": "UNDEFINED"
+      },
+      "historical_run_evidence_mutated": false,
+      "monte_carlo_input_status": "MC_LOW_CONFIDENCE",
+      "native_sequence_evidence_sha256": "6c51038030216b94e415699d49bee9268244dec9922692454a1e64d21e9f3bd5",
+      "readiness_id": "c92460b16b72978a95d7d5ff1596dd15b450eb52ba79be050a6925bf4a4d770f",
+      "run_id": "owner-strategy-research-001-spot-benchmark-run",
+      "sample_adequacy": "NOT_APPLICABLE",
+      "schema_version": 1,
+      "terminal_open_position_excluded": true
+    },
+    "spot_candidate_a": {
+      "average_trade_realized_pnl": {
+        "formula": "mean(native Position.realized_pnl for completed Position units)",
+        "inputs": [
+          "native_completed_position_sequence"
+        ],
+        "source": "NAUTILUS_NATIVE_POSITION_REALIZED_PNL_SEQUENCE",
+        "status": "CALCULATED",
+        "undefined_reason": "NOT_APPLICABLE",
+        "unit": "USDT",
+        "value": "2261.29015512"
+      },
+      "average_trade_realized_return": {
+        "formula": "mean(native Position.realized_return for completed Position units)",
+        "inputs": [
+          "native_completed_position_sequence"
+        ],
+        "source": "NAUTILUS_NATIVE_POSITION_REALIZED_RETURN_SEQUENCE",
+        "status": "CALCULATED",
+        "undefined_reason": "NOT_APPLICABLE",
+        "unit": "ratio",
+        "value": "0.23179998"
+      },
+      "calmar": {
+        "formula": "NATIVE_CAGR_252 / abs(NATIVE_MAX_DRAWDOWN)",
+        "inputs": [
+          "native portfolio daily returns"
+        ],
+        "source": "PROJECT_FALLBACK_ABSENT_NAUTILUS_NATIVE_METRIC",
+        "status": "UNDEFINED",
+        "undefined_reason": "UNDEFINED_NATIVE_CALMAR_PORTFOLIO_RETURNS_BASIS_UNAVAILABLE",
+        "unit": "ratio",
+        "value": "UNDEFINED"
+      },
+      "calmar_input_returns_sha256": "2bc68b611db8aa019650da8537deff53874a8eeb152b66e7525fac2b8a9f2b88",
+      "calmar_qualification_id": "3f90cd46134e0d1ad3b93f0b34428e208eaa3e4cae7bd2b6880dd3a260f62885",
+      "calmar_returns_basis": "POSITION_RETURNS_FALLBACK",
+      "completed_native_units": {
+        "formula": "NAUTILUS_NATIVE_REPORT_OR_STATISTIC",
+        "inputs": [
+          "cache.position_snapshots()/cache.positions_closed()"
+        ],
+        "source": "NAUTILUS_NATIVE",
+        "status": "NATIVE",
+        "undefined_reason": "NOT_APPLICABLE",
+        "unit": "NAUTILUS_NATIVE_COMPLETED_POSITIONS",
+        "value": "3"
+      },
+      "gross_pnl": {
+        "formula": "NAUTILUS_NATIVE_GROSS_PNL",
+        "inputs": [
+          "native Position.realized_pnl",
+          "native commissions",
+          "native funding"
+        ],
+        "source": "PROJECT_FALLBACK_ABSENT_NAUTILUS_NATIVE_METRIC",
+        "status": "UNDEFINED",
+        "undefined_reason": "UNDEFINED_NATIVE_GROSS_PNL_NOT_EXPOSED",
+        "unit": "USDT",
+        "value": "UNDEFINED"
+      },
+      "historical_run_evidence_mutated": false,
+      "monte_carlo_input_status": "NATIVE_NET_COMPLETED_UNIT_SEQUENCE_READY",
+      "native_sequence_evidence_sha256": "92f1ff1ca545616e05e9f7b5ad9b01419de18db0a51b7f55f50566c047d11890",
+      "readiness_id": "6c618df040c9c6353e9f480675dee03281b181c594e85c5d89873a62dd7010d5",
+      "run_id": "owner-strategy-research-001-spot-candidate-a-run-retry-001",
+      "sample_adequacy": "NOT_APPLICABLE",
+      "schema_version": 1,
+      "terminal_open_position_excluded": true
+    },
+    "spot_candidate_b": {
+      "average_trade_realized_pnl": {
+        "formula": "mean(native Position.realized_pnl for completed Position units)",
+        "inputs": [
+          "native_completed_position_sequence"
+        ],
+        "source": "NAUTILUS_NATIVE_POSITION_REALIZED_PNL_SEQUENCE",
+        "status": "CALCULATED",
+        "undefined_reason": "NOT_APPLICABLE",
+        "unit": "USDT",
+        "value": "386.94204247"
+      },
+      "average_trade_realized_return": {
+        "formula": "mean(native Position.realized_return for completed Position units)",
+        "inputs": [
+          "native_completed_position_sequence"
+        ],
+        "source": "NAUTILUS_NATIVE_POSITION_REALIZED_RETURN_SEQUENCE",
+        "status": "CALCULATED",
+        "undefined_reason": "NOT_APPLICABLE",
+        "unit": "ratio",
+        "value": "0.14626735"
+      },
+      "calmar": {
+        "formula": "NATIVE_CAGR_252 / abs(NATIVE_MAX_DRAWDOWN)",
+        "inputs": [
+          "native portfolio daily returns"
+        ],
+        "source": "PROJECT_FALLBACK_ABSENT_NAUTILUS_NATIVE_METRIC",
+        "status": "UNDEFINED",
+        "undefined_reason": "UNDEFINED_NATIVE_CALMAR_PORTFOLIO_RETURNS_BASIS_UNAVAILABLE",
+        "unit": "ratio",
+        "value": "UNDEFINED"
+      },
+      "calmar_input_returns_sha256": "a313ddecd9a9b2401624f4d592c9e0f53430a61b0e8e13b9becdf4afb217d790",
+      "calmar_qualification_id": "656d384201705b9c49f0cb2ae28cfead3a67b8ec2b36d0194dcd20e8aa3bad21",
+      "calmar_returns_basis": "POSITION_RETURNS_FALLBACK",
+      "completed_native_units": {
+        "formula": "NAUTILUS_NATIVE_REPORT_OR_STATISTIC",
+        "inputs": [
+          "cache.position_snapshots()/cache.positions_closed()"
+        ],
+        "source": "NAUTILUS_NATIVE",
+        "status": "NATIVE",
+        "undefined_reason": "NOT_APPLICABLE",
+        "unit": "NAUTILUS_NATIVE_COMPLETED_POSITIONS",
+        "value": "3"
+      },
+      "gross_pnl": {
+        "formula": "NAUTILUS_NATIVE_GROSS_PNL",
+        "inputs": [
+          "native Position.realized_pnl",
+          "native commissions",
+          "native funding"
+        ],
+        "source": "PROJECT_FALLBACK_ABSENT_NAUTILUS_NATIVE_METRIC",
+        "status": "UNDEFINED",
+        "undefined_reason": "UNDEFINED_NATIVE_GROSS_PNL_NOT_EXPOSED",
+        "unit": "USDT",
+        "value": "UNDEFINED"
+      },
+      "historical_run_evidence_mutated": false,
+      "monte_carlo_input_status": "NATIVE_NET_COMPLETED_UNIT_SEQUENCE_READY",
+      "native_sequence_evidence_sha256": "0a569fb3b920988a51589586a52b0d1c3340fb2a8033228cef63bc4e0a454387",
+      "readiness_id": "1af888ffb7376bd19c502aeabf9e848a7cc114ad3f9e7e7b8a5fce325829151e",
+      "run_id": "owner-strategy-research-001-spot-candidate-b-run",
+      "sample_adequacy": "NOT_APPLICABLE",
+      "schema_version": 1,
+      "terminal_open_position_excluded": true
+    }
+  },
+  "schema": "owner-strategy-research-001-native-metrics-v1",
+  "status": "PASS"
+}

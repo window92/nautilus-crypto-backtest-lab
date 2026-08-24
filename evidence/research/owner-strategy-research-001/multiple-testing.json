@@ -1,0 +1,12 @@
+{
+  "benchmark_trial_count": 2,
+  "candidate_addition_after_results": false,
+  "candidate_budget": 2,
+  "candidate_profile_trial_count": 4,
+  "interpretation": "Frozen multiplicity policy retained; exploratory outputs do not create an eligible hypothesis-test claim.",
+  "p_value_claim_performed": false,
+  "policy": "HOLM_BONFERRONI",
+  "publishable_winner_selected": false,
+  "schema": "owner-strategy-research-001-multiple-testing-v1",
+  "status": "PASS"
+}
