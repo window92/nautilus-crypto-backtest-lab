@@ -1,0 +1,71 @@
+{
+  "accepted_catalog_identities": {
+    "BINANCE_SPOT_CASH_LONG_ONLY": "db0971d28caba547378e3acba5ad8df1cbd0d6d5be963d153248928a729e374f",
+    "BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING": "7c96897a8e1ea3c02198238a277fb8c3d995f54dd90dc381e534a5f21b017ae0"
+  },
+  "accepted_dataset_release_identities": {
+    "BINANCE_SPOT_CASH_LONG_ONLY": "fd8542c109cfbf7d6b19d5b7bbb7705c6a161efc807695f3671978c381e34eca",
+    "BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING": "b6c8f5d659f3441c924b613d770342796c90b90a970f42a3dc8227c856198917"
+  },
+  "created_at_utc": "2026-08-24T12:47:43Z",
+  "dependency_lock_path": "requirements.lock.txt",
+  "dependency_lock_sha256": "b2765c9e33b10566fc327b48920fd1d3a73618c19622baaceab1fe9dca61df47",
+  "duckdb_schema_identity": "74276cca97b16757602a2d90f140891fa08d1463c901d5b75ad69d7f23ffa4da",
+  "duckdb_semantic_identity": "11329c1497ff6bf3a68c5d3ba994f5ac2bbd0ece51cf489f9fa3f681a01ecbff",
+  "final_pressure_test": {
+    "deterministic_replay_pass_count": 6,
+    "errors": 0,
+    "evidence_inventory_identity": "9f7680befe70dc445b368eefb21efe1b023f7a23c2c0ee795258208b9c1fa33f",
+    "evidence_path": "evidence/research/owner-strategy-research-001",
+    "execution_occurrences": 924,
+    "failures": 0,
+    "final_content_identity": "9757f5edef476db27c1da51c7d5b6e98762014c66893a988a38ebed0d556f437",
+    "mechanical_run_check_pass_count": 6,
+    "skips": 0,
+    "test_results_file_sha256": "77b1c580d2732e544f84b1ea4ca7aeeb228bbb93d34d1b65c1886d3beef5af4a",
+    "unique_tests": 294,
+    "verdict": "OWNER_STRATEGY_RESEARCH_001_PASS_COMMITTED_AND_PUSHED",
+    "xfail": 0
+  },
+  "git_tag": "v1.0.0",
+  "known_limitations": [
+    "Only Binance BTCUSDT Spot CASH long-only and USD-M Linear Perpetual one-way NETTING leverage-1 profiles are supported in V1.",
+    "Execution is bar-based and does not model a live order book, queue position, tick path, market impact, or every source of slippage.",
+    "The accepted 2021-01-01 through 2021-08-01 data window is exposed Development data and is not a fresh Final Holdout.",
+    "Exact accepted data identities require the attested raw-object and observation set; byte-different reacquisition creates a new candidate release.",
+    "No real profitability claim or guarantee of future performance is authorized."
+  ],
+  "large_data_exclusion": {
+    "excluded_from_git_and_release_assets": [
+      "raw Binance archive and REST payloads",
+      "DuckDB database and staging payloads",
+      "ParquetDataCatalog payloads",
+      "local virtual environments and wheel caches",
+      "temporary files, secrets, and large run caches"
+    ],
+    "statement": "Git and the GitHub Release contain manifests, checksums, code, tests, and review evidence only; a clone does not include market-data payloads."
+  },
+  "nautilus": {
+    "version": "2.0.0rc2",
+    "wheel_filename": "nautilus_trader-2.0.0rc2-cp312-cp312-manylinux_2_34_x86_64.whl",
+    "wheel_sha256": "716169aca15bfb615a27610a9230e670dec5be3d4606fea591fe64eca145a5ac"
+  },
+  "python": {
+    "abi": "cp312",
+    "implementation": "CPython",
+    "version": "3.12.3"
+  },
+  "release_commit": "08c4c970fbd52a1e6928e046f377b9ecbdf3ca00",
+  "release_commit_role": "ACCEPTED_PRODUCT_AND_FINAL_PRESSURE_TEST_COMMIT; THE V1.0.0 TAG TARGET ADDS RELEASE DOCUMENTATION, MANIFEST, AND IGNORE-POLICY HARDENING ONLY",
+  "release_name": "Nautilus Crypto Backtest Lab v1.0.0",
+  "release_version": "1.0.0",
+  "runtime_lock_path": "runtime.lock.json",
+  "runtime_lock_sha256": "4032df9f355348c2a0cfa9f79f331f97c9a8d24ecc8490a573d2c7f788bafddd",
+  "schema": "nautilus-crypto-backtest-lab-release-manifest-v1",
+  "ssot_path": "SSOT.md",
+  "ssot_sha256": "b4deb7048242239234de7eaa353b623b3e45247eb42f1021dbc26ffd910edb99",
+  "supported_profiles": [
+    "BINANCE_SPOT_CASH_LONG_ONLY",
+    "BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING"
+  ]
+}

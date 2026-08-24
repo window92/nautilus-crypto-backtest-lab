@@ -1,205 +1,268 @@
 # Nautilus Crypto Backtest Lab
 
-A strict, reproducible cryptocurrency backtesting laboratory built on NautilusTrader.
+Nautilus Crypto Backtest Lab is a strict, reproducible laboratory for causal,
+bar-based cryptocurrency backtests on official Binance data. NautilusTrader
+`2.0.0rc2` is the only owner of financial truth: orders, matching, fills,
+positions, accounts, portfolio state, PnL, fees, funding settlement, and mark
+valuation.
 
-## Engineering Authority
+The V1 release is functionally complete for the two locked BTCUSDT profiles
+below. Its final pressure test passed 294 unique tests, six mechanical runs, and
+six fresh-process deterministic replays. That proves the laboratory contract,
+not future profitability.
 
-`SSOT.md` is the sole engineering authority for this repository.
+## Supported V1 scope
 
-## Locked Runtime
+| Profile | Instrument | Account/position model | Direction |
+|---|---|---|---|
+| `BINANCE_SPOT_CASH_LONG_ONLY` | Binance Spot `BTCUSDT` | CASH / NETTING | Long or flat; no borrowing or shorting |
+| `BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING` | Binance USDⓈ-M Linear Perpetual `BTCUSDT` | MARGIN / NETTING / leverage 1 | Long or short; one-way only |
 
-NautilusTrader v2.0.0rc2, using the locked official Rust/PyO3 wheel and public
-Python API.
+The accepted V1 data window is
+`[2021-01-01T00:00:00Z, 2021-08-01T00:00:00Z)`. It is exposed Development
+data and is not a fresh Final Holdout.
 
-## Build Sequence
+## What the project does
 
-M0 → M1 → M2 → M3 → M4
+- Preserves official Binance response/archive bytes before parsing and binds
+  them by locator, role, size, and SHA-256.
+- Reconciles source observations without silent precedence, synthetic prices,
+  interpolation, or forward fill.
+- Uses DuckDB as a derived canonical validation/query store and creates
+  immutable `DatasetRelease` identities.
+- Exports accepted real market data to Nautilus-compatible
+  `ParquetDataCatalog` payloads.
+- Runs registered causal strategies through the public Nautilus APIs inside a
+  process-level offline boundary.
+- Produces immutable run evidence, a read-only checker result, deterministic
+  replay identity, research governance records, and Owner reports.
 
-Implementation must follow the contracts, qualification requirements, acceptance conditions, and stop conditions defined in `SSOT.md`.
+It does not provide live trading, exchange connectivity for orders, an order
+book simulator, tick-level execution, parameter optimization, automatic
+Holdout authorization, or a profitability guarantee. DuckDB is not a matching,
+ledger, funding, portfolio, or PnL engine.
 
-## M0 foundation
+## Architecture
 
-M0 provides only the strict configuration/runtime foundation. It does not load
-market data, run a strategy, or implement M1–M4 behavior.
+```text
+official Binance bytes + publisher checksums
+                  │
+                  ▼
+content-addressed raw store (authority; immutable)
+                  │
+                  ▼
+DuckDB validation / conflicts / minute dispositions
+                  │
+                  ▼
+DatasetRelease manifest ──► ParquetDataCatalog
+                                  │
+                                  ▼
+                         NautilusTrader engine
+                                  │
+                                  ▼
+               checker + replay + research evidence/reports
+```
 
-The qualified environment is the repository-local `.venv` created with CPython
-3.12. Acquire the exact wheel during an explicit network-enabled setup step,
-verify its bytes before installation, then install the remaining fully hashed
-lock. Installing Nautilus from the verified local file also preserves its wheel
-filename and archive digest in `direct_url.json` for runtime preflight:
+`SSOT.md` is the sole engineering authority. The shorter release contract is
+in [docs/RELEASE_V1.md](docs/RELEASE_V1.md), and local data handling is in
+[docs/DATA_STORAGE_AND_REBUILD.md](docs/DATA_STORAGE_AND_REBUILD.md).
+
+## System requirements
+
+- Linux x86-64 with glibc `2.39` (the wheel requires glibc `>=2.34`).
+- CPython `3.12.3` / ABI `cp312`.
+- UTC and locale `C.UTF-8` for locked execution.
+- Enough local storage for official raw data, two DuckDB rebuilds, and Parquet
+  catalogs. These payloads are intentionally absent from Git.
+- Git for authoritative history; network access is used only during explicit
+  setup/acquisition and push operations, never during an Official Run.
+
+## Create the project runtime
+
+Download the exact official Nautilus wheel during an explicit network-enabled
+setup step, verify it, and install it locally. Do not install it globally.
 
 ```bash
 python3.12 -m pip download --no-deps --only-binary=:all: \
-  --dest /tmp/nautilus-m0-wheel nautilus_trader==2.0.0rc2
-sha256sum /tmp/nautilus-m0-wheel/nautilus_trader-2.0.0rc2-cp312-cp312-manylinux_2_34_x86_64.whl
-# Required digest: 716169aca15bfb615a27610a9230e670dec5be3d4606fea591fe64eca145a5ac
+  --dest /tmp/nautilus-v1-wheel nautilus_trader==2.0.0rc2
+echo '716169aca15bfb615a27610a9230e670dec5be3d4606fea591fe64eca145a5ac  /tmp/nautilus-v1-wheel/nautilus_trader-2.0.0rc2-cp312-cp312-manylinux_2_34_x86_64.whl' \
+  | sha256sum --check --strict
 python3.12 -m venv .venv
 .venv/bin/python -m pip install --no-deps \
-  /tmp/nautilus-m0-wheel/nautilus_trader-2.0.0rc2-cp312-cp312-manylinux_2_34_x86_64.whl
+  /tmp/nautilus-v1-wheel/nautilus_trader-2.0.0rc2-cp312-cp312-manylinux_2_34_x86_64.whl
 .venv/bin/python -m pip check
 ```
 
-Run the M0 suite and regenerate real-runtime evidence with the locked UTC and
-locale settings:
+Verify the complete runtime identity:
 
 ```bash
-TZ=UTC LC_ALL=C.UTF-8 PYTHONPATH=src .venv/bin/python -m unittest discover -s tests -t . -v
-TZ=UTC LC_ALL=C.UTF-8 PYTHONPATH=src .venv/bin/python scripts/generate_m0_evidence.py
+TZ=UTC LANG=C.UTF-8 LC_ALL=C.UTF-8 PYTHONPATH=src \
+  .venv/bin/python - <<'PY'
+from pathlib import Path
+from crypto_lab.config import RuntimeLock
+from crypto_lab.runtime import verify_runtime_lock
+
+root = Path.cwd()
+identity = verify_runtime_lock(
+    RuntimeLock.from_json_bytes((root / "runtime.lock.json").read_bytes()),
+    dependency_lock_path=root / "requirements.lock.txt",
+)
+print(identity["nautilus_version"], identity["installed_wheel_sha256"])
+PY
 ```
 
-The official NautilusTrader wheel is not stored in this repository. Its exact
-filename, SHA-256, source commit, SLSA attestation, and resolved dependencies are
-recorded in `runtime.lock.json`, `requirements.lock.txt`, and `evidence/m0/`.
+The expected output is `2.0.0rc2` followed by
+`716169aca15bfb615a27610a9230e670dec5be3d4606fea591fe64eca145a5ac`.
 
-## M1 causal harness
+## Obtain and rebuild official Binance data
 
-M1 exposes `run_lab(config) -> RunResult` for one isolated Instrument, Market
-Profile, StrategySpec, Dataset Release, and initial-capital allocation. The
-runner uses the public NautilusTrader v2 `BacktestEngine`, `Strategy`, native
-orders/Fills/positions/accounts, `MakerTakerFeeModel`, mark valuation, and
-funding settlement. Project code is limited to strict boundary validation,
-pre-submit V1 safety guards, immutable evidence projections, and a read-only
-post-run checker.
-
-M1 qualification data are synthetic external one-minute LAST bars and, for the
-Perpetual profile, native `MarkPriceUpdate` and `FundingRateUpdate` objects. M1
-does not acquire market data or execute an Official Run.
-
-Run the completed-phase regression and M1 acceptance suite, generate additive
-engine evidence, then validate the evidence without mutation:
+Data acquisition is a separate network-enabled phase. The acquisition drivers
+accept only the official source allowlist and preserve response bytes before
+parsing:
 
 ```bash
-TZ=UTC LC_ALL=C.UTF-8 PYTHONPATH=src .venv/bin/python scripts/run_m1_acceptance.py
-TZ=UTC LC_ALL=C.UTF-8 PYTHONPATH=src .venv/bin/python scripts/generate_m1_evidence.py
-TZ=UTC LC_ALL=C.UTF-8 PYTHONPATH=src .venv/bin/python scripts/validate_m1_evidence.py
+TZ=UTC LANG=C.UTF-8 LC_ALL=C.UTF-8 PYTHONPATH=src \
+  .venv/bin/python scripts/run_data_provenance_repair.py acquire
+TZ=UTC LANG=C.UTF-8 LC_ALL=C.UTF-8 PYTHONPATH=src \
+  .venv/bin/python \
+  evidence/repair/free-official-binance-data-duckdb-001/tools/acquire_phase_a.py acquire
+TZ=UTC LANG=C.UTF-8 LC_ALL=C.UTF-8 PYTHONPATH=src \
+  .venv/bin/python \
+  evidence/repair/free-official-binance-data-duckdb-001/tools/analyze_phase_a.py
 ```
 
-## M2 frozen Binance data
+The exact accepted V1 identities require the complete attested raw-object set,
+including the official historical order-grid observations. A current
+re-download that differs by one byte or observation identity must fail closed
+and become a new candidate release; it must not be relabeled as V1. Follow the
+complete acquisition and rebuild procedure in
+[docs/DATA_STORAGE_AND_REBUILD.md](docs/DATA_STORAGE_AND_REBUILD.md).
 
-M2 freezes exact official Binance Public Data archive bytes in the local
-content-addressed `data/raw/sha256/` store before parsing. Publisher checksums,
-strict source roles, explicit timestamp rules, exact one-minute grids,
-point-in-time metadata limitations, funding schedule evidence, and native
-Nautilus catalog semantic identities are bound into immutable
-`DatasetRelease` manifests. Raw archives and derived Parquet payloads are not
-committed; the small manifests, fixture extracts, identities, and acceptance
-evidence are committed.
-
-The bounded qualification uses BTCUSDT only and is not an Official Run or a
-research partition. Acquisition is an explicit network-enabled setup step;
-all parsing, catalog rebuild, and tests run offline afterward:
+Install DuckDB `1.4.5` in the independent data-tool environment, then run two
+fresh builds and the semantic comparator:
 
 ```bash
-M2_SOURCE_DIR=/path/to/approved-binance-downloads \
-  TZ=UTC LC_ALL=C.UTF-8 PYTHONPATH=src .venv/bin/python \
-  scripts/generate_m2_evidence.py
-TZ=UTC LC_ALL=C.UTF-8 PYTHONPATH=src .venv/bin/python \
-  scripts/run_m2_acceptance.py
+python3.12 -m venv .data-venv
+mkdir -p .data-wheelhouse
+python3.12 -m pip download --no-deps --only-binary=:all: \
+  --dest .data-wheelhouse duckdb==1.4.5
+.data-venv/bin/python -m pip install --no-index --no-deps \
+  --find-links .data-wheelhouse --require-hashes -r requirements.data.lock.txt
+
+DATA_PYTHONPATH="$PWD/src:$PWD:$PWD/.venv/lib/python3.12/site-packages"
+TZ=UTC LANG=C.UTF-8 LC_ALL=C.UTF-8 PYTHONPATH="$DATA_PYTHONPATH" \
+  .data-venv/bin/python scripts/build_free_official_binance_release.py \
+  --database data/duckdb/v1.0.0-rebuild/primary.duckdb \
+  --catalog-root data/catalog/v1.0.0-rebuild/primary \
+  --staging data/duckdb/v1.0.0-rebuild/staging-primary \
+  --result data/duckdb/v1.0.0-rebuild/primary-result.json \
+  --role PRIMARY
+TZ=UTC LANG=C.UTF-8 LC_ALL=C.UTF-8 PYTHONPATH="$DATA_PYTHONPATH" \
+  .data-venv/bin/python scripts/build_free_official_binance_release.py \
+  --database data/duckdb/v1.0.0-rebuild/independent.duckdb \
+  --catalog-root data/catalog/v1.0.0-rebuild/independent \
+  --staging data/duckdb/v1.0.0-rebuild/staging-independent \
+  --result data/duckdb/v1.0.0-rebuild/independent-result.json \
+  --role INDEPENDENT_REBUILD
+TZ=UTC LANG=C.UTF-8 LC_ALL=C.UTF-8 PYTHONPATH="$DATA_PYTHONPATH" \
+  .data-venv/bin/python scripts/validate_free_official_binance_rebuild.py \
+  --primary-result data/duckdb/v1.0.0-rebuild/primary-result.json \
+  --independent-result data/duckdb/v1.0.0-rebuild/independent-result.json \
+  --primary-catalog-root data/catalog/v1.0.0-rebuild/primary \
+  --independent-catalog-root data/catalog/v1.0.0-rebuild/independent \
+  --artifact-root data/duckdb/v1.0.0-rebuild/release-artifacts \
+  --output data/duckdb/v1.0.0-rebuild/validation.json
 ```
 
-## M3 profile qualification
+The validator materializes content-addressed catalogs only after both builds
+agree semantically. Compare its output with
+[release/v1.0.0-manifest.json](release/v1.0.0-manifest.json).
 
-M3 consumes the strict repaired M2 `DatasetRelease` objects directly and runs
-only deterministic `QUALIFICATION` profiles.  The mechanical signal schedules
-are frozen in `StrategySpec`; the public Nautilus engine remains the sole owner
-of orders, Fills, positions, accounts, fees, funding, PnL, and portfolio state.
-The bounded intervals are permanently disclosed as exposed qualification data,
-not future Holdout data, and no profitability conclusion is produced.
+## Run a backtest
 
-After the M3 implementation commit is clean and pushed, run the two profiles,
-fresh-process replays, and negative controls offline:
-
-```bash
-TZ=UTC LC_ALL=C.UTF-8 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src \
-  .venv/bin/python scripts/run_m3_qualifications.py
-```
-
-The run starts only when `HEAD == origin/main` and the worktree is clean.  Its
-additive output is written under `evidence/m3/m3-acceptance-001/`; M3 never
-acquires data, starts research, performs an Official Run, or implements M4.
-
-## M4 research governance and reporting
-
-M4 reads immutable completed evidence and adds strict content-addressed
-`ResearchProtocol`, append-only trial history, chronological partition checks,
-Holdout consumption, deterministic search-budget enforcement, sample adequacy,
-path-risk Monte Carlo diagnostics, claim eligibility, and JSON/Markdown
-reporting. It never submits orders, modifies Fills, posts cash, or reconstructs
-Nautilus financial truth. Synthetic acceptance workspaces are isolated from the
-future Owner journal under `research/`.
-
-From a clean committed checkout, Final V1 Acceptance replays the accepted Spot
-and Perpetual qualification paths offline and writes only additive evidence:
+The supported public entry point is the strict Owner Workflow. It deliberately
+has no material defaults: first create and review an `OwnerWorkflowInput` JSON
+with a registered strategy, frozen protocol, new trial/run identities, accepted
+DatasetRelease, and qualified profile. Then run from a clean commit whose
+`HEAD` equals `origin/main`:
 
 ```bash
-TZ=UTC LC_ALL=C.UTF-8 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src \
-  .venv/bin/python scripts/run_final_v1_acceptance.py
-PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src \
-  .venv/bin/python scripts/validate_m4_evidence.py
-```
-
-The synthetic eligibility fixture proves the claim-gate contract only. It is
-permanently labeled as non-research and never constitutes a real profitability
-claim or an Owner study.
-
-## Public Owner workflow
-
-The Repair Epoch adds one public, strict interface for a future Owner-selected
-study.  Its JSON input is `crypto_lab.OwnerWorkflowInput`; unknown, missing, or
-duplicate fields are rejected.  The input freezes the complete
-`ResearchProtocol`, trial/candidate/run identities, registered StrategySpec,
-Dataset Release and Qualified Profile identities, partition and warmup/scoring
-boundaries, Initial Capital, fee assumption, and seed.  It contains no caller
-booleans for integrity, Holdout freshness, diagnostics, eligibility, metrics,
-or completed trades.
-
-Run it only from a clean checked-out branch whose `HEAD` equals its
-`origin/<branch>` tracking ref:
-
-```bash
-TZ=UTC LC_ALL=C.UTF-8 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src \
+OWNER_INPUT=/tmp/strict-owner-workflow.json
+test -f "$OWNER_INPUT"
+TZ=UTC LANG=C.UTF-8 LC_ALL=C.UTF-8 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src \
   .venv/bin/python scripts/run_owner_workflow.py \
-  --input /absolute/path/to/strict-owner-workflow.json \
+  --input "$OWNER_INPUT" \
   --repository "$PWD" \
   --output /tmp/owner-workflow-result.json
 ```
 
-The command performs the complete lifecycle without private imports or a glue
-script.  It refreezes and persists the protocol, validates candidate order and
-budget, first commits and normal-pushes an immutable workflow intent, then
-records `PLANNED` and `STARTED` and publishes the history anchor, runs the
-registered Nautilus Strategy in a dedicated
-seccomp-isolated child, always records a terminal state, commits and pushes the
-Run evidence, reruns the read-only checker, derives diagnostics and Monte Carlo
-status from Run evidence, resolves the claim from authoritative identities,
-and publishes the full JSON/Markdown report.  A Final Holdout is checked by the
-authoritative exposure resolver before designation and consumed/anchored on
-first result exposure.  Each history checkpoint is fsynced, committed, and
-normal-pushed before the next phase, which preserves a clean-worktree Official
-preflight and makes prior anchors independently reconcilable.  A later
-invocation detects either a committed intent interrupted before `STARTED` or
-an interrupted `STARTED` trial, records the full attempt as `ABORTED` (or
-reconciles complete persisted terminal evidence), publishes that recovery, and
-stops so a retry must use new trial and run IDs.  An uncommitted journal/anchor
-extension without the earlier committed workflow authorization is rejected.
+This is not a lightweight local shortcut: the command enforces the official
+journal/history checkpoints, creates and pushes ordinary commits where the
+workflow requires them, runs the Nautilus child offline, executes the read-only
+checker, and writes the report. It refuses reused identities, unqualified data,
+dirty source, or ambiguous research authority.
 
-For interface qualification only, this command generates a complete strict
-input over the already exposed M3 Spot interval.  It is not a Strategy Research
-selection, Owner Study, Final Holdout use, or profitability claim:
+To re-run the checker read-only for the run produced by that workflow result:
 
 ```bash
-TZ=UTC LC_ALL=C.UTF-8 PYTHONPATH=src .venv/bin/python \
-  scripts/generate_owner_workflow_fixture_input.py \
-  --repository "$PWD" \
-  --frozen-at-utc 2026-08-22T12:00:00Z \
-  --trial-id qualification-interface-fixture-001 \
-  --run-id qualification-interface-run-001 \
-  --output /tmp/qualification-interface-input.json
+RUN_ID="$(.venv/bin/python -c \
+  'import json; print(json.load(open("/tmp/owner-workflow-result.json"))["run_id"])')"
+RUN_DIR="$(find runs -mindepth 1 -maxdepth 1 -type d -name "${RUN_ID}-*" -print -quit)"
+test -n "$RUN_DIR" && test -d "$RUN_DIR"
+TZ=UTC LANG=C.UTF-8 LC_ALL=C.UTF-8 PYTHONPATH=src \
+  .venv/bin/python - "$RUN_DIR" <<'PY'
+import json
+import sys
+from pathlib import Path
+from crypto_lab.checker import check_evidence_directory
+
+report = check_evidence_directory(
+    Path(sys.argv[1]),
+    repository_root=Path.cwd(),
+    official_source_required=True,
+    source_revision_current_head_required=False,
+)
+print(json.dumps(report.to_builtins(), indent=2, sort_keys=True))
+raise SystemExit(0 if report.outcome.value == "CHECK_PASS" else 2)
+PY
 ```
 
-The currently registered implementation is deliberately qualification-only
-and permanently claim-ineligible.  A future Owner-selected economic Strategy
-must first have a reviewed, static public registry entry; configuration files
-cannot provide callables, dynamic imports, source code, or precomputed order
-schedules, and no Product Code change is needed between trials of an already
-registered implementation.
+## Results and reports
+
+- Trial JSON/Markdown reports: `research/reports/`.
+- Immutable run evidence: `runs/` and `runs/replays/`.
+- Final Owner research report:
+  [evidence/research/owner-strategy-research-001/owner-report/README.md](evidence/research/owner-strategy-research-001/owner-report/README.md).
+- Final mechanical integrity report:
+  [evidence/research/owner-strategy-research-001/mechanical-integrity/README.md](evidence/research/owner-strategy-research-001/mechanical-integrity/README.md).
+- Data repair report:
+  [evidence/repair/instrument-representation-funding-checker-001/owner-report/README.md](evidence/repair/instrument-representation-funding-checker-001/owner-report/README.md).
+
+Open any `README.md` directly in GitHub, or serve the repository through your
+normal authenticated GitHub browser session. Historical failed and blocked
+attempts remain part of the evidence and are not rewritten.
+
+## Simulation limits and disclaimer
+
+V1 is bar-based. `DefaultFillModel(1.0, 1.0, 0)` and the locked latency/fee
+contracts do not recreate an exchange order book, queue position, tick path,
+market impact, or all live slippage conditions. A Fill is a Nautilus simulation
+result constrained by available causal bar state, not a promise of live
+execution quality.
+
+Research results in this repository use exposed Development data unless their
+authoritative protocol explicitly says otherwise. They are not investment
+advice, do not constitute a real profitability claim, and do not guarantee
+future performance.
+
+## Repository and large-data policy
+
+Git contains Product Code, tests, scripts, configuration, the SSOT, lock files,
+small DatasetRelease manifests, checksums, and review evidence. It excludes raw
+Binance archives, DuckDB payloads, Parquet catalogs, local virtual
+environments, secrets, temporary files, and large run caches. A clone therefore
+does not include market-data payloads automatically.
+
+See [CHANGELOG.md](CHANGELOG.md) for release history and
+[docs/DATA_STORAGE_AND_REBUILD.md](docs/DATA_STORAGE_AND_REBUILD.md) before
+moving, backing up, or rebuilding local data.

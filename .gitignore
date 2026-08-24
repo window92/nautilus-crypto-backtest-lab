@@ -15,6 +15,21 @@ build/
 .env
 .env.*
 .DS_Store
+*.duckdb
+*.duckdb.wal
+*.parquet
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.tmp
+*.temp
+*.swp
+*~
+.cache/
+runs/**/cache/
+runs/**/caches/
+runs/**/artifacts/
 
 # M2 provenance authority and derived catalogs stay local; immutable manifests
 # and normalized release identities under data/releases remain tracked.
