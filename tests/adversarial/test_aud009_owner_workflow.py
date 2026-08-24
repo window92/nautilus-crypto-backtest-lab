@@ -127,7 +127,9 @@ class Aud009OwnerWorkflowTests(unittest.TestCase):
                     "LC_ALL": "C.UTF-8",
                     "PYTHONDONTWRITEBYTECODE": "1",
                     "PYTHONPATH": str(repository / "src"),
-                    "TZ": "UTC",
+                    # The public Owner workflow, not its caller, must bind the
+                    # Official child to the adopted UTC Runtime Lock.
+                    "TZ": "Europe/Berlin",
                 },
             )
             process = subprocess.run(

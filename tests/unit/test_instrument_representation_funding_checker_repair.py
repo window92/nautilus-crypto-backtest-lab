@@ -3,12 +3,14 @@ from __future__ import annotations
 import ast
 import copy
 import json
+import os
 import subprocess
 import sys
 import tempfile
 import unittest
 from decimal import Decimal
 from pathlib import Path
+from unittest import mock
 
 from nautilus_trader.model import Price
 from nautilus_trader.model import Quantity
@@ -28,6 +30,7 @@ from crypto_lab.data import to_nautilus_instrument
 from crypto_lab.data import to_nautilus_mark_updates
 from crypto_lab.data import validate_limit_order_price
 from crypto_lab.data import validate_market_order_quantity
+from crypto_lab.owner import _official_child_environment
 from crypto_lab.status import FailureCode
 from tests.m2_helpers import perp_execution_bars
 from tests.m2_helpers import perp_mark_bars
@@ -313,6 +316,16 @@ class HistoricalCheckerRegressionTests(unittest.TestCase):
 
 
 class ReplacementWorkflowInputTests(unittest.TestCase):
+    def test_owner_workflow_pins_official_child_runtime_environment(self) -> None:
+        with mock.patch.dict(
+            os.environ,
+            {"TZ": "Europe/Berlin", "LANG": "en_US.UTF-8", "LC_ALL": "C"},
+        ):
+            environment = _official_child_environment()
+        self.assertEqual(environment["TZ"], "UTC")
+        self.assertEqual(environment["LANG"], "C.UTF-8")
+        self.assertEqual(environment["LC_ALL"], "C.UTF-8")
+
     def test_replacement_inputs_lock_new_releases_and_supersession(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             process = subprocess.run(

@@ -324,6 +324,17 @@ def _status_paths(repository: Path) -> tuple[str, ...]:
     return tuple(result)
 
 
+def _official_child_environment() -> dict[str, str]:
+    """Bind the Official child to the already-adopted Runtime Lock environment."""
+
+    return {
+        **os.environ,
+        "TZ": "UTC",
+        "LANG": "C.UTF-8",
+        "LC_ALL": "C.UTF-8",
+    }
+
+
 def _checkpoint(
     repository: Path,
     *,
@@ -1349,6 +1360,7 @@ def execute_owner_workflow(
             check=False,
             capture_output=True,
             text=True,
+            env=_official_child_environment(),
         )
         replay_child = subprocess.run(
             replay_command,
@@ -1356,6 +1368,7 @@ def execute_owner_workflow(
             check=False,
             capture_output=True,
             text=True,
+            env=_official_child_environment(),
         )
         staged_primary = primary_root / run_name
         staged_replay = replay_root / run_name
@@ -1443,7 +1456,14 @@ def execute_owner_workflow(
         _atomic_write(replay_path, canonical_json_bytes(replay_evidence) + b"\n")
         child = primary_child
     else:
-        child = subprocess.run(command, cwd=repository, check=False, capture_output=True, text=True)
+        child = subprocess.run(
+            command,
+            cwd=repository,
+            check=False,
+            capture_output=True,
+            text=True,
+            env=_official_child_environment(),
+        )
         run_dir = repository / "runs" / run_name
     status_path = run_dir / "status.json"
     if status_path.is_file():
