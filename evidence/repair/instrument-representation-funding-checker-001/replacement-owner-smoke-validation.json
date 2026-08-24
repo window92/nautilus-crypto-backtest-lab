@@ -1,0 +1,33 @@
+{
+  "canonical_market_numeric_values_changed": false,
+  "final_holdout_used": false,
+  "perpetual": {
+    "catalog_identity": "7c96897a8e1ea3c02198238a277fb8c3d995f54dd90dc381e534a5f21b017ae0",
+    "checker": "CHECK_PASS",
+    "dataset_release_id": "b6c8f5d659f3441c924b613d770342796c90b90a970f42a3dc8227c856198917",
+    "fills": 55,
+    "native_financial_settlements": 539,
+    "net_pnl": "-3010.78713375 USDT",
+    "orders": 55,
+    "replay": "PASS",
+    "runtime_funding_updates": 1272,
+    "source_funding_events": 636,
+    "trial_id": "owner-smoke-002-replacement-001-perpetual-sma20-development"
+  },
+  "real_profitability_claim": false,
+  "research_evidence_path": "evidence/research/owner-smoke-002-replacement-001",
+  "research_manifest_sha256": "bb7f7cf014cf01e43ddab0c84d275d1d77b9010e471a1fc4b6fa7f16d3d0fa53",
+  "schema": "instrument-repair-replacement-owner-smoke-validation-v1",
+  "spot": {
+    "catalog_identity": "db0971d28caba547378e3acba5ad8df1cbd0d6d5be963d153248928a729e374f",
+    "checker": "CHECK_PASS",
+    "dataset_release_id": "fd8542c109cfbf7d6b19d5b7bbb7705c6a161efc807695f3671978c381e34eca",
+    "fills": 27,
+    "net_pnl": "-751.78721000 USDT",
+    "orders": 27,
+    "replay": "PASS",
+    "trial_id": "owner-smoke-002-replacement-001-spot-sma20-development-retry-002"
+  },
+  "status": "PASS",
+  "strategy_semantics_changed": false
+}

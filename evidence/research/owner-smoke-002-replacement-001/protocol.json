@@ -1,0 +1,325 @@
+{
+  "profiles": {
+    "perpetual": {
+      "binding": {
+        "path": "research/protocols/abcc94723ba95eb9ab36bd6acb4b62d6a22d9f881f2ee7046ba57bc1d471cdc5.json",
+        "sha256": "8cff0bdafd150df1a4b3b6116a7b7fdbcce091d61802f446814083a33731d150",
+        "size_bytes": 4811
+      },
+      "protocol": {
+        "candidate_ordering": "AS_LISTED",
+        "claim_basis": "EXPLORATORY_OPERATIONAL_VALIDATION_ONLY; DATA_QUALITY_INSPECTED_NOT_FINAL_HOLDOUT; NO_FINAL_HOLDOUT; NO_REAL_PROFITABILITY_CLAIM; SUPERSEDES_FAILED_TRIALS=owner-smoke-002-perpetual-sma20-development; SUPERSESSION_REASON=INSTRUMENT_REPRESENTATION_PREVENTED_EXECUTABLE_MARKET_STATE; SAME_STRATEGY_PARAMETERS_WINDOW_LATENCY_FEES_BALANCE_AND_SIZING; NO_CANONICAL_MARKET_VALUE_CHANGE",
+        "dataset_release_ids": [
+          "b6c8f5d659f3441c924b613d770342796c90b90a970f42a3dc8227c856198917"
+        ],
+        "deterministic_generator": "NOT_APPLICABLE_ONE_EXPLICIT_CANDIDATE_NO_STRATEGY_RANDOMNESS",
+        "development_interval": {
+          "end_exclusive": "2021-08-01T00:00:00Z",
+          "start_inclusive": "2021-02-01T00:00:00Z"
+        },
+        "final_holdout_interval": {
+          "end_exclusive": "2099-01-04T00:00:00Z",
+          "start_inclusive": "2099-01-03T00:00:00Z"
+        },
+        "frozen_at_utc": "2026-08-24T03:06:50.713899Z",
+        "hypothesis_id": "verified-data-causal-reproducible-owner-workflow-price-vs-sma20-perpetual-not-profitability",
+        "instrument_ids": [
+          "BTCUSDT-PERP.BINANCE"
+        ],
+        "instrument_scope": "SINGLE_INSTRUMENT",
+        "instrument_selection_basis": "Owner-authorized additive replacement after exact Nautilus instrument representation repair; locked BTCUSDT profile and inspected window unchanged",
+        "intended_claim_scope": "INSTRUMENT_ONLY",
+        "kill_criteria": [
+          "MECHANICAL_INTEGRITY_NOT_PASS",
+          "CHECKER_NOT_PASS",
+          "DETERMINISTIC_REPLAY_NOT_PASS",
+          "OFFLINE_BOUNDARY_NOT_PASS"
+        ],
+        "market_profile": "BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING",
+        "monte_carlo_spec": {
+          "block_length": "NOT_APPLICABLE",
+          "decimal_places": 8,
+          "not_applicable_reason": "Exploratory operational validation makes no profitability claim",
+          "quantile_method": "R7_LINEAR_INTERPOLATION",
+          "random_seed": 0,
+          "resampling_method": "NOT_APPLICABLE",
+          "simulation_count": 0
+        },
+        "multiple_testing_treatment": "NOT_APPLICABLE",
+        "oos_interval": {
+          "end_exclusive": "2099-01-03T00:00:00Z",
+          "start_inclusive": "2099-01-02T00:00:00Z"
+        },
+        "ordered_candidates": [
+          {
+            "candidate_id": "c20dcfb448d06f28d053e898c9e24ba9427f19fb9ea7de9ff9807f37f554a056",
+            "candidate_label": "SMA20_ONLY_PRE_REGISTERED_CANDIDATE",
+            "parameter_values": {
+              "authorization_id": "OWNER_OPERATIONAL_SMOKE_001",
+              "completed_bars_only": "TRUE_REJECT_INCOMPLETE",
+              "daily_boundary": "UTC",
+              "equality_target": "FLAT",
+              "market_policy": "USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING_LEVERAGE_1",
+              "network_access": "FORBIDDEN",
+              "order_quantity": "0.100",
+              "order_type": "MARKET",
+              "profitability_claim": "INELIGIBLE",
+              "reversal_behavior": "CLOSE_TO_FLAT_CONFIRM_THEN_SEPARATE_REOPEN",
+              "signal_price": "DAILY_CLOSE_FROM_CANONICAL_1M",
+              "sma_lookback": "20",
+              "strategy_family": "BTCUSDT_DAILY_PRICE_VS_SMA20_TREND"
+            },
+            "strategy_spec_id": "1709ba857dc22ca970d34075490141e004182d2bec7ac2c40b1bfb426f347503"
+          }
+        ],
+        "parameter_domain": {
+          "authorization_id": [
+            "OWNER_OPERATIONAL_SMOKE_001"
+          ],
+          "completed_bars_only": [
+            "TRUE_REJECT_INCOMPLETE"
+          ],
+          "daily_boundary": [
+            "UTC"
+          ],
+          "equality_target": [
+            "FLAT"
+          ],
+          "market_policy": [
+            "USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING_LEVERAGE_1"
+          ],
+          "network_access": [
+            "FORBIDDEN"
+          ],
+          "order_quantity": [
+            "0.100"
+          ],
+          "order_type": [
+            "MARKET"
+          ],
+          "profitability_claim": [
+            "INELIGIBLE"
+          ],
+          "reversal_behavior": [
+            "CLOSE_TO_FLAT_CONFIRM_THEN_SEPARATE_REOPEN"
+          ],
+          "signal_price": [
+            "DAILY_CLOSE_FROM_CANONICAL_1M"
+          ],
+          "sma_lookback": [
+            "20"
+          ],
+          "strategy_family": [
+            "BTCUSDT_DAILY_PRICE_VS_SMA20_TREND"
+          ]
+        },
+        "primary_metric": "EXPLORATORY_OPERATIONAL_VALIDATION",
+        "protocol_id": "abcc94723ba95eb9ab36bd6acb4b62d6a22d9f881f2ee7046ba57bc1d471cdc5",
+        "purge_embargo_rule": {
+          "embargo_seconds": 0,
+          "max_forward_dependency_seconds": 0,
+          "mode": "NOT_APPLICABLE",
+          "purge_seconds": 0,
+          "reason": "No trained model, label, or forward target in this operational validation"
+        },
+        "random_seeds": [
+          0
+        ],
+        "required_benchmark": {
+          "benchmark_id": "OWNER_SMOKE_002_PERPETUAL_NO_PROFITABILITY_BENCHMARK",
+          "cost_basis": "SAME_EXPLICIT_ESTIMATED_FEE_BASIS",
+          "definition": "Structural protocol field only; no benchmark-dependent or profitability claim is authorized",
+          "frozen_before_result_exposure": true,
+          "scored_interval": {
+            "end_exclusive": "2099-01-04T00:00:00Z",
+            "start_inclusive": "2099-01-03T00:00:00Z"
+          }
+        },
+        "research_family_id": "owner-smoke-002-replacement-001-perpetual-daily-price-vs-sma20",
+        "research_intent": "EXPLORATORY",
+        "sample_adequacy_rule": {
+          "counted_observation": "NOT_APPLICABLE",
+          "minimum_completed_trades": "NOT_APPLICABLE",
+          "rationale": "Exploratory operational validation makes no profitability claim"
+        },
+        "schema_version": 1,
+        "search_budget": 1,
+        "selection_rule": "ONLY_PREDECLARED_SMA20_CANDIDATE_NO_RANKING",
+        "strategy_family": "BTCUSDT_DAILY_PRICE_VS_SMA20_TREND",
+        "terminal_policy": "MARK_OPEN_POSITION_NO_SYNTHETIC_CLOSE",
+        "tie_break_rule": "NOT_APPLICABLE_SINGLE_CANDIDATE",
+        "time_series_split": "CHRONOLOGICAL",
+        "universe_as_of_rule": "NOT_APPLICABLE",
+        "universe_membership_sha256": "NOT_APPLICABLE",
+        "universe_selection_rule": "NOT_APPLICABLE",
+        "validation_interval": {
+          "end_exclusive": "2099-01-02T00:00:00Z",
+          "start_inclusive": "2099-01-01T00:00:00Z"
+        }
+      },
+      "protocol_id": "abcc94723ba95eb9ab36bd6acb4b62d6a22d9f881f2ee7046ba57bc1d471cdc5"
+    },
+    "spot": {
+      "binding": {
+        "path": "research/protocols/4734d273510a80fffead77e81e1a96507162b6db98ac16c000966ffc63b0403b.json",
+        "sha256": "f2e5f9cfeca35eadcab831f2c30a709e84c4d2be146d9d24a986d3c1b91c74ae",
+        "size_bytes": 4972
+      },
+      "protocol": {
+        "candidate_ordering": "AS_LISTED",
+        "claim_basis": "EXPLORATORY_OPERATIONAL_VALIDATION_ONLY; DATA_QUALITY_INSPECTED_NOT_FINAL_HOLDOUT; NO_FINAL_HOLDOUT; NO_REAL_PROFITABILITY_CLAIM; MECHANICAL_RETRY_AFTER_RETAINED_PRODUCT_DEFECT_002; NO_PARAMETER_OR_DATA_CHANGE; SUPERSEDES_FAILED_TRIALS=owner-smoke-002-spot-sma20-development,owner-smoke-002-spot-sma20-development-retry-001,owner-smoke-002-replacement-001-spot-sma20-development,owner-smoke-002-replacement-001-spot-sma20-development-retry-001; SUPERSESSION_REASON=INSTRUMENT_REPRESENTATION_PREVENTED_EXECUTABLE_MARKET_STATE; SAME_STRATEGY_PARAMETERS_WINDOW_LATENCY_FEES_BALANCE_AND_SIZING; NO_CANONICAL_MARKET_VALUE_CHANGE",
+        "dataset_release_ids": [
+          "fd8542c109cfbf7d6b19d5b7bbb7705c6a161efc807695f3671978c381e34eca"
+        ],
+        "deterministic_generator": "NOT_APPLICABLE_ONE_EXPLICIT_CANDIDATE_NO_STRATEGY_RANDOMNESS",
+        "development_interval": {
+          "end_exclusive": "2021-08-01T00:00:00Z",
+          "start_inclusive": "2021-02-01T00:00:00Z"
+        },
+        "final_holdout_interval": {
+          "end_exclusive": "2099-01-04T00:00:00Z",
+          "start_inclusive": "2099-01-03T00:00:00Z"
+        },
+        "frozen_at_utc": "2026-08-24T03:15:10.469544Z",
+        "hypothesis_id": "verified-data-causal-reproducible-owner-workflow-price-vs-sma20-spot-not-profitability",
+        "instrument_ids": [
+          "BTCUSDT.BINANCE"
+        ],
+        "instrument_scope": "SINGLE_INSTRUMENT",
+        "instrument_selection_basis": "Owner-authorized additive replacement after exact Nautilus instrument representation repair; locked BTCUSDT profile and inspected window unchanged",
+        "intended_claim_scope": "INSTRUMENT_ONLY",
+        "kill_criteria": [
+          "MECHANICAL_INTEGRITY_NOT_PASS",
+          "CHECKER_NOT_PASS",
+          "DETERMINISTIC_REPLAY_NOT_PASS",
+          "OFFLINE_BOUNDARY_NOT_PASS"
+        ],
+        "market_profile": "BINANCE_SPOT_CASH_LONG_ONLY",
+        "monte_carlo_spec": {
+          "block_length": "NOT_APPLICABLE",
+          "decimal_places": 8,
+          "not_applicable_reason": "Exploratory operational validation makes no profitability claim",
+          "quantile_method": "R7_LINEAR_INTERPOLATION",
+          "random_seed": 0,
+          "resampling_method": "NOT_APPLICABLE",
+          "simulation_count": 0
+        },
+        "multiple_testing_treatment": "NOT_APPLICABLE",
+        "oos_interval": {
+          "end_exclusive": "2099-01-03T00:00:00Z",
+          "start_inclusive": "2099-01-02T00:00:00Z"
+        },
+        "ordered_candidates": [
+          {
+            "candidate_id": "fd77636c31b5803262697d140b77973375ab2a7f84743cf8bb4b29234c00aeee",
+            "candidate_label": "SMA20_ONLY_PRE_REGISTERED_CANDIDATE",
+            "parameter_values": {
+              "authorization_id": "OWNER_OPERATIONAL_SMOKE_001",
+              "completed_bars_only": "TRUE_REJECT_INCOMPLETE",
+              "daily_boundary": "UTC",
+              "equality_target": "FLAT",
+              "market_policy": "CASH_LONG_OR_FLAT_NO_BORROW_NO_SHORT",
+              "network_access": "FORBIDDEN",
+              "order_quantity": "0.10000",
+              "order_type": "MARKET",
+              "profitability_claim": "INELIGIBLE",
+              "reversal_behavior": "NOT_APPLICABLE_SPOT_LONG_FLAT",
+              "signal_price": "DAILY_CLOSE_FROM_CANONICAL_1M",
+              "sma_lookback": "20",
+              "strategy_family": "BTCUSDT_DAILY_PRICE_VS_SMA20_TREND"
+            },
+            "strategy_spec_id": "1deb9ec868b8d59be33c5444923da4fa43e8ac172367192444feba41d891711f"
+          }
+        ],
+        "parameter_domain": {
+          "authorization_id": [
+            "OWNER_OPERATIONAL_SMOKE_001"
+          ],
+          "completed_bars_only": [
+            "TRUE_REJECT_INCOMPLETE"
+          ],
+          "daily_boundary": [
+            "UTC"
+          ],
+          "equality_target": [
+            "FLAT"
+          ],
+          "market_policy": [
+            "CASH_LONG_OR_FLAT_NO_BORROW_NO_SHORT"
+          ],
+          "network_access": [
+            "FORBIDDEN"
+          ],
+          "order_quantity": [
+            "0.10000"
+          ],
+          "order_type": [
+            "MARKET"
+          ],
+          "profitability_claim": [
+            "INELIGIBLE"
+          ],
+          "reversal_behavior": [
+            "NOT_APPLICABLE_SPOT_LONG_FLAT"
+          ],
+          "signal_price": [
+            "DAILY_CLOSE_FROM_CANONICAL_1M"
+          ],
+          "sma_lookback": [
+            "20"
+          ],
+          "strategy_family": [
+            "BTCUSDT_DAILY_PRICE_VS_SMA20_TREND"
+          ]
+        },
+        "primary_metric": "EXPLORATORY_OPERATIONAL_VALIDATION",
+        "protocol_id": "4734d273510a80fffead77e81e1a96507162b6db98ac16c000966ffc63b0403b",
+        "purge_embargo_rule": {
+          "embargo_seconds": 0,
+          "max_forward_dependency_seconds": 0,
+          "mode": "NOT_APPLICABLE",
+          "purge_seconds": 0,
+          "reason": "No trained model, label, or forward target in this operational validation"
+        },
+        "random_seeds": [
+          0
+        ],
+        "required_benchmark": {
+          "benchmark_id": "OWNER_SMOKE_002_SPOT_NO_PROFITABILITY_BENCHMARK",
+          "cost_basis": "SAME_EXPLICIT_ESTIMATED_FEE_BASIS",
+          "definition": "Structural protocol field only; no benchmark-dependent or profitability claim is authorized",
+          "frozen_before_result_exposure": true,
+          "scored_interval": {
+            "end_exclusive": "2099-01-04T00:00:00Z",
+            "start_inclusive": "2099-01-03T00:00:00Z"
+          }
+        },
+        "research_family_id": "owner-smoke-002-replacement-001-spot-daily-price-vs-sma20",
+        "research_intent": "EXPLORATORY",
+        "sample_adequacy_rule": {
+          "counted_observation": "NOT_APPLICABLE",
+          "minimum_completed_trades": "NOT_APPLICABLE",
+          "rationale": "Exploratory operational validation makes no profitability claim"
+        },
+        "schema_version": 1,
+        "search_budget": 1,
+        "selection_rule": "ONLY_PREDECLARED_SMA20_CANDIDATE_NO_RANKING",
+        "strategy_family": "BTCUSDT_DAILY_PRICE_VS_SMA20_TREND",
+        "terminal_policy": "MARK_OPEN_POSITION_NO_SYNTHETIC_CLOSE",
+        "tie_break_rule": "NOT_APPLICABLE_SINGLE_CANDIDATE",
+        "time_series_split": "CHRONOLOGICAL",
+        "universe_as_of_rule": "NOT_APPLICABLE",
+        "universe_membership_sha256": "NOT_APPLICABLE",
+        "universe_selection_rule": "NOT_APPLICABLE",
+        "validation_interval": {
+          "end_exclusive": "2099-01-02T00:00:00Z",
+          "start_inclusive": "2099-01-01T00:00:00Z"
+        }
+      },
+      "protocol_id": "4734d273510a80fffead77e81e1a96507162b6db98ac16c000966ffc63b0403b"
+    }
+  },
+  "purpose": "EXPLORATORY_OPERATIONAL_VALIDATION",
+  "schema": "owner-smoke-002-replacement-protocol-bindings-v1",
+  "status": "PASS"
+}

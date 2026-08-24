@@ -1,0 +1,60 @@
+{
+  "average_trade": "UNDEFINED",
+  "average_trade_reason": "NATIVE_COMPLETED_TRADE_SEQUENCE_UNAVAILABLE",
+  "cagr": "-0.14590226",
+  "calmar": "UNDEFINED",
+  "calmar_reason": "NO_SSOT_FALLBACK_OR_UNAMBIGUOUS_PINNED_NAUTILUS_VALUE",
+  "checker": "CHECK_PASS",
+  "completed_daily_bars": 212,
+  "completed_native_trades": "UNDEFINED",
+  "completed_native_trades_status": "UNAVAILABLE",
+  "currency": "USDT",
+  "ending_equity": "9248.21279000",
+  "exposure_active_ns": 7689540000000000,
+  "exposure_ratio": "0.491708870473",
+  "fees": "119.59221000",
+  "fills": 27,
+  "funding": "NOT_APPLICABLE",
+  "funding_paid": "NOT_APPLICABLE",
+  "funding_received": "NOT_APPLICABLE",
+  "gross_pnl": "UNDEFINED",
+  "gross_pnl_reason": "PINNED_NAUTILUS_NATIVE_GROSS_FIELD_UNAVAILABLE_UNAMBIGUOUSLY",
+  "long_entries": 14,
+  "maximum_drawdown": "0.30479815",
+  "native_expectancy": "-109.2473007142857",
+  "native_positions": 14,
+  "net_pnl": "-751.78721000",
+  "orders": 27,
+  "position_exits": 13,
+  "profile": "spot",
+  "profit_factor": "0.6371392910652053",
+  "replay": "PASS",
+  "replay_identity": "60a312df85e5bba027306db63ddb007e51f48996fabb168f06cd6209827a6387",
+  "schema": "owner-smoke-002-replacement-metrics-v1",
+  "scored_decisions": 181,
+  "sharpe": "-2.4124616673999877",
+  "short_entries": 0,
+  "sortino": "-4.553253456945881",
+  "status": "PASS",
+  "terminal_portfolio": {
+    "equity": {
+      "BTC": {
+        "amount": "0.10000000",
+        "currency": "BTC"
+      },
+      "USDT": {
+        "amount": "5102.02979000",
+        "currency": "USDT"
+      }
+    },
+    "realized_pnl": "-1529.46221000 USDT",
+    "source": "nautilus_trader.portfolio.Portfolio public API",
+    "total_pnl": "-751.78721000 USDT",
+    "unrealized_pnl": "777.67500000 USDT"
+  },
+  "terminal_position_open": true,
+  "terminal_signed_quantity": "0.1",
+  "total_return": "-0.07517872",
+  "undefined_metrics_not_coerced_to_zero": true,
+  "win_rate": "0.14285714285714285"
+}

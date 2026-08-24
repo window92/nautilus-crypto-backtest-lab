@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="320" viewBox="0 0 900 320" role="img">
+<!-- source_sha256=92790024c9a076ba48ca7e74be04e1d58fed58dc3cb4bad454ccd63bf95b3b83; deterministic_downsampling=NONE -->
+<rect width="900" height="320" fill="#fff"/>
+<text x="24" y="22" font-family="sans-serif" font-size="16">SPOT cumulative fees (USDT)</text>
+<line x1="80" y1="266" x2="876" y2="266" stroke="#555"/>
+<line x1="80" y1="32" x2="80" y2="266" stroke="#555"/>
+<polyline points="80.00,266.00 88.80,259.06 189.95,249.88 216.33,240.07 220.73,230.61 233.93,220.66 299.89,210.06 330.68,198.78 370.26,187.83 374.65,176.46 418.63,165.46 471.41,154.20 489.00,143.81 493.40,132.57 524.18,122.91 620.93,115.24 625.33,108.02 647.32,100.71 660.51,93.75 664.91,86.09 686.90,79.09 735.27,72.07 739.67,65.22 757.26,58.35 761.66,51.76 788.05,45.07 792.45,38.59 840.82,32.00 876.00,32.00" fill="none" stroke="#1468a0" stroke-width="2"/>
+<text x="4" y="40" font-family="monospace" font-size="10">119.59221000</text>
+<text x="4" y="264" font-family="monospace" font-size="10">0</text>
+<text x="80" y="298" font-family="sans-serif" font-size="11">Cumulative fees USDT; no downsampling</text>
+</svg>

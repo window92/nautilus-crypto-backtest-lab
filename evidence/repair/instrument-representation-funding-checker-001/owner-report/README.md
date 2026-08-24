@@ -58,8 +58,15 @@
 
 ## إعادة البناء والاختبارات
 
-البناءان المستقلان متطابقان دلاليًا رغم اختلاف file hash الفيزيائي المتوقع. بوابة القبول: 264 اختبارًا فريدًا، 944 execution occurrence، failures=0، errors=0، skips=0، xfail=0. نجحت runtime preflight وpip checks وcompileall وraw rehash وgit diff check.
+البناءان المستقلان متطابقان دلاليًا رغم اختلاف file hash الفيزيائي المتوقع. بوابة القبول النهائية: 268 اختبارًا فريدًا، 960 execution occurrence، failures=0، errors=0، skips=0، xfail=0. نجحت runtime preflight وpip checks وcompileall وraw rehash وgit diff check.
 
-## الخطوة التالية
+## Replacement Owner Smoke
 
-بعد commit/push لهذا الإصلاح ومن SourceRevision نظيفة فقط، تُنشأ Replacement Trials جديدة مرتبطة بالمحاولات الفاشلة، وتُشغل الاستراتيجية نفسها بلا تغيير.
+أُنشئت Replacement Trials من SourceRevision نظيفة وبالاستراتيجية والنافذة والـparameters نفسها:
+
+- Spot: `CHECK_PASS` وreplay `PASS`، 27 Order و27 Fill، وNet PnL `-751.78721000 USDT`.
+- Perpetual: `CHECK_PASS` وreplay `PASS`، 55 Order و55 Fill، وNet PnL `-3010.78713375 USDT`.
+- 636 source funding events ارتبطت بـ1,272 runtime updates، لكن عُدت 539 settlement مالية أصلية فقط للحدود المؤهلة.
+- Final Holdout remained `false`، وReal profitability claim remained `false`؛ النتائج السلبية معروضة كما هي.
+
+التقرير البحثي الكامل: `evidence/research/owner-smoke-002-replacement-001/owner-report/README.md`.

@@ -1,0 +1,11 @@
+{
+  "final_holdout_used": false,
+  "market_numeric_values_changed": false,
+  "optimization_used": false,
+  "real_profitability_claim": false,
+  "repair_epoch": "NAUTILUS_INSTRUMENT_REPRESENTATION_AND_FUNDING_CHECKER_REPAIR_001",
+  "schema": "owner-smoke-002-replacement-authorization-v1",
+  "status": "PASS",
+  "strategy": "btcusdt_daily_price_vs_sma20_trend_v1",
+  "strategy_parameters_changed": false
+}

@@ -1,0 +1,32 @@
+{
+  "profile": "perpetual",
+  "replay": {
+    "fresh_processes": true,
+    "primary_checker": "CHECK_PASS",
+    "primary_child_diagnostic": "<frozen runpy>:128: RuntimeWarning: 'crypto_lab.owner' found in sys.modules after import of package 'crypto_lab', but prior to execution of 'crypto_lab.owner'; this may result in unpredictable behaviour",
+    "primary_child_returncode": 0,
+    "primary_config_sha256": "1959c892b2188a8a5686ec111a8d122f1bf571771de8aacadd3714c66e2c5c4c",
+    "primary_run_ref": "runs/owner-smoke-002-replacement-001-perpetual-run-1959c892b218",
+    "primary_semantic_digest": "8b37dd36555b178c5aff04867b229d478435991f0ab9aea7a28b242ff6c8770b",
+    "primary_state": "COMPLETED",
+    "read_only_checker_revalidated": true,
+    "replay_checker": "CHECK_PASS",
+    "replay_child_diagnostic": "<frozen runpy>:128: RuntimeWarning: 'crypto_lab.owner' found in sys.modules after import of package 'crypto_lab', but prior to execution of 'crypto_lab.owner'; this may result in unpredictable behaviour",
+    "replay_child_returncode": 0,
+    "replay_config_sha256": "1959c892b2188a8a5686ec111a8d122f1bf571771de8aacadd3714c66e2c5c4c",
+    "replay_identity": "c02f6b6f0c304dbb6eed9891f43c92c371f40989d3219f6e53b2411e481f4f3a",
+    "replay_run_ref": "runs/replays/owner-smoke-002-replacement-001-perpetual-sma20-development/owner-smoke-002-replacement-001-perpetual-run-1959c892b218",
+    "replay_semantic_digest": "8b37dd36555b178c5aff04867b229d478435991f0ab9aea7a28b242ff6c8770b",
+    "replay_state": "COMPLETED",
+    "result": "PASS",
+    "schema": "owner-deterministic-replay-v1",
+    "trial_id": "owner-smoke-002-replacement-001-perpetual-sma20-development"
+  },
+  "replay_binding": {
+    "path": "research/replays/owner-smoke-002-replacement-001-perpetual-sma20-development.json",
+    "sha256": "d5e842fddb910e66c3115c71e9870752817d3b20389c86a9a108e9c967cd2acb",
+    "size_bytes": 1514
+  },
+  "schema": "owner-smoke-002-replacement-replay-result-v1",
+  "status": "PASS"
+}

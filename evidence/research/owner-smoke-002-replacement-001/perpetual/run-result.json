@@ -1,0 +1,185 @@
+{
+  "checker": "CHECK_PASS",
+  "metrics": {
+    "average_trade": "UNDEFINED",
+    "average_trade_reason": "NATIVE_COMPLETED_TRADE_SEQUENCE_UNAVAILABLE",
+    "cagr": "-0.51463376",
+    "calmar": "UNDEFINED",
+    "calmar_reason": "NO_SSOT_FALLBACK_OR_UNAMBIGUOUS_PINNED_NAUTILUS_VALUE",
+    "checker": "CHECK_PASS",
+    "completed_daily_bars": 212,
+    "completed_native_trades": "UNDEFINED",
+    "completed_native_trades_status": "UNAVAILABLE",
+    "currency": "USDT",
+    "ending_equity": "6989.21286625",
+    "exposure_active_ns": 15550320000000000,
+    "exposure_ratio": "0.994367710252",
+    "fees": "242.69077200",
+    "fills": 55,
+    "funding": "-692.06436175",
+    "funding_paid": "835.66261746",
+    "funding_received": "143.59825571",
+    "gross_pnl": "UNDEFINED",
+    "gross_pnl_reason": "PINNED_NAUTILUS_NATIVE_GROSS_FIELD_UNAVAILABLE_UNAMBIGUOUSLY",
+    "long_entries": 14,
+    "maximum_drawdown": "0.46862798",
+    "native_expectancy": "-135.2701119196429",
+    "native_positions": 28,
+    "net_pnl": "-3010.78713375",
+    "orders": 55,
+    "position_exits": 27,
+    "profile": "perpetual",
+    "profit_factor": "0.8226675270475429",
+    "replay": "PASS",
+    "replay_identity": "c02f6b6f0c304dbb6eed9891f43c92c371f40989d3219f6e53b2411e481f4f3a",
+    "schema": "owner-smoke-002-replacement-metrics-v1",
+    "scored_decisions": 181,
+    "sharpe": "-1.0559386792006344",
+    "short_entries": 14,
+    "sortino": "-1.415784386437887",
+    "status": "PASS",
+    "terminal_portfolio": {
+      "equity": {
+        "USDT": {
+          "amount": "6989.21286625",
+          "currency": "USDT"
+        }
+      },
+      "realized_pnl": "-3787.56313375 USDT",
+      "source": "nautilus_trader.portfolio.Portfolio public API",
+      "total_pnl": "-3010.78713375 USDT",
+      "unrealized_pnl": "776.77600000 USDT"
+    },
+    "terminal_position_open": true,
+    "terminal_signed_quantity": "0.1",
+    "total_return": "-0.30107871",
+    "undefined_metrics_not_coerced_to_zero": true,
+    "win_rate": "0.10714285714285714"
+  },
+  "profile": "perpetual",
+  "run_id": "owner-smoke-002-replacement-001-perpetual-run",
+  "run_state": "COMPLETED",
+  "schema": "owner-smoke-002-replacement-run-result-v1",
+  "source_bindings": {
+    "account": {
+      "path": "runs/owner-smoke-002-replacement-001-perpetual-run-1959c892b218/account.csv",
+      "sha256": "bb1ff35caa08cb5f58c88a91a2305d220e5ec4842575196347dd6ad4b59d6297",
+      "size_bytes": 106898
+    },
+    "authoritative_report": {
+      "path": "research/reports/owner-smoke-002-replacement-001-perpetual-sma20-development.json",
+      "sha256": "119ea4d2a5b0bae96270d5f9c0c336c4de682338c98f6b96a3ce39de3eaf14f2",
+      "size_bytes": 34286
+    },
+    "checker": {
+      "path": "runs/owner-smoke-002-replacement-001-perpetual-run-1959c892b218/checker.json",
+      "sha256": "dbf5917058af064c0e2a87db3cb663c422e40d3fe4499a618d1443a09b6a48ed",
+      "size_bytes": 7416
+    },
+    "dataset_release": {
+      "path": "runs/owner-smoke-002-replacement-001-perpetual-run-1959c892b218/dataset_release.json",
+      "sha256": "2af6367a93a4a7c0d14bed4041f23ce088f55441c922692aa0949d5e11381279",
+      "size_bytes": 16581
+    },
+    "fills": {
+      "path": "runs/owner-smoke-002-replacement-001-perpetual-run-1959c892b218/fills.csv",
+      "sha256": "a4426fc800769e0856ba6488e73a7547cb2ec00f2ee5532296c403d4d55c862d",
+      "size_bytes": 16634
+    },
+    "funding": {
+      "path": "runs/owner-smoke-002-replacement-001-perpetual-run-1959c892b218/funding.csv",
+      "sha256": "480249b2ba697b1d9875aadd207cf8b311dfc6e950e62ae4e2c72a6601b804cb",
+      "size_bytes": 66141
+    },
+    "funding_source": {
+      "path": "runs/owner-smoke-002-replacement-001-perpetual-run-1959c892b218/funding_source.json",
+      "sha256": "ad62b3da8ed373418c173f976e088f146446584fcfb057eb8498d233f0e72a92",
+      "size_bytes": 133037
+    },
+    "instrument_metadata": {
+      "path": "runs/owner-smoke-002-replacement-001-perpetual-run-1959c892b218/instrument_metadata.json",
+      "sha256": "7208dc194d57c93e80cd7d32557524728d4ad0e5dec09acf9b1ec3d4f0ca5c00",
+      "size_bytes": 4056
+    },
+    "native_completed_trades": {
+      "path": "runs/owner-smoke-002-replacement-001-perpetual-run-1959c892b218/native_completed_trades.json",
+      "sha256": "2b21bc59be64b37ba510b15e7adf09a13b9cf875652bb231c65ae19904993116",
+      "size_bytes": 449
+    },
+    "native_result": {
+      "path": "runs/owner-smoke-002-replacement-001-perpetual-run-1959c892b218/nautilus_result.json",
+      "sha256": "da55a9faec340adb29fdb0728dc36989c2185c5b83fd06252d173bb0afb064c7",
+      "size_bytes": 2827937
+    },
+    "native_statistics": {
+      "path": "runs/owner-smoke-002-replacement-001-perpetual-run-1959c892b218/native_statistics.json",
+      "sha256": "c13128c8681de0b02a6bc77dcdc1e7d46178d45727c62a95deeef95cb2f3be68",
+      "size_bytes": 14271
+    },
+    "orders": {
+      "path": "runs/owner-smoke-002-replacement-001-perpetual-run-1959c892b218/orders.csv",
+      "sha256": "46d1031e760fe7a20d8e20726fd8371b1b68e39ae6b09596ef38e7584300f972",
+      "size_bytes": 7953
+    },
+    "performance": {
+      "path": "research/performance/owner-smoke-002-replacement-001-perpetual-run.json",
+      "sha256": "e04028c14b20092c4d6ce06c9bf1926888241b1388933d72781c7ad7efa6d211",
+      "size_bytes": 27897
+    },
+    "positions": {
+      "path": "runs/owner-smoke-002-replacement-001-perpetual-run-1959c892b218/positions.csv",
+      "sha256": "a820f58ce146d88ee36740a57a035f7a0b7e9ae5632f5d788355ac91d9bd92fa",
+      "size_bytes": 5110
+    },
+    "protocol": {
+      "path": "research/protocols/abcc94723ba95eb9ab36bd6acb4b62d6a22d9f881f2ee7046ba57bc1d471cdc5.json",
+      "sha256": "8cff0bdafd150df1a4b3b6116a7b7fdbcce091d61802f446814083a33731d150",
+      "size_bytes": 4811
+    },
+    "replay": {
+      "path": "research/replays/owner-smoke-002-replacement-001-perpetual-sma20-development.json",
+      "sha256": "d5e842fddb910e66c3115c71e9870752817d3b20389c86a9a108e9c967cd2acb",
+      "size_bytes": 1514
+    },
+    "run_config": {
+      "path": "runs/owner-smoke-002-replacement-001-perpetual-run-1959c892b218/lab_run_config.json",
+      "sha256": "f3685ba571faffe455a8476e4ff717b9eab5fd908366920d6560299a2b895814",
+      "size_bytes": 6200
+    },
+    "run_manifest": {
+      "path": "runs/owner-smoke-002-replacement-001-perpetual-run-1959c892b218/evidence_manifest.json",
+      "sha256": "beaaa9c4973936341db427d5187e908632980c3dcd3bbc28e674188ef0f873e9",
+      "size_bytes": 2948
+    },
+    "source_revision": {
+      "path": "runs/owner-smoke-002-replacement-001-perpetual-run-1959c892b218/source_revision.json",
+      "sha256": "dd4f56697e6c5aa6aacd1e4ca3d641962f2b9e393a5125b297972c0fdceb332f",
+      "size_bytes": 278
+    },
+    "status": {
+      "path": "runs/owner-smoke-002-replacement-001-perpetual-run-1959c892b218/status.json",
+      "sha256": "b60229a4d9359742b193d96a8d11328a0c3667e4fd5f73aa61c7c1c9c7c8a2f5",
+      "size_bytes": 157
+    },
+    "strategy_identity": {
+      "path": "runs/owner-smoke-002-replacement-001-perpetual-run-1959c892b218/strategy_identity.json",
+      "sha256": "9869d34cc02e2f9fd66111e40cc6917c8d25dcf8dadf2f99062ed537b1b962a4",
+      "size_bytes": 2294
+    },
+    "workflow": {
+      "path": "research/workflows/owner-smoke-002-replacement-001-perpetual-sma20-development.json",
+      "sha256": "b2f870f9bef1d3b9c9998791568f0ced92dbd9fb9b2dfb601717c5690d1edf6e",
+      "size_bytes": 7103
+    }
+  },
+  "source_revision": {
+    "branch_ref": "main",
+    "captured_at_utc": "2026-08-24T03:20:04.653262Z",
+    "clean_worktree": true,
+    "git_commit": "88c8a38acd0654d3781d8be8b6427af040b71da1",
+    "git_tree": "001418f36b81a27aa4665607a946ff6d3c6e9432",
+    "repository": "https://github.com/window92/nautilus-crypto-backtest-lab.git"
+  },
+  "status": "PASS",
+  "trial_id": "owner-smoke-002-replacement-001-perpetual-sma20-development"
+}

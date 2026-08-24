@@ -92,6 +92,10 @@ def write_text(path: Path, value: str) -> None:
     path.write_text(value, encoding="utf-8", newline="\n")
 
 
+def copy_normalized_text(source: Path, target: Path) -> None:
+    target.write_bytes(source.read_bytes().rstrip(b"\n") + b"\n")
+
+
 def read_csv(path: Path) -> list[dict[str, str]]:
     with path.open(encoding="utf-8", newline="") as stream:
         return list(csv.DictReader(stream))
@@ -113,6 +117,68 @@ def binding(path: Path) -> dict[str, Any]:
         "sha256": sha256_file(path),
         "size_bytes": path.stat().st_size,
     }
+
+
+def stable_repair_bindings() -> dict[str, dict[str, Any]]:
+    result: dict[str, dict[str, Any]] = {}
+    for name in (
+        "dataset-release-identities.json",
+        "catalog-identities.json",
+        "value-continuity.json",
+        "full-nautilus-ingestion.json",
+        "funding-runtime-binding.json",
+    ):
+        path = REPAIR_EVIDENCE / name
+        result[path.relative_to(ROOT).as_posix()] = binding(path)
+    return result
+
+
+def refresh_inventory() -> None:
+    inventory_path = EVIDENCE / "evidence-inventory.json"
+    manifest_path = EVIDENCE / "final-content-manifest.json"
+    inventory = load(inventory_path)
+    copy_normalized_text(EVIDENCE / "test-output.txt", EVIDENCE / "test-output.txt")
+    source_entries = {
+        key: value
+        for key, value in inventory["source_entries"].items()
+        if key
+        != (REPAIR_EVIDENCE / "final-content-manifest.json").relative_to(ROOT).as_posix()
+    }
+    source_entries.update(stable_repair_bindings())
+    generated_entries = {
+        path.relative_to(EVIDENCE).as_posix(): {
+            "path": path.relative_to(ROOT).as_posix(),
+            "sha256": sha256_file(path),
+            "size_bytes": path.stat().st_size,
+        }
+        for path in EVIDENCE.rglob("*")
+        if path.is_file() and path.name not in {"evidence-inventory.json", "final-content-manifest.json"}
+    }
+    inventory.update(
+        {
+            "source_entries": dict(sorted(source_entries.items())),
+            "generated_entries": dict(sorted(generated_entries.items())),
+            "source_inventory_identity": canonical_sha256(source_entries),
+            "generated_inventory_identity": canonical_sha256(generated_entries),
+        },
+    )
+    write_json(inventory_path, inventory)
+    manifest = load(manifest_path)
+    manifest_files = {
+        path.relative_to(EVIDENCE).as_posix(): {
+            "sha256": sha256_file(path),
+            "size_bytes": path.stat().st_size,
+        }
+        for path in sorted(EVIDENCE.rglob("*"))
+        if path.is_file() and path.name != "final-content-manifest.json"
+    }
+    manifest.update(
+        {
+            "files": manifest_files,
+            "file_count_excluding_manifest": len(manifest_files),
+        },
+    )
+    write_json(manifest_path, manifest)
 
 
 def money(value: str) -> tuple[Decimal, str]:
@@ -622,8 +688,24 @@ Spot القديمة التي أعادت false `CHECK_PASS` يعيدها checker 
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--acceptance-output", type=Path, required=True)
+    parser.add_argument("--refresh-inventory-only", action="store_true")
     args = parser.parse_args()
     acceptance_root = args.acceptance_output.resolve()
+    if args.refresh_inventory_only:
+        if not EVIDENCE.is_dir():
+            raise FileNotFoundError(f"replacement evidence does not exist: {EVIDENCE}")
+        refresh_inventory()
+        print(
+            json.dumps(
+                {
+                    "status": "PASS",
+                    "refreshed": True,
+                    "manifest_sha256": sha256_file(EVIDENCE / "final-content-manifest.json"),
+                },
+                sort_keys=True,
+            ),
+        )
+        return 0
     if EVIDENCE.exists():
         raise FileExistsError(f"refusing to overwrite additive evidence: {EVIDENCE}")
     if git("status", "--porcelain"):
@@ -906,7 +988,7 @@ def main() -> int:
         for item in failed:
             stream.write(json.dumps(item, sort_keys=True, ensure_ascii=False) + "\n")
     write_json(EVIDENCE / "test-results.json", acceptance)
-    shutil.copyfile(acceptance_root / "test-output.txt", EVIDENCE / "test-output.txt")
+    copy_normalized_text(acceptance_root / "test-output.txt", EVIDENCE / "test-output.txt")
 
     charts = EVIDENCE / "charts"
     for label, view in views.items():
@@ -944,8 +1026,8 @@ def main() -> int:
         "research/trials.jsonl": binding(ROOT / "research/trials.jsonl"),
         "research/history_anchors.jsonl": binding(ROOT / "research/history_anchors.jsonl"),
         "research/holdout_lock.json": binding(ROOT / "research/holdout_lock.json"),
-        str(REPAIR_EVIDENCE.relative_to(ROOT) / "final-content-manifest.json"): binding(REPAIR_EVIDENCE / "final-content-manifest.json"),
     }
+    source_entries.update(stable_repair_bindings())
     for view in views.values():
         for path in view["sources"].values():
             source_entries[path.relative_to(ROOT).as_posix()] = binding(path)

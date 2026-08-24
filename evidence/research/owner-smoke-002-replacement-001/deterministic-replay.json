@@ -1,0 +1,35 @@
+{
+  "profiles": {
+    "perpetual": {
+      "checker": "CHECK_PASS",
+      "fresh_processes": true,
+      "primary_semantic_digest": "8b37dd36555b178c5aff04867b229d478435991f0ab9aea7a28b242ff6c8770b",
+      "replay_identity": "c02f6b6f0c304dbb6eed9891f43c92c371f40989d3219f6e53b2411e481f4f3a",
+      "replay_semantic_digest": "8b37dd36555b178c5aff04867b229d478435991f0ab9aea7a28b242ff6c8770b",
+      "result": "PASS"
+    },
+    "spot": {
+      "checker": "CHECK_PASS",
+      "fresh_processes": true,
+      "primary_semantic_digest": "41b67c450db299e8ad9045eaa5a73a52ce4512f2f0bc6fb58f608442ceceb733",
+      "replay_identity": "60a312df85e5bba027306db63ddb007e51f48996fabb168f06cd6209827a6387",
+      "replay_semantic_digest": "41b67c450db299e8ad9045eaa5a73a52ce4512f2f0bc6fb58f608442ceceb733",
+      "result": "PASS"
+    }
+  },
+  "schema": "owner-smoke-002-replacement-deterministic-replay-v1",
+  "semantic_dimensions": [
+    "signals",
+    "orders",
+    "fills",
+    "positions",
+    "account_events",
+    "fees",
+    "funding",
+    "equity_series",
+    "terminal_state",
+    "mechanical_integrity",
+    "report_inputs"
+  ],
+  "status": "PASS"
+}

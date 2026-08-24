@@ -1,0 +1,54 @@
+{
+  "child_process_network_blocked": true,
+  "dns_blocked": true,
+  "external_contact_count": 0,
+  "network_syscalls_blocked": true,
+  "profiles": {
+    "perpetual": {
+      "attempts": [],
+      "enforced": true,
+      "process_isolation": {
+        "architecture": "x86_64",
+        "child_dns_probe_blocked": true,
+        "child_native_probe_blocked": true,
+        "child_python_probe_errno": 1,
+        "closed_inherited_socket_descriptors": [],
+        "current_process_probe_errno": 1,
+        "external_endpoint_contacted": false,
+        "filters_after": 1,
+        "filters_before": 0,
+        "inherited_by_fork_exec": true,
+        "io_uring_probe_errno": 1,
+        "mechanism": "LINUX_SECCOMP_BPF_TSYNC_ERRNO_EPERM",
+        "no_new_privs": true,
+        "schema": "process-network-isolation-v1",
+        "seccomp_mode": 2
+      },
+      "required": true
+    },
+    "spot": {
+      "attempts": [],
+      "enforced": true,
+      "process_isolation": {
+        "architecture": "x86_64",
+        "child_dns_probe_blocked": true,
+        "child_native_probe_blocked": true,
+        "child_python_probe_errno": 1,
+        "closed_inherited_socket_descriptors": [],
+        "current_process_probe_errno": 1,
+        "external_endpoint_contacted": false,
+        "filters_after": 1,
+        "filters_before": 0,
+        "inherited_by_fork_exec": true,
+        "io_uring_probe_errno": 1,
+        "mechanism": "LINUX_SECCOMP_BPF_TSYNC_ERRNO_EPERM",
+        "no_new_privs": true,
+        "schema": "process-network-isolation-v1",
+        "seccomp_mode": 2
+      },
+      "required": true
+    }
+  },
+  "schema": "owner-smoke-002-replacement-offline-enforcement-v1",
+  "status": "PASS"
+}

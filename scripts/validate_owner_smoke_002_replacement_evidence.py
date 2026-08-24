@@ -150,6 +150,30 @@ def main() -> int:
     if baseline.get("status") != "PASS" or baseline.get("locked_hashes") != EXPECTED_LOCKS:
         failures.append("baseline_invalid")
 
+    evidence_inventory = load("evidence-inventory.json")
+    source_entries = evidence_inventory.get("source_entries", {})
+    for entry in source_entries.values():
+        source_path = ROOT / entry["path"]
+        if (
+            not source_path.is_file()
+            or source_path.stat().st_size != entry["size_bytes"]
+            or sha256_file(source_path) != entry["sha256"]
+        ):
+            failures.append(f"stale_source_binding:{entry['path']}")
+    generated_expected = evidence_inventory.get("generated_entries", {})
+    generated_actual = {
+        relative: {
+            "path": (EVIDENCE / relative).relative_to(ROOT).as_posix(),
+            "sha256": sha256_file(EVIDENCE / relative),
+            "size_bytes": (EVIDENCE / relative).stat().st_size,
+        }
+        for relative in sorted(
+            present - {"evidence-inventory.json", "final-content-manifest.json"}
+        )
+    }
+    if generated_expected != generated_actual:
+        failures.append("generated_inventory_mismatch")
+
     datasets = load("dataset-bindings.json")
     strategies = load("strategy-identities.json")
     replay_all = load("deterministic-replay.json")

@@ -1,0 +1,32 @@
+{
+  "artifact_assembly_head": "cd2182ddb1b87ca36e28c9d49165c5101b0a4381",
+  "artifact_assembly_origin_main": "cd2182ddb1b87ca36e28c9d49165c5101b0a4381",
+  "locked_hashes": {
+    "SSOT.md": "b4deb7048242239234de7eaa353b623b3e45247eb42f1021dbc26ffd910edb99",
+    "requirements.lock.txt": "b2765c9e33b10566fc327b48920fd1d3a73618c19622baaceab1fe9dca61df47",
+    "runtime.lock.json": "4032df9f355348c2a0cfa9f79f331f97c9a8d24ecc8490a573d2c7f788bafddd"
+  },
+  "official_source_revisions": {
+    "perpetual": {
+      "branch_ref": "main",
+      "captured_at_utc": "2026-08-24T03:20:04.653262Z",
+      "clean_worktree": true,
+      "git_commit": "88c8a38acd0654d3781d8be8b6427af040b71da1",
+      "git_tree": "001418f36b81a27aa4665607a946ff6d3c6e9432",
+      "repository": "https://github.com/window92/nautilus-crypto-backtest-lab.git"
+    },
+    "spot": {
+      "branch_ref": "main",
+      "captured_at_utc": "2026-08-24T03:15:31.499795Z",
+      "clean_worktree": true,
+      "git_commit": "e60c41b6533144df9eb6dfe55117cb0f3542978c",
+      "git_tree": "89b87a303caa44a7b27b979f42d3d80495fae33a",
+      "repository": "https://github.com/window92/nautilus-crypto-backtest-lab.git"
+    }
+  },
+  "recorded_at_utc": "2026-08-24T03:58:04.168747Z",
+  "repair_baseline_commit": "07432371c82cc62b1ff05ed5900a4d50c91df385",
+  "schema": "owner-smoke-002-replacement-baseline-v1",
+  "status": "PASS",
+  "worktree_clean_before_assembly": true
+}

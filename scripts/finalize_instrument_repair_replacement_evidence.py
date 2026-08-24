@@ -52,7 +52,9 @@ def main() -> int:
     ):
         raise RuntimeError("final acceptance or replacement research evidence is not PASS")
     shutil.copyfile(acceptance_root / "result.json", REPAIR / "test-results.json")
-    shutil.copyfile(acceptance_root / "test-output.txt", REPAIR / "test-output.txt")
+    (REPAIR / "test-output.txt").write_bytes(
+        (acceptance_root / "test-output.txt").read_bytes().rstrip(b"\n") + b"\n",
+    )
 
     replacement = {
         "schema": "instrument-repair-replacement-owner-smoke-validation-v1",
@@ -116,6 +118,13 @@ def main() -> int:
             "cause": "Semantically equal retained failure codes were compared in list order",
             "repair_commit": "c7c46a7",
         },
+        {
+            "attempt": "final-runtime-preflight-unbound-shell-environment",
+            "status": "FAIL_RETAINED",
+            "cause": "Manual final preflight invocation omitted the locked TZ=UTC environment and correctly failed with current timezone=None",
+            "resolution": "Identical read-only preflight rerun with TZ=UTC LANG=C.UTF-8 LC_ALL=C.UTF-8 passed",
+            "official_run_affected": False,
+        },
     ]
     failed_path = REPAIR / "failed-attempts.jsonl"
     existing = [
@@ -152,9 +161,13 @@ def main() -> int:
 
 التقرير البحثي الكامل: `evidence/research/owner-smoke-002-replacement-001/owner-report/README.md`.
 """
-    if old not in report:
+    if old not in report and new not in report:
         raise RuntimeError("repair Owner report terminal section changed unexpectedly")
-    report_path.write_text(report.replace(old, new), encoding="utf-8", newline="\n")
+    report_path.write_text(
+        report.replace(old, new) if old in report else report,
+        encoding="utf-8",
+        newline="\n",
+    )
 
     old_manifest = load(REPAIR / "final-content-manifest.json")
     inventory = {

@@ -1,0 +1,45 @@
+{
+  "canonical_market_numeric_values_changed": false,
+  "duckdb_schema_identity": "74276cca97b16757602a2d90f140891fa08d1463c901d5b75ad69d7f23ffa4da",
+  "duckdb_semantic_identity": "11329c1497ff6bf3a68c5d3ba994f5ac2bbd0ece51cf489f9fa3f681a01ecbff",
+  "profiles": {
+    "perpetual": {
+      "catalog_identity": "7c96897a8e1ea3c02198238a277fb8c3d995f54dd90dc381e534a5f21b017ae0",
+      "dataset_release_id": "b6c8f5d659f3441c924b613d770342796c90b90a970f42a3dc8227c856198917",
+      "instrument_metadata_identity": "b4579742d10d7e1e529689ae07c3db2b6a9362430d0b8cd7112a4d9846eef226",
+      "metadata_binding": {
+        "path": "runs/owner-smoke-002-replacement-001-perpetual-run-1959c892b218/instrument_metadata.json",
+        "sha256": "7208dc194d57c93e80cd7d32557524728d4ad0e5dec09acf9b1ec3d4f0ca5c00",
+        "size_bytes": 4056
+      },
+      "release_binding": {
+        "path": "runs/owner-smoke-002-replacement-001-perpetual-run-1959c892b218/dataset_release.json",
+        "sha256": "2af6367a93a4a7c0d14bed4041f23ce088f55441c922692aa0949d5e11381279",
+        "size_bytes": 16581
+      }
+    },
+    "spot": {
+      "catalog_identity": "db0971d28caba547378e3acba5ad8df1cbd0d6d5be963d153248928a729e374f",
+      "dataset_release_id": "fd8542c109cfbf7d6b19d5b7bbb7705c6a161efc807695f3671978c381e34eca",
+      "instrument_metadata_identity": "9c7ba442a19cb74f8059983ae56db23b8c341ac47c3ba77e2fb8da05a661e3ea",
+      "metadata_binding": {
+        "path": "runs/owner-smoke-002-replacement-001-spot-run-retry-002-b25302d138b2/instrument_metadata.json",
+        "sha256": "a40ea9516910452af3f57938907a5c9877bf5587f3a17ab2a8091a2c0dd119c5",
+        "size_bytes": 8061
+      },
+      "release_binding": {
+        "path": "runs/owner-smoke-002-replacement-001-spot-run-retry-002-b25302d138b2/dataset_release.json",
+        "sha256": "ae609c85a06b8eeffc0ee8ae310b5532b14e9209913b4bee6e6086b750af84b7",
+        "size_bytes": 7054
+      }
+    }
+  },
+  "schema": "owner-smoke-002-replacement-dataset-bindings-v1",
+  "status": "PASS",
+  "window": {
+    "classification": "DATA_QUALITY_INSPECTED_NOT_FINAL_HOLDOUT",
+    "end_exclusive": "2021-08-01T00:00:00Z",
+    "scoring_start": "2021-02-01T00:00:00Z",
+    "warmup_start": "2021-01-01T00:00:00Z"
+  }
+}

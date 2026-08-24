@@ -1,0 +1,179 @@
+{
+  "checker": "CHECK_PASS",
+  "metrics": {
+    "average_trade": "UNDEFINED",
+    "average_trade_reason": "NATIVE_COMPLETED_TRADE_SEQUENCE_UNAVAILABLE",
+    "cagr": "-0.14590226",
+    "calmar": "UNDEFINED",
+    "calmar_reason": "NO_SSOT_FALLBACK_OR_UNAMBIGUOUS_PINNED_NAUTILUS_VALUE",
+    "checker": "CHECK_PASS",
+    "completed_daily_bars": 212,
+    "completed_native_trades": "UNDEFINED",
+    "completed_native_trades_status": "UNAVAILABLE",
+    "currency": "USDT",
+    "ending_equity": "9248.21279000",
+    "exposure_active_ns": 7689540000000000,
+    "exposure_ratio": "0.491708870473",
+    "fees": "119.59221000",
+    "fills": 27,
+    "funding": "NOT_APPLICABLE",
+    "funding_paid": "NOT_APPLICABLE",
+    "funding_received": "NOT_APPLICABLE",
+    "gross_pnl": "UNDEFINED",
+    "gross_pnl_reason": "PINNED_NAUTILUS_NATIVE_GROSS_FIELD_UNAVAILABLE_UNAMBIGUOUSLY",
+    "long_entries": 14,
+    "maximum_drawdown": "0.30479815",
+    "native_expectancy": "-109.2473007142857",
+    "native_positions": 14,
+    "net_pnl": "-751.78721000",
+    "orders": 27,
+    "position_exits": 13,
+    "profile": "spot",
+    "profit_factor": "0.6371392910652053",
+    "replay": "PASS",
+    "replay_identity": "60a312df85e5bba027306db63ddb007e51f48996fabb168f06cd6209827a6387",
+    "schema": "owner-smoke-002-replacement-metrics-v1",
+    "scored_decisions": 181,
+    "sharpe": "-2.4124616673999877",
+    "short_entries": 0,
+    "sortino": "-4.553253456945881",
+    "status": "PASS",
+    "terminal_portfolio": {
+      "equity": {
+        "BTC": {
+          "amount": "0.10000000",
+          "currency": "BTC"
+        },
+        "USDT": {
+          "amount": "5102.02979000",
+          "currency": "USDT"
+        }
+      },
+      "realized_pnl": "-1529.46221000 USDT",
+      "source": "nautilus_trader.portfolio.Portfolio public API",
+      "total_pnl": "-751.78721000 USDT",
+      "unrealized_pnl": "777.67500000 USDT"
+    },
+    "terminal_position_open": true,
+    "terminal_signed_quantity": "0.1",
+    "total_return": "-0.07517872",
+    "undefined_metrics_not_coerced_to_zero": true,
+    "win_rate": "0.14285714285714285"
+  },
+  "profile": "spot",
+  "run_id": "owner-smoke-002-replacement-001-spot-run-retry-002",
+  "run_state": "COMPLETED",
+  "schema": "owner-smoke-002-replacement-run-result-v1",
+  "source_bindings": {
+    "account": {
+      "path": "runs/owner-smoke-002-replacement-001-spot-run-retry-002-b25302d138b2/account.csv",
+      "sha256": "aa225dd810b7448cf26e8c01615b19b5aac1f52b6692daf813b406ce9895f99d",
+      "size_bytes": 4836
+    },
+    "authoritative_report": {
+      "path": "research/reports/owner-smoke-002-replacement-001-spot-sma20-development-retry-002.json",
+      "sha256": "b5a0e6b2d13c4ab719b4fc4862ef303636d36c8bc7f12d78ba9d72f9ac6b447c",
+      "size_bytes": 34983
+    },
+    "checker": {
+      "path": "runs/owner-smoke-002-replacement-001-spot-run-retry-002-b25302d138b2/checker.json",
+      "sha256": "afd3c4ab541539dac911c3c7a32fa881a53e029c229740dd2f118cd56fd5b4f7",
+      "size_bytes": 6566
+    },
+    "dataset_release": {
+      "path": "runs/owner-smoke-002-replacement-001-spot-run-retry-002-b25302d138b2/dataset_release.json",
+      "sha256": "ae609c85a06b8eeffc0ee8ae310b5532b14e9209913b4bee6e6086b750af84b7",
+      "size_bytes": 7054
+    },
+    "fills": {
+      "path": "runs/owner-smoke-002-replacement-001-spot-run-retry-002-b25302d138b2/fills.csv",
+      "sha256": "92790024c9a076ba48ca7e74be04e1d58fed58dc3cb4bad454ccd63bf95b3b83",
+      "size_bytes": 7896
+    },
+    "instrument_metadata": {
+      "path": "runs/owner-smoke-002-replacement-001-spot-run-retry-002-b25302d138b2/instrument_metadata.json",
+      "sha256": "a40ea9516910452af3f57938907a5c9877bf5587f3a17ab2a8091a2c0dd119c5",
+      "size_bytes": 8061
+    },
+    "native_completed_trades": {
+      "path": "runs/owner-smoke-002-replacement-001-spot-run-retry-002-b25302d138b2/native_completed_trades.json",
+      "sha256": "14ccc1e30928583e09bdaf5aee0d02f2a6fc4ccfcd7570b09a035a0c65ac20ee",
+      "size_bytes": 454
+    },
+    "native_result": {
+      "path": "runs/owner-smoke-002-replacement-001-spot-run-retry-002-b25302d138b2/nautilus_result.json",
+      "sha256": "364771d0056437900668edc968ebb633a6575e6d7285fc1cf1bbe863c7fbfb98",
+      "size_bytes": 243472
+    },
+    "native_statistics": {
+      "path": "runs/owner-smoke-002-replacement-001-spot-run-retry-002-b25302d138b2/native_statistics.json",
+      "sha256": "860cd272e7adbccf65ecccd6162ba2394f8f75d3d6654c78a9e92f09b48c8644",
+      "size_bytes": 1844
+    },
+    "orders": {
+      "path": "runs/owner-smoke-002-replacement-001-spot-run-retry-002-b25302d138b2/orders.csv",
+      "sha256": "1087575a7feb669ceaeaafe5a579f0157603354ca9933ca3ec4889d5779d55a5",
+      "size_bytes": 4071
+    },
+    "performance": {
+      "path": "research/performance/owner-smoke-002-replacement-001-spot-run-retry-002.json",
+      "sha256": "d05549fa2207aab2831c9a85ef74074fb96c88cf6efc10cc9cef2cbdbe1ec40a",
+      "size_bytes": 27783
+    },
+    "positions": {
+      "path": "runs/owner-smoke-002-replacement-001-spot-run-retry-002-b25302d138b2/positions.csv",
+      "sha256": "f6ff816c61872a1fce886fcbaaae6f92bceb68dd91b217e7e7be38f7c70bbd8c",
+      "size_bytes": 2458
+    },
+    "protocol": {
+      "path": "research/protocols/4734d273510a80fffead77e81e1a96507162b6db98ac16c000966ffc63b0403b.json",
+      "sha256": "f2e5f9cfeca35eadcab831f2c30a709e84c4d2be146d9d24a986d3c1b91c74ae",
+      "size_bytes": 4972
+    },
+    "replay": {
+      "path": "research/replays/owner-smoke-002-replacement-001-spot-sma20-development-retry-002.json",
+      "sha256": "877a19c5086ceb005fdaa8aeb0e438bcf39989a3f7664a3e0a85fd8a24086ca1",
+      "size_bytes": 1534
+    },
+    "run_config": {
+      "path": "runs/owner-smoke-002-replacement-001-spot-run-retry-002-b25302d138b2/lab_run_config.json",
+      "sha256": "fbfe347d22dd4c4342061edd7c99ff7a8380ff9cb9256308160561c50d1137de",
+      "size_bytes": 6011
+    },
+    "run_manifest": {
+      "path": "runs/owner-smoke-002-replacement-001-spot-run-retry-002-b25302d138b2/evidence_manifest.json",
+      "sha256": "9d9b8c24aeb4667c6334f094e1d453ee698ca27af3e06893b5fb316269b7e903",
+      "size_bytes": 2704
+    },
+    "source_revision": {
+      "path": "runs/owner-smoke-002-replacement-001-spot-run-retry-002-b25302d138b2/source_revision.json",
+      "sha256": "db01ff7c8d12e4a6cca30d3b53f02b6125005e5b44b26b0ba8def5df8cd5e631",
+      "size_bytes": 278
+    },
+    "status": {
+      "path": "runs/owner-smoke-002-replacement-001-spot-run-retry-002-b25302d138b2/status.json",
+      "sha256": "b8973e91a004c12fe50ce2915e0c80c39567f04065496d82c4f4fa35179d3d58",
+      "size_bytes": 162
+    },
+    "strategy_identity": {
+      "path": "runs/owner-smoke-002-replacement-001-spot-run-retry-002-b25302d138b2/strategy_identity.json",
+      "sha256": "56d0c244ab14ab4409c9ad47e45a5908d002b920cb11169665ad4b639dce5056",
+      "size_bytes": 2207
+    },
+    "workflow": {
+      "path": "research/workflows/owner-smoke-002-replacement-001-spot-sma20-development-retry-002.json",
+      "sha256": "ff4f4ea8d1962b6d70fb07513614c4357fd88fa21f52401a4fe712848d5a68a6",
+      "size_bytes": 7187
+    }
+  },
+  "source_revision": {
+    "branch_ref": "main",
+    "captured_at_utc": "2026-08-24T03:15:31.499795Z",
+    "clean_worktree": true,
+    "git_commit": "e60c41b6533144df9eb6dfe55117cb0f3542978c",
+    "git_tree": "89b87a303caa44a7b27b979f42d3d80495fae33a",
+    "repository": "https://github.com/window92/nautilus-crypto-backtest-lab.git"
+  },
+  "status": "PASS",
+  "trial_id": "owner-smoke-002-replacement-001-spot-sma20-development-retry-002"
+}

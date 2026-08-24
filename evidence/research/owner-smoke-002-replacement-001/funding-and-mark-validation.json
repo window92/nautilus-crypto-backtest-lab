@@ -1,0 +1,17 @@
+{
+  "eligible_position_boundaries": 539,
+  "future_mark_used": false,
+  "interpolation_used": false,
+  "mark_age_ns_max": 46000000,
+  "mark_age_ns_min": 0,
+  "mark_binding": "LATEST_CAUSAL_AT_OR_BEFORE_FUNDING_TIMESTAMP",
+  "maximum_mark_staleness_ns": 60000000000,
+  "native_financial_settlements": 539,
+  "nearest_mark_used": false,
+  "no_position_boundaries": 97,
+  "runtime_update_pair_counted_as_two_settlements": false,
+  "runtime_updates": 1272,
+  "schema": "owner-smoke-002-replacement-funding-mark-v1",
+  "source_funding_events": 636,
+  "status": "PASS"
+}

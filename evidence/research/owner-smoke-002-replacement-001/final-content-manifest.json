@@ -1,0 +1,163 @@
+{
+  "catalog_payloads_committed": false,
+  "created_at_utc": "2026-08-24T03:58:04.168747Z",
+  "duckdb_payloads_committed": false,
+  "epoch": "OWNER_SMOKE_002_REPLACEMENT_001",
+  "file_count_excluding_manifest": 37,
+  "files": {
+    "baseline-attestation.json": {
+      "sha256": "05555858120ae5db4d3c00e7f7ae746ad60b758d8fdf0077869453514c9223f5",
+      "size_bytes": 1423
+    },
+    "charts/perpetual-drawdown.svg": {
+      "sha256": "8ce1eef96af2e7404d3522e2e63b4d9accd7de891098747a3f3a39132a4bb310",
+      "size_bytes": 3261
+    },
+    "charts/perpetual-equity.svg": {
+      "sha256": "3f5a3e4e5083ff0f457d575460d4a98e461fb9ba8fb1e51312f81855c7109389",
+      "size_bytes": 3233
+    },
+    "charts/perpetual-fees.svg": {
+      "sha256": "8e9cfa3c7c95f92d338ed6fabda951e01001101e108314f6a5c9b47fe07d82b2",
+      "size_bytes": 1575
+    },
+    "charts/perpetual-funding.svg": {
+      "sha256": "df507a71cc0f798439d881ee2ce27dddf91b69b6b802e18bf6cae98cddef9844",
+      "size_bytes": 8339
+    },
+    "charts/perpetual-position.svg": {
+      "sha256": "8cd2bc9ff4151986013dcda38ca843344b1114414879fd83fafae72393e2da98",
+      "size_bytes": 2328
+    },
+    "charts/spot-drawdown.svg": {
+      "sha256": "0a71197e957ea74bc01779737617250ac4f9271b55ef1adb97ea3cefc7b509d4",
+      "size_bytes": 3264
+    },
+    "charts/spot-equity.svg": {
+      "sha256": "df5c3e60f787dd8bcbd442ea59fc03695d5b18aed768d055abd1880dc7089e2c",
+      "size_bytes": 3164
+    },
+    "charts/spot-fees.svg": {
+      "sha256": "572adeb58170f1b00cb888fd3b92a20232841f69c154df164d68afee8f7177b1",
+      "size_bytes": 1191
+    },
+    "charts/spot-position.svg": {
+      "sha256": "fb22437d4c0813f1ba9b2084d5558c908d902bbd65d72812cd87c44d73be30ce",
+      "size_bytes": 1540
+    },
+    "charts/spot-vs-perpetual-equity.svg": {
+      "sha256": "4ec52199917cfc748ae1af586129d87fc6e7a2f78d12e8007717adb2156c8d30",
+      "size_bytes": 5727
+    },
+    "dataset-bindings.json": {
+      "sha256": "cf6e3a0dc11ed29b5363a62b6b78db858a773156ed3ebbf621e79e98f5e07ccd",
+      "size_bytes": 2240
+    },
+    "deterministic-replay.json": {
+      "sha256": "c9f49b9f52eecac8a760904cffcc1fddc7d76f85701005c1bca210ae066465ce",
+      "size_bytes": 1146
+    },
+    "deterministic-replay/README.md": {
+      "sha256": "6499a99d50f9a8df0ee96bc73026d69f45dfd7d40281cf8390e4d8710cff6256",
+      "size_bytes": 1100
+    },
+    "evidence-inventory.json": {
+      "sha256": "58482a4b5ea723aa252d5b7171b60ec62b17c3180fe020448d19b528468444a2",
+      "size_bytes": 24454
+    },
+    "failed-attempts.jsonl": {
+      "sha256": "4b6dc06f5ec6727b7131a4f6fa8b4aa375a47ae87b58bc35183b815f43b9748b",
+      "size_bytes": 1434
+    },
+    "funding-and-mark-validation.json": {
+      "sha256": "8ede3ae8e5b4646f7642cbadb73a61fe86f18bcd9a053d7f9aebdb61c6b4d62b",
+      "size_bytes": 565
+    },
+    "mechanical-integrity/README.md": {
+      "sha256": "e6ee5a5134c5d7fd4acb9c6eef8442fec59e1e310eb8ce15c06851dd0b0933ed",
+      "size_bytes": 1360
+    },
+    "offline-enforcement.json": {
+      "sha256": "2e87f14b1217b7abd731aa0e24bfa4ab5306f6bc965a244f5f5315ca6250dac6",
+      "size_bytes": 1691
+    },
+    "owner-authorization.json": {
+      "sha256": "7f94d2fd78220cee27d85ed389e13d639216faee9b1cbc9e93b1c6e46c222d91",
+      "size_bytes": 405
+    },
+    "owner-report/README.md": {
+      "sha256": "c3c241013b1dfe7ab07b65d334c15ea7b528f9e110cebbcdcf13dd22b030714a",
+      "size_bytes": 4329
+    },
+    "perpetual-report/README.md": {
+      "sha256": "e46eb3d393fc48e52c2081e75750fc5b74f40958dae79c730e0f6543d9e5079f",
+      "size_bytes": 2705
+    },
+    "perpetual/checker-result.json": {
+      "sha256": "1b44fb196a25eabb6f4b62d7f01e452c82171f0f94fb49d14e49ca6c2d86e0f6",
+      "size_bytes": 11843
+    },
+    "perpetual/metrics.json": {
+      "sha256": "60301a2bd45db87204e070853e94d7ea168c3afcea5ea73feba6b63ade9ec888",
+      "size_bytes": 1870
+    },
+    "perpetual/replay-result.json": {
+      "sha256": "6453737cbaa193606a0f9bbecd4d5a9b4df04cb7b675245a275ee46681d45bf2",
+      "size_bytes": 1988
+    },
+    "perpetual/run-result.json": {
+      "sha256": "aee9365d852d8c3aa412f2264135f06f38585243fec2581aff8166154a64aebe",
+      "size_bytes": 7877
+    },
+    "protocol.json": {
+      "sha256": "1b8d537f2b6334180f2f6dbc73963c343813484c715a38e96d04723ce4861342",
+      "size_bytes": 14164
+    },
+    "research-eligibility.json": {
+      "sha256": "74c752df32bd580c42ee16c0b1a68049a9028daea0d49b7b474803abd169a463",
+      "size_bytes": 460
+    },
+    "spot-report/README.md": {
+      "sha256": "2815a24c373ab7b5d438414a386baf1ce158aa1d240dcfb09aca37bced28faa2",
+      "size_bytes": 2270
+    },
+    "spot/checker-result.json": {
+      "sha256": "dc7558abe089fadb180c5cd7fba79e5e316d55595cba521ae5734f5da5539135",
+      "size_bytes": 10639
+    },
+    "spot/metrics.json": {
+      "sha256": "529a59332ed03681e94d3471b178c1339adf8f93d69d09926282087457ab2acd",
+      "size_bytes": 1948
+    },
+    "spot/replay-result.json": {
+      "sha256": "f4f259a0310fe4044613b970c77ddba8582c1802e8609cb7c972905329b7c117",
+      "size_bytes": 2008
+    },
+    "spot/run-result.json": {
+      "sha256": "49ef882aace5169237434656b16db1bdd36db0caf7030025b9bd3506f2297695",
+      "size_bytes": 7587
+    },
+    "strategy-identities.json": {
+      "sha256": "4587c855813da6ac44982a9649f2dea19d6bd45bb1ec51b6031e79c1a5dc69e3",
+      "size_bytes": 1624
+    },
+    "test-output.txt": {
+      "sha256": "cab0557b9782f9516527ab3fc9a29754f97153093c7bfea068bf91126fcda98a",
+      "size_bytes": 143627
+    },
+    "test-results.json": {
+      "sha256": "0fab612b6d0130e2bc604101ec5f23e5899a343a428d5fc0776bfe7d60fc6246",
+      "size_bytes": 137072
+    },
+    "trial-records.jsonl": {
+      "sha256": "5f05f8d755e0bbd46bc7a8804595cde0a358efb8645bfb548a99980bdbeb763e",
+      "size_bytes": 18712
+    }
+  },
+  "final_holdout_used": false,
+  "raw_archives_committed": false,
+  "real_profitability_claim": false,
+  "schema": "owner-smoke-002-replacement-final-content-manifest-v1",
+  "secrets_present": false,
+  "status": "PASS"
+}

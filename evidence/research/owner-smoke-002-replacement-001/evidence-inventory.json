@@ -1,0 +1,444 @@
+{
+  "catalog_payload_copied": false,
+  "duckdb_payload_copied": false,
+  "generated_entries": {
+    "baseline-attestation.json": {
+      "path": "evidence/research/owner-smoke-002-replacement-001/baseline-attestation.json",
+      "sha256": "05555858120ae5db4d3c00e7f7ae746ad60b758d8fdf0077869453514c9223f5",
+      "size_bytes": 1423
+    },
+    "charts/perpetual-drawdown.svg": {
+      "path": "evidence/research/owner-smoke-002-replacement-001/charts/perpetual-drawdown.svg",
+      "sha256": "8ce1eef96af2e7404d3522e2e63b4d9accd7de891098747a3f3a39132a4bb310",
+      "size_bytes": 3261
+    },
+    "charts/perpetual-equity.svg": {
+      "path": "evidence/research/owner-smoke-002-replacement-001/charts/perpetual-equity.svg",
+      "sha256": "3f5a3e4e5083ff0f457d575460d4a98e461fb9ba8fb1e51312f81855c7109389",
+      "size_bytes": 3233
+    },
+    "charts/perpetual-fees.svg": {
+      "path": "evidence/research/owner-smoke-002-replacement-001/charts/perpetual-fees.svg",
+      "sha256": "8e9cfa3c7c95f92d338ed6fabda951e01001101e108314f6a5c9b47fe07d82b2",
+      "size_bytes": 1575
+    },
+    "charts/perpetual-funding.svg": {
+      "path": "evidence/research/owner-smoke-002-replacement-001/charts/perpetual-funding.svg",
+      "sha256": "df507a71cc0f798439d881ee2ce27dddf91b69b6b802e18bf6cae98cddef9844",
+      "size_bytes": 8339
+    },
+    "charts/perpetual-position.svg": {
+      "path": "evidence/research/owner-smoke-002-replacement-001/charts/perpetual-position.svg",
+      "sha256": "8cd2bc9ff4151986013dcda38ca843344b1114414879fd83fafae72393e2da98",
+      "size_bytes": 2328
+    },
+    "charts/spot-drawdown.svg": {
+      "path": "evidence/research/owner-smoke-002-replacement-001/charts/spot-drawdown.svg",
+      "sha256": "0a71197e957ea74bc01779737617250ac4f9271b55ef1adb97ea3cefc7b509d4",
+      "size_bytes": 3264
+    },
+    "charts/spot-equity.svg": {
+      "path": "evidence/research/owner-smoke-002-replacement-001/charts/spot-equity.svg",
+      "sha256": "df5c3e60f787dd8bcbd442ea59fc03695d5b18aed768d055abd1880dc7089e2c",
+      "size_bytes": 3164
+    },
+    "charts/spot-fees.svg": {
+      "path": "evidence/research/owner-smoke-002-replacement-001/charts/spot-fees.svg",
+      "sha256": "572adeb58170f1b00cb888fd3b92a20232841f69c154df164d68afee8f7177b1",
+      "size_bytes": 1191
+    },
+    "charts/spot-position.svg": {
+      "path": "evidence/research/owner-smoke-002-replacement-001/charts/spot-position.svg",
+      "sha256": "fb22437d4c0813f1ba9b2084d5558c908d902bbd65d72812cd87c44d73be30ce",
+      "size_bytes": 1540
+    },
+    "charts/spot-vs-perpetual-equity.svg": {
+      "path": "evidence/research/owner-smoke-002-replacement-001/charts/spot-vs-perpetual-equity.svg",
+      "sha256": "4ec52199917cfc748ae1af586129d87fc6e7a2f78d12e8007717adb2156c8d30",
+      "size_bytes": 5727
+    },
+    "dataset-bindings.json": {
+      "path": "evidence/research/owner-smoke-002-replacement-001/dataset-bindings.json",
+      "sha256": "cf6e3a0dc11ed29b5363a62b6b78db858a773156ed3ebbf621e79e98f5e07ccd",
+      "size_bytes": 2240
+    },
+    "deterministic-replay.json": {
+      "path": "evidence/research/owner-smoke-002-replacement-001/deterministic-replay.json",
+      "sha256": "c9f49b9f52eecac8a760904cffcc1fddc7d76f85701005c1bca210ae066465ce",
+      "size_bytes": 1146
+    },
+    "deterministic-replay/README.md": {
+      "path": "evidence/research/owner-smoke-002-replacement-001/deterministic-replay/README.md",
+      "sha256": "6499a99d50f9a8df0ee96bc73026d69f45dfd7d40281cf8390e4d8710cff6256",
+      "size_bytes": 1100
+    },
+    "failed-attempts.jsonl": {
+      "path": "evidence/research/owner-smoke-002-replacement-001/failed-attempts.jsonl",
+      "sha256": "4b6dc06f5ec6727b7131a4f6fa8b4aa375a47ae87b58bc35183b815f43b9748b",
+      "size_bytes": 1434
+    },
+    "funding-and-mark-validation.json": {
+      "path": "evidence/research/owner-smoke-002-replacement-001/funding-and-mark-validation.json",
+      "sha256": "8ede3ae8e5b4646f7642cbadb73a61fe86f18bcd9a053d7f9aebdb61c6b4d62b",
+      "size_bytes": 565
+    },
+    "mechanical-integrity/README.md": {
+      "path": "evidence/research/owner-smoke-002-replacement-001/mechanical-integrity/README.md",
+      "sha256": "e6ee5a5134c5d7fd4acb9c6eef8442fec59e1e310eb8ce15c06851dd0b0933ed",
+      "size_bytes": 1360
+    },
+    "offline-enforcement.json": {
+      "path": "evidence/research/owner-smoke-002-replacement-001/offline-enforcement.json",
+      "sha256": "2e87f14b1217b7abd731aa0e24bfa4ab5306f6bc965a244f5f5315ca6250dac6",
+      "size_bytes": 1691
+    },
+    "owner-authorization.json": {
+      "path": "evidence/research/owner-smoke-002-replacement-001/owner-authorization.json",
+      "sha256": "7f94d2fd78220cee27d85ed389e13d639216faee9b1cbc9e93b1c6e46c222d91",
+      "size_bytes": 405
+    },
+    "owner-report/README.md": {
+      "path": "evidence/research/owner-smoke-002-replacement-001/owner-report/README.md",
+      "sha256": "c3c241013b1dfe7ab07b65d334c15ea7b528f9e110cebbcdcf13dd22b030714a",
+      "size_bytes": 4329
+    },
+    "perpetual-report/README.md": {
+      "path": "evidence/research/owner-smoke-002-replacement-001/perpetual-report/README.md",
+      "sha256": "e46eb3d393fc48e52c2081e75750fc5b74f40958dae79c730e0f6543d9e5079f",
+      "size_bytes": 2705
+    },
+    "perpetual/checker-result.json": {
+      "path": "evidence/research/owner-smoke-002-replacement-001/perpetual/checker-result.json",
+      "sha256": "1b44fb196a25eabb6f4b62d7f01e452c82171f0f94fb49d14e49ca6c2d86e0f6",
+      "size_bytes": 11843
+    },
+    "perpetual/metrics.json": {
+      "path": "evidence/research/owner-smoke-002-replacement-001/perpetual/metrics.json",
+      "sha256": "60301a2bd45db87204e070853e94d7ea168c3afcea5ea73feba6b63ade9ec888",
+      "size_bytes": 1870
+    },
+    "perpetual/replay-result.json": {
+      "path": "evidence/research/owner-smoke-002-replacement-001/perpetual/replay-result.json",
+      "sha256": "6453737cbaa193606a0f9bbecd4d5a9b4df04cb7b675245a275ee46681d45bf2",
+      "size_bytes": 1988
+    },
+    "perpetual/run-result.json": {
+      "path": "evidence/research/owner-smoke-002-replacement-001/perpetual/run-result.json",
+      "sha256": "aee9365d852d8c3aa412f2264135f06f38585243fec2581aff8166154a64aebe",
+      "size_bytes": 7877
+    },
+    "protocol.json": {
+      "path": "evidence/research/owner-smoke-002-replacement-001/protocol.json",
+      "sha256": "1b8d537f2b6334180f2f6dbc73963c343813484c715a38e96d04723ce4861342",
+      "size_bytes": 14164
+    },
+    "research-eligibility.json": {
+      "path": "evidence/research/owner-smoke-002-replacement-001/research-eligibility.json",
+      "sha256": "74c752df32bd580c42ee16c0b1a68049a9028daea0d49b7b474803abd169a463",
+      "size_bytes": 460
+    },
+    "spot-report/README.md": {
+      "path": "evidence/research/owner-smoke-002-replacement-001/spot-report/README.md",
+      "sha256": "2815a24c373ab7b5d438414a386baf1ce158aa1d240dcfb09aca37bced28faa2",
+      "size_bytes": 2270
+    },
+    "spot/checker-result.json": {
+      "path": "evidence/research/owner-smoke-002-replacement-001/spot/checker-result.json",
+      "sha256": "dc7558abe089fadb180c5cd7fba79e5e316d55595cba521ae5734f5da5539135",
+      "size_bytes": 10639
+    },
+    "spot/metrics.json": {
+      "path": "evidence/research/owner-smoke-002-replacement-001/spot/metrics.json",
+      "sha256": "529a59332ed03681e94d3471b178c1339adf8f93d69d09926282087457ab2acd",
+      "size_bytes": 1948
+    },
+    "spot/replay-result.json": {
+      "path": "evidence/research/owner-smoke-002-replacement-001/spot/replay-result.json",
+      "sha256": "f4f259a0310fe4044613b970c77ddba8582c1802e8609cb7c972905329b7c117",
+      "size_bytes": 2008
+    },
+    "spot/run-result.json": {
+      "path": "evidence/research/owner-smoke-002-replacement-001/spot/run-result.json",
+      "sha256": "49ef882aace5169237434656b16db1bdd36db0caf7030025b9bd3506f2297695",
+      "size_bytes": 7587
+    },
+    "strategy-identities.json": {
+      "path": "evidence/research/owner-smoke-002-replacement-001/strategy-identities.json",
+      "sha256": "4587c855813da6ac44982a9649f2dea19d6bd45bb1ec51b6031e79c1a5dc69e3",
+      "size_bytes": 1624
+    },
+    "test-output.txt": {
+      "path": "evidence/research/owner-smoke-002-replacement-001/test-output.txt",
+      "sha256": "cab0557b9782f9516527ab3fc9a29754f97153093c7bfea068bf91126fcda98a",
+      "size_bytes": 143627
+    },
+    "test-results.json": {
+      "path": "evidence/research/owner-smoke-002-replacement-001/test-results.json",
+      "sha256": "0fab612b6d0130e2bc604101ec5f23e5899a343a428d5fc0776bfe7d60fc6246",
+      "size_bytes": 137072
+    },
+    "trial-records.jsonl": {
+      "path": "evidence/research/owner-smoke-002-replacement-001/trial-records.jsonl",
+      "sha256": "5f05f8d755e0bbd46bc7a8804595cde0a358efb8645bfb548a99980bdbeb763e",
+      "size_bytes": 18712
+    }
+  },
+  "generated_inventory_identity": "a37bb11db940aa9a8acd64800acf08449f506c41c182a4d4d1b09baa569edd3c",
+  "inventory_self_excluded": true,
+  "raw_data_copied": false,
+  "schema": "owner-smoke-002-replacement-evidence-inventory-v1",
+  "source_entries": {
+    "evidence/repair/instrument-representation-funding-checker-001/catalog-identities.json": {
+      "path": "evidence/repair/instrument-representation-funding-checker-001/catalog-identities.json",
+      "sha256": "df708fa78055df8056b266e7596d15e0aabb433e1b5001cf1f584eef70e929b8",
+      "size_bytes": 733
+    },
+    "evidence/repair/instrument-representation-funding-checker-001/dataset-release-identities.json": {
+      "path": "evidence/repair/instrument-representation-funding-checker-001/dataset-release-identities.json",
+      "sha256": "9589d43fecf34b05f7f6b34a76ed7a0a501710591333f1123aa594615af1e63a",
+      "size_bytes": 1194
+    },
+    "evidence/repair/instrument-representation-funding-checker-001/full-nautilus-ingestion.json": {
+      "path": "evidence/repair/instrument-representation-funding-checker-001/full-nautilus-ingestion.json",
+      "sha256": "c534567146d4f0800f51e3fbebbc54d9d32e2829aca0eb1af5bc3693c02f4f75",
+      "size_bytes": 11542
+    },
+    "evidence/repair/instrument-representation-funding-checker-001/funding-runtime-binding.json": {
+      "path": "evidence/repair/instrument-representation-funding-checker-001/funding-runtime-binding.json",
+      "sha256": "1f0192f683ab7305afd5113bd75f82edad45a8bd5991358ca68c8b70873c2ca2",
+      "size_bytes": 708
+    },
+    "evidence/repair/instrument-representation-funding-checker-001/value-continuity.json": {
+      "path": "evidence/repair/instrument-representation-funding-checker-001/value-continuity.json",
+      "sha256": "81d3da07c7f9996a3cc8b7b0f05e15c22a8d17bc455cfddc90f283fb2896094b",
+      "size_bytes": 8506
+    },
+    "research/history_anchors.jsonl": {
+      "path": "research/history_anchors.jsonl",
+      "sha256": "7749116665604a602e9103b19fd8d26eaf1ddc7367b03bf847437c72893e6afc",
+      "size_bytes": 13029
+    },
+    "research/holdout_lock.json": {
+      "path": "research/holdout_lock.json",
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "size_bytes": 3
+    },
+    "research/performance/owner-smoke-002-replacement-001-perpetual-run.json": {
+      "path": "research/performance/owner-smoke-002-replacement-001-perpetual-run.json",
+      "sha256": "e04028c14b20092c4d6ce06c9bf1926888241b1388933d72781c7ad7efa6d211",
+      "size_bytes": 27897
+    },
+    "research/performance/owner-smoke-002-replacement-001-spot-run-retry-002.json": {
+      "path": "research/performance/owner-smoke-002-replacement-001-spot-run-retry-002.json",
+      "sha256": "d05549fa2207aab2831c9a85ef74074fb96c88cf6efc10cc9cef2cbdbe1ec40a",
+      "size_bytes": 27783
+    },
+    "research/protocols/4734d273510a80fffead77e81e1a96507162b6db98ac16c000966ffc63b0403b.json": {
+      "path": "research/protocols/4734d273510a80fffead77e81e1a96507162b6db98ac16c000966ffc63b0403b.json",
+      "sha256": "f2e5f9cfeca35eadcab831f2c30a709e84c4d2be146d9d24a986d3c1b91c74ae",
+      "size_bytes": 4972
+    },
+    "research/protocols/abcc94723ba95eb9ab36bd6acb4b62d6a22d9f881f2ee7046ba57bc1d471cdc5.json": {
+      "path": "research/protocols/abcc94723ba95eb9ab36bd6acb4b62d6a22d9f881f2ee7046ba57bc1d471cdc5.json",
+      "sha256": "8cff0bdafd150df1a4b3b6116a7b7fdbcce091d61802f446814083a33731d150",
+      "size_bytes": 4811
+    },
+    "research/replays/owner-smoke-002-replacement-001-perpetual-sma20-development.json": {
+      "path": "research/replays/owner-smoke-002-replacement-001-perpetual-sma20-development.json",
+      "sha256": "d5e842fddb910e66c3115c71e9870752817d3b20389c86a9a108e9c967cd2acb",
+      "size_bytes": 1514
+    },
+    "research/replays/owner-smoke-002-replacement-001-spot-sma20-development-retry-002.json": {
+      "path": "research/replays/owner-smoke-002-replacement-001-spot-sma20-development-retry-002.json",
+      "sha256": "877a19c5086ceb005fdaa8aeb0e438bcf39989a3f7664a3e0a85fd8a24086ca1",
+      "size_bytes": 1534
+    },
+    "research/reports/owner-smoke-002-replacement-001-perpetual-sma20-development.json": {
+      "path": "research/reports/owner-smoke-002-replacement-001-perpetual-sma20-development.json",
+      "sha256": "119ea4d2a5b0bae96270d5f9c0c336c4de682338c98f6b96a3ce39de3eaf14f2",
+      "size_bytes": 34286
+    },
+    "research/reports/owner-smoke-002-replacement-001-spot-sma20-development-retry-002.json": {
+      "path": "research/reports/owner-smoke-002-replacement-001-spot-sma20-development-retry-002.json",
+      "sha256": "b5a0e6b2d13c4ab719b4fc4862ef303636d36c8bc7f12d78ba9d72f9ac6b447c",
+      "size_bytes": 34983
+    },
+    "research/trials.jsonl": {
+      "path": "research/trials.jsonl",
+      "sha256": "08480526b0003fb6b3f2ee03f9b8ca7576b9a572f360bdd6deeae6b939f470a1",
+      "size_bytes": 32206
+    },
+    "research/workflows/owner-smoke-002-replacement-001-perpetual-sma20-development.json": {
+      "path": "research/workflows/owner-smoke-002-replacement-001-perpetual-sma20-development.json",
+      "sha256": "b2f870f9bef1d3b9c9998791568f0ced92dbd9fb9b2dfb601717c5690d1edf6e",
+      "size_bytes": 7103
+    },
+    "research/workflows/owner-smoke-002-replacement-001-spot-sma20-development-retry-002.json": {
+      "path": "research/workflows/owner-smoke-002-replacement-001-spot-sma20-development-retry-002.json",
+      "sha256": "ff4f4ea8d1962b6d70fb07513614c4357fd88fa21f52401a4fe712848d5a68a6",
+      "size_bytes": 7187
+    },
+    "runs/owner-smoke-002-replacement-001-perpetual-run-1959c892b218/account.csv": {
+      "path": "runs/owner-smoke-002-replacement-001-perpetual-run-1959c892b218/account.csv",
+      "sha256": "bb1ff35caa08cb5f58c88a91a2305d220e5ec4842575196347dd6ad4b59d6297",
+      "size_bytes": 106898
+    },
+    "runs/owner-smoke-002-replacement-001-perpetual-run-1959c892b218/checker.json": {
+      "path": "runs/owner-smoke-002-replacement-001-perpetual-run-1959c892b218/checker.json",
+      "sha256": "dbf5917058af064c0e2a87db3cb663c422e40d3fe4499a618d1443a09b6a48ed",
+      "size_bytes": 7416
+    },
+    "runs/owner-smoke-002-replacement-001-perpetual-run-1959c892b218/dataset_release.json": {
+      "path": "runs/owner-smoke-002-replacement-001-perpetual-run-1959c892b218/dataset_release.json",
+      "sha256": "2af6367a93a4a7c0d14bed4041f23ce088f55441c922692aa0949d5e11381279",
+      "size_bytes": 16581
+    },
+    "runs/owner-smoke-002-replacement-001-perpetual-run-1959c892b218/evidence_manifest.json": {
+      "path": "runs/owner-smoke-002-replacement-001-perpetual-run-1959c892b218/evidence_manifest.json",
+      "sha256": "beaaa9c4973936341db427d5187e908632980c3dcd3bbc28e674188ef0f873e9",
+      "size_bytes": 2948
+    },
+    "runs/owner-smoke-002-replacement-001-perpetual-run-1959c892b218/fills.csv": {
+      "path": "runs/owner-smoke-002-replacement-001-perpetual-run-1959c892b218/fills.csv",
+      "sha256": "a4426fc800769e0856ba6488e73a7547cb2ec00f2ee5532296c403d4d55c862d",
+      "size_bytes": 16634
+    },
+    "runs/owner-smoke-002-replacement-001-perpetual-run-1959c892b218/funding.csv": {
+      "path": "runs/owner-smoke-002-replacement-001-perpetual-run-1959c892b218/funding.csv",
+      "sha256": "480249b2ba697b1d9875aadd207cf8b311dfc6e950e62ae4e2c72a6601b804cb",
+      "size_bytes": 66141
+    },
+    "runs/owner-smoke-002-replacement-001-perpetual-run-1959c892b218/funding_source.json": {
+      "path": "runs/owner-smoke-002-replacement-001-perpetual-run-1959c892b218/funding_source.json",
+      "sha256": "ad62b3da8ed373418c173f976e088f146446584fcfb057eb8498d233f0e72a92",
+      "size_bytes": 133037
+    },
+    "runs/owner-smoke-002-replacement-001-perpetual-run-1959c892b218/instrument_metadata.json": {
+      "path": "runs/owner-smoke-002-replacement-001-perpetual-run-1959c892b218/instrument_metadata.json",
+      "sha256": "7208dc194d57c93e80cd7d32557524728d4ad0e5dec09acf9b1ec3d4f0ca5c00",
+      "size_bytes": 4056
+    },
+    "runs/owner-smoke-002-replacement-001-perpetual-run-1959c892b218/lab_run_config.json": {
+      "path": "runs/owner-smoke-002-replacement-001-perpetual-run-1959c892b218/lab_run_config.json",
+      "sha256": "f3685ba571faffe455a8476e4ff717b9eab5fd908366920d6560299a2b895814",
+      "size_bytes": 6200
+    },
+    "runs/owner-smoke-002-replacement-001-perpetual-run-1959c892b218/native_completed_trades.json": {
+      "path": "runs/owner-smoke-002-replacement-001-perpetual-run-1959c892b218/native_completed_trades.json",
+      "sha256": "2b21bc59be64b37ba510b15e7adf09a13b9cf875652bb231c65ae19904993116",
+      "size_bytes": 449
+    },
+    "runs/owner-smoke-002-replacement-001-perpetual-run-1959c892b218/native_statistics.json": {
+      "path": "runs/owner-smoke-002-replacement-001-perpetual-run-1959c892b218/native_statistics.json",
+      "sha256": "c13128c8681de0b02a6bc77dcdc1e7d46178d45727c62a95deeef95cb2f3be68",
+      "size_bytes": 14271
+    },
+    "runs/owner-smoke-002-replacement-001-perpetual-run-1959c892b218/nautilus_result.json": {
+      "path": "runs/owner-smoke-002-replacement-001-perpetual-run-1959c892b218/nautilus_result.json",
+      "sha256": "da55a9faec340adb29fdb0728dc36989c2185c5b83fd06252d173bb0afb064c7",
+      "size_bytes": 2827937
+    },
+    "runs/owner-smoke-002-replacement-001-perpetual-run-1959c892b218/orders.csv": {
+      "path": "runs/owner-smoke-002-replacement-001-perpetual-run-1959c892b218/orders.csv",
+      "sha256": "46d1031e760fe7a20d8e20726fd8371b1b68e39ae6b09596ef38e7584300f972",
+      "size_bytes": 7953
+    },
+    "runs/owner-smoke-002-replacement-001-perpetual-run-1959c892b218/positions.csv": {
+      "path": "runs/owner-smoke-002-replacement-001-perpetual-run-1959c892b218/positions.csv",
+      "sha256": "a820f58ce146d88ee36740a57a035f7a0b7e9ae5632f5d788355ac91d9bd92fa",
+      "size_bytes": 5110
+    },
+    "runs/owner-smoke-002-replacement-001-perpetual-run-1959c892b218/source_revision.json": {
+      "path": "runs/owner-smoke-002-replacement-001-perpetual-run-1959c892b218/source_revision.json",
+      "sha256": "dd4f56697e6c5aa6aacd1e4ca3d641962f2b9e393a5125b297972c0fdceb332f",
+      "size_bytes": 278
+    },
+    "runs/owner-smoke-002-replacement-001-perpetual-run-1959c892b218/status.json": {
+      "path": "runs/owner-smoke-002-replacement-001-perpetual-run-1959c892b218/status.json",
+      "sha256": "b60229a4d9359742b193d96a8d11328a0c3667e4fd5f73aa61c7c1c9c7c8a2f5",
+      "size_bytes": 157
+    },
+    "runs/owner-smoke-002-replacement-001-perpetual-run-1959c892b218/strategy_identity.json": {
+      "path": "runs/owner-smoke-002-replacement-001-perpetual-run-1959c892b218/strategy_identity.json",
+      "sha256": "9869d34cc02e2f9fd66111e40cc6917c8d25dcf8dadf2f99062ed537b1b962a4",
+      "size_bytes": 2294
+    },
+    "runs/owner-smoke-002-replacement-001-spot-run-retry-002-b25302d138b2/account.csv": {
+      "path": "runs/owner-smoke-002-replacement-001-spot-run-retry-002-b25302d138b2/account.csv",
+      "sha256": "aa225dd810b7448cf26e8c01615b19b5aac1f52b6692daf813b406ce9895f99d",
+      "size_bytes": 4836
+    },
+    "runs/owner-smoke-002-replacement-001-spot-run-retry-002-b25302d138b2/checker.json": {
+      "path": "runs/owner-smoke-002-replacement-001-spot-run-retry-002-b25302d138b2/checker.json",
+      "sha256": "afd3c4ab541539dac911c3c7a32fa881a53e029c229740dd2f118cd56fd5b4f7",
+      "size_bytes": 6566
+    },
+    "runs/owner-smoke-002-replacement-001-spot-run-retry-002-b25302d138b2/dataset_release.json": {
+      "path": "runs/owner-smoke-002-replacement-001-spot-run-retry-002-b25302d138b2/dataset_release.json",
+      "sha256": "ae609c85a06b8eeffc0ee8ae310b5532b14e9209913b4bee6e6086b750af84b7",
+      "size_bytes": 7054
+    },
+    "runs/owner-smoke-002-replacement-001-spot-run-retry-002-b25302d138b2/evidence_manifest.json": {
+      "path": "runs/owner-smoke-002-replacement-001-spot-run-retry-002-b25302d138b2/evidence_manifest.json",
+      "sha256": "9d9b8c24aeb4667c6334f094e1d453ee698ca27af3e06893b5fb316269b7e903",
+      "size_bytes": 2704
+    },
+    "runs/owner-smoke-002-replacement-001-spot-run-retry-002-b25302d138b2/fills.csv": {
+      "path": "runs/owner-smoke-002-replacement-001-spot-run-retry-002-b25302d138b2/fills.csv",
+      "sha256": "92790024c9a076ba48ca7e74be04e1d58fed58dc3cb4bad454ccd63bf95b3b83",
+      "size_bytes": 7896
+    },
+    "runs/owner-smoke-002-replacement-001-spot-run-retry-002-b25302d138b2/instrument_metadata.json": {
+      "path": "runs/owner-smoke-002-replacement-001-spot-run-retry-002-b25302d138b2/instrument_metadata.json",
+      "sha256": "a40ea9516910452af3f57938907a5c9877bf5587f3a17ab2a8091a2c0dd119c5",
+      "size_bytes": 8061
+    },
+    "runs/owner-smoke-002-replacement-001-spot-run-retry-002-b25302d138b2/lab_run_config.json": {
+      "path": "runs/owner-smoke-002-replacement-001-spot-run-retry-002-b25302d138b2/lab_run_config.json",
+      "sha256": "fbfe347d22dd4c4342061edd7c99ff7a8380ff9cb9256308160561c50d1137de",
+      "size_bytes": 6011
+    },
+    "runs/owner-smoke-002-replacement-001-spot-run-retry-002-b25302d138b2/native_completed_trades.json": {
+      "path": "runs/owner-smoke-002-replacement-001-spot-run-retry-002-b25302d138b2/native_completed_trades.json",
+      "sha256": "14ccc1e30928583e09bdaf5aee0d02f2a6fc4ccfcd7570b09a035a0c65ac20ee",
+      "size_bytes": 454
+    },
+    "runs/owner-smoke-002-replacement-001-spot-run-retry-002-b25302d138b2/native_statistics.json": {
+      "path": "runs/owner-smoke-002-replacement-001-spot-run-retry-002-b25302d138b2/native_statistics.json",
+      "sha256": "860cd272e7adbccf65ecccd6162ba2394f8f75d3d6654c78a9e92f09b48c8644",
+      "size_bytes": 1844
+    },
+    "runs/owner-smoke-002-replacement-001-spot-run-retry-002-b25302d138b2/nautilus_result.json": {
+      "path": "runs/owner-smoke-002-replacement-001-spot-run-retry-002-b25302d138b2/nautilus_result.json",
+      "sha256": "364771d0056437900668edc968ebb633a6575e6d7285fc1cf1bbe863c7fbfb98",
+      "size_bytes": 243472
+    },
+    "runs/owner-smoke-002-replacement-001-spot-run-retry-002-b25302d138b2/orders.csv": {
+      "path": "runs/owner-smoke-002-replacement-001-spot-run-retry-002-b25302d138b2/orders.csv",
+      "sha256": "1087575a7feb669ceaeaafe5a579f0157603354ca9933ca3ec4889d5779d55a5",
+      "size_bytes": 4071
+    },
+    "runs/owner-smoke-002-replacement-001-spot-run-retry-002-b25302d138b2/positions.csv": {
+      "path": "runs/owner-smoke-002-replacement-001-spot-run-retry-002-b25302d138b2/positions.csv",
+      "sha256": "f6ff816c61872a1fce886fcbaaae6f92bceb68dd91b217e7e7be38f7c70bbd8c",
+      "size_bytes": 2458
+    },
+    "runs/owner-smoke-002-replacement-001-spot-run-retry-002-b25302d138b2/source_revision.json": {
+      "path": "runs/owner-smoke-002-replacement-001-spot-run-retry-002-b25302d138b2/source_revision.json",
+      "sha256": "db01ff7c8d12e4a6cca30d3b53f02b6125005e5b44b26b0ba8def5df8cd5e631",
+      "size_bytes": 278
+    },
+    "runs/owner-smoke-002-replacement-001-spot-run-retry-002-b25302d138b2/status.json": {
+      "path": "runs/owner-smoke-002-replacement-001-spot-run-retry-002-b25302d138b2/status.json",
+      "sha256": "b8973e91a004c12fe50ce2915e0c80c39567f04065496d82c4f4fa35179d3d58",
+      "size_bytes": 162
+    },
+    "runs/owner-smoke-002-replacement-001-spot-run-retry-002-b25302d138b2/strategy_identity.json": {
+      "path": "runs/owner-smoke-002-replacement-001-spot-run-retry-002-b25302d138b2/strategy_identity.json",
+      "sha256": "56d0c244ab14ab4409c9ad47e45a5908d002b920cb11169665ad4b639dce5056",
+      "size_bytes": 2207
+    }
+  },
+  "source_inventory_identity": "05405f894b9af007bf4da3639b77c88a2889255c53989ff1461a1e8866b19098",
+  "status": "PASS"
+}

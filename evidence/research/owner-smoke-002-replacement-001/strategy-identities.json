@@ -1,0 +1,39 @@
+{
+  "profiles": {
+    "perpetual": {
+      "binding": {
+        "path": "runs/owner-smoke-002-replacement-001-perpetual-run-1959c892b218/strategy_identity.json",
+        "sha256": "9869d34cc02e2f9fd66111e40cc6917c8d25dcf8dadf2f99062ed537b1b962a4",
+        "size_bytes": 2294
+      },
+      "source_revision": {
+        "branch_ref": "main",
+        "captured_at_utc": "2026-08-24T03:20:04.653262Z",
+        "clean_worktree": true,
+        "git_commit": "88c8a38acd0654d3781d8be8b6427af040b71da1",
+        "git_tree": "001418f36b81a27aa4665607a946ff6d3c6e9432",
+        "repository": "https://github.com/window92/nautilus-crypto-backtest-lab.git"
+      },
+      "strategy_identity": "6493e4e80528ea818ba6f0d9f7841d957349cc188576eea97a6d50e3b94492f9"
+    },
+    "spot": {
+      "binding": {
+        "path": "runs/owner-smoke-002-replacement-001-spot-run-retry-002-b25302d138b2/strategy_identity.json",
+        "sha256": "56d0c244ab14ab4409c9ad47e45a5908d002b920cb11169665ad4b639dce5056",
+        "size_bytes": 2207
+      },
+      "source_revision": {
+        "branch_ref": "main",
+        "captured_at_utc": "2026-08-24T03:15:31.499795Z",
+        "clean_worktree": true,
+        "git_commit": "e60c41b6533144df9eb6dfe55117cb0f3542978c",
+        "git_tree": "89b87a303caa44a7b27b979f42d3d80495fae33a",
+        "repository": "https://github.com/window92/nautilus-crypto-backtest-lab.git"
+      },
+      "strategy_identity": "36a8da3b30f72b20872d12f1556ee6c2b0776c61a2685a05733094970bd96fca"
+    }
+  },
+  "schema": "owner-smoke-002-replacement-strategy-identities-v1",
+  "status": "PASS",
+  "strategy_semantics_changed": false
+}

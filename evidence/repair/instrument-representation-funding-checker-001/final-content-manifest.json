@@ -3,7 +3,7 @@
   "created_at_utc": "2026-08-23T22:57:32.437421Z",
   "duckdb_payloads_committed": false,
   "epoch": "NAUTILUS_INSTRUMENT_REPRESENTATION_AND_FUNDING_CHECKER_REPAIR_001",
-  "file_count_excluding_manifest": 20,
+  "file_count_excluding_manifest": 21,
   "files": {
     "baseline-attestation.json": {
       "sha256": "b03c6dae41f915f616e0450bac3b14deb96572d6c6bc2a9d83780c4875b2d98f",
@@ -30,8 +30,8 @@
       "size_bytes": 17943
     },
     "failed-attempts.jsonl": {
-      "sha256": "ca54e3f182414a2b9093604be12340f4e10e85ca78839366da9b62636d4d9b3f",
-      "size_bytes": 1664
+      "sha256": "12840e5545b59a54a6bfc084307b43211fcd2f8ee6629215fb89287f5d44f858",
+      "size_bytes": 3038
     },
     "full-nautilus-ingestion.json": {
       "sha256": "c534567146d4f0800f51e3fbebbc54d9d32e2829aca0eb1af5bc3693c02f4f75",
@@ -54,12 +54,16 @@
       "size_bytes": 3470
     },
     "owner-report/README.md": {
-      "sha256": "87c4685d3fd912fbafb4d46fb1b0682f5898d0b8ccf47ab38961c2bc09ce526d",
-      "size_bytes": 6065
+      "sha256": "885ee12b145b0749d763a151ce6f7a9991bb29f395deeac8f30c93a1799c39a6",
+      "size_bytes": 6578
     },
     "pinned-nautilus-precision-contract.json": {
       "sha256": "8b8b6f45aa47a3e2d234da907ccd9b629cf83da899ac726112225bf2e68ffac8",
       "size_bytes": 2312
+    },
+    "replacement-owner-smoke-validation.json": {
+      "sha256": "74e60b5da267dcce2271b7a8cb54005acea0798a2ac3c2d90560e6454718b0c1",
+      "size_bytes": 1363
     },
     "representation-vs-order-grid.json": {
       "sha256": "daa0c2790c60422622f219246a660cdad75118ee20bdc8e2ee91dbd9a1ff7276",
@@ -74,19 +78,21 @@
       "size_bytes": 14624
     },
     "test-output.txt": {
-      "sha256": "3a924926cca73bd010e3318cf58fdae7c398869f81b76d37c0913b0e20630c78",
-      "size_bytes": 140889
+      "sha256": "cab0557b9782f9516527ab3fc9a29754f97153093c7bfea068bf91126fcda98a",
+      "size_bytes": 143627
     },
     "test-results.json": {
-      "sha256": "b24cdefbb05b205af0d977da06c4f54ed2d62fc95448dc9953472c439b8f54f9",
-      "size_bytes": 135384
+      "sha256": "0fab612b6d0130e2bc604101ec5f23e5899a343a428d5fc0776bfe7d60fc6246",
+      "size_bytes": 137072
     },
     "value-continuity.json": {
       "sha256": "81d3da07c7f9996a3cc8b7b0f05e15c22a8d17bc455cfddc90f283fb2896094b",
       "size_bytes": 8506
     }
   },
+  "finalized_at_utc": "2026-08-24T04:01:46.168765Z",
   "raw_archives_committed": false,
+  "replacement_owner_smoke_status": "PASS",
   "schema": "instrument-repair-final-content-manifest-v1",
   "secrets_present": false,
   "status": "PASS"

@@ -1,0 +1,12 @@
+{
+  "claim_eligibility": "INELIGIBLE_FOR_REAL_PROFITABILITY_CLAIM",
+  "data_window_classification": "DATA_QUALITY_INSPECTED_NOT_FINAL_HOLDOUT",
+  "final_holdout_used": false,
+  "optimization_performed": false,
+  "parameter_search_performed": false,
+  "partition_role": "DEVELOPMENT",
+  "purpose": "EXPLORATORY_OPERATIONAL_VALIDATION",
+  "real_profitability_claim": false,
+  "schema": "owner-smoke-002-replacement-research-eligibility-v1",
+  "status": "PASS"
+}
