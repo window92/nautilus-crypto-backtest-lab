@@ -26,10 +26,20 @@ def _claim_addendum(profile: MarketProfile, *, retry_sequence: int) -> str:
         if profile is MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY
         else "owner-smoke-002-perpetual-sma20-development"
     )
-    replacement_failure = (
-        f",{EPOCH_ID}-{'spot' if profile is MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY else 'perpetual'}-"
-        "sma20-development"
+    suffix = "spot" if profile is MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY else "perpetual"
+    replacement_base = f"{EPOCH_ID}-{suffix}-sma20-development"
+    replacement_attempts = (
+        [replacement_base]
+        + [
+            f"{replacement_base}-retry-{index:03d}"
+            for index in range(1, retry_sequence)
+        ]
         if retry_sequence > 0
+        else []
+    )
+    replacement_failure = (
+        "," + ",".join(replacement_attempts)
+        if replacement_attempts
         else ""
     )
     return (

@@ -390,6 +390,39 @@ class ReplacementWorkflowInputTests(unittest.TestCase):
             self.assertEqual(payload["scoring_start"], "2021-02-01T00:00:00Z")
             self.assertEqual(payload["scoring_end_exclusive"], "2021-08-01T00:00:00Z")
 
+    def test_replacement_retry_lists_every_retained_predecessor(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            process = subprocess.run(
+                [
+                    sys.executable,
+                    str(ROOT / "scripts/generate_owner_smoke_002_replacement_inputs.py"),
+                    "--frozen-at-utc",
+                    "2026-08-24T00:00:00Z",
+                    "--retry-sequence",
+                    "2",
+                    "--output-dir",
+                    str(Path(directory) / "inputs"),
+                ],
+                cwd=ROOT,
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(process.returncode, 0, process.stderr)
+            spot = json.loads(
+                (
+                    Path(directory)
+                    / "inputs"
+                    / "owner-smoke-002-replacement-001-spot-sma20-development-retry-002.json"
+                ).read_text(encoding="utf-8"),
+            )
+        claim = spot["protocol"]["claim_basis"]
+        self.assertIn("owner-smoke-002-replacement-001-spot-sma20-development", claim)
+        self.assertIn(
+            "owner-smoke-002-replacement-001-spot-sma20-development-retry-001",
+            claim,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
