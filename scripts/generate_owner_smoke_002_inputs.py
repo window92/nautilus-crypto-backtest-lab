@@ -65,12 +65,17 @@ def _profile_record_id(profile: MarketProfile) -> str:
     return record.qualified_profile_record_id
 
 
-def _workflow(
+def build_owner_smoke_workflow(
     *,
     frozen_at_utc: datetime,
     profile: MarketProfile,
     release_id: str,
     retry_sequence: int,
+    epoch_id: str = "owner-smoke-002",
+    instrument_selection_basis: str = (
+        "OWNER_SMOKE_002_VERIFIED_DATA_EXECUTION locked BTCUSDT profile"
+    ),
+    claim_addendum: str = "",
 ) -> OwnerWorkflowInput:
     release = DatasetRelease.from_json_bytes(
         (ROOT / "data/releases" / f"{release_id}.json").read_bytes(),
@@ -94,7 +99,7 @@ def _workflow(
     )
     protocol = ResearchProtocol.create(
         frozen_at_utc=frozen_at_utc,
-        research_family_id=f"owner-smoke-002-{suffix}-daily-price-vs-sma20",
+        research_family_id=f"{epoch_id}-{suffix}-daily-price-vs-sma20",
         hypothesis_id=(
             "verified-data-causal-reproducible-owner-workflow-price-vs-sma20-"
             f"{suffix}-not-profitability"
@@ -103,9 +108,7 @@ def _workflow(
         market_profile=profile,
         instrument_scope=InstrumentScope.SINGLE_INSTRUMENT,
         instrument_ids=(release.instrument_id,),
-        instrument_selection_basis=(
-            "OWNER_SMOKE_002_VERIFIED_DATA_EXECUTION locked BTCUSDT profile"
-        ),
+        instrument_selection_basis=instrument_selection_basis,
         universe_selection_rule=NOT_APPLICABLE,
         universe_as_of_rule=NOT_APPLICABLE,
         universe_membership_sha256=NOT_APPLICABLE,
@@ -173,6 +176,7 @@ def _workflow(
                 else "; MECHANICAL_RETRY_AFTER_RETAINED_PRODUCT_DEFECT_"
                 f"{retry_sequence:03d}; NO_PARAMETER_OR_DATA_CHANGE"
             )
+            + claim_addendum
         ),
         kill_criteria=(
             "MECHANICAL_INTEGRITY_NOT_PASS",
@@ -186,9 +190,9 @@ def _workflow(
         schema_version=1,
         workflow_purpose=OwnerWorkflowPurpose.OWNER_STUDY,
         protocol=protocol,
-        trial_id=f"owner-smoke-002-{suffix}-sma20-development{retry_suffix}",
+        trial_id=f"{epoch_id}-{suffix}-sma20-development{retry_suffix}",
         candidate_id=candidate.candidate_id,
-        run_id=f"owner-smoke-002-{suffix}-run{retry_suffix}",
+        run_id=f"{epoch_id}-{suffix}-run{retry_suffix}",
         registered_strategy_id=REGISTRATION_ID,
         strategy_spec=spec,
         dataset_release_id=release.dataset_release_id,
@@ -215,7 +219,7 @@ def _workflow(
         < release.normalized_time_range.end_exclusive
     ):
         raise RuntimeError(
-            "OWNER_SMOKE_002 must execute DEVELOPMENT only; its required structural "
+            f"{epoch_id} must execute DEVELOPMENT only; its required structural "
             "Final Holdout declaration must remain outside the DatasetRelease and unused",
         )
     return workflow
@@ -235,13 +239,13 @@ def main() -> int:
     output = args.output_dir.resolve()
     output.mkdir(parents=True, exist_ok=False)
     values = (
-        _workflow(
+        build_owner_smoke_workflow(
             frozen_at_utc=frozen,
             profile=MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY,
             release_id=SPOT_RELEASE_ID,
             retry_sequence=args.retry_sequence,
         ),
-        _workflow(
+        build_owner_smoke_workflow(
             frozen_at_utc=frozen,
             profile=MarketProfile.BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING,
             release_id=PERPETUAL_RELEASE_ID,

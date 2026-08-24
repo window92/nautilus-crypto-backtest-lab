@@ -2,6 +2,10 @@ from __future__ import annotations
 
 import ast
 import copy
+import json
+import subprocess
+import sys
+import tempfile
 import unittest
 from decimal import Decimal
 from pathlib import Path
@@ -306,6 +310,49 @@ class HistoricalCheckerRegressionTests(unittest.TestCase):
         self.assertIn(FailureCode.CAUSAL_EXECUTION_UNRESOLVED.value, report.failure_codes)
         check = next(item for item in report.checks if item["name"] == "orders_reach_executable_market_state")
         self.assertEqual(check["no_market_rejection_count"], 89)
+
+
+class ReplacementWorkflowInputTests(unittest.TestCase):
+    def test_replacement_inputs_lock_new_releases_and_supersession(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            process = subprocess.run(
+                [
+                    sys.executable,
+                    str(ROOT / "scripts/generate_owner_smoke_002_replacement_inputs.py"),
+                    "--frozen-at-utc",
+                    "2026-08-24T00:00:00Z",
+                    "--output-dir",
+                    str(Path(directory) / "inputs"),
+                ],
+                cwd=ROOT,
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(process.returncode, 0, process.stderr)
+            payloads = [
+                json.loads(path.read_text(encoding="utf-8"))
+                for path in sorted((Path(directory) / "inputs").glob("*.json"))
+            ]
+        self.assertEqual(len(payloads), 2)
+        self.assertEqual(
+            {item["dataset_release_id"] for item in payloads},
+            {
+                "fd8542c109cfbf7d6b19d5b7bbb7705c6a161efc807695f3671978c381e34eca",
+                "b6c8f5d659f3441c924b613d770342796c90b90a970f42a3dc8227c856198917",
+            },
+        )
+        for payload in payloads:
+            claim = payload["protocol"]["claim_basis"]
+            self.assertIn("SUPERSEDES_FAILED_TRIALS=", claim)
+            self.assertIn(
+                "SUPERSESSION_REASON=INSTRUMENT_REPRESENTATION_PREVENTED_EXECUTABLE_MARKET_STATE",
+                claim,
+            )
+            self.assertIn("NO_CANONICAL_MARKET_VALUE_CHANGE", claim)
+            self.assertEqual(payload["partition_role"], "DEVELOPMENT")
+            self.assertEqual(payload["scoring_start"], "2021-02-01T00:00:00Z")
+            self.assertEqual(payload["scoring_end_exclusive"], "2021-08-01T00:00:00Z")
 
 
 if __name__ == "__main__":
