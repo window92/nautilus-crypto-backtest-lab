@@ -616,7 +616,7 @@ def main() -> int:
 
 ## إعادة البناء والاختبارات
 
-البناءان المستقلان متطابقان دلاليًا رغم اختلاف file hash الفيزيائي المتوقع. بوابة القبول: 264 اختبارًا فريدًا، 944 execution occurrence، failures=0، errors=0، skips=0، xfail=0. نجحت runtime preflight وpip checks وcompileall وraw rehash وgit diff check.
+البناءان المستقلان متطابقان دلاليًا رغم اختلاف file hash الفيزيائي المتوقع. بوابة القبول: {acceptance['unique_tests']} اختبارًا فريدًا، {acceptance['test_execution_occurrences']} execution occurrence، failures=0، errors=0، skips=0، xfail=0. نجحت runtime preflight وpip checks وcompileall وraw rehash وgit diff check.
 
 ## الخطوة التالية
 

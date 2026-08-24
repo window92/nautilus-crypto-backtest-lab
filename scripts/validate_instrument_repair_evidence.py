@@ -31,6 +31,7 @@ REQUIRED = {
     "test-results.json",
     "test-output.txt",
     "failed-attempts.jsonl",
+    "replacement-owner-smoke-validation.json",
     "final-content-manifest.json",
     "owner-report/README.md",
 }
@@ -165,7 +166,8 @@ def main() -> int:
     tests = load("test-results.json")
     if (
         tests.get("status") != "PASS"
-        or tests.get("unique_tests") != 264
+        or tests.get("unique_tests") != 268
+        or tests.get("test_execution_occurrences") != 960
         or any(value != "PASS" for value in tests["gates"].values())
         or any(
             run.get("failures", 0) not in {0, None}
@@ -190,6 +192,18 @@ def main() -> int:
     ]
     if not failed_lines:
         failures.append("failed_attempts_missing")
+
+    replacement = load("replacement-owner-smoke-validation.json")
+    if (
+        replacement.get("status") != "PASS"
+        or replacement.get("spot", {}).get("checker") != "CHECK_PASS"
+        or replacement.get("spot", {}).get("replay") != "PASS"
+        or replacement.get("perpetual", {}).get("checker") != "CHECK_PASS"
+        or replacement.get("perpetual", {}).get("replay") != "PASS"
+        or replacement.get("final_holdout_used") is not False
+        or replacement.get("real_profitability_claim") is not False
+    ):
+        failures.append("replacement_owner_smoke_invalid")
 
     status = "PASS" if not failures else "FAIL"
     print(
