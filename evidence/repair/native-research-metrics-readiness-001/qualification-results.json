@@ -1,0 +1,19 @@
+{
+  "covered_contracts": [
+    "NETTING closed cycle snapshot",
+    "terminal open exclusion",
+    "partial reduction exclusion",
+    "close-to-flat then reopen",
+    "Spot long/flat",
+    "Perpetual reversal",
+    "missing/orphan/duplicate/conflicting/forged snapshot rejection",
+    "manual Fill pairing API rejection",
+    "commission/funding realized-PnL semantics",
+    "deterministic native unit sequence",
+    "native Calmar basis and zero-drawdown rejection"
+  ],
+  "schema": "native-research-metrics-qualification-results-v1",
+  "small_native_api_qualification": true,
+  "status": "PASS",
+  "strategy_rerun": false
+}

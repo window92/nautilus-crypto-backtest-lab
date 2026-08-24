@@ -1,0 +1,16 @@
+{
+  "branch": "main",
+  "captured_at_utc": "2026-08-24T05:37:17.734890Z",
+  "cold_start_git_status": "CLEAN",
+  "cold_start_head": "66fff0b08db76bb38b634f81f3f4ef871c8fb788",
+  "cold_start_origin_main": "66fff0b08db76bb38b634f81f3f4ef871c8fb788",
+  "dependency_lock_sha256": "b2765c9e33b10566fc327b48920fd1d3a73618c19622baaceab1fe9dca61df47",
+  "historical_run_evidence_modified": false,
+  "repository": "/home/builder/projects/nautilus-crypto-backtest-lab",
+  "runtime_lock_sha256": "4032df9f355348c2a0cfa9f79f331f97c9a8d24ecc8490a573d2c7f788bafddd",
+  "schema": "native-research-metrics-baseline-v1",
+  "ssot_sha256": "b4deb7048242239234de7eaa353b623b3e45247eb42f1021dbc26ffd910edb99",
+  "status": "PASS",
+  "strategy_rerun": false,
+  "user": "builder"
+}

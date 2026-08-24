@@ -1,0 +1,30 @@
+{
+  "completed_unit": "NAUTILUS_CLOSED_POSITION_SNAPSHOT_OR_TERMINAL_CLOSED_POSITION",
+  "manual_fill_pairing": false,
+  "native_v2_fields": [
+    "native_position_id",
+    "parent_position_id",
+    "instrument_id",
+    "entry_side",
+    "opened_ns",
+    "closed_ns",
+    "opening_order_id",
+    "closing_order_id",
+    "average_open_price",
+    "average_close_price",
+    "peak_quantity",
+    "realized_pnl",
+    "realized_return",
+    "commissions",
+    "duration_ns",
+    "funding_adjustment_count",
+    "source_run_id"
+  ],
+  "partial_reduction_completed_unit": false,
+  "reopen_behavior": "SNAPSHOT_CLOSED_POSITION_THEN_RESET_AND_REUSE_CURRENT_NETTING_POSITION",
+  "schema": "native-netting-snapshot-contract-v1",
+  "snapshot_and_live_position_double_counted": false,
+  "source_commit": "27a8e54e7ac3c57d6cbf8891f0283dfbaee97317",
+  "status": "PASS",
+  "terminal_open_position_completed_unit": false
+}

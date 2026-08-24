@@ -1,0 +1,163 @@
+{
+  "cardinality_authority": "BacktestResult.total_positions=current cache positions+cache snapshots; cross-checked with native current Position and PositionClosed callbacks",
+  "historical_snapshot_payloads_reconstructed": false,
+  "profiles": {
+    "perpetual": {
+      "calmar_qualification": {
+        "input_observation_count": 181,
+        "input_returns_sha256": "49646752dee764a06181e8631b5418d668e9d653abbbc5c07d4dfbb791e3c31a",
+        "native_api": "nautilus_trader.analysis.CalmarRatio.calculate_from_returns",
+        "nautilus_version": "2.0.0rc2",
+        "period": 252,
+        "project_calmar_calculation_used": false,
+        "qualification_id": "01959ca45764e7d76234ee89df8d01b087a58c8cc857a5d8ae007721671daeb6",
+        "returns_basis": "PORTFOLIO_DAILY_ACCOUNT_RETURNS",
+        "schema_version": 1,
+        "scored_start_ns": 1612137600000000000,
+        "scoring_end_exclusive_ns": 1627776000000000000,
+        "status": "NATIVE",
+        "undefined_reason": "NOT_APPLICABLE",
+        "value": "-0.837979294581023"
+      },
+      "historical_v1_cardinality_status": "NATIVE_CARDINALITY_RECONCILED",
+      "historical_v1_detailed_snapshot_sequence_status": "NOT_PERSISTED_IN_HISTORICAL_RUN",
+      "manual_fill_pairing_used": false,
+      "native_average_return_statistic": "-0.0014508147005646722",
+      "native_completed_cycle_count": 27,
+      "native_current_position_count": 1,
+      "native_expectancy_not_accepted_as_average_completed_trade": "-135.2701119196429",
+      "native_expectancy_rejection_reason": "stats_pnls includes the terminal current Position; it is not the completed-only sequence",
+      "native_returns_basis": "PORTFOLIO_DAILY_ACCOUNT_RETURNS",
+      "native_returns_basis_proof": {
+        "account_event_count": 1134,
+        "all_nonempty_events_single_currency": true,
+        "balance_currencies": [
+          "USDT"
+        ],
+        "nonempty_balance_event_count": 1134
+      },
+      "native_returns_observation_count": 212,
+      "native_snapshot_count_from_pinned_result_contract": 27,
+      "native_terminal_closed_position_count": 0,
+      "native_terminal_open_position_count": 1,
+      "native_total_positions": 28,
+      "position_closed_callback_count": 27,
+      "position_closed_timestamp_count": 27,
+      "profile": "perpetual",
+      "returns_timestamp_matches_position_closes": false,
+      "returns_timestamp_position_close_overlap_count": 0,
+      "returns_timestamps_are_utc_daily": true,
+      "run_id": "owner-smoke-002-replacement-001-perpetual-run",
+      "source_bindings": {
+        "account": {
+          "path": "runs/owner-smoke-002-replacement-001-perpetual-run-1959c892b218/account.csv",
+          "sha256": "bb1ff35caa08cb5f58c88a91a2305d220e5ec4842575196347dd6ad4b59d6297",
+          "size_bytes": 106898
+        },
+        "native_completed_trades": {
+          "path": "runs/owner-smoke-002-replacement-001-perpetual-run-1959c892b218/native_completed_trades.json",
+          "sha256": "2b21bc59be64b37ba510b15e7adf09a13b9cf875652bb231c65ae19904993116",
+          "size_bytes": 449
+        },
+        "native_result": {
+          "path": "runs/owner-smoke-002-replacement-001-perpetual-run-1959c892b218/nautilus_result.json",
+          "sha256": "da55a9faec340adb29fdb0728dc36989c2185c5b83fd06252d173bb0afb064c7",
+          "size_bytes": 2827937
+        },
+        "native_statistics": {
+          "path": "runs/owner-smoke-002-replacement-001-perpetual-run-1959c892b218/native_statistics.json",
+          "sha256": "c13128c8681de0b02a6bc77dcdc1e7d46178d45727c62a95deeef95cb2f3be68",
+          "size_bytes": 14271
+        },
+        "positions": {
+          "path": "runs/owner-smoke-002-replacement-001-perpetual-run-1959c892b218/positions.csv",
+          "sha256": "a820f58ce146d88ee36740a57a035f7a0b7e9ae5632f5d788355ac91d9bd92fa",
+          "size_bytes": 5110
+        }
+      },
+      "terminal_open_excluded_from_completed_sample": true,
+      "terminal_position_side": "LONG",
+      "terminal_position_signed_quantity": "0.1"
+    },
+    "spot": {
+      "calmar_qualification": {
+        "input_observation_count": 13,
+        "input_returns_sha256": "5cf9ea579afda5557a3e24148eb95a360b9475cce8e720a32f887c2b75159385",
+        "native_api": "nautilus_trader.analysis.CalmarRatio.calculate_from_returns",
+        "nautilus_version": "2.0.0rc2",
+        "period": 252,
+        "project_calmar_calculation_used": false,
+        "qualification_id": "32cbc8ed9aaf37fbaeb8c334b1ee90187cd5ac44150b13f0356ce226d8b89a63",
+        "returns_basis": "POSITION_RETURNS_FALLBACK",
+        "schema_version": 1,
+        "scored_start_ns": 1612137600000000000,
+        "scoring_end_exclusive_ns": 1627776000000000000,
+        "status": "UNDEFINED",
+        "undefined_reason": "UNDEFINED_NATIVE_CALMAR_PORTFOLIO_RETURNS_BASIS_UNAVAILABLE",
+        "value": "UNDEFINED"
+      },
+      "historical_v1_cardinality_status": "NATIVE_CARDINALITY_RECONCILED",
+      "historical_v1_detailed_snapshot_sequence_status": "NOT_PERSISTED_IN_HISTORICAL_RUN",
+      "manual_fill_pairing_used": false,
+      "native_average_return_statistic": "-0.016989496851835366",
+      "native_completed_cycle_count": 13,
+      "native_current_position_count": 1,
+      "native_expectancy_not_accepted_as_average_completed_trade": "-109.2473007142857",
+      "native_expectancy_rejection_reason": "stats_pnls includes the terminal current Position; it is not the completed-only sequence",
+      "native_returns_basis": "POSITION_RETURNS_FALLBACK",
+      "native_returns_basis_proof": {
+        "account_event_count": 28,
+        "all_nonempty_events_single_currency": false,
+        "balance_currencies": [
+          "BTC",
+          "USDT"
+        ],
+        "nonempty_balance_event_count": 28
+      },
+      "native_returns_observation_count": 13,
+      "native_snapshot_count_from_pinned_result_contract": 13,
+      "native_terminal_closed_position_count": 0,
+      "native_terminal_open_position_count": 1,
+      "native_total_positions": 14,
+      "position_closed_callback_count": 13,
+      "position_closed_timestamp_count": 13,
+      "profile": "spot",
+      "returns_timestamp_matches_position_closes": true,
+      "returns_timestamp_position_close_overlap_count": 13,
+      "returns_timestamps_are_utc_daily": false,
+      "run_id": "owner-smoke-002-replacement-001-spot-run-retry-002",
+      "source_bindings": {
+        "account": {
+          "path": "runs/owner-smoke-002-replacement-001-spot-run-retry-002-b25302d138b2/account.csv",
+          "sha256": "aa225dd810b7448cf26e8c01615b19b5aac1f52b6692daf813b406ce9895f99d",
+          "size_bytes": 4836
+        },
+        "native_completed_trades": {
+          "path": "runs/owner-smoke-002-replacement-001-spot-run-retry-002-b25302d138b2/native_completed_trades.json",
+          "sha256": "14ccc1e30928583e09bdaf5aee0d02f2a6fc4ccfcd7570b09a035a0c65ac20ee",
+          "size_bytes": 454
+        },
+        "native_result": {
+          "path": "runs/owner-smoke-002-replacement-001-spot-run-retry-002-b25302d138b2/nautilus_result.json",
+          "sha256": "364771d0056437900668edc968ebb633a6575e6d7285fc1cf1bbe863c7fbfb98",
+          "size_bytes": 243472
+        },
+        "native_statistics": {
+          "path": "runs/owner-smoke-002-replacement-001-spot-run-retry-002-b25302d138b2/native_statistics.json",
+          "sha256": "860cd272e7adbccf65ecccd6162ba2394f8f75d3d6654c78a9e92f09b48c8644",
+          "size_bytes": 1844
+        },
+        "positions": {
+          "path": "runs/owner-smoke-002-replacement-001-spot-run-retry-002-b25302d138b2/positions.csv",
+          "sha256": "f6ff816c61872a1fce886fcbaaae6f92bceb68dd91b217e7e7be38f7c70bbd8c",
+          "size_bytes": 2458
+        }
+      },
+      "terminal_open_excluded_from_completed_sample": true,
+      "terminal_position_side": "LONG",
+      "terminal_position_signed_quantity": "0.1"
+    }
+  },
+  "schema": "native-historical-run-reconciliation-v1",
+  "status": "PASS"
+}

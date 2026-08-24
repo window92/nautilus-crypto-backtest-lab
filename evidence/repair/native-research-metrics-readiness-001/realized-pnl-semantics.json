@@ -1,0 +1,11 @@
+{
+  "base_currency_commission": "quantity adjustment; marks net-after-cost completed-unit outcome ambiguous unless all commissions are settlement currency",
+  "funding": "PositionAdjusted(FUNDING).pnl_change is included in Position.realized_pnl",
+  "position_realized_pnl": "accumulates trading PnL, settlement-currency commissions, and PositionAdjusted.pnl_change",
+  "position_realized_return": "native price return for the Position cycle",
+  "project_pnl_engine_used": false,
+  "schema": "native-realized-pnl-semantics-v1",
+  "stats_pnls": "includes current open Position realized PnL and therefore is not a completed-only series",
+  "status": "PASS",
+  "terminal_unrealized_pnl": "not part of a completed Position unit"
+}

@@ -1,0 +1,11 @@
+{
+  "counted_observation": "PINNED_NAUTILUS_NATIVE_COMPLETED_POSITION_UNIT",
+  "cross_instrument_pooling": false,
+  "future_threshold_evaluation_ready": true,
+  "owner_smoke_002_frozen_sample_adequacy": "NOT_APPLICABLE_EXPLORATORY",
+  "perpetual_historical_count": 27,
+  "schema": "native-sample-adequacy-readiness-v1",
+  "spot_historical_count": 13,
+  "status": "PASS",
+  "terminal_open_position_excluded": true
+}

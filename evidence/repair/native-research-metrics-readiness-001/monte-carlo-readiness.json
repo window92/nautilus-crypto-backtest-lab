@@ -1,0 +1,10 @@
+{
+  "ambiguous_cost_disposition": "MC_LOW_CONFIDENCE",
+  "future_input_contract": "ordered persisted Position.realized_pnl values only when every fee/funding effect is unambiguously attributed to that completed Position",
+  "historical_completed_net_unit_sequence": "NOT_PERSISTED",
+  "historical_substitute_monte_carlo_run": false,
+  "manual_fill_pairing": false,
+  "owner_smoke_002_monte_carlo": "NOT_APPLICABLE_EXPLORATORY",
+  "schema": "native-monte-carlo-readiness-v1",
+  "status": "PASS"
+}

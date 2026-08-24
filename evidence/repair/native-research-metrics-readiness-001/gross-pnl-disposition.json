@@ -1,0 +1,9 @@
+{
+  "net_plus_fees_plus_funding_reconstruction_used": false,
+  "perpetual": "UNDEFINED_NATIVE_GROSS_PNL_NOT_EXPOSED",
+  "position_realized_pnl_includes_attributed_funding": true,
+  "position_realized_pnl_is_net_of_settlement_commissions": true,
+  "schema": "native-gross-pnl-disposition-v1",
+  "spot": "UNDEFINED_NATIVE_GROSS_PNL_NOT_EXPOSED",
+  "status": "UNDEFINED_NATIVE_GROSS_PNL_NOT_EXPOSED"
+}

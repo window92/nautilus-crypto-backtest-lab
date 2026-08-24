@@ -1,0 +1,18 @@
+{
+  "future_runs": "PERSIST_NATIVE_POSITION_REALIZED_PNL_AND_REALIZED_RETURN_PER_COMPLETED_UNIT",
+  "perpetual": {
+    "average_native_realized_pnl": "UNDEFINED_HISTORICAL_SNAPSHOT_PAYLOADS_NOT_PERSISTED",
+    "average_native_realized_return": "UNDEFINED_HISTORICAL_SNAPSHOT_PAYLOADS_NOT_PERSISTED",
+    "basis": "PINNED_NAUTILUS_PORTFOLIO_DAILY_ACCOUNT_RETURNS",
+    "completed_native_units": 27,
+    "stats_returns_rejected_as_trade_average": true
+  },
+  "schema": "native-average-trade-disposition-v1",
+  "spot": {
+    "average_native_realized_pnl": "UNDEFINED_HISTORICAL_SNAPSHOT_PAYLOADS_NOT_PERSISTED",
+    "average_native_realized_return": "-0.016989496851835366",
+    "basis": "PINNED_NAUTILUS_POSITION_RETURNS_FALLBACK",
+    "completed_native_units": 13
+  },
+  "status": "PASS"
+}

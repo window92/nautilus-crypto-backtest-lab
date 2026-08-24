@@ -1,0 +1,40 @@
+{
+  "denominator": "ABS_PINNED_NAUTILUS_MAX_DRAWDOWN",
+  "numerator": "PINNED_NAUTILUS_CAGR_PERIOD_252",
+  "perpetual": {
+    "input_observation_count": 181,
+    "input_returns_sha256": "49646752dee764a06181e8631b5418d668e9d653abbbc5c07d4dfbb791e3c31a",
+    "native_api": "nautilus_trader.analysis.CalmarRatio.calculate_from_returns",
+    "nautilus_version": "2.0.0rc2",
+    "period": 252,
+    "project_calmar_calculation_used": false,
+    "qualification_id": "01959ca45764e7d76234ee89df8d01b087a58c8cc857a5d8ae007721671daeb6",
+    "returns_basis": "PORTFOLIO_DAILY_ACCOUNT_RETURNS",
+    "schema_version": 1,
+    "scored_start_ns": 1612137600000000000,
+    "scoring_end_exclusive_ns": 1627776000000000000,
+    "status": "NATIVE",
+    "undefined_reason": "NOT_APPLICABLE",
+    "value": "-0.837979294581023"
+  },
+  "project_calmar_calculation": false,
+  "schema": "native-calmar-disposition-v1",
+  "spot": {
+    "input_observation_count": 13,
+    "input_returns_sha256": "5cf9ea579afda5557a3e24148eb95a360b9475cce8e720a32f887c2b75159385",
+    "native_api": "nautilus_trader.analysis.CalmarRatio.calculate_from_returns",
+    "nautilus_version": "2.0.0rc2",
+    "period": 252,
+    "project_calmar_calculation_used": false,
+    "qualification_id": "32cbc8ed9aaf37fbaeb8c334b1ee90187cd5ac44150b13f0356ce226d8b89a63",
+    "returns_basis": "POSITION_RETURNS_FALLBACK",
+    "schema_version": 1,
+    "scored_start_ns": 1612137600000000000,
+    "scoring_end_exclusive_ns": 1627776000000000000,
+    "status": "UNDEFINED",
+    "undefined_reason": "UNDEFINED_NATIVE_CALMAR_PORTFOLIO_RETURNS_BASIS_UNAVAILABLE",
+    "value": "UNDEFINED"
+  },
+  "status": "PASS",
+  "zero_drawdown": "UNDEFINED_NAN"
+}

@@ -1,0 +1,105 @@
+{
+  "installed_api_files": {
+    "backtest_api": {
+      "path": ".venv/lib/python3.12/site-packages/nautilus_trader/backtest/__init__.pyi",
+      "sha256": "77ffa9b33b63aa83ee04ffdedffd30beb5c99fd91ba017c339cfb7b63eafeeb4",
+      "size_bytes": 18273
+    },
+    "common_api": {
+      "path": ".venv/lib/python3.12/site-packages/nautilus_trader/common/__init__.pyi",
+      "sha256": "756b37a23d99f423285e3536aef163ece4978dd8d29b0499d28dd3e11671b581",
+      "size_bytes": 64527
+    },
+    "model_api": {
+      "path": ".venv/lib/python3.12/site-packages/nautilus_trader/model/__init__.pyi",
+      "sha256": "0ca43828d28d81eb0a4a5eedf0e44978cfdc6c204a570466a776a7bec083ecb1",
+      "size_bytes": 258920
+    }
+  },
+  "nautilus_source_commit": "27a8e54e7ac3c57d6cbf8891f0283dfbaee97317",
+  "nautilus_source_repository": "nautechsystems/nautilus_trader",
+  "nautilus_version": "2.0.0rc2",
+  "public_apis": {
+    "BacktestEngine.cache": "getset_descriptor",
+    "BacktestEngine.generate_fills_report": "(self, /)",
+    "BacktestEngine.generate_positions_report": "(self, /)",
+    "BacktestEngine.get_result": "(self, /)",
+    "Cache.position_snapshots": "(self, /, position_id=None, account_id=None)",
+    "Cache.positions": "(self, /, venue=None, instrument_id=None, strategy_id=None, account_id=None, side=None)",
+    "Cache.positions_closed": "(self, /, venue=None, instrument_id=None, strategy_id=None, account_id=None, side=None)",
+    "Cache.positions_open": "(self, /, venue=None, instrument_id=None, strategy_id=None, account_id=None, side=None)",
+    "CalmarRatio": "(period=None)",
+    "CalmarRatio.calculate_from_returns": "(self, /, raw_returns)",
+    "Position": "(instrument, fill)",
+    "Position.adjustments": "(self, /)",
+    "Position.commissions": "(self, /)"
+  },
+  "qualified_behaviors": {
+    "analyzer_positions": "realized PnL for every supplied Position; realized return only for closed Position",
+    "cache_snapshots": "cache-owned closed Position clones with new snapshot IDs",
+    "calmar": "CAGR(period=252 by default) divided by absolute native MaxDrawdown; zero drawdown is NaN",
+    "netting_reopen": "snapshots the closed Position before resetting/reusing current Position",
+    "positions_report": "current positions plus position snapshots, with is_snapshot marker",
+    "returns_primary": "snapshot-backed portfolio returns when one common account currency exists; otherwise Position-return fallback",
+    "total_positions": "len(current cache positions) + len(cache position snapshots)"
+  },
+  "schema": "pinned-nautilus-native-metrics-api-qualification-v1",
+  "source_files": {
+    "backtest_engine_result": {
+      "path": "/tmp/nautilus-source-27a8e54/crates/backtest/src/engine.rs",
+      "sha256": "66ee96a7a6bcb65b2ab6cafbed9f92e8329180c349ce8fe955de84f0bdc8738a",
+      "size_bytes": 96641
+    },
+    "backtest_python_reports": {
+      "path": "/tmp/nautilus-source-27a8e54/crates/backtest/src/python/engine.rs",
+      "sha256": "6fede6b04b09b9a133da36bf3a4980c8e325fbc8cf5540cf455280164902589c",
+      "size_bytes": 69505
+    },
+    "cache_position_snapshots": {
+      "path": "/tmp/nautilus-source-27a8e54/crates/common/src/cache/position.rs",
+      "sha256": "dee7ac27cc7ae2406088aff5fa7f92dea5f8ec8f279c70e52bbecfc8bcafc0eb",
+      "size_bytes": 18769
+    },
+    "cagr": {
+      "path": "/tmp/nautilus-source-27a8e54/crates/analysis/src/statistics/cagr.rs",
+      "sha256": "8e7774949707e04b9b794a0cd6910ab97ec63a3e60bd0e11bf12c526a0e36e7d",
+      "size_bytes": 8240
+    },
+    "calmar_ratio": {
+      "path": "/tmp/nautilus-source-27a8e54/crates/analysis/src/statistics/calmar_ratio.rs",
+      "sha256": "211d990b8b062f7d454743002a4a9e67cb09402fb2af21a75b3e41ed7479eb1a",
+      "size_bytes": 7239
+    },
+    "execution_netting_reopen": {
+      "path": "/tmp/nautilus-source-27a8e54/crates/execution/src/engine/mod.rs",
+      "sha256": "291418de63ffa44ccd2fdbd643e97a01af370744de477066d9a1799265420267",
+      "size_bytes": 153876
+    },
+    "max_drawdown": {
+      "path": "/tmp/nautilus-source-27a8e54/crates/analysis/src/statistics/max_drawdown.rs",
+      "sha256": "80824be1853276edd500f7a5f466cae0adba25e647b8124af5a6745b9f9240b7",
+      "size_bytes": 5731
+    },
+    "portfolio_analyzer": {
+      "path": "/tmp/nautilus-source-27a8e54/crates/analysis/src/analyzer.rs",
+      "sha256": "0403965ab6b73c14a8a7d2dd1bcc02d49146bd2811282227265b5e348c27385f",
+      "size_bytes": 78852
+    },
+    "position": {
+      "path": "/tmp/nautilus-source-27a8e54/crates/model/src/position.rs",
+      "sha256": "f93f384a8dd37d17b86b2d5fe24d91fc81cdea972c5edd7cb6714ce1fe902884",
+      "size_bytes": 200363
+    },
+    "report_provider": {
+      "path": "/tmp/nautilus-source-27a8e54/nautilus_trader/analysis/reporter.py",
+      "sha256": "65ba5347d8b0f20f9a6bb9fe03a2e0a5d305eec1db5dd533a81ac69bbefddfcd",
+      "size_bytes": 6747
+    },
+    "returns_average": {
+      "path": "/tmp/nautilus-source-27a8e54/crates/analysis/src/statistics/returns_avg.rs",
+      "sha256": "c5ec6290e0ec052689157ce8da35f437ca6c3bbda19baa7272b148b2ae6e949a",
+      "size_bytes": 4300
+    }
+  },
+  "status": "PASS"
+}

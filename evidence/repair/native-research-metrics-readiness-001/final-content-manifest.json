@@ -1,0 +1,83 @@
+{
+  "catalog_payloads_committed": false,
+  "created_at_utc": "2026-08-24T05:52:37.711988Z",
+  "duckdb_payloads_committed": false,
+  "epoch": "NATIVE_RESEARCH_METRICS_READINESS_001",
+  "file_count_excluding_manifest": 16,
+  "files": {
+    "average-trade-disposition.json": {
+      "sha256": "232210e9bb9fe001224eba2b13d0adca9287661108714745815fe373b936d81d",
+      "size_bytes": 789
+    },
+    "baseline-attestation.json": {
+      "sha256": "cce7f2dc9716ec20f5f8050cbc508f53a403e56f751a6be7e5306d1059a474d3",
+      "size_bytes": 757
+    },
+    "calmar-disposition.json": {
+      "sha256": "1b447fb73d585fc1f1bb2a47079d2ec82d3f50107b5c31658e48387ff549d6cb",
+      "size_bytes": 1684
+    },
+    "failed-attempts.jsonl": {
+      "sha256": "4c80d76e5576807a08b629e89236ff2a28ab50d7a7b555b35f44c5e419df561f",
+      "size_bytes": 2094
+    },
+    "gross-pnl-disposition.json": {
+      "sha256": "651329f0511acb607d31fdd07cf375893a2397302f4beb4eb58f5ccc98e45eca",
+      "size_bytes": 399
+    },
+    "historical-integrity.json": {
+      "sha256": "092b3c235e3329df501a70d93d92e1bb852a1dc0486585981381c874a529b8e7",
+      "size_bytes": 6028
+    },
+    "historical-run-reconciliation.json": {
+      "sha256": "0835dbfd0206a4b83b122aa9d4ec1b1bc0ffe23185b2d71bdf59abbd38217df3",
+      "size_bytes": 7948
+    },
+    "monte-carlo-readiness.json": {
+      "sha256": "9993990aa283487dcb21494e1af91ea3306e3f412ede06783fbbf9cedae24bce",
+      "size_bytes": 496
+    },
+    "netting-snapshot-contract.json": {
+      "sha256": "cd2a8c806ba9cb0c379c53d96b256bafea642ca5d0db723af0deb1a86cab24c8",
+      "size_bytes": 907
+    },
+    "owner-report/README.md": {
+      "sha256": "6e39a45ab3172e0b9a4acaa3e57e272ca466d06003aa83d9efb501813f7931ae",
+      "size_bytes": 5799
+    },
+    "pinned-nautilus-apis.json": {
+      "sha256": "6a5e6cccd1bf70bd6fb32dda10a139c5f38b9f2955bd2beeaf42eb8788b367c3",
+      "size_bytes": 5127
+    },
+    "qualification-results.json": {
+      "sha256": "08cf219223a6df60dac3916e6a07b3a1b55e227110bfa03f93606d7b496fb556",
+      "size_bytes": 626
+    },
+    "realized-pnl-semantics.json": {
+      "sha256": "7502bf0f810dc19780d78abc29ac7137db57aa0203e2b3b4832e8c26e1f30f00",
+      "size_bytes": 726
+    },
+    "sample-adequacy-readiness.json": {
+      "sha256": "3011053eeca3890b8830e29e7ce54a9698ad5484bb471a3de736595489259a39",
+      "size_bytes": 415
+    },
+    "test-output.txt": {
+      "sha256": "dcb18e1935dd2d628796ba5fa90cf571113e4dd5fe5d58dd6e499372208a4c8a",
+      "size_bytes": 116420
+    },
+    "test-results.json": {
+      "sha256": "7ed8cbbda7a4275c4a6805e35baf9757bd78dbb4887418922effe8531201d1e6",
+      "size_bytes": 106921
+    }
+  },
+  "final_holdout_used": false,
+  "historical_run_evidence_modified": false,
+  "optimization_run": false,
+  "project_pnl_engine_used": false,
+  "project_trade_pairing_used": false,
+  "raw_data_payloads_committed": false,
+  "schema": "native-research-metrics-readiness-final-content-manifest-v1",
+  "secrets_present": false,
+  "status": "PASS",
+  "strategy_rerun": false
+}
