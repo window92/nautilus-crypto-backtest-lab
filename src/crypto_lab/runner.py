@@ -814,6 +814,7 @@ def _run_real_data_with_native_funding_checkpoints(
     *,
     data: tuple[Any, ...],
     instrument_id: Any,
+    funding_source_events: tuple[dict[str, Any], ...] = (),
     start_ns: int | None = None,
 ) -> tuple[tuple[dict[str, Any], ...], tuple[dict[str, Any], ...]]:
     """Run public streaming batches and preserve native adjustments before NETTING reuse.
@@ -826,7 +827,13 @@ def _run_real_data_with_native_funding_checkpoints(
     """
 
     boundaries = sorted(
-        {int(item.ts_init) for item in data if isinstance(item, FundingRateUpdate)},
+        {
+            int(item.next_funding_ns)
+            if item.next_funding_ns is not None
+            else int(item.ts_init)
+            for item in data
+            if isinstance(item, FundingRateUpdate)
+        },
     )
     if not boundaries:
         engine.add_data(list(data))
@@ -838,14 +845,47 @@ def _run_real_data_with_native_funding_checkpoints(
     preserved: list[dict[str, Any]] = []
     checkpoints: list[dict[str, Any]] = []
     first_batch = True
+    source_by_boundary = {
+        int(item["calc_time_ns"]): item
+        for item in funding_source_events
+    }
+    if len(source_by_boundary) != len(funding_source_events):
+        raise DataContractError(
+            FailureCode.FUNDING_AMBIGUOUS,
+            "duplicate official funding source boundary",
+        )
     for boundary_ns in boundaries:
-        batch_start = cursor
-        while cursor < len(ordered) and int(ordered[cursor].ts_init) <= boundary_ns:
+        pre_boundary_start = cursor
+        while cursor < len(ordered) and int(ordered[cursor].ts_init) < boundary_ns:
             cursor += 1
-        batch = ordered[batch_start:cursor]
-        if not batch:
+        pre_boundary_batch = ordered[pre_boundary_start:cursor]
+        if pre_boundary_batch:
+            engine.add_data(pre_boundary_batch)
+            engine.run(start=start_ns if first_batch else None, streaming=True)
+            first_batch = False
+            engine.clear_data()
+
+        # This snapshot is the financially eligible position at the instant
+        # immediately before the funding boundary.  Orders which first fill on
+        # a Bar at the boundary are processed after Mark/Funding data and must
+        # not retroactively become eligible for that settlement.
+        eligible_positions = [
+            {
+                "instrument_id": str(position.instrument_id),
+                "position_id": str(position.id),
+                "signed_qty": str(position.signed_qty),
+                "ts_last": int(position.ts_last),
+            }
+            for position in engine.cache.positions_open(instrument_id=instrument_id)
+        ]
+
+        boundary_start = cursor
+        while cursor < len(ordered) and int(ordered[cursor].ts_init) == boundary_ns:
+            cursor += 1
+        boundary_batch = ordered[boundary_start:cursor]
+        if not boundary_batch:
             continue
-        engine.add_data(batch)
+        engine.add_data(boundary_batch)
         engine.run(start=start_ns if first_batch else None, streaming=True)
         first_batch = False
         positions = engine.cache.positions(instrument_id=instrument_id)
@@ -860,9 +900,37 @@ def _run_real_data_with_native_funding_checkpoints(
         account = engine.cache.account_for_venue(instrument_id.venue)
         account_events = [] if account is None else [event.to_dict() for event in account.events]
         native_mark = engine.cache.mark_price(instrument_id)
+        runtime_updates = [
+            item
+            for item in boundary_batch
+            if isinstance(item, FundingRateUpdate)
+            and (
+                int(item.next_funding_ns)
+                if item.next_funding_ns is not None
+                else int(item.ts_init)
+            )
+            == boundary_ns
+        ]
+        source_event = source_by_boundary.get(boundary_ns)
         checkpoints.append(
             {
                 "boundary_ns": boundary_ns,
+                "source_event_key": (
+                    None if source_event is None else source_event.get("event_key")
+                ),
+                "source_funding_rate": (
+                    None if source_event is None else source_event.get("funding_rate")
+                ),
+                "runtime_updates_at_boundary": [
+                    {
+                        "rate": str(item.rate),
+                        "interval": item.interval,
+                        "next_funding_ns": item.next_funding_ns,
+                        "ts_event": int(item.ts_event),
+                        "ts_init": int(item.ts_init),
+                    }
+                    for item in runtime_updates
+                ],
                 "native_mark_price": (
                     None
                     if native_mark is None
@@ -873,8 +941,16 @@ def _run_real_data_with_native_funding_checkpoints(
                         "ts_init": int(native_mark.ts_init),
                     }
                 ),
+                "native_mark_age_ns": (
+                    None
+                    if native_mark is None
+                    else boundary_ns - int(native_mark.ts_event)
+                ),
+                "mark_selection": "LATEST_CAUSAL_AT_OR_BEFORE_FUNDING_TIMESTAMP",
                 "native_adjustments": native_adjustments,
-                "open_positions": [
+                "open_positions": eligible_positions,
+                "eligible_position_capture": "IMMEDIATELY_BEFORE_FUNDING_BOUNDARY",
+                "positions_after_boundary": [
                     {
                         "instrument_id": str(position.instrument_id),
                         "position_id": str(position.id),
@@ -1135,6 +1211,11 @@ def _run_bound(
                             engine,
                             data=data,
                             instrument_id=instrument.id,
+                            funding_source_events=(
+                                ()
+                                if resolved_release is None
+                                else resolved_release.funding_source_events
+                            ),
                             start_ns=explicit_time_origin_ns,
                         )
                     )
@@ -1406,6 +1487,8 @@ def _run_bound(
                     ),
                     "size_increment": str(instrument.size_increment),
                     "price_increment": str(instrument.price_increment),
+                    "price_precision": instrument.price_precision,
+                    "size_precision": instrument.size_precision,
                     "project_financial_engine": False,
                 }
             ),
@@ -1417,6 +1500,9 @@ def _run_bound(
             ),
             "funding_runtime_update_count": (
                 0 if resolved_release is None else resolved_release.funding_runtime_update_count
+            ),
+            "market_state_acceptance": (
+                None if resolved_release is None else resolved_release.market_state_acceptance
             ),
         },
         "terminal_position_open": any(

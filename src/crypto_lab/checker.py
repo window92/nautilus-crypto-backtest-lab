@@ -16,8 +16,9 @@ from crypto_lab.config import LabRunConfig
 from crypto_lab.config import MarketProfile
 from crypto_lab.config import SourceRevision
 from crypto_lab.data import DatasetRelease
+from crypto_lab.data import FUNDING_NATIVE_BINDING_RC2_EXPLICIT_BOUNDARY_PAIR
 from crypto_lab.data import HISTORICAL_NORMALIZER_VERSIONS
-from crypto_lab.data import NORMALIZER_VERSION
+from crypto_lab.data import INSTRUMENT_REPAIR_NORMALIZER_VERSION
 from crypto_lab.data import SyntheticQualificationDatasetRelease
 from crypto_lab.hashing import canonical_sha256
 from crypto_lab.hashing import sha256_file
@@ -68,6 +69,7 @@ ROOT = Path(__file__).resolve().parents[2]
 ONE_MINUTE_NS = 60_000_000_000
 DAY_NS = 86_400_000_000_000
 OWNER_SMOKE_STRATEGY_FAMILY = "BTCUSDT_DAILY_PRICE_VS_SMA20_TREND"
+MAX_FUNDING_MARK_STALENESS_NS = ONE_MINUTE_NS
 
 
 def _read_json(path: Path) -> dict[str, Any]:
@@ -85,6 +87,164 @@ def _read_csv(path: Path) -> list[dict[str, str]]:
 def _commission_amount(value: str) -> Decimal:
     amount, _currency = value.split(" ", maxsplit=1)
     return Decimal(amount)
+
+
+def validate_owner_smoke_funding_binding(
+    *,
+    source_events: list[dict[str, Any]],
+    checkpoints: list[dict[str, Any]],
+    funding_rows: list[dict[str, str]],
+    dataset_contract: dict[str, Any],
+    instrument_id: str,
+    max_mark_staleness_ns: int = MAX_FUNDING_MARK_STALENESS_NS,
+) -> tuple[bool, tuple[str, ...], dict[str, Any]]:
+    """Validate source-event, runtime-update and native-settlement cardinality.
+
+    Two identical pinned-runtime updates are transport/binding events for one
+    official source event.  Financial cardinality is counted only from native
+    ``PositionAdjusted(FUNDING)`` rows and their account effect.  Mark lookup is
+    latest-causal at-or-before the millisecond-offset source timestamp.
+    """
+
+    failures: list[str] = []
+    source_by_boundary: dict[int, dict[str, Any]] = {}
+    source_keys: set[str] = set()
+    for item in source_events:
+        try:
+            boundary = int(item["calc_time_ns"])
+            event_key = str(item["event_key"])
+        except Exception:
+            failures.append(FailureCode.FUNDING_AMBIGUOUS.value)
+            continue
+        if boundary in source_by_boundary or event_key in source_keys:
+            failures.append(FailureCode.FUNDING_AMBIGUOUS.value)
+        source_by_boundary[boundary] = item
+        source_keys.add(event_key)
+
+    checkpoint_by_boundary: dict[int, dict[str, Any]] = {}
+    for item in checkpoints:
+        try:
+            boundary = int(item["boundary_ns"])
+        except Exception:
+            failures.append(FailureCode.FUNDING_AMBIGUOUS.value)
+            continue
+        if boundary in checkpoint_by_boundary:
+            failures.append(FailureCode.FUNDING_DOUBLE_COUNT.value)
+        checkpoint_by_boundary[boundary] = item
+
+    if (
+        dataset_contract.get("funding_native_binding")
+        != FUNDING_NATIVE_BINDING_RC2_EXPLICIT_BOUNDARY_PAIR
+        or int(dataset_contract.get("funding_source_event_count", -1)) != len(source_events)
+        or int(dataset_contract.get("funding_runtime_update_count", -1))
+        != 2 * len(source_events)
+        or set(source_by_boundary) != set(checkpoint_by_boundary)
+    ):
+        failures.append(FailureCode.FUNDING_AMBIGUOUS.value)
+
+    expected_adjustments: list[tuple[int, Decimal]] = []
+    applicable = 0
+    no_position = 0
+    mark_ages: list[int] = []
+    for boundary, source_event in source_by_boundary.items():
+        checkpoint = checkpoint_by_boundary.get(boundary)
+        if checkpoint is None:
+            continue
+        runtime_updates = checkpoint.get("runtime_updates_at_boundary", [])
+        rate = Decimal(str(source_event["funding_rate"]))
+        runtime_pair_ok = bool(
+            len(runtime_updates) == 2
+            and checkpoint.get("source_event_key") == source_event["event_key"]
+            and all(
+                Decimal(str(item.get("rate"))) == rate
+                and int(item.get("ts_event", -1)) == boundary
+                and int(item.get("ts_init", -1)) == boundary
+                and int(item.get("next_funding_ns", -1)) == boundary
+                for item in runtime_updates
+            )
+        )
+        if not runtime_pair_ok:
+            failures.append(FailureCode.FUNDING_AMBIGUOUS.value)
+
+        positions = checkpoint.get("open_positions", [])
+        native = checkpoint.get("native_adjustments", [])
+        if (
+            checkpoint.get("eligible_position_capture")
+            != "IMMEDIATELY_BEFORE_FUNDING_BOUNDARY"
+            or not isinstance(positions, list)
+            or len(positions) > 1
+            or not isinstance(native, list)
+        ):
+            failures.append(FailureCode.FUNDING_AMBIGUOUS.value)
+            continue
+        if not positions:
+            no_position += 1
+            if native:
+                failures.append(FailureCode.FUNDING_DOUBLE_COUNT.value)
+            continue
+
+        applicable += 1
+        mark = checkpoint.get("native_mark_price")
+        if not isinstance(mark, dict) or mark.get("instrument_id") != instrument_id:
+            failures.append(FailureCode.MARK_ROLE_INVALID.value)
+            continue
+        mark_ts = int(mark.get("ts_event", -1))
+        age = boundary - mark_ts
+        mark_ages.append(age)
+        if (
+            mark_ts > boundary
+            or age < 0
+            or age > max_mark_staleness_ns
+            or checkpoint.get("mark_selection")
+            != "LATEST_CAUSAL_AT_OR_BEFORE_FUNDING_TIMESTAMP"
+            or int(checkpoint.get("native_mark_age_ns", -1)) != age
+        ):
+            failures.append(FailureCode.MARK_ROLE_INVALID.value)
+            continue
+
+        signed_qty = Decimal(str(positions[0]["signed_qty"]))
+        expected = (
+            -signed_qty * Decimal(str(mark["value"])) * rate
+        ).quantize(Decimal("0.00000001"))
+        if len(native) != 1:
+            failures.append(FailureCode.FUNDING_DOUBLE_COUNT.value)
+            continue
+        adjustment = native[0]
+        if not (
+            adjustment.get("adjustment_type") == "FUNDING"
+            and int(adjustment.get("ts_event", -1)) == boundary
+            and _commission_amount(str(adjustment.get("pnl_change"))) == expected
+            and str(adjustment.get("reason", "")).startswith("funding_settlement:")
+            and checkpoint.get("account_events_at_boundary")
+        ):
+            failures.append(FailureCode.FUNDING_DOUBLE_COUNT.value)
+            continue
+        expected_adjustments.append((boundary, expected))
+
+    actual_adjustments = sorted(
+        (int(row["ts_event"]), _commission_amount(row["pnl_change"]))
+        for row in funding_rows
+    )
+    if actual_adjustments != sorted(expected_adjustments):
+        failures.append(FailureCode.FUNDING_DOUBLE_COUNT.value)
+
+    unique_failures = tuple(dict.fromkeys(failures))
+    return (
+        not unique_failures,
+        unique_failures,
+        {
+            "source_event_count": len(source_events),
+            "processed_checkpoint_count": len(checkpoints),
+            "applicable_open_position_boundaries": applicable,
+            "no_position_boundaries": no_position,
+            "native_settlement_count": len(funding_rows),
+            "runtime_update_count": dataset_contract.get("funding_runtime_update_count"),
+            "mark_age_ns_min": min(mark_ages) if mark_ages else None,
+            "mark_age_ns_max": max(mark_ages) if mark_ages else None,
+            "maximum_mark_staleness_ns": max_mark_staleness_ns,
+            "mark_binding": "LATEST_CAUSAL_AT_OR_BEFORE_FUNDING_TIMESTAMP",
+        },
+    )
 
 
 def check_evidence_directory(
@@ -295,6 +455,8 @@ def check_evidence_directory(
         )
         source_roles_ok = True
         catalog_binding_ok = True
+        acceptance = None
+        market_state_ok = True
     else:
         role_results = dataset.completeness_result.role_results
         bar_times = []
@@ -314,6 +476,57 @@ def check_evidence_directory(
             and contract.get("catalog_identity") == dataset.catalog_identity
             and contract.get("caller_side_conversion_used") is False
         )
+        if dataset.normalizer_version == INSTRUMENT_REPAIR_NORMALIZER_VERSION:
+            acceptance = contract.get("market_state_acceptance")
+            execution_role = next(
+                (
+                    item
+                    for item in role_results
+                    if item.source_role.value
+                    in {"SPOT_EXECUTION_1M", "USDM_PERPETUAL_EXECUTION_1M"}
+                ),
+                None,
+            )
+            mark_role = next(
+                (
+                    item
+                    for item in role_results
+                    if item.source_role.value == "USDM_PERPETUAL_MARK_1M"
+                ),
+                None,
+            )
+            market_state_ok = bool(
+                isinstance(acceptance, dict)
+                and acceptance.get("status") == "PASS"
+                and acceptance.get("gate") == "NAUTILUS_EXECUTABLE_MARKET_STATE_ACCEPTANCE"
+                and acceptance.get("dataset_profile") == config.market_profile.value
+                and acceptance.get("instrument_id") == config.instrument_id
+                and acceptance.get("catalog_identity") == dataset.catalog_identity
+                and acceptance.get("instrument_metadata_identity")
+                == dataset.instrument_metadata_identity
+                and execution_role is not None
+                and int(acceptance.get("expected_executable_bars", -1))
+                == execution_role.actual_count
+                and int(acceptance.get("accepted_executable_bars", -1))
+                == execution_role.actual_count
+                and int(acceptance.get("precision_skipped_bars", -1)) == 0
+                and int(acceptance.get("rejected_precision_events", -1)) == 0
+                and int(acceptance.get("no_market_data_precision_warnings", -1)) == 0
+                and int(acceptance.get("fatal_runtime_diagnostics", -1)) == 0
+                and int(acceptance.get("missing_market_state", -1)) == 0
+                and (
+                    mark_role is None
+                    or (
+                        int(acceptance.get("expected_mark_updates", -1))
+                        == mark_role.actual_count
+                        and int(acceptance.get("accepted_mark_updates", -1))
+                        == mark_role.actual_count
+                    )
+                )
+            )
+        else:
+            acceptance = None
+            market_state_ok = True
     checks.append(
         {
             "name": "no_required_data_gap_ignored",
@@ -325,8 +538,17 @@ def check_evidence_directory(
         blocked.append(FailureCode.DATA_GAP.value)
     checks.append({"name": "dataset_source_roles", "pass": source_roles_ok})
     checks.append({"name": "dataset_catalog_binding", "pass": catalog_binding_ok})
+    checks.append(
+        {
+            "name": "nautilus_executable_market_state_acceptance",
+            "pass": market_state_ok,
+            "validation": acceptance,
+        },
+    )
     if not source_roles_ok or not catalog_binding_ok:
         blocked.append(FailureCode.DOWNSTREAM_CONTRACT_FAILURE.value)
+    if not market_state_ok:
+        blocked.append(FailureCode.INSTRUMENT_METADATA_INVALID.value)
 
     strategy_spec = _read_json(run_dir / "strategy_spec.json")
     is_owner_smoke_sma20 = (
@@ -456,6 +678,29 @@ def check_evidence_directory(
         )
     else:
         checks.append({"name": "preflight", "pass": True})
+
+    runtime_diagnostics = result.get("runtime_diagnostics", [])
+    engine_health_ok = bool(
+        result.get("engine_executed") is True
+        and result.get("engine_completed") is True
+        and result.get("engine_error") is None
+        and isinstance(runtime_diagnostics, list)
+        and not any(bool(item.get("fatal")) for item in runtime_diagnostics if isinstance(item, dict))
+    )
+    checks.append(
+        {
+            "name": "engine_runtime_health",
+            "pass": engine_health_ok,
+            "engine_error": result.get("engine_error"),
+            "fatal_runtime_diagnostics": sum(
+                bool(item.get("fatal"))
+                for item in runtime_diagnostics
+                if isinstance(item, dict)
+            ),
+        },
+    )
+    if not engine_health_ok:
+        failures.append(FailureCode.UNSUPPORTED_RUNTIME.value)
 
     if official:
         isolation = result.get("network_guard", {}).get("process_isolation")
@@ -677,6 +922,36 @@ def check_evidence_directory(
     )
     if not lifecycle_ok:
         failures.append(FailureCode.CAUSAL_EXECUTION_UNRESOLVED.value)
+    rejected_events = [
+        item
+        for item in result.get("semantic_sequence", {}).get("orders", [])
+        if item.get("type") == "OrderRejected"
+    ]
+    no_market_rejections = [
+        item
+        for item in rejected_events
+        if str(item.get("reason", "")).startswith("No market for ")
+    ]
+    executable_market_state_ok = bool(
+        not no_market_rejections
+        and not (
+            orders
+            and len(rejected_events) == len(orders)
+            and not fills
+        )
+    )
+    checks.append(
+        {
+            "name": "orders_reach_executable_market_state",
+            "pass": executable_market_state_ok,
+            "order_count": len(orders),
+            "rejected_order_count": len(rejected_events),
+            "no_market_rejection_count": len(no_market_rejections),
+            "fill_count": len(fills),
+        },
+    )
+    if not executable_market_state_ok:
+        failures.append(FailureCode.CAUSAL_EXECUTION_UNRESOLVED.value)
     intervals = sorted(
         (
             int(row["initialized_ns"]),
@@ -881,58 +1156,14 @@ def check_evidence_directory(
                 funding_source = _read_json(run_dir / "funding_source.json")
                 source_events = funding_source["events"]
                 checkpoints = result["native_funding_checkpoints"]
-                source_by_boundary = {
-                    int(item["calc_time_ns"]): item for item in source_events
-                }
-                checkpoint_by_boundary = {
-                    int(item["boundary_ns"]): item for item in checkpoints
-                }
-                exact_funding_ok = bool(
-                    len(source_by_boundary) == len(source_events)
-                    and len(checkpoint_by_boundary) == len(checkpoints)
-                    and set(source_by_boundary) == set(checkpoint_by_boundary)
-                    and result["dataset_contract"]["funding_source_event_count"]
-                    == len(source_events)
-                    and result["dataset_contract"]["funding_runtime_update_count"]
-                    == 2 * len(source_events)
-                )
-                applicable_boundaries = 0
-                expected_adjustments: list[tuple[int, Decimal]] = []
-                for boundary_ns, source_event in source_by_boundary.items():
-                    checkpoint = checkpoint_by_boundary[boundary_ns]
-                    mark = checkpoint.get("native_mark_price")
-                    positions_at_boundary = checkpoint.get("open_positions", [])
-                    native = checkpoint.get("native_adjustments", [])
-                    exact_funding_ok = exact_funding_ok and bool(
-                        isinstance(mark, dict)
-                        and mark.get("instrument_id") == config.instrument_id
-                        and int(mark.get("ts_event", -1)) == boundary_ns
-                        and int(mark.get("ts_init", -1)) == boundary_ns
-                        and len(positions_at_boundary) <= 1
+                exact_funding_ok, funding_failure_codes, exact_detail = (
+                    validate_owner_smoke_funding_binding(
+                        source_events=source_events,
+                        checkpoints=checkpoints,
+                        funding_rows=funding_rows,
+                        dataset_contract=result["dataset_contract"],
+                        instrument_id=config.instrument_id,
                     )
-                    if positions_at_boundary:
-                        applicable_boundaries += 1
-                        signed_qty = Decimal(str(positions_at_boundary[0]["signed_qty"]))
-                        expected = (
-                            -signed_qty
-                            * Decimal(str(mark["value"]))
-                            * Decimal(str(source_event["funding_rate"]))
-                        ).quantize(Decimal("0.00000001"))
-                        exact_funding_ok = exact_funding_ok and bool(
-                            len(native) == 1
-                            and native[0]["adjustment_type"] == "FUNDING"
-                            and int(native[0]["ts_event"]) == boundary_ns
-                            and _commission_amount(native[0]["pnl_change"]) == expected
-                        )
-                        expected_adjustments.append((boundary_ns, expected))
-                    else:
-                        exact_funding_ok = exact_funding_ok and not native
-                actual_adjustments = sorted(
-                    (int(row["ts_event"]), _commission_amount(row["pnl_change"]))
-                    for row in funding_rows
-                )
-                exact_funding_ok = exact_funding_ok and actual_adjustments == sorted(
-                    expected_adjustments,
                 )
                 mark_role = next(
                     item
@@ -945,18 +1176,10 @@ def check_evidence_directory(
                     and config.nautilus_engine_config.portfolio.use_mark_prices is True
                     and result.get("mark_fallback_accepted") is False
                 )
-                exact_detail = {
-                    "source_event_count": len(source_events),
-                    "processed_checkpoint_count": len(checkpoints),
-                    "applicable_open_position_boundaries": applicable_boundaries,
-                    "native_settlement_count": len(funding_rows),
-                    "runtime_update_count": result["dataset_contract"][
-                        "funding_runtime_update_count"
-                    ],
-                }
             except Exception as exc:
                 exact_funding_ok = False
                 exact_mark_ok = False
+                funding_failure_codes = (FailureCode.FUNDING_AMBIGUOUS.value,)
                 exact_detail = {"detail": str(exc)}
             checks.append(
                 {
@@ -973,7 +1196,11 @@ def check_evidence_directory(
                 },
             )
             if not exact_funding_ok:
-                failures.append(FailureCode.FUNDING_DOUBLE_COUNT.value)
+                for code in funding_failure_codes:
+                    if code == FailureCode.MARK_ROLE_INVALID.value:
+                        blocked.append(code)
+                    else:
+                        failures.append(code)
             if not exact_mark_ok:
                 blocked.append(FailureCode.MARK_ROLE_INVALID.value)
         if is_m3_qualification and not isinstance(dataset, SyntheticQualificationDatasetRelease):
