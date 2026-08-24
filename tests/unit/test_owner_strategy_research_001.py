@@ -5,6 +5,7 @@ from dataclasses import replace
 from datetime import UTC
 from datetime import datetime
 from decimal import Decimal
+from pathlib import Path
 from types import SimpleNamespace
 
 from crypto_lab.config import MarketProfile
@@ -12,6 +13,7 @@ from crypto_lab.config import NOT_APPLICABLE
 from crypto_lab.config import SourceRevision
 from crypto_lab.owner import OwnerWorkflowPurpose
 from crypto_lab.owner import _validate_candidate_order
+from crypto_lab.official import _strategy_identity_matches_frozen_source
 from crypto_lab.research import BenchmarkSpec
 from crypto_lab.research import CandidateSpec
 from crypto_lab.research import ClaimScope
@@ -28,6 +30,8 @@ from crypto_lab.research import TrialState
 from crypto_lab.research import benchmark_trial_candidate_id
 from crypto_lab.strategies import TSMOM_FULL_REGISTRATION_ID
 from crypto_lab.strategies import TSMOM_VOL20_REGISTRATION_ID
+from crypto_lab.strategies import RegisteredStrategyIdentity
+from crypto_lab.strategies import StrategySpec
 from crypto_lab.strategies import annualized_realized_volatility_28d
 from crypto_lab.strategies import floor_to_increment
 from crypto_lab.strategies import is_monday_utc_boundary
@@ -49,6 +53,44 @@ def _interval(day: int) -> UtcInterval:
 
 
 class OwnerStrategyResearch001Tests(unittest.TestCase):
+    def test_historical_registered_identity_is_bound_to_its_own_git_bytes(self) -> None:
+        root = Path(__file__).resolve().parents[2]
+        run_dir = (
+            root
+            / "runs/owner-strategy-research-001-spot-benchmark-run-ef60cf17606c"
+        )
+        identity = RegisteredStrategyIdentity.from_json_bytes(
+            (run_dir / "strategy_identity.json").read_bytes(),
+        )
+        spec = StrategySpec.from_json_bytes(
+            (run_dir / "strategy_spec.json").read_bytes(),
+        )
+        source = SourceRevision.from_json_bytes((run_dir / "source_revision.json").read_bytes())
+        self.assertTrue(
+            _strategy_identity_matches_frozen_source(
+                identity,
+                spec,
+                source,
+                repository_root=root,
+            ),
+        )
+        forged = RegisteredStrategyIdentity.create(
+            **{
+                key: value
+                for key, value in identity.to_builtins().items()
+                if key not in {"schema_version", "strategy_identity_sha256", "implementation_code_sha256"}
+            },
+            implementation_code_sha256="0" * 64,
+        )
+        self.assertFalse(
+            _strategy_identity_matches_frozen_source(
+                forged,
+                spec,
+                source,
+                repository_root=root,
+            ),
+        )
+
     def test_exact_momentum_golden_and_29_close_requirement(self) -> None:
         closes = tuple(Decimal(100 + index) for index in range(29))
         self.assertEqual(momentum_28d(closes), Decimal("0.28"))
