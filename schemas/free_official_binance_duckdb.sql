@@ -220,6 +220,40 @@ CREATE TABLE instrument_metadata (
     metadata_json VARCHAR NOT NULL
 );
 
+CREATE TABLE instrument_metadata_source_bindings (
+    instrument_metadata_identity VARCHAR NOT NULL REFERENCES instrument_metadata(instrument_metadata_identity),
+    source_raw_object_sha256 VARCHAR NOT NULL REFERENCES raw_objects(raw_object_sha256),
+    source_role VARCHAR NOT NULL CHECK (source_role IN (
+        'SPOT_INSTRUMENT_METADATA',
+        'SPOT_HISTORICAL_ORDER_GRID',
+        'USDM_PERPETUAL_INSTRUMENT_METADATA',
+        'USDM_PERPETUAL_HISTORICAL_ORDER_GRID'
+    )),
+    binding_purpose VARCHAR NOT NULL CHECK (binding_purpose IN (
+        'CURRENT_OFFICIAL_FILTERS',
+        'HISTORICAL_PRICE_GRID',
+        'HISTORICAL_ORDER_GRID',
+        'LOSSLESS_RUNTIME_REPRESENTATION'
+    )),
+    PRIMARY KEY (instrument_metadata_identity, source_raw_object_sha256, binding_purpose)
+);
+
+CREATE TABLE nautilus_market_state_acceptance (
+    validation_identity VARCHAR PRIMARY KEY CHECK (regexp_full_match(validation_identity, '[0-9a-f]{64}')),
+    market_profile VARCHAR NOT NULL,
+    instrument_id VARCHAR NOT NULL,
+    instrument_metadata_identity VARCHAR NOT NULL REFERENCES instrument_metadata(instrument_metadata_identity),
+    expected_executable_bars BIGINT NOT NULL CHECK (expected_executable_bars > 0),
+    accepted_executable_bars BIGINT NOT NULL CHECK (accepted_executable_bars = expected_executable_bars),
+    expected_mark_updates BIGINT NOT NULL CHECK (expected_mark_updates >= 0),
+    accepted_mark_updates BIGINT NOT NULL CHECK (accepted_mark_updates = expected_mark_updates),
+    precision_skipped_bars BIGINT NOT NULL CHECK (precision_skipped_bars = 0),
+    rejected_precision_events BIGINT NOT NULL CHECK (rejected_precision_events = 0),
+    missing_market_state BIGINT NOT NULL CHECK (missing_market_state = 0),
+    material_json VARCHAR NOT NULL,
+    UNIQUE (market_profile, instrument_id, instrument_metadata_identity)
+);
+
 CREATE TABLE data_windows (
     data_window_identity VARCHAR PRIMARY KEY CHECK (regexp_full_match(data_window_identity, '[0-9a-f]{64}')),
     classification VARCHAR NOT NULL CHECK (classification IN ('EXPOSED_DATA_BLOCKED_NOT_FINAL_HOLDOUT', 'DATA_QUALITY_INSPECTED_NOT_FINAL_HOLDOUT')),
@@ -248,6 +282,13 @@ CREATE TABLE dataset_releases (
     status VARCHAR NOT NULL CHECK (status = 'PASS'),
     created_at_utc VARCHAR NOT NULL,
     UNIQUE (market_profile, instrument_id, data_window_identity)
+);
+
+CREATE TABLE dataset_release_supersessions (
+    superseded_dataset_release_id VARCHAR PRIMARY KEY CHECK (regexp_full_match(superseded_dataset_release_id, '[0-9a-f]{64}')),
+    replacement_dataset_release_id VARCHAR NOT NULL REFERENCES dataset_releases(dataset_release_id),
+    classification VARCHAR NOT NULL CHECK (classification = 'SUPERSEDED_INSTRUMENT_REPRESENTATION_INCOMPATIBLE_WITH_PINNED_NAUTILUS'),
+    defect_reason VARCHAR NOT NULL CHECK (defect_reason = 'INSTRUMENT_REPRESENTATION_PREVENTED_EXECUTABLE_MARKET_STATE')
 );
 
 CREATE TABLE release_members (

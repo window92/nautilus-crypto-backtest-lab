@@ -99,6 +99,10 @@ def compare_build_results(primary: dict[str, Any], rebuilt: dict[str, Any]) -> d
         "network_used_during_build",
         "strategy_run",
         "official_trial",
+        "source_precision_audit",
+        "instrument_metadata_identities",
+        "market_state_acceptance",
+        "superseded_dataset_releases",
     )
     mismatches = [key for key in exact_keys if primary.get(key) != rebuilt.get(key)]
     if mismatches:
@@ -217,6 +221,22 @@ def database_gate(path: Path) -> dict[str, Any]:
                 "WHERE m.source_raw_object_sha256 IS NOT NULL AND r.raw_object_sha256 IS NULL",
             ).fetchone()[0],
         )
+        acceptance_rows = connection.execute(
+            "SELECT market_profile, expected_executable_bars, "
+            "accepted_executable_bars, expected_mark_updates, accepted_mark_updates, "
+            "precision_skipped_bars, rejected_precision_events, missing_market_state "
+            "FROM nautilus_market_state_acceptance ORDER BY market_profile",
+        ).fetchall()
+        supersessions = connection.execute(
+            "SELECT superseded_dataset_release_id, replacement_dataset_release_id, "
+            "classification, defect_reason "
+            "FROM dataset_release_supersessions ORDER BY superseded_dataset_release_id",
+        ).fetchall()
+        instrument_source_binding_count = int(
+            connection.execute(
+                "SELECT count(*) FROM instrument_metadata_source_bindings",
+            ).fetchone()[0],
+        )
     finally:
         connection.close()
     expected_dispositions = {
@@ -226,7 +246,7 @@ def database_gate(path: Path) -> dict[str, Any]:
         f"{PERP_PROFILE}:REAL_OFFICIAL_BAR": 305_280,
     }
     if (
-        table_count != 18
+        table_count != 21
         or double_columns
         or blockers
         or unresolved_conflicts
@@ -242,6 +262,20 @@ def database_gate(path: Path) -> dict[str, Any]:
         or bar_during_no_trade
         or int(redundant_404_objects) != 50
         or source_binding_orphans
+        or len(acceptance_rows) != 2
+        or any(
+            int(row[1]) != int(row[2])
+            or int(row[3]) != int(row[4])
+            or any(int(value) != 0 for value in row[5:])
+            for row in acceptance_rows
+        )
+        or len(supersessions) != 2
+        or any(
+            row[2] != "SUPERSEDED_INSTRUMENT_REPRESENTATION_INCOMPATIBLE_WITH_PINNED_NAUTILUS"
+            or row[3] != "INSTRUMENT_REPRESENTATION_PREVENTED_EXECUTABLE_MARKET_STATE"
+            for row in supersessions
+        )
+        or instrument_source_binding_count != 6
     ):
         raise RuntimeError("read-only DuckDB acceptance gate failed")
     return {
@@ -265,6 +299,9 @@ def database_gate(path: Path) -> dict[str, Any]:
         "redundant_daily_mark_404_observation_count": int(redundant_404_observations),
         "redundant_daily_mark_404_unique_delivery_object_count": int(redundant_404_objects),
         "release_source_binding_orphan_count": source_binding_orphans,
+        "nautilus_market_state_acceptance": [list(row) for row in acceptance_rows],
+        "dataset_release_supersessions": [list(row) for row in supersessions],
+        "instrument_metadata_source_binding_count": instrument_source_binding_count,
     }
 
 
@@ -341,6 +378,7 @@ def materialize_releases(
         for suffix in (
             f"{release.dataset_release_id}.json",
             f"{release.instrument_metadata_identity}.metadata.json",
+            f"{release.derived_validation_identity}.market-state.json",
         ):
             preserve_file(artifact_root / suffix, DATA_ROOT / "releases" / suffix)
         if profile == PERP_PROFILE:
@@ -449,13 +487,13 @@ def compare_funding_rows(
                 or int(item["ts_init"]) != int(row[0])
                 or int(item["interval"]) != int(row[1]) * 60
                 or Decimal(item["rate"]) != Decimal(row[2])
-                or item["next_funding_ns"] is not None
+                or int(item["next_funding_ns"]) != int(row[0])
             ):
                 raise RuntimeError("Nautilus funding semantic mismatch")
     return {
         "official_source_event_count": len(rows),
         "runtime_update_count": len(projections),
-        "native_binding": "NAUTILUS_2_0_0RC2_INTERVAL_BOUNDARY_REPEAT_ONCE",
+        "native_binding": "NAUTILUS_2_0_0RC2_EXPLICIT_SOURCE_BOUNDARY_PAIR",
         "schedule_invented": False,
     }
 
@@ -488,6 +526,7 @@ def resolve_and_compare_catalogs(
                 "execution": execution,
                 "release_time_range": release.normalized_time_range.to_builtins(),
                 "instrument_id": release.instrument_id,
+                "market_state_acceptance": resolved.market_state_acceptance,
             }
             if profile == SPOT_PROFILE:
                 if resolved.semantic_inventory["mark_price_updates"] or resolved.semantic_inventory["funding_rate_updates"]:

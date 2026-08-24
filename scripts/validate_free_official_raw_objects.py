@@ -19,6 +19,7 @@ ALLOWED_HOSTS = {
     "data.binance.vision",
     "fapi.binance.com",
     "raw.githubusercontent.com",
+    "www.binance.com",
 }
 
 

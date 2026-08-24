@@ -17,6 +17,7 @@ import hashlib
 import importlib.util
 import json
 import os
+import re
 import stat
 import sys
 import tempfile
@@ -38,13 +39,15 @@ if str(SRC) not in sys.path:
 import duckdb  # noqa: E402
 from crypto_lab.config import MarketProfile  # noqa: E402
 from crypto_lab.data import CoverageDisposition  # noqa: E402
-from crypto_lab.data import FUNDING_NATIVE_BINDING_RC2_INTERVAL_BOUNDARY  # noqa: E402
+from crypto_lab.data import FUNDING_NATIVE_BINDING_RC2_EXPLICIT_BOUNDARY_PAIR  # noqa: E402
 from crypto_lab.data import FundingEvent  # noqa: E402
+from crypto_lab.data import INSTRUMENT_REPAIR_NORMALIZER_VERSION  # noqa: E402
 from crypto_lab.data import MinuteDisposition  # noqa: E402
 from crypto_lab.data import NormalizedBar  # noqa: E402
 from crypto_lab.data import SourceObjectBinding  # noqa: E402
 from crypto_lab.data import SourceRole  # noqa: E402
 from crypto_lab.data import TimeRange  # noqa: E402
+from crypto_lab.data import bind_lossless_instrument_representation  # noqa: E402
 from crypto_lab.data import build_dataset_release  # noqa: E402
 from crypto_lab.data import build_nautilus_catalog  # noqa: E402
 from crypto_lab.data import minute_coverage_identity  # noqa: E402
@@ -53,6 +56,8 @@ from crypto_lab.data import parse_usdm_instrument_metadata  # noqa: E402
 from crypto_lab.data import prove_funding_schedule_from_official_objects  # noqa: E402
 from crypto_lab.hashing import canonical_json_bytes  # noqa: E402
 from crypto_lab.hashing import canonical_sha256  # noqa: E402
+from crypto_lab.data_acceptance import market_state_acceptance_identity  # noqa: E402
+from crypto_lab.data_acceptance import qualify_executable_market_state  # noqa: E402
 
 
 OLD_RAW = ROOT / "data/raw/data-provenance-duckdb-001"
@@ -92,6 +97,40 @@ PERP_INSTRUMENT = "BTCUSDT-PERP.BINANCE"
 FEE_RATE = Decimal("0.001")
 FEE_BASIS = "SSOT Appendix A qualification-only observable estimated fee"
 SPOT_METADATA_URL = "https://data-api.binance.vision/api/v3/exchangeInfo?symbol=BTCUSDT"
+SPOT_HISTORICAL_GRID_URL = (
+    "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query"
+    "?articleCode=6925d618ab6b47e2936cc4614eaad64b"
+)
+SPOT_HISTORICAL_GRID_SHA256 = "89e0fb77408dde49f342bfb7929f7adb08af6c73e26eaf203143641ede99ea9a"
+SPOT_HISTORICAL_GRID_SIZE = 1_844_272
+SPOT_HISTORICAL_GRID_CAPTURED_AT = "2026-08-23T20:08:26Z"
+SPOT_HISTORICAL_GRID_RAW_PATH = (
+    ROOT
+    / "data/raw/instrument-representation-funding-checker-001/objects/sha256/89"
+    / f"{SPOT_HISTORICAL_GRID_SHA256}.bin"
+)
+SPOT_HISTORICAL_GRID_FILENAME = "binance-spot-btcusdt-step-size-2021-08-26.json"
+HISTORICAL_GRID_URL = (
+    "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query"
+    "?articleCode=81e6795b0bae49828cbd52479094a987"
+)
+HISTORICAL_GRID_SHA256 = "ca85fd9286601514fdb00610aef15f7ee43b5e0657c865ad18e97c0763e8b5d1"
+HISTORICAL_GRID_SIZE = 17_790
+HISTORICAL_GRID_CAPTURED_AT = "2026-08-23T19:35:20Z"
+HISTORICAL_GRID_RAW_PATH = (
+    ROOT
+    / "data/raw/instrument-representation-funding-checker-001/objects/sha256/ca"
+    / f"{HISTORICAL_GRID_SHA256}.bin"
+)
+HISTORICAL_GRID_FILENAME = "binance-usdm-btcusdt-tick-size-2022-02-15.json"
+SUPERSEDED_SPOT_RELEASE = "95e04adb076be05eba0a970aa0978f1a4d1f41ad3caf04e9cd5859dd408ac099"
+SUPERSEDED_PERP_RELEASE = "9c8a5f679f38852119d1d2054b0711965f0a6d89d5dd0e0ebedaa8d8df66b503"
+SPOT_ACCEPTANCE_CONFIG = (
+    ROOT / "runs/owner-smoke-002-spot-run-retry-001-8a09aee98d9f/lab_run_config.json"
+)
+PERP_ACCEPTANCE_CONFIG = (
+    ROOT / "runs/owner-smoke-002-perpetual-run-11882dd8dabb/lab_run_config.json"
+)
 EPOCH = datetime(1970, 1, 1, tzinfo=UTC)
 CSV_NULL = chr(92) + "N"
 
@@ -308,6 +347,167 @@ class SourceRegistry:
         if sha256_bytes(payload) != digest:
             raise RuntimeError(f"raw object changed after registry verification: {digest}")
         return payload
+
+
+def register_historical_order_grid_authority(registry: SourceRegistry) -> dict[str, Any]:
+    """Bind the preserved official Binance tick-size announcement.
+
+    The current exchangeInfo object remains authoritative for the quantity
+    filters.  This separate official observation proves the historical
+    BTCUSDT price tick without treating Futures ``pricePrecision`` as a tick.
+    """
+
+    if (
+        not HISTORICAL_GRID_RAW_PATH.is_file()
+        or HISTORICAL_GRID_RAW_PATH.stat().st_size != HISTORICAL_GRID_SIZE
+        or hash_file(HISTORICAL_GRID_RAW_PATH) != HISTORICAL_GRID_SHA256
+    ):
+        raise RuntimeError("official historical order-grid object identity mismatch")
+    payload = HISTORICAL_GRID_RAW_PATH.read_bytes()
+    parsed = json.loads(payload.decode("utf-8"))
+    if parsed.get("success") is not True or parsed.get("code") != "000000":
+        raise RuntimeError("official Binance CMS response is not successful")
+    article = parsed.get("data")
+    if not isinstance(article, dict) or article.get("code") != "81e6795b0bae49828cbd52479094a987":
+        raise RuntimeError("official Binance CMS article identity mismatch")
+    if article.get("title") != "Updates on the Tick Size for BTC USDⓈ-M Perpetual Futures Contracts":
+        raise RuntimeError("official Binance CMS article title mismatch")
+    body = str(article.get("body", ""))
+    text_nodes = [
+        json.loads(f'"{item}"')
+        for item in re.findall(r'"text":"((?:[^"\\]|\\.)*)"', body)
+    ]
+    btc_rows = [
+        text_nodes[index : index + 3]
+        for index, value in enumerate(text_nodes)
+        if value == "BTCUSDT"
+    ]
+    if (
+        not any("2022-02-15 03:30 AM (UTC)" in item for item in text_nodes)
+        or "Before" not in text_nodes
+        or "After" not in text_nodes
+        or ["BTCUSDT", "0.01", "0.1"] not in btc_rows
+    ):
+        raise RuntimeError("official Binance BTCUSDT before/after tick table is unresolved")
+    observation_id = canonical_sha256(
+        {
+            "raw_object_sha256": HISTORICAL_GRID_SHA256,
+            "exact_locator": HISTORICAL_GRID_URL,
+            "captured_at_utc": HISTORICAL_GRID_CAPTURED_AT,
+            "source_role": SourceRole.USDM_PERPETUAL_HISTORICAL_ORDER_GRID.value,
+        },
+    )
+    observation = {
+        "observation_id": observation_id,
+        "raw_object_sha256": HISTORICAL_GRID_SHA256,
+        "exact_locator": HISTORICAL_GRID_URL,
+        "exact_query_json": canonical_text(
+            {"articleCode": "81e6795b0bae49828cbd52479094a987"},
+        ),
+        "http_status": 200,
+        "response_headers_json": canonical_text(
+            {
+                "content-length": str(HISTORICAL_GRID_SIZE),
+                "content-type": "application/json;charset=UTF-8",
+                "date": "Sun, 23 Aug 2026 19:35:20 GMT",
+                "etag": 'W/"0211f60b56f1235d97d0d2b855040e1e9"',
+            },
+        ),
+        "captured_at_utc": HISTORICAL_GRID_CAPTURED_AT,
+        "source_role": SourceRole.USDM_PERPETUAL_HISTORICAL_ORDER_GRID.value,
+        "instrument": "BTCUSDT",
+        "requested_interval": "NOT_APPLICABLE",
+        "requested_start_ms": None,
+        "requested_end_ms": None,
+        "pagination_identity": "NOT_APPLICABLE",
+    }
+    if HISTORICAL_GRID_SHA256 in registry.raw:
+        raise RuntimeError("historical order-grid raw object was registered twice")
+    registry.raw[HISTORICAL_GRID_SHA256] = RawBinding(
+        HISTORICAL_GRID_SHA256,
+        HISTORICAL_GRID_SIZE,
+        HISTORICAL_GRID_RAW_PATH,
+    )
+    registry.observations.append(observation)
+    registry.observations.sort(key=lambda item: item["observation_id"])
+    registry.by_sha[HISTORICAL_GRID_SHA256] = [observation]
+    return observation
+
+
+def register_spot_historical_order_grid_authority(registry: SourceRegistry) -> dict[str, Any]:
+    """Bind Binance's official before/after BTCUSDT Spot step-size table."""
+
+    if (
+        not SPOT_HISTORICAL_GRID_RAW_PATH.is_file()
+        or SPOT_HISTORICAL_GRID_RAW_PATH.stat().st_size != SPOT_HISTORICAL_GRID_SIZE
+        or hash_file(SPOT_HISTORICAL_GRID_RAW_PATH) != SPOT_HISTORICAL_GRID_SHA256
+    ):
+        raise RuntimeError("official Spot historical order-grid object identity mismatch")
+    parsed = json.loads(SPOT_HISTORICAL_GRID_RAW_PATH.read_text(encoding="utf-8"))
+    if parsed.get("success") is not True or parsed.get("code") != "000000":
+        raise RuntimeError("official Binance Spot CMS response is not successful")
+    article = parsed.get("data")
+    if not isinstance(article, dict) or article.get("code") != "6925d618ab6b47e2936cc4614eaad64b":
+        raise RuntimeError("official Binance Spot CMS article identity mismatch")
+    if article.get("title") != "Updates on Tick Size and Step Size for Spot Trading Pairs":
+        raise RuntimeError("official Binance Spot CMS article title mismatch")
+    body = str(article.get("body", ""))
+    text_nodes = [
+        json.loads(f'"{item}"')
+        for item in re.findall(r'"text":"((?:[^"\\]|\\.)*)"', body)
+    ]
+    btc_rows = [
+        text_nodes[index : index + 3]
+        for index, value in enumerate(text_nodes)
+        if value == "BTCUSDT"
+    ]
+    if (
+        not any("2021-08-26 06:00 AM (UTC)" in item for item in text_nodes)
+        or "Step Size (Before)" not in text_nodes
+        or "Updated Step Size" not in text_nodes
+        or ["BTCUSDT", "0.000001", "0.00001"] not in btc_rows
+    ):
+        raise RuntimeError("official Binance BTCUSDT before/after Spot step table is unresolved")
+    observation_id = canonical_sha256(
+        {
+            "raw_object_sha256": SPOT_HISTORICAL_GRID_SHA256,
+            "exact_locator": SPOT_HISTORICAL_GRID_URL,
+            "captured_at_utc": SPOT_HISTORICAL_GRID_CAPTURED_AT,
+            "source_role": SourceRole.SPOT_HISTORICAL_ORDER_GRID.value,
+        },
+    )
+    observation = {
+        "observation_id": observation_id,
+        "raw_object_sha256": SPOT_HISTORICAL_GRID_SHA256,
+        "exact_locator": SPOT_HISTORICAL_GRID_URL,
+        "exact_query_json": canonical_text(
+            {"articleCode": "6925d618ab6b47e2936cc4614eaad64b"},
+        ),
+        "http_status": 200,
+        "response_headers_json": canonical_text(
+            {
+                "capture_transport": "CURL_FAIL_ON_NON_2XX_BODY_PRESERVED_BEFORE_PARSE",
+            },
+        ),
+        "captured_at_utc": SPOT_HISTORICAL_GRID_CAPTURED_AT,
+        "source_role": SourceRole.SPOT_HISTORICAL_ORDER_GRID.value,
+        "instrument": "BTCUSDT",
+        "requested_interval": "NOT_APPLICABLE",
+        "requested_start_ms": None,
+        "requested_end_ms": None,
+        "pagination_identity": "NOT_APPLICABLE",
+    }
+    if SPOT_HISTORICAL_GRID_SHA256 in registry.raw:
+        raise RuntimeError("Spot historical order-grid raw object was registered twice")
+    registry.raw[SPOT_HISTORICAL_GRID_SHA256] = RawBinding(
+        SPOT_HISTORICAL_GRID_SHA256,
+        SPOT_HISTORICAL_GRID_SIZE,
+        SPOT_HISTORICAL_GRID_RAW_PATH,
+    )
+    registry.observations.append(observation)
+    registry.observations.sort(key=lambda item: item["observation_id"])
+    registry.by_sha[SPOT_HISTORICAL_GRID_SHA256] = [observation]
+    return observation
 
 
 SOURCE_OBSERVATION_HEADER = (
@@ -1456,6 +1656,172 @@ def load_metadata(
     return spot_metadata, perp_metadata, spot_observation, perp_observation
 
 
+def required_decimal_precision(value: Decimal) -> int:
+    """Return the minimum finite decimal places needed for exact equality."""
+
+    if not value.is_finite():
+        raise RuntimeError("non-finite source Decimal")
+    fixed = format(value, "f")
+    if "." not in fixed:
+        return 0
+    return len(fixed.rstrip("0").split(".", 1)[1])
+
+
+def source_decimal_precision(value: Decimal) -> int:
+    if not value.is_finite():
+        raise RuntimeError("non-finite source Decimal")
+    return max(0, -value.as_tuple().exponent)
+
+
+def numeric_field_audit(
+    rows: Iterable[Any],
+    *,
+    field: str,
+    timestamp_field: str,
+    previous_representation_precision: int,
+) -> dict[str, Any]:
+    required_distribution: Counter[int] = Counter()
+    source_distribution: Counter[int] = Counter()
+    affected: list[int] = []
+    trailing_zero_only = 0
+    count = 0
+    for row in rows:
+        count += 1
+        value = getattr(row, field)
+        if not isinstance(value, Decimal):
+            value = Decimal(str(value))
+        required = required_decimal_precision(value)
+        source = source_decimal_precision(value)
+        required_distribution[required] += 1
+        source_distribution[source] += 1
+        if required > previous_representation_precision:
+            affected.append(int(getattr(row, timestamp_field)))
+        elif source > previous_representation_precision:
+            trailing_zero_only += 1
+    maximum = max(required_distribution, default=0)
+    return {
+        "field": field,
+        "row_count": count,
+        "previous_representation_precision": previous_representation_precision,
+        "maximum_exact_required_decimal_precision": maximum,
+        "required_precision_distribution": {
+            str(key): required_distribution[key] for key in sorted(required_distribution)
+        },
+        "source_spelling_precision_distribution": {
+            str(key): source_distribution[key] for key in sorted(source_distribution)
+        },
+        "affected_row_count": len(affected),
+        "first_affected_timestamp_ns": None if not affected else min(affected),
+        "last_affected_timestamp_ns": None if not affected else max(affected),
+        "values_requiring_non_zero_digits_above_previous_precision": len(affected),
+        "source_spellings_with_trailing_zeros_only_above_previous_precision": trailing_zero_only,
+        "lossless_zero_padding_possible": True,
+        "rounding_required": False,
+    }
+
+
+def build_source_precision_audit(
+    *,
+    spot_bars: tuple[NormalizedBar, ...] | list[NormalizedBar],
+    perpetual_execution_bars: tuple[NormalizedBar, ...] | list[NormalizedBar],
+    perpetual_mark_bars: tuple[NormalizedBar, ...] | list[NormalizedBar],
+    funding_events: tuple[FundingEvent, ...] | list[FundingEvent],
+    spot_metadata: Any,
+    perp_metadata: Any,
+) -> dict[str, Any]:
+    spot_fields = {
+        field: numeric_field_audit(
+            spot_bars,
+            field=field,
+            timestamp_field="interval_start_ns",
+            previous_representation_precision=(
+                spot_metadata.size_precision if field == "volume" else spot_metadata.price_precision
+            ),
+        )
+        for field in ("open", "high", "low", "close", "volume")
+    }
+    perp_execution_fields = {
+        field: numeric_field_audit(
+            perpetual_execution_bars,
+            field=field,
+            timestamp_field="interval_start_ns",
+            previous_representation_precision=(
+                perp_metadata.size_precision if field == "volume" else perp_metadata.price_precision
+            ),
+        )
+        for field in ("open", "high", "low", "close", "volume")
+    }
+    perp_mark_fields = {
+        field: numeric_field_audit(
+            perpetual_mark_bars,
+            field=field,
+            timestamp_field="interval_start_ns",
+            previous_representation_precision=perp_metadata.price_precision,
+        )
+        for field in ("open", "high", "low", "close")
+    }
+    funding_fields = {
+        "funding_rate": numeric_field_audit(
+            funding_events,
+            field="funding_rate",
+            timestamp_field="calc_time_ns",
+            previous_representation_precision=0,
+        ),
+    }
+    spot_price_precision = max(
+        item["maximum_exact_required_decimal_precision"]
+        for field, item in spot_fields.items()
+        if field != "volume"
+    )
+    spot_size_precision = spot_fields["volume"]["maximum_exact_required_decimal_precision"]
+    perp_execution_price_precision = max(
+        item["maximum_exact_required_decimal_precision"]
+        for field, item in perp_execution_fields.items()
+        if field != "volume"
+    )
+    perp_mark_precision = max(
+        item["maximum_exact_required_decimal_precision"] for item in perp_mark_fields.values()
+    )
+    perp_size_precision = perp_execution_fields["volume"]["maximum_exact_required_decimal_precision"]
+    material = {
+        "schema": "source-precision-audit-v1",
+        "spot": {
+            "fields": spot_fields,
+            "execution_price_representation_precision": spot_price_precision,
+            "bar_volume_representation_precision": spot_size_precision,
+            "instrument_size_representation_precision": spot_size_precision,
+            "economic_order_quantity_contract": {
+                "min_quantity": str(spot_metadata.min_quantity),
+                "max_quantity": str(spot_metadata.max_quantity),
+                "size_increment": str(spot_metadata.size_increment),
+                "representation_precision": spot_size_precision,
+            },
+        },
+        "perpetual": {
+            "execution_fields": perp_execution_fields,
+            "mark_fields": perp_mark_fields,
+            "funding_fields": funding_fields,
+            "execution_price_maximum_exact_precision": perp_execution_price_precision,
+            "mark_price_maximum_exact_precision": perp_mark_precision,
+            "instrument_price_representation_precision": max(
+                perp_execution_price_precision,
+                perp_mark_precision,
+            ),
+            "bar_volume_and_order_quantity_representation_precision": perp_size_precision,
+            "economic_order_quantity_contract": {
+                "min_quantity": str(perp_metadata.min_quantity),
+                "max_quantity": str(perp_metadata.max_quantity),
+                "size_increment": str(perp_metadata.size_increment),
+                "representation_precision": perp_size_precision,
+            },
+        },
+        "raw_canonical_decimal_text_changed": False,
+        "numeric_market_value_changed": False,
+        "rounding_or_truncation_used": False,
+    }
+    return {"source_precision_audit_identity": canonical_sha256(material), **material}
+
+
 def pair_range(analyzer: Any, pair: dict[str, Any]) -> TimeRange:
     start_ms = int(analyzer.task_value(pair, "range_start_ms", "start_ms"))
     end_ms = int(analyzer.task_value(pair, "range_end_ms", "end_ms"))
@@ -1548,7 +1914,9 @@ def source_bindings(
     perp_mark_pairs: list[dict[str, Any]],
     funding_pairs: list[dict[str, Any]],
     spot_metadata_observation: dict[str, Any],
+    spot_historical_grid_observation: dict[str, Any],
     perp_metadata_observation: dict[str, Any],
+    historical_grid_observation: dict[str, Any],
 ) -> tuple[tuple[SourceObjectBinding, ...], tuple[SourceObjectBinding, ...]]:
     spot = [
         pair_binding(
@@ -1568,6 +1936,15 @@ def source_bindings(
             source_role=SourceRole.SPOT_INSTRUMENT_METADATA,
             market_profile=SPOT_PROFILE,
             exact_filename="spot-exchangeInfo-BTCUSDT.json",
+        ),
+    )
+    spot.append(
+        metadata_binding(
+            registry,
+            spot_historical_grid_observation,
+            source_role=SourceRole.SPOT_HISTORICAL_ORDER_GRID,
+            market_profile=SPOT_PROFILE,
+            exact_filename=SPOT_HISTORICAL_GRID_FILENAME,
         ),
     )
     perp: list[SourceObjectBinding] = []
@@ -1594,6 +1971,15 @@ def source_bindings(
             source_role=SourceRole.USDM_PERPETUAL_INSTRUMENT_METADATA,
             market_profile=PERP_PROFILE,
             exact_filename="usdm-exchangeInfo.json",
+        ),
+    )
+    perp.append(
+        metadata_binding(
+            registry,
+            historical_grid_observation,
+            source_role=SourceRole.USDM_PERPETUAL_HISTORICAL_ORDER_GRID,
+            market_profile=PERP_PROFILE,
+            exact_filename=HISTORICAL_GRID_FILENAME,
         ),
     )
     return (
@@ -1729,8 +2115,13 @@ TABLE_ORDER = {
     "verified_no_trade_intervals": "instrument_id, start_ns",
     "minute_dispositions": "market_profile, instrument_id, open_time_ns",
     "instrument_metadata": "instrument_metadata_identity",
+    "instrument_metadata_source_bindings": (
+        "instrument_metadata_identity, source_raw_object_sha256, binding_purpose"
+    ),
+    "nautilus_market_state_acceptance": "validation_identity",
     "data_windows": "shift_months, data_window_identity",
     "dataset_releases": "market_profile, instrument_id",
+    "dataset_release_supersessions": "superseded_dataset_release_id",
     "release_members": "dataset_release_id, member_type, member_identity",
     "validation_results": "validation_name, validation_identity",
 }
@@ -1831,7 +2222,14 @@ def build(
     analyzer = load_analyzer()
     registry = SourceRegistry()
     registry.load()
-    spot_metadata, perp_metadata, spot_metadata_observation, perp_metadata_observation = load_metadata(
+    spot_historical_grid_observation = register_spot_historical_order_grid_authority(registry)
+    historical_grid_observation = register_historical_order_grid_authority(registry)
+    (
+        base_spot_metadata,
+        base_perp_metadata,
+        spot_metadata_observation,
+        perp_metadata_observation,
+    ) = load_metadata(
         registry,
         new,
     )
@@ -1885,7 +2283,7 @@ def build(
             "INSERT INTO schema_metadata VALUES (?, ?, ?, ?, ?, ?)",
             [
                 schema_identity,
-                "free-official-binance-duckdb-v1",
+                "free-official-binance-duckdb-v2-instrument-representation",
                 EXPECTED_DUCKDB_VERSION,
                 "UTC_INTEGER_NANOSECONDS_CANONICAL;SOURCE_UNITS_EXPLICIT",
                 False,
@@ -1909,29 +2307,6 @@ def build(
             aggtrade_writer=writers["spot_agg_trades"],
         )
         spot_coverage_identity = minute_coverage_identity(spot["dispositions"])
-        spot_validation_identity = canonical_sha256(
-            {
-                "profile": SPOT_PROFILE.value,
-                "minute_coverage_identity": spot_coverage_identity,
-                "source_reconciliation_identity": spot["source_reconciliation_identity"],
-                "counts": spot["counts"],
-                "unresolved_gap_count": 0,
-                "synthetic_bar_count": 0,
-                "binary_float_material_calculation_used": False,
-            },
-        )
-        spot_catalog_binding = {
-            "data_window_identity": selected["data_window_identity"],
-            "partition_geometry_identity": windows["partition_geometry_identity"],
-            "minute_coverage_identity": spot_coverage_identity,
-            "normalized_time_range": time_range.to_builtins(),
-        }
-        spot_catalog = build_nautilus_catalog(
-            catalog_root / "spot",
-            metadata=spot_metadata,
-            execution_bars=spot["bars"],
-            semantic_binding=spot_catalog_binding,
-        )
 
         perpetual = process_perpetual_market_data(
             analyzer=analyzer,
@@ -1953,17 +2328,96 @@ def build(
             funding_writer=writers["perpetual_funding_events"],
         )
         perp_coverage_identity = minute_coverage_identity(perpetual["dispositions"])
-        perp_validation_identity = canonical_sha256(
-            {
-                "profile": PERP_PROFILE.value,
-                "minute_coverage_identity": perp_coverage_identity,
-                "source_reconciliation_identity": perpetual["source_reconciliation_identity"],
-                "execution_minute_count": len(perpetual["execution_bars"]),
-                "mark_minute_count": len(perpetual["mark_bars"]),
-                "funding_event_count": len(funding["events"]),
-                "mark_substitution_count": 0,
-                "missing_mark_minute_count": 0,
+
+        source_precision_audit = build_source_precision_audit(
+            spot_bars=spot["bars"],
+            perpetual_execution_bars=perpetual["execution_bars"],
+            perpetual_mark_bars=perpetual["mark_bars"],
+            funding_events=funding["events"],
+            spot_metadata=base_spot_metadata,
+            perp_metadata=base_perp_metadata,
+        )
+        spot_metadata = bind_lossless_instrument_representation(
+            base_spot_metadata,
+            price_precision=int(
+                source_precision_audit["spot"]["execution_price_representation_precision"],
+            ),
+            size_precision=int(
+                source_precision_audit["spot"]["instrument_size_representation_precision"],
+            ),
+            price_increment=Decimal("0.01"),
+            size_increment=Decimal("0.000001"),
+            representation_evidence={
+                "source_precision_audit_identity": source_precision_audit[
+                    "source_precision_audit_identity"
+                ],
+                "normalization": "LOSSLESS_ZERO_PADDING_ONLY",
             },
+            economic_order_grid_evidence={
+                "historical_numeric_increments_proven": True,
+                "historical_exact_for_window": False,
+                "price_increment": {
+                    "value": "0.01",
+                    "authority": "CURRENT_OFFICIAL_FILTER_PLUS_NO_RELEVANT_BINANCE_CHANGE_IN_OFFICIAL_ANNOUNCEMENT_AUDIT",
+                    "source_raw_object_sha256s": [
+                        base_spot_metadata.source_object_sha256,
+                        SPOT_HISTORICAL_GRID_SHA256,
+                    ],
+                },
+                "size_increment": {
+                    "value": "0.000001",
+                    "authority": "OFFICIAL_BINANCE_BEFORE_AFTER_STEP_SIZE_TABLE_EFFECTIVE_2021_08_26",
+                    "source_raw_object_sha256": SPOT_HISTORICAL_GRID_SHA256,
+                },
+                "limits": "CURRENT_OFFICIAL_FILTERS_FAIL_CLOSED_FOR_QUALIFICATION",
+            },
+        )
+        perp_metadata = bind_lossless_instrument_representation(
+            base_perp_metadata,
+            price_precision=int(
+                source_precision_audit["perpetual"]["instrument_price_representation_precision"],
+            ),
+            size_precision=int(
+                source_precision_audit["perpetual"][
+                    "bar_volume_and_order_quantity_representation_precision"
+                ],
+            ),
+            price_increment=Decimal("0.01"),
+            size_increment=Decimal("0.001"),
+            representation_evidence={
+                "source_precision_audit_identity": source_precision_audit[
+                    "source_precision_audit_identity"
+                ],
+                "normalization": "LOSSLESS_ZERO_PADDING_ONLY",
+            },
+            economic_order_grid_evidence={
+                "historical_numeric_increments_proven": True,
+                "historical_exact_for_window": False,
+                "price_increment": {
+                    "value": "0.01",
+                    "authority": "OFFICIAL_BINANCE_BEFORE_AFTER_TICK_SIZE_TABLE_EFFECTIVE_2022_02_15",
+                    "source_raw_object_sha256": HISTORICAL_GRID_SHA256,
+                },
+                "size_increment": {
+                    "value": "0.001",
+                    "authority": "OFFICIAL_EXCHANGE_INFO_AND_LOCKED_QUANTITY_REPRESENTATION",
+                    "source_raw_object_sha256": base_perp_metadata.source_object_sha256,
+                },
+                "limits": "CURRENT_OFFICIAL_FILTERS_FAIL_CLOSED_FOR_QUALIFICATION",
+            },
+        )
+
+        spot_catalog_binding = {
+            "data_window_identity": selected["data_window_identity"],
+            "partition_geometry_identity": windows["partition_geometry_identity"],
+            "minute_coverage_identity": spot_coverage_identity,
+            "normalized_time_range": time_range.to_builtins(),
+        }
+        spot_catalog = build_nautilus_catalog(
+            catalog_root / "spot",
+            metadata=spot_metadata,
+            execution_bars=spot["bars"],
+            semantic_binding=spot_catalog_binding,
         )
         perp_catalog_binding = {
             "data_window_identity": selected["data_window_identity"],
@@ -1977,9 +2431,30 @@ def build(
             execution_bars=perpetual["execution_bars"],
             mark_bars=perpetual["mark_bars"],
             funding_events=funding["events"],
-            funding_native_binding=FUNDING_NATIVE_BINDING_RC2_INTERVAL_BOUNDARY,
+            funding_native_binding=FUNDING_NATIVE_BINDING_RC2_EXPLICIT_BOUNDARY_PAIR,
             semantic_binding=perp_catalog_binding,
         )
+
+        spot_market_acceptance = qualify_executable_market_state(
+            config_path=SPOT_ACCEPTANCE_CONFIG,
+            catalog_identity=spot_catalog.catalog_identity,
+            metadata=spot_metadata,
+            instrument=spot_catalog.instrument,
+            execution_bars=spot_catalog.execution_bars,
+            diagnostic_root=staging / "nautilus-diagnostics/spot",
+        )
+        spot_validation_identity = market_state_acceptance_identity(spot_market_acceptance)
+        perp_market_acceptance = qualify_executable_market_state(
+            config_path=PERP_ACCEPTANCE_CONFIG,
+            catalog_identity=perp_catalog.catalog_identity,
+            metadata=perp_metadata,
+            instrument=perp_catalog.instrument,
+            execution_bars=perp_catalog.execution_bars,
+            mark_updates=perp_catalog.mark_updates,
+            funding_updates=perp_catalog.funding_updates,
+            diagnostic_root=staging / "nautilus-diagnostics/perpetual",
+        )
+        perp_validation_identity = market_state_acceptance_identity(perp_market_acceptance)
 
         spot_bindings, perp_bindings = source_bindings(
             analyzer=analyzer,
@@ -1989,7 +2464,9 @@ def build(
             perp_mark_pairs=perpetual["mark_binding_pairs"],
             funding_pairs=funding["binding_pairs"],
             spot_metadata_observation=spot_metadata_observation,
+            spot_historical_grid_observation=spot_historical_grid_observation,
             perp_metadata_observation=perp_metadata_observation,
+            historical_grid_observation=historical_grid_observation,
         )
         spot_release = build_dataset_release(
             market_profile=SPOT_PROFILE,
@@ -2008,6 +2485,7 @@ def build(
             derived_validation_identity=spot_validation_identity,
             data_tool_lock_identity=data_tool_lock_identity,
             data_quality_exposure_identity=windows["data_quality_exposure_identity"],
+            normalizer_version=INSTRUMENT_REPAIR_NORMALIZER_VERSION,
         )
         perp_release = build_dataset_release(
             market_profile=PERP_PROFILE,
@@ -2019,7 +2497,7 @@ def build(
             mark_bars=perpetual["mark_bars"],
             funding_events=funding["events"],
             funding_schedule=funding["schedule"],
-            funding_native_binding=FUNDING_NATIVE_BINDING_RC2_INTERVAL_BOUNDARY,
+            funding_native_binding=FUNDING_NATIVE_BINDING_RC2_EXPLICIT_BOUNDARY_PAIR,
             catalog_identity=perp_catalog.catalog_identity,
             created_at_utc=datetime.fromisoformat(checked_at.replace("Z", "+00:00")),
             minute_dispositions=perpetual["dispositions"],
@@ -2030,6 +2508,7 @@ def build(
             derived_validation_identity=perp_validation_identity,
             data_tool_lock_identity=data_tool_lock_identity,
             data_quality_exposure_identity=windows["data_quality_exposure_identity"],
+            normalizer_version=INSTRUMENT_REPAIR_NORMALIZER_VERSION,
         )
 
         for stream in streams.values():
@@ -2058,6 +2537,80 @@ def build(
                     perp_metadata.observed_at_utc.isoformat().replace("+00:00", "Z"),
                     False,
                     perp_metadata.to_json_bytes().decode("utf-8"),
+                ),
+            ],
+        )
+        connection.executemany(
+            "INSERT INTO instrument_metadata_source_bindings VALUES (?, ?, ?, ?)",
+            [
+                (
+                    spot_metadata.instrument_metadata_identity,
+                    base_spot_metadata.source_object_sha256,
+                    SourceRole.SPOT_INSTRUMENT_METADATA.value,
+                    "CURRENT_OFFICIAL_FILTERS",
+                ),
+                (
+                    spot_metadata.instrument_metadata_identity,
+                    base_spot_metadata.source_object_sha256,
+                    SourceRole.SPOT_INSTRUMENT_METADATA.value,
+                    "LOSSLESS_RUNTIME_REPRESENTATION",
+                ),
+                (
+                    spot_metadata.instrument_metadata_identity,
+                    SPOT_HISTORICAL_GRID_SHA256,
+                    SourceRole.SPOT_HISTORICAL_ORDER_GRID.value,
+                    "HISTORICAL_ORDER_GRID",
+                ),
+                (
+                    perp_metadata.instrument_metadata_identity,
+                    base_perp_metadata.source_object_sha256,
+                    SourceRole.USDM_PERPETUAL_INSTRUMENT_METADATA.value,
+                    "CURRENT_OFFICIAL_FILTERS",
+                ),
+                (
+                    perp_metadata.instrument_metadata_identity,
+                    base_perp_metadata.source_object_sha256,
+                    SourceRole.USDM_PERPETUAL_INSTRUMENT_METADATA.value,
+                    "LOSSLESS_RUNTIME_REPRESENTATION",
+                ),
+                (
+                    perp_metadata.instrument_metadata_identity,
+                    HISTORICAL_GRID_SHA256,
+                    SourceRole.USDM_PERPETUAL_HISTORICAL_ORDER_GRID.value,
+                    "HISTORICAL_PRICE_GRID",
+                ),
+            ],
+        )
+        connection.executemany(
+            "INSERT INTO nautilus_market_state_acceptance VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            [
+                (
+                    spot_validation_identity,
+                    SPOT_PROFILE.value,
+                    SPOT_INSTRUMENT,
+                    spot_metadata.instrument_metadata_identity,
+                    spot_market_acceptance["expected_executable_bars"],
+                    spot_market_acceptance["accepted_executable_bars"],
+                    spot_market_acceptance["expected_mark_updates"],
+                    spot_market_acceptance["accepted_mark_updates"],
+                    spot_market_acceptance["precision_skipped_bars"],
+                    spot_market_acceptance["rejected_precision_events"],
+                    spot_market_acceptance["missing_market_state"],
+                    canonical_text(spot_market_acceptance),
+                ),
+                (
+                    perp_validation_identity,
+                    PERP_PROFILE.value,
+                    PERP_INSTRUMENT,
+                    perp_metadata.instrument_metadata_identity,
+                    perp_market_acceptance["expected_executable_bars"],
+                    perp_market_acceptance["accepted_executable_bars"],
+                    perp_market_acceptance["expected_mark_updates"],
+                    perp_market_acceptance["accepted_mark_updates"],
+                    perp_market_acceptance["precision_skipped_bars"],
+                    perp_market_acceptance["rejected_precision_events"],
+                    perp_market_acceptance["missing_market_state"],
+                    canonical_text(perp_market_acceptance),
                 ),
             ],
         )
@@ -2103,15 +2656,32 @@ def build(
         # DuckDB reports eleven columns for this table; fail closed otherwise.
         if len(table_columns(connection, "dataset_releases")) != 11:
             raise RuntimeError("dataset_releases schema drift")
+        connection.executemany(
+            "INSERT INTO dataset_release_supersessions VALUES (?, ?, ?, ?)",
+            [
+                (
+                    SUPERSEDED_SPOT_RELEASE,
+                    spot_release.dataset_release_id,
+                    "SUPERSEDED_INSTRUMENT_REPRESENTATION_INCOMPATIBLE_WITH_PINNED_NAUTILUS",
+                    "INSTRUMENT_REPRESENTATION_PREVENTED_EXECUTABLE_MARKET_STATE",
+                ),
+                (
+                    SUPERSEDED_PERP_RELEASE,
+                    perp_release.dataset_release_id,
+                    "SUPERSEDED_INSTRUMENT_REPRESENTATION_INCOMPATIBLE_WITH_PINNED_NAUTILUS",
+                    "INSTRUMENT_REPRESENTATION_PREVENTED_EXECUTABLE_MARKET_STATE",
+                ),
+            ],
+        )
 
         for release in releases:
             source_objects = (
                 set(spot["used_raw_sha256s"])
-                | {spot_metadata.source_object_sha256}
+                | {spot_metadata.source_object_sha256, SPOT_HISTORICAL_GRID_SHA256}
                 if release.market_profile is SPOT_PROFILE
                 else set(perpetual["used_raw_sha256s"])
                 | set(funding["used_raw_sha256s"])
-                | {perp_metadata.source_object_sha256}
+                | {perp_metadata.source_object_sha256, HISTORICAL_GRID_SHA256}
             )
             missing_raw_bindings = sorted(source_objects - set(registry.raw))
             if missing_raw_bindings:
@@ -2215,6 +2785,27 @@ def build(
                 checked_at,
             ),
             validation_row(
+                "SOURCE_PRECISION_AND_VALUE_CONTINUITY",
+                source_precision_audit,
+                checked_at,
+            ),
+            validation_row(
+                "NAUTILUS_EXECUTABLE_MARKET_STATE_ACCEPTANCE_SPOT",
+                {
+                    "validation_identity": spot_validation_identity,
+                    **spot_market_acceptance,
+                },
+                checked_at,
+            ),
+            validation_row(
+                "NAUTILUS_EXECUTABLE_MARKET_STATE_ACCEPTANCE_PERPETUAL",
+                {
+                    "validation_identity": perp_validation_identity,
+                    **perp_market_acceptance,
+                },
+                checked_at,
+            ),
+            validation_row(
                 "DUCKDB_OFFLINE_NO_EXTENSIONS",
                 {
                     "duckdb_version": duckdb.__version__,
@@ -2296,7 +2887,7 @@ def build(
         funding_material = {
             "schedule_identity": funding["schedule"].schedule_identity,
             "events": [item.semantic_payload() for item in funding["events"]],
-            "native_binding": FUNDING_NATIVE_BINDING_RC2_INTERVAL_BOUNDARY,
+            "native_binding": FUNDING_NATIVE_BINDING_RC2_EXPLICIT_BOUNDARY_PAIR,
         }
         if canonical_sha256(funding_material) != perp_release.funding_data_identity:
             raise RuntimeError("funding artifact identity mismatch")
@@ -2304,8 +2895,16 @@ def build(
             artifact_root / f"{perp_release.funding_data_identity}.funding.json",
             {"funding_data_identity": perp_release.funding_data_identity, **funding_material},
         )
+        write_json(
+            artifact_root / f"{spot_validation_identity}.market-state.json",
+            {"validation_identity": spot_validation_identity, **spot_market_acceptance},
+        )
+        write_json(
+            artifact_root / f"{perp_validation_identity}.market-state.json",
+            {"validation_identity": perp_validation_identity, **perp_market_acceptance},
+        )
         result = {
-            "schema": "free-official-binance-duckdb-build-result-v1",
+            "schema": "free-official-binance-duckdb-build-result-v2-instrument-representation",
             "status": "PASS",
             "build_role": role,
             "build_identity": build_identity,
@@ -2316,6 +2915,25 @@ def build(
             "pre_manifest_table_hashes": pre_manifest_hashes,
             "row_counts": counts,
             "dataset_release_ids": release_ids,
+            "superseded_dataset_releases": {
+                SUPERSEDED_SPOT_RELEASE: spot_release.dataset_release_id,
+                SUPERSEDED_PERP_RELEASE: perp_release.dataset_release_id,
+            },
+            "instrument_metadata_identities": {
+                SPOT_PROFILE.value: spot_metadata.instrument_metadata_identity,
+                PERP_PROFILE.value: perp_metadata.instrument_metadata_identity,
+            },
+            "source_precision_audit": source_precision_audit,
+            "market_state_acceptance": {
+                SPOT_PROFILE.value: {
+                    "validation_identity": spot_validation_identity,
+                    **spot_market_acceptance,
+                },
+                PERP_PROFILE.value: {
+                    "validation_identity": perp_validation_identity,
+                    **perp_market_acceptance,
+                },
+            },
             "releases": {
                 SPOT_PROFILE.value: spot_release.to_builtins(),
                 PERP_PROFILE.value: perp_release.to_builtins(),

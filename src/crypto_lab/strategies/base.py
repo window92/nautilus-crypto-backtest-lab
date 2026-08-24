@@ -26,6 +26,9 @@ from crypto_lab.config import _require_equal
 from crypto_lab.config import _require_nonempty
 from crypto_lab.hashing import canonical_sha256
 from crypto_lab.status import FailureCode
+from crypto_lab.data import DataContractError
+from crypto_lab.data import lossless_runtime_quantity_text
+from crypto_lab.data import validate_market_order_quantity
 
 
 ONE_MINUTE_NS = 60_000_000_000
@@ -420,30 +423,38 @@ class GuardedCausalStrategy(Strategy):
             )
             return
 
-        quantity = Quantity.from_str(intent.quantity)
-        if quantity.precision != self._size_precision:
+        try:
+            runtime_quantity_text = lossless_runtime_quantity_text(
+                intent.quantity,
+                self._size_precision,
+            )
+            quantity = Quantity.from_str(runtime_quantity_text)
+        except DataContractError:
             self._record_guard_failure(
                 FailureCode.INSTRUMENT_METADATA_INVALID,
                 intent=intent,
                 timestamp_ns=now,
-                detail="order quantity precision differs from Instrument size precision",
+                detail="order quantity cannot be represented losslessly at Instrument precision",
+            )
+            return
+        requested = Decimal(intent.quantity)
+        instrument = self.cache.instrument(self._instrument_id)
+        try:
+            if instrument is None:
+                raise DataContractError(
+                    FailureCode.INSTRUMENT_METADATA_INVALID,
+                    "native Instrument is unavailable before order submission",
+                )
+            validate_market_order_quantity(instrument, quantity)
+        except DataContractError as exc:
+            self._record_guard_failure(
+                FailureCode.INSTRUMENT_METADATA_INVALID,
+                intent=intent,
+                timestamp_ns=now,
+                detail=f"MARKET quantity violates Binance filters: {exc}",
             )
             return
         signed = self._signed_position()
-        requested = Decimal(intent.quantity)
-        if (
-            self._size_increment <= 0
-            or requested % self._size_increment != 0
-            or (self._min_quantity is not None and requested < self._min_quantity)
-            or (self._max_quantity is not None and requested > self._max_quantity)
-        ):
-            self._record_guard_failure(
-                FailureCode.INSTRUMENT_METADATA_INVALID,
-                intent=intent,
-                timestamp_ns=now,
-                detail="MARKET quantity violates the native Instrument min/max/grid",
-            )
-            return
         if self._profile is MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY:
             if signed < 0 or (intent.side == "SELL" and requested > signed):
                 self._record_guard_failure(
@@ -479,6 +490,9 @@ class GuardedCausalStrategy(Strategy):
                 "effective_insert_at_ns": now + self._effective_insert_latency_ns,
                 "position_before": str(signed),
                 "time_in_force": "GTC",
+                "canonical_quantity": intent.quantity,
+                "runtime_quantity": runtime_quantity_text,
+                "runtime_zero_padding_only": Decimal(runtime_quantity_text) == requested,
             },
         )
         self.submit_order(order)

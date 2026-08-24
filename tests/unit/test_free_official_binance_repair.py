@@ -136,7 +136,7 @@ class SparseOfficialGridTests(unittest.TestCase):
                 source_reconciliation_identity="a" * 64,
             )
 
-    def test_nautilus_export_preserves_official_text_precision(self) -> None:
+    def test_nautilus_export_rejects_value_outside_bound_instrument_precision(self) -> None:
         source = spot_bars()[0]
         precise = replace(
             source,
@@ -145,8 +145,12 @@ class SparseOfficialGridTests(unittest.TestCase):
             low=source.low + source.low.__class__("0.001"),
             close=source.close + source.close.__class__("0.001"),
         )
-        exported = to_nautilus_execution_bars((precise,), metadata=spot_metadata())
-        self.assertEqual(str(exported[0].open), format(precise.open, "f"))
+        with self.assertRaises(DataContractError) as raised:
+            to_nautilus_execution_bars((precise,), metadata=spot_metadata())
+        self.assertEqual(
+            raised.exception.code,
+            FailureCode.INSTRUMENT_METADATA_INVALID.value,
+        )
 
     def test_missing_mark_minute_and_execution_price_substitution_are_rejected(self) -> None:
         marks = perp_mark_bars()
@@ -328,7 +332,7 @@ class NewDuckDBContractTests(unittest.TestCase):
         if result.returncode:
             self.fail(result.stdout + result.stderr)
         material = json.loads(result.stdout)
-        self.assertEqual(material["table_count"], 18)
+        self.assertEqual(material["table_count"], 21)
         self.assertEqual(material["double_columns"], 0)
         self.assertTrue(material["duplicate_funding_rejected"])
         self.assertTrue(material["id_gap_rejected"])
