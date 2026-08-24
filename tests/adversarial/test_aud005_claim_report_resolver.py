@@ -131,6 +131,26 @@ class Aud005ClaimReportResolverTests(unittest.TestCase):
                 failure_or_block_reason="DETERMINISTIC_REPLAY_MISMATCH_OR_FAILURE",
             ),
         )
+        self.assertTrue(
+            _historical_failed_checker_is_retained(
+                TrialState.FAILED,
+                {
+                    **blocked_status,
+                    "failure_codes": [
+                        "RUNTIME_LOCK_MISMATCH",
+                        "INSTRUMENT_METADATA_INVALID",
+                    ],
+                },
+                {
+                    **blocked_checker,
+                    "failure_codes": [
+                        "INSTRUMENT_METADATA_INVALID",
+                        "RUNTIME_LOCK_MISMATCH",
+                    ],
+                },
+                failure_or_block_reason="DETERMINISTIC_REPLAY_MISMATCH_OR_FAILURE",
+            ),
+        )
 
     def test_official_locator_rejects_assertions_subsets_metrics_and_trades(self) -> None:
         base = {

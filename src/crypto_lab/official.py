@@ -85,6 +85,16 @@ def _historical_failed_checker_is_retained(
             and status.get("state") in {TrialState.FAILED.value, TrialState.BLOCKED.value}
         )
     )
+    status_failures = status.get("failure_codes")
+    checker_failures = persisted_checker.get("failure_codes")
+    failures_match = bool(
+        isinstance(status_failures, list)
+        and isinstance(checker_failures, list)
+        and status_failures
+        and len(status_failures) == len(set(status_failures))
+        and len(checker_failures) == len(set(checker_failures))
+        and set(status_failures) == set(checker_failures)
+    )
     return bool(
         state in {TrialState.FAILED, TrialState.BLOCKED, TrialState.ABORTED}
         and run_state_matches_journal
@@ -92,8 +102,7 @@ def _historical_failed_checker_is_retained(
         in {CheckerOutcome.CHECK_FAIL.value, CheckerOutcome.CHECK_BLOCKED.value}
         and persisted_checker.get("outcome") == status.get("checker_outcome")
         and persisted_checker.get("mutated_run_evidence") is False
-        and persisted_checker.get("failure_codes")
-        and status.get("failure_codes") == persisted_checker.get("failure_codes")
+        and failures_match
     )
 
 
