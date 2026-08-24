@@ -106,6 +106,32 @@ class Aud005ClaimReportResolverTests(unittest.TestCase):
             ),
         )
 
+        blocked_status = {
+            "state": "BLOCKED",
+            "checker_outcome": "CHECK_BLOCKED",
+            "failure_codes": ["INSTRUMENT_METADATA_INVALID"],
+        }
+        blocked_checker = {
+            "outcome": "CHECK_BLOCKED",
+            "failure_codes": ["INSTRUMENT_METADATA_INVALID"],
+            "mutated_run_evidence": False,
+        }
+        self.assertFalse(
+            _historical_failed_checker_is_retained(
+                TrialState.FAILED,
+                blocked_status,
+                blocked_checker,
+            ),
+        )
+        self.assertTrue(
+            _historical_failed_checker_is_retained(
+                TrialState.FAILED,
+                blocked_status,
+                blocked_checker,
+                failure_or_block_reason="DETERMINISTIC_REPLAY_MISMATCH_OR_FAILURE",
+            ),
+        )
+
     def test_official_locator_rejects_assertions_subsets_metrics_and_trades(self) -> None:
         base = {
             "schema_version": 1,

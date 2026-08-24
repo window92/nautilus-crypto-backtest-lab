@@ -65,6 +65,8 @@ def _historical_failed_checker_is_retained(
     state: TrialState,
     status: dict[str, Any],
     persisted_checker: dict[str, Any],
+    *,
+    failure_or_block_reason: str = "NOT_APPLICABLE",
 ) -> bool:
     """Validate immutable failed evidence without rewriting its historical verdict.
 
@@ -75,9 +77,17 @@ def _historical_failed_checker_is_retained(
     revalidation.
     """
 
+    run_state_matches_journal = bool(
+        status.get("state") == state.value
+        or (
+            state is TrialState.FAILED
+            and failure_or_block_reason == "DETERMINISTIC_REPLAY_MISMATCH_OR_FAILURE"
+            and status.get("state") in {TrialState.FAILED.value, TrialState.BLOCKED.value}
+        )
+    )
     return bool(
         state in {TrialState.FAILED, TrialState.BLOCKED, TrialState.ABORTED}
-        and status.get("state") == state.value
+        and run_state_matches_journal
         and status.get("checker_outcome")
         in {CheckerOutcome.CHECK_FAIL.value, CheckerOutcome.CHECK_BLOCKED.value}
         and persisted_checker.get("outcome") == status.get("checker_outcome")
@@ -259,13 +269,25 @@ class OfficialEvidenceResolver:
         status = self._json(run_dir / "status.json")
         persisted_checker = self._json(run_dir / "checker.json")
         manifest_sha = self._verify_manifest(run_dir, record.run_id)
+        historical_failed_retained = bool(
+            not revalidate_current_checker
+            and _historical_failed_checker_is_retained(
+                record.state,
+                status,
+                persisted_checker,
+                failure_or_block_reason=record.failure_or_block_reason,
+            )
+        )
         if (
             config.run_id != record.run_id
             or config.config_sha256 != record.config_sha256
             or config.research_protocol_id != protocol.protocol_id
             or config.strategy_spec_id != record.strategy_spec_id
             or release.dataset_release_id != record.dataset_release_id
-            or status.get("state") != record.state.value
+            or (
+                status.get("state") != record.state.value
+                and not historical_failed_retained
+            )
             or status.get("checker_outcome") != persisted_checker.get("outcome")
         ):
             raise ResearchError("EVIDENCE_INCOMPLETE", "selected trial and Run evidence mismatch")
@@ -290,11 +312,7 @@ class OfficialEvidenceResolver:
             )
             if regenerated.to_builtins() != persisted_checker:
                 raise ResearchError("EVIDENCE_INCOMPLETE", "persisted checker is stale or forged")
-        elif not _historical_failed_checker_is_retained(
-            record.state,
-            status,
-            persisted_checker,
-        ):
+        elif not historical_failed_retained:
             raise ResearchError(
                 "EVIDENCE_INCOMPLETE",
                 "historical failed checker evidence is inconsistent",
