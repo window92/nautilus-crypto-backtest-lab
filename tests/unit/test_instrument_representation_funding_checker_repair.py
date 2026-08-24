@@ -314,6 +314,29 @@ class HistoricalCheckerRegressionTests(unittest.TestCase):
         check = next(item for item in report.checks if item["name"] == "orders_reach_executable_market_state")
         self.assertEqual(check["no_market_rejection_count"], 89)
 
+    def test_sparse_spot_acceptance_does_not_require_a_bar_for_no_trade_minutes(self) -> None:
+        run = (
+            ROOT
+            / "runs/owner-smoke-002-replacement-001-spot-run-retry-001-abbedb975f37"
+        )
+        report = check_evidence_directory(
+            run,
+            repository_root=ROOT,
+            source_revision_current_head_required=False,
+        )
+        self.assertNotIn(
+            FailureCode.INSTRUMENT_METADATA_INVALID.value,
+            report.failure_codes,
+        )
+        check = next(
+            item
+            for item in report.checks
+            if item["name"] == "nautilus_executable_market_state_acceptance"
+        )
+        self.assertTrue(check["pass"])
+        self.assertEqual(check["validation"]["expected_executable_bars"], 304596)
+        self.assertEqual(check["validation"]["accepted_executable_bars"], 304596)
+
 
 class ReplacementWorkflowInputTests(unittest.TestCase):
     def test_owner_workflow_pins_official_child_runtime_environment(self) -> None:

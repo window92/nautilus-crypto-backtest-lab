@@ -495,6 +495,31 @@ def check_evidence_directory(
                 ),
                 None,
             )
+            expected_executable = (
+                int(acceptance.get("expected_executable_bars", -1))
+                if isinstance(acceptance, dict)
+                else -1
+            )
+            accepted_executable = (
+                int(acceptance.get("accepted_executable_bars", -1))
+                if isinstance(acceptance, dict)
+                else -1
+            )
+            # Spot role completeness is minute-disposition completeness: a
+            # VERIFIED_NO_TRADE_INTERVAL occupies a minute but deliberately
+            # has no Nautilus Bar.  The immutable acceptance artifact is bound
+            # to the exact catalog identity, so its expected and accepted Bar
+            # counts must match each other; only continuously priced Perpetual
+            # execution requires equality with the role's minute count.
+            execution_counts_ok = bool(
+                execution_role is not None
+                and expected_executable > 0
+                and accepted_executable == expected_executable
+                and (
+                    config.market_profile.value == "BINANCE_SPOT_CASH_LONG_ONLY"
+                    or expected_executable == execution_role.actual_count
+                )
+            )
             market_state_ok = bool(
                 isinstance(acceptance, dict)
                 and acceptance.get("status") == "PASS"
@@ -504,11 +529,7 @@ def check_evidence_directory(
                 and acceptance.get("catalog_identity") == dataset.catalog_identity
                 and acceptance.get("instrument_metadata_identity")
                 == dataset.instrument_metadata_identity
-                and execution_role is not None
-                and int(acceptance.get("expected_executable_bars", -1))
-                == execution_role.actual_count
-                and int(acceptance.get("accepted_executable_bars", -1))
-                == execution_role.actual_count
+                and execution_counts_ok
                 and int(acceptance.get("precision_skipped_bars", -1)) == 0
                 and int(acceptance.get("rejected_precision_events", -1)) == 0
                 and int(acceptance.get("no_market_data_precision_warnings", -1)) == 0
