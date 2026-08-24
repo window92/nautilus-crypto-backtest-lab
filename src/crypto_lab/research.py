@@ -1164,6 +1164,10 @@ class CompletedTradeSeries(StrictModel):
     source: str
     evidence_sha256: str
     settlement_currency: str
+    stable_native_sequence: bool
+    native_completed_unit_count: int | str
+    realized_pnl_outcomes: tuple[Decimal, ...]
+    realized_returns: tuple[Decimal, ...]
     unambiguous_net_after_cost: bool
     net_outcomes: tuple[Decimal, ...]
 
@@ -1172,8 +1176,46 @@ class CompletedTradeSeries(StrictModel):
             raise ResearchError("CLAIM_INELIGIBLE", "project trade pairing is forbidden")
         _require_sha256(self.evidence_sha256, "completed_trades.evidence_sha256")
         _require_nonempty(self.settlement_currency, "completed_trades.settlement_currency")
-        if any(not outcome.is_finite() for outcome in self.net_outcomes):
+        values = (*self.realized_pnl_outcomes, *self.realized_returns, *self.net_outcomes)
+        if any(not outcome.is_finite() for outcome in values):
             raise ResearchError("CLAIM_INELIGIBLE", "trade outcome must be finite")
+        if not self.stable_native_sequence:
+            if self.native_completed_unit_count != "UNDEFINED":
+                raise ResearchError(
+                    "CLAIM_INELIGIBLE",
+                    "unstable native sequence cannot publish a completed-unit count",
+                )
+            if self.realized_pnl_outcomes or self.realized_returns or self.net_outcomes:
+                raise ResearchError(
+                    "CLAIM_INELIGIBLE",
+                    "unstable native sequence cannot publish unit outcomes",
+                )
+            if self.unambiguous_net_after_cost:
+                raise ResearchError(
+                    "CLAIM_INELIGIBLE",
+                    "unstable native sequence cannot claim net-after-cost outcomes",
+                )
+            return
+        if type(self.native_completed_unit_count) is not int:
+            raise ResearchError("CLAIM_INELIGIBLE", "native completed-unit count must be integer")
+        count = self.native_completed_unit_count
+        if count < 0:
+            raise ResearchError("CLAIM_INELIGIBLE", "native completed-unit count is negative")
+        if len(self.realized_pnl_outcomes) != count or len(self.realized_returns) != count:
+            raise ResearchError(
+                "CLAIM_INELIGIBLE",
+                "native completed-unit values are incomplete",
+            )
+        if self.unambiguous_net_after_cost:
+            if len(self.net_outcomes) != count:
+                raise ResearchError("CLAIM_INELIGIBLE", "native net outcome sequence is incomplete")
+            if self.net_outcomes != self.realized_pnl_outcomes:
+                raise ResearchError(
+                    "CLAIM_INELIGIBLE",
+                    "native net outcomes must be the persisted Position.realized_pnl sequence",
+                )
+        elif self.net_outcomes:
+            raise ResearchError("CLAIM_INELIGIBLE", "ambiguous costs forbid net outcomes")
 
 
 def evaluate_sample_adequacy(
@@ -1183,12 +1225,13 @@ def evaluate_sample_adequacy(
     threshold = rule.minimum_completed_trades
     if threshold == NOT_APPLICABLE:
         return SampleAdequacy.NOT_APPLICABLE
-    if not completed_trades.unambiguous_net_after_cost:
+    if not completed_trades.stable_native_sequence:
         return SampleAdequacy.LOW_CONFIDENCE
     assert isinstance(threshold, int)
+    assert isinstance(completed_trades.native_completed_unit_count, int)
     return (
         SampleAdequacy.ADEQUATE
-        if len(completed_trades.net_outcomes) >= threshold
+        if completed_trades.native_completed_unit_count >= threshold
         else SampleAdequacy.LOW_CONFIDENCE
     )
 

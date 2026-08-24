@@ -16,6 +16,8 @@ from crypto_lab.runner import run_official_lab
 from crypto_lab.m3 import MechanicalIntegrity
 from crypto_lab.m3 import QualificationDownstreamBundle
 from crypto_lab.m3 import QualifiedProfileRegistry
+from crypto_lab.native_metrics import NativeCalmarQualification
+from crypto_lab.reporting import NativeResearchMetricsReadiness
 from crypto_lab.reporting import PerformanceDiagnostics
 from crypto_lab.reporting import ReportInput
 from crypto_lab.reporting import ReportOutput
@@ -50,6 +52,8 @@ __all__ = [
     "RunState",
     "RunResult",
     "MechanicalIntegrity",
+    "NativeResearchMetricsReadiness",
+    "NativeCalmarQualification",
     "PerformanceDiagnostics",
     "QualificationDownstreamBundle",
     "QualifiedProfileRegistry",

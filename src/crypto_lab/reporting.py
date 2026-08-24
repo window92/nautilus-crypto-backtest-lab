@@ -21,6 +21,7 @@ from crypto_lab.config import _require_sha256
 from crypto_lab.config import _require_utc
 from crypto_lab.hashing import canonical_json_bytes
 from crypto_lab.hashing import canonical_sha256
+from crypto_lab.native_metrics import NativeCalmarQualification
 from crypto_lab.research import ClaimEvaluation
 from crypto_lab.research import MonteCarloResult
 from crypto_lab.research import MonteCarloStatus
@@ -215,6 +216,182 @@ class PerformanceDiagnostics(StrictModel):
         return cls(diagnostics_id=canonical_sha256(material), **material)
 
 
+class NativeResearchMetricsReadiness(StrictModel):
+    """Additive reporting contract for native completed-position metrics."""
+
+    schema_version: int
+    readiness_id: str
+    run_id: str
+    native_sequence_evidence_sha256: str
+    completed_native_units: DiagnosticValue
+    average_trade_realized_pnl: DiagnosticValue
+    average_trade_realized_return: DiagnosticValue
+    gross_pnl: DiagnosticValue
+    calmar: DiagnosticValue
+    calmar_qualification_id: str
+    calmar_input_returns_sha256: str
+    calmar_returns_basis: str
+    sample_adequacy: SampleAdequacy
+    monte_carlo_input_status: str
+    terminal_open_position_excluded: bool
+    historical_run_evidence_mutated: bool
+
+    def __post_init__(self) -> None:
+        if self.schema_version != 1:
+            raise ResearchError("EVIDENCE_INCOMPLETE", "unknown native metrics readiness schema")
+        _require_sha256(self.readiness_id, "native_metrics_readiness.readiness_id")
+        _require_sha256(
+            self.native_sequence_evidence_sha256,
+            "native_metrics_readiness.native_sequence_evidence_sha256",
+        )
+        _require_sha256(
+            self.calmar_qualification_id,
+            "native_metrics_readiness.calmar_qualification_id",
+        )
+        _require_sha256(
+            self.calmar_input_returns_sha256,
+            "native_metrics_readiness.calmar_input_returns_sha256",
+        )
+        _require_nonempty(self.run_id, "native_metrics_readiness.run_id")
+        _require_nonempty(
+            self.calmar_returns_basis,
+            "native_metrics_readiness.calmar_returns_basis",
+        )
+        if self.monte_carlo_input_status not in {
+            "NATIVE_NET_COMPLETED_UNIT_SEQUENCE_READY",
+            "MC_LOW_CONFIDENCE",
+        }:
+            raise ResearchError("EVIDENCE_INCOMPLETE", "unknown Monte Carlo input readiness")
+        if self.historical_run_evidence_mutated:
+            raise ResearchError("EVIDENCE_INCOMPLETE", "historical Run evidence cannot be mutated")
+        if not self.terminal_open_position_excluded:
+            raise ResearchError(
+                "EVIDENCE_INCOMPLETE",
+                "terminal open Position must be excluded from completed native units",
+            )
+        if canonical_sha256(self.material_payload()) != self.readiness_id:
+            raise ResearchError("EVIDENCE_INCOMPLETE", "native metrics readiness identity mismatch")
+
+    def material_payload(self) -> dict[str, Any]:
+        return {
+            field.name: getattr(self, field.name)
+            for field in fields(self)
+            if field.name != "readiness_id"
+        }
+
+    @classmethod
+    def create(cls, **values: Any) -> NativeResearchMetricsReadiness:
+        material = {"schema_version": 1, **values}
+        return cls(readiness_id=canonical_sha256(material), **material)
+
+
+def generate_native_research_metrics_readiness(
+    *,
+    run_id: str,
+    completed_trades: CompletedTradeSeries,
+    sample_adequacy: SampleAdequacy,
+    native_calmar: NativeCalmarQualification,
+    terminal_open_position_excluded: bool,
+) -> NativeResearchMetricsReadiness:
+    """Report only metrics carried by the native completed-position sequence."""
+
+    if completed_trades.stable_native_sequence:
+        assert isinstance(completed_trades.native_completed_unit_count, int)
+        count = completed_trades.native_completed_unit_count
+        completed_count = _native(
+            str(count),
+            unit="NAUTILUS_NATIVE_COMPLETED_POSITIONS",
+            metric="cache.position_snapshots()/cache.positions_closed()",
+        )
+        if count:
+            average_pnl = _calculated(
+                sum(completed_trades.realized_pnl_outcomes, Decimal(0)) / Decimal(count),
+                unit=completed_trades.settlement_currency,
+                formula="mean(native Position.realized_pnl for completed Position units)",
+                inputs=("native_completed_position_sequence",),
+                source="NAUTILUS_NATIVE_POSITION_REALIZED_PNL_SEQUENCE",
+            )
+            average_return = _calculated(
+                sum(completed_trades.realized_returns, Decimal(0)) / Decimal(count),
+                unit="ratio",
+                formula="mean(native Position.realized_return for completed Position units)",
+                inputs=("native_completed_position_sequence",),
+                source="NAUTILUS_NATIVE_POSITION_REALIZED_RETURN_SEQUENCE",
+            )
+        else:
+            average_pnl = _undefined(
+                unit=completed_trades.settlement_currency,
+                formula="mean(native Position.realized_pnl for completed Position units)",
+                inputs=("native_completed_position_sequence",),
+                reason="average trade is undefined for zero native completed positions",
+            )
+            average_return = _undefined(
+                unit="ratio",
+                formula="mean(native Position.realized_return for completed Position units)",
+                inputs=("native_completed_position_sequence",),
+                reason="average trade is undefined for zero native completed positions",
+            )
+    else:
+        completed_count = _undefined(
+            unit="NAUTILUS_NATIVE_COMPLETED_POSITIONS",
+            formula="count(persisted Nautilus native completed Position units)",
+            inputs=("native_completed_position_sequence",),
+            reason="stable native completed-position sequence unavailable",
+        )
+        average_pnl = _undefined(
+            unit=completed_trades.settlement_currency,
+            formula="mean(native Position.realized_pnl for completed Position units)",
+            inputs=("native_completed_position_sequence",),
+            reason="native completed-unit realized PnL sequence unavailable",
+        )
+        average_return = _undefined(
+            unit="ratio",
+            formula="mean(native Position.realized_return for completed Position units)",
+            inputs=("native_completed_position_sequence",),
+            reason="native completed-unit realized-return sequence unavailable",
+        )
+
+    gross = _undefined(
+        unit=completed_trades.settlement_currency,
+        formula="NAUTILUS_NATIVE_GROSS_PNL",
+        inputs=("native Position.realized_pnl", "native commissions", "native funding"),
+        reason="UNDEFINED_NATIVE_GROSS_PNL_NOT_EXPOSED",
+    )
+    calmar = (
+        _native(native_calmar.value, unit="ratio", metric="CalmarRatio(252)")
+        if native_calmar.status == "NATIVE"
+        else _undefined(
+            unit="ratio",
+            formula="NATIVE_CAGR_252 / abs(NATIVE_MAX_DRAWDOWN)",
+            inputs=("native portfolio daily returns",),
+            reason=native_calmar.undefined_reason,
+        )
+    )
+    monte_carlo_status = (
+        "NATIVE_NET_COMPLETED_UNIT_SEQUENCE_READY"
+        if completed_trades.stable_native_sequence
+        and completed_trades.unambiguous_net_after_cost
+        and bool(completed_trades.net_outcomes)
+        else "MC_LOW_CONFIDENCE"
+    )
+    return NativeResearchMetricsReadiness.create(
+        run_id=run_id,
+        native_sequence_evidence_sha256=completed_trades.evidence_sha256,
+        completed_native_units=completed_count,
+        average_trade_realized_pnl=average_pnl,
+        average_trade_realized_return=average_return,
+        gross_pnl=gross,
+        calmar=calmar,
+        calmar_qualification_id=native_calmar.qualification_id,
+        calmar_input_returns_sha256=native_calmar.input_returns_sha256,
+        calmar_returns_basis=native_calmar.returns_basis,
+        sample_adequacy=sample_adequacy,
+        monte_carlo_input_status=monte_carlo_status,
+        terminal_open_position_excluded=terminal_open_position_excluded,
+        historical_run_evidence_mutated=False,
+    )
+
+
 def _drawdown_state(
     observations: tuple[EquityObservation, ...],
     scoring_end_exclusive: datetime,
@@ -392,14 +569,25 @@ def generate_performance_diagnostics(
         formula="sum(drawdown_duration_seconds) / scored_elapsed_seconds",
         inputs=("drawdown_episodes", "scored_elapsed_seconds"),
     )
+    if completed_trades.stable_native_sequence:
+        assert isinstance(completed_trades.native_completed_unit_count, int)
+        completed_trade_count = _calculated(
+            completed_trades.native_completed_unit_count,
+            unit="NAUTILUS_NATIVE_COMPLETED_TRADES",
+            formula="count(persisted Nautilus native closed Position units)",
+            inputs=("native_completed_position_sequence",),
+            source="NAUTILUS_NATIVE_POSITION_SEQUENCE",
+        )
+    else:
+        completed_trade_count = _undefined(
+            unit="NAUTILUS_NATIVE_COMPLETED_TRADES",
+            formula="count(persisted Nautilus native closed Position units)",
+            inputs=("native_completed_position_sequence",),
+            reason="stable Nautilus native completed-position sequence unavailable",
+        )
+
     if completed_trades.unambiguous_net_after_cost:
         outcomes = completed_trades.net_outcomes
-        completed_trade_count = _calculated(
-            len(outcomes),
-            unit="NAUTILUS_NATIVE_COMPLETED_TRADES",
-            formula="count(native completed net-after-cost trade outcomes)",
-            inputs=("native_completed_trade_sequence",),
-        )
         win_rate = (
             _calculated(
                 Decimal(sum(item > 0 for item in outcomes)) / Decimal(len(outcomes)),
@@ -429,13 +617,7 @@ def generate_performance_diagnostics(
             inputs=("native_completed_trade_sequence",),
         )
     else:
-        reason = "stable unambiguous Nautilus native completed-trade sequence unavailable"
-        completed_trade_count = _undefined(
-            unit="NAUTILUS_NATIVE_COMPLETED_TRADES",
-            formula="count(native completed net-after-cost trade outcomes)",
-            inputs=("native_completed_trade_sequence",),
-            reason=reason,
-        )
+        reason = "unambiguous Nautilus native net-after-cost outcome sequence unavailable"
         win_rate = _undefined(
             unit="fraction",
             formula="winning native completed trades / native completed trades",
@@ -803,10 +985,12 @@ __all__ = [
     "DrawdownEpisode",
     "DrawdownObservation",
     "EquityObservation",
+    "NativeResearchMetricsReadiness",
     "PerformanceDiagnostics",
     "ReportInput",
     "ReportOutput",
     "build_report",
+    "generate_native_research_metrics_readiness",
     "generate_performance_diagnostics",
     "write_report",
 ]

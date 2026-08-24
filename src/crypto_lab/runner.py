@@ -42,6 +42,7 @@ from crypto_lab.git_identity import capture_actual_source_revision
 from crypto_lab.git_identity import verify_source_revision
 from crypto_lab.nautilus_config import add_venue_from_config
 from crypto_lab.nautilus_config import to_nautilus_engine_config
+from crypto_lab.native_positions import capture_native_completed_position_sequence
 from crypto_lab.offline import OfflineBoundaryUnavailable
 from crypto_lab.offline import NetworkAttemptBlocked
 from crypto_lab.offline import activate_process_network_isolation
@@ -596,7 +597,83 @@ def _native_statistic_value(value: Any) -> str:
     return str(value)
 
 
-def _native_statistics(result: Any) -> dict[str, Any]:
+def _native_returns_basis(
+    result: Any,
+    *,
+    native_completed: Any,
+    portfolio_snapshots: list[dict[str, Any]],
+) -> str:
+    """Identify the pinned analyzer's primary returns source without guessing.
+
+    Nautilus 2.0.0rc2 prefers snapshot-backed portfolio daily returns when its
+    snapshot gate succeeds, and otherwise exposes closed-Position returns.  We
+    reproduce only that source-selection gate here; the return values remain
+    the native ``BacktestResult.returns_series`` and are never recalculated.
+    """
+
+    day_ns = 86_400_000_000_000
+    eligible_days: set[int] = set()
+    eligible_currency: str | None = None
+    first_eligible_snapshot = True
+    portfolio_gate_failed = False
+    for snapshot in portfolio_snapshots:
+        if snapshot["unpriced_instruments"]:
+            continue
+        total_equity = snapshot["total_equity"]
+        if len(total_equity) != 1:
+            portfolio_gate_failed = True
+            break
+        equity = snapshot["base_currency_equity"] or total_equity[0]
+        currency = str(equity["currency"])
+        if eligible_currency is not None and currency != eligible_currency:
+            portfolio_gate_failed = True
+            break
+        eligible_currency = currency
+        timestamp = int(snapshot["ts_event"])
+        day_start = timestamp - timestamp % day_ns
+        if first_eligible_snapshot or (timestamp % day_ns == 0 and timestamp > 0):
+            day_start = max(0, day_start - day_ns)
+        first_eligible_snapshot = False
+        eligible_days.add(day_start)
+
+    portfolio_eligible = (
+        not portfolio_gate_failed
+        and eligible_currency is not None
+        and len(eligible_days) >= 2
+    )
+    native_returns = {
+        int(timestamp): float(value)
+        for timestamp, value in result.returns_series.items()
+    }
+    position_returns: dict[int, float] = {}
+    for unit in native_completed.units:
+        position_returns[unit.closed_ns] = (
+            position_returns.get(unit.closed_ns, 0.0) + float(unit.realized_return)
+        )
+
+    if portfolio_eligible:
+        if not native_returns or any(timestamp % day_ns for timestamp in native_returns):
+            raise ValueError(
+                "NATIVE_RETURNS_BASIS_AMBIGUOUS: eligible portfolio snapshots disagree "
+                "with native daily returns",
+            )
+        return "PORTFOLIO_DAILY_ACCOUNT_RETURNS"
+    if native_returns.keys() != position_returns.keys() or any(
+        native_returns[timestamp] != position_returns[timestamp]
+        for timestamp in native_returns
+    ):
+        raise ValueError(
+            "NATIVE_RETURNS_BASIS_AMBIGUOUS: primary returns are neither qualified "
+            "portfolio daily returns nor native closed-Position returns",
+        )
+    return "POSITION_RETURNS_FALLBACK"
+
+
+def _native_statistics(
+    result: Any,
+    *,
+    returns_basis: str,
+) -> dict[str, Any]:
     return {
         "schema": "nautilus-native-statistics-v1",
         "stats_pnls": {
@@ -621,6 +698,11 @@ def _native_statistics(result: Any) -> dict[str, Any]:
             }
             for timestamp, value in sorted(result.returns_series.items())
         ],
+        "returns_basis": returns_basis,
+        "returns_basis_source": (
+            "PINNED_PORTFOLIO_ANALYZER_SNAPSHOT_GATE_AT_SOURCE_COMMIT_"
+            "27a8e54e7ac3c57d6cbf8891f0283dfbaee97317"
+        ),
         "undefined_native_values_preserved": True,
     }
 
@@ -662,6 +744,8 @@ def _capture_engine(
     strategy: GuardedCausalStrategy,
     instrument_id: Any,
     *,
+    source_run_id: str,
+    settlement_currency: str,
     preserved_funding_events: tuple[dict[str, Any], ...] = (),
 ) -> dict[str, Any]:
     orders_native = engine.cache.orders(instrument_id=instrument_id)
@@ -721,6 +805,17 @@ def _capture_engine(
 
     account = engine.cache.account_for_venue(instrument_id.venue)
     account_events = [] if account is None else [event.to_dict() for event in account.events]
+    expected_closed_cycles = sum(
+        item.get("event_type") == "PositionClosed"
+        for item in strategy.observations["position_sequence"]
+    )
+    native_completed = capture_native_completed_position_sequence(
+        engine.cache,
+        instrument_id=instrument_id,
+        source_run_id=source_run_id,
+        expected_settlement_currency=settlement_currency,
+        expected_closed_cycle_count=expected_closed_cycles,
+    )
     portfolio_snapshots = _native_portfolio_snapshots(engine, account)
     funding_events: list[dict[str, Any]] = [dict(item) for item in preserved_funding_events]
     for position in positions_native:
@@ -776,6 +871,9 @@ def _capture_engine(
         ],
         "account_events": [_semantic_event(event) for event in account_events],
         "funding": [_semantic_event(event) for event in funding_events],
+        "native_completed_positions": [
+            unit.semantic_payload() for unit in native_completed.units
+        ],
         "terminal_portfolio": {"unrealized_pnl": unrealized},
     }
     return {
@@ -786,7 +884,15 @@ def _capture_engine(
         "account_events": account_events,
         "funding_events": funding_events,
         "portfolio_snapshots": portfolio_snapshots,
-        "native_statistics": _native_statistics(native_result),
+        "native_completed_trades": native_completed.to_builtins(),
+        "native_statistics": _native_statistics(
+            native_result,
+            returns_basis=_native_returns_basis(
+                native_result,
+                native_completed=native_completed,
+                portfolio_snapshots=portfolio_snapshots,
+            ),
+        ),
         "backtest_result": {
             "backtest_start": int(native_result.backtest_start),
             "backtest_end": int(native_result.backtest_end),
@@ -983,6 +1089,7 @@ def _empty_capture() -> dict[str, Any]:
         "positions": [],
         "account_events": [],
         "funding": [],
+        "native_completed_positions": [],
         "terminal_portfolio": {},
     }
     return {
@@ -999,8 +1106,11 @@ def _empty_capture() -> dict[str, Any]:
             "stats_returns": {},
             "stats_general": {},
             "returns_series": [],
+            "returns_basis": "UNAVAILABLE",
+            "returns_basis_source": "UNAVAILABLE",
             "undefined_native_values_preserved": True,
         },
+        "native_completed_trades": None,
         "backtest_result": None,
         "mark_price_count": 0,
         "funding_rate_count": 0,
@@ -1230,6 +1340,8 @@ def _run_bound(
                 engine,
                 strategy,
                 instrument.id,
+                source_run_id=run.run_id,
+                settlement_currency=run.initial_capital.currency,
                 preserved_funding_events=preserved_funding,
             )
         except NetworkAttemptBlocked as exc:
@@ -1246,7 +1358,13 @@ def _run_bound(
                 try:
                     observations = json.loads(json.dumps(strategy.observations))
                     assert instrument is not None
-                    capture = _capture_engine(engine, strategy, instrument.id)
+                    capture = _capture_engine(
+                        engine,
+                        strategy,
+                        instrument.id,
+                        source_run_id=run.run_id,
+                        settlement_currency=run.initial_capital.currency,
+                    )
                 except Exception as capture_exc:
                     engine_error += (
                         f"; evidence_capture={type(capture_exc).__name__}: {capture_exc}"
@@ -1365,23 +1483,20 @@ def _run_bound(
             capture["funding_events"],
         )
     if is_official:
-        _write_json(
-            run_dir / "native_completed_trades.json",
-            {
+        native_completed = capture["native_completed_trades"]
+        if native_completed is None:
+            native_completed = {
                 "schema": "nautilus-native-completed-trades-v1",
                 "run_id": run.run_id,
                 "status": "UNAVAILABLE",
                 "completed_trade_count": "UNDEFINED",
                 "net_outcomes": [],
                 "settlement_currency": run.initial_capital.currency,
-                "source": "PINNED_NAUTILUS_NATIVE_SEQUENCE_NOT_EXPOSED_UNAMBIGUOUSLY",
-                "reason": (
-                    "No qualified public v2.0.0rc2 API provides an unambiguous net-after-fee-and-"
-                    "funding completed-trade sequence for this Run"
-                ),
+                "source": "NATIVE_ENGINE_CAPTURE_UNAVAILABLE",
+                "reason": "Run did not reach the native cache capture boundary",
                 "project_trade_pairing_used": False,
-            },
-        )
+            }
+        _write_json(run_dir / "native_completed_trades.json", native_completed)
         snapshot_bytes = b"".join(
             canonical_json_bytes(item) + b"\n"
             for item in capture["portfolio_snapshots"]

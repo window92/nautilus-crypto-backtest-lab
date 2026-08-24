@@ -18,6 +18,7 @@ from crypto_lab.config import StrictModel
 from crypto_lab.config import _require_sha256
 from crypto_lab.hashing import canonical_sha256
 from crypto_lab.hashing import sha256_file
+from crypto_lab.native_positions import NativeCompletedPositionSequence
 from crypto_lab.reporting import EquityObservation
 from crypto_lab.reporting import PerformanceDiagnostics
 from crypto_lab.reporting import generate_performance_diagnostics
@@ -27,6 +28,7 @@ from crypto_lab.research import ResearchError
 from crypto_lab.research import ResearchProtocol
 from crypto_lab.research import ResamplingMethod
 from crypto_lab.research import SampleAdequacy
+from crypto_lab.research import evaluate_sample_adequacy
 
 
 class DiagnosticResolution(StrictModel):
@@ -91,6 +93,54 @@ _RUN_DIAGNOSTIC_INPUTS = (
     "strategy_identity.json",
     "strategy_spec.json",
 )
+
+
+def _completed_trade_series(
+    path: Path,
+    *,
+    expected_run_id: str,
+    settlement_currency: str,
+) -> CompletedTradeSeries:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    schema = payload.get("schema")
+    if schema == "nautilus-native-completed-trades-v2":
+        sequence = NativeCompletedPositionSequence.from_json_bytes(path.read_bytes())
+        if sequence.source_run_id != expected_run_id:
+            raise ResearchError("EVIDENCE_INCOMPLETE", "native completed sequence Run mismatch")
+        if sequence.settlement_currency != settlement_currency:
+            raise ResearchError(
+                "EVIDENCE_INCOMPLETE",
+                "native completed sequence settlement currency mismatch",
+            )
+        return CompletedTradeSeries(
+            source="NAUTILUS_NATIVE_COMPLETED_TRADES",
+            evidence_sha256=sha256_file(path),
+            settlement_currency=settlement_currency,
+            stable_native_sequence=True,
+            native_completed_unit_count=sequence.completed_trade_count,
+            realized_pnl_outcomes=tuple(unit.realized_pnl for unit in sequence.units),
+            realized_returns=sequence.realized_returns,
+            unambiguous_net_after_cost=sequence.unambiguous_net_after_cost,
+            net_outcomes=sequence.net_outcomes,
+        )
+    if (
+        schema != "nautilus-native-completed-trades-v1"
+        or payload.get("run_id") != expected_run_id
+        or payload.get("project_trade_pairing_used") is not False
+        or payload.get("status") != "UNAVAILABLE"
+    ):
+        raise ResearchError("EVIDENCE_INCOMPLETE", "native completed-trade evidence is invalid")
+    return CompletedTradeSeries(
+        source="NAUTILUS_NATIVE_COMPLETED_TRADES",
+        evidence_sha256=sha256_file(path),
+        settlement_currency=settlement_currency,
+        stable_native_sequence=False,
+        native_completed_unit_count="UNDEFINED",
+        realized_pnl_outcomes=(),
+        realized_returns=(),
+        unambiguous_net_after_cost=False,
+        net_outcomes=(),
+    )
 
 
 def _money_total(items: Any, currency: str) -> Decimal:
@@ -175,19 +225,12 @@ def derive_performance_diagnostics(
         )
         for timestamp, equity in sorted(by_timestamp.items())
     )
-    native_truth = json.loads(completed_path.read_text(encoding="utf-8"))
-    completed = CompletedTradeSeries(
-        source="NAUTILUS_NATIVE_COMPLETED_TRADES",
-        evidence_sha256=sha256_file(completed_path),
+    completed = _completed_trade_series(
+        completed_path,
+        expected_run_id=config.run_id,
         settlement_currency=currency,
-        unambiguous_net_after_cost=native_truth.get("status") == "AVAILABLE",
-        net_outcomes=tuple(Decimal(str(item)) for item in native_truth.get("net_outcomes", ())),
     )
-    sample = (
-        SampleAdequacy.NOT_APPLICABLE
-        if protocol.sample_adequacy_rule.minimum_completed_trades == NOT_APPLICABLE
-        else SampleAdequacy.LOW_CONFIDENCE
-    )
+    sample = evaluate_sample_adequacy(protocol.sample_adequacy_rule, completed)
     monte_carlo = (
         MonteCarloStatus.NOT_APPLICABLE
         if protocol.monte_carlo_spec.resampling_method is ResamplingMethod.NOT_APPLICABLE
@@ -251,28 +294,13 @@ def derive_diagnostic_resolution(
             "diagnostic Run inputs are incomplete: " + ",".join(missing),
         )
     config = LabRunConfig.from_json_bytes((run_dir / "lab_run_config.json").read_bytes())
-    native_truth = json.loads(
-        (run_dir / "native_completed_trades.json").read_text(encoding="utf-8"),
+    completed = _completed_trade_series(
+        run_dir / "native_completed_trades.json",
+        expected_run_id=config.run_id,
+        settlement_currency=config.initial_capital.currency,
     )
-    if (
-        native_truth.get("schema") != "nautilus-native-completed-trades-v1"
-        or native_truth.get("run_id") != config.run_id
-        or native_truth.get("project_trade_pairing_used") is not False
-    ):
-        raise ResearchError("EVIDENCE_INCOMPLETE", "native completed-trade evidence is invalid")
-    available = native_truth.get("status") == "AVAILABLE"
-    if available:
-        # V1 has no qualified path producing AVAILABLE yet.  Fail closed instead
-        # of accepting a caller-created sequence as native truth.
-        raise ResearchError(
-            "EVIDENCE_INCOMPLETE",
-            "AVAILABLE native trade evidence requires a separately qualified resolver",
-        )
-    sample = (
-        SampleAdequacy.NOT_APPLICABLE
-        if protocol.sample_adequacy_rule.minimum_completed_trades == NOT_APPLICABLE
-        else SampleAdequacy.LOW_CONFIDENCE
-    )
+    available = completed.stable_native_sequence
+    sample = evaluate_sample_adequacy(protocol.sample_adequacy_rule, completed)
     monte_carlo = (
         MonteCarloStatus.NOT_APPLICABLE
         if protocol.monte_carlo_spec.resampling_method is ResamplingMethod.NOT_APPLICABLE
@@ -303,7 +331,7 @@ def derive_diagnostic_resolution(
             "native_statistics.json",
         )
         limitations = (
-            "NATIVE_COMPLETED_TRADE_SEQUENCE_UNAVAILABLE",
+            *(("NATIVE_COMPLETED_TRADE_SEQUENCE_UNAVAILABLE",) if not available else ()),
             "CURRENT_METADATA_NOT_EXACT_2020_2021_POINT_IN_TIME_METADATA",
             "ACCOUNT_SPECIFIC_HISTORICAL_FEE_TIER_UNAVAILABLE_ESTIMATED_FEE_USED",
             "DEVELOPMENT_EXPOSED_NOT_FINAL_HOLDOUT",
@@ -315,7 +343,7 @@ def derive_diagnostic_resolution(
         performance_status = "INCOMPLETE"
         extra_inputs = ()
         limitations = (
-            "NATIVE_COMPLETED_TRADE_SEQUENCE_UNAVAILABLE",
+            *(("NATIVE_COMPLETED_TRADE_SEQUENCE_UNAVAILABLE",) if not available else ()),
             "FULL_NATIVE_EQUITY_CURVE_UNAVAILABLE",
             "QUALIFICATION_FIXTURE_NOT_PROFITABILITY_EVIDENCE",
         )
@@ -335,7 +363,7 @@ def derive_diagnostic_resolution(
         },
         native_completed_trades_status="AVAILABLE" if available else "UNAVAILABLE",
         native_completed_trade_count=(
-            int(native_truth["completed_trade_count"]) if available else "UNDEFINED"
+            completed.native_completed_unit_count if available else "UNDEFINED"
         ),
         performance_diagnostics_status=performance_status,
         sample_adequacy=sample,

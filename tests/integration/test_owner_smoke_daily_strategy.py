@@ -23,6 +23,7 @@ from nautilus_trader.model import Symbol
 
 from crypto_lab.config import MarketProfile
 from crypto_lab.config import SourceRevision
+from crypto_lab.native_positions import capture_native_completed_position_sequence
 from crypto_lab.nautilus_config import add_venue_from_config
 from crypto_lab.nautilus_config import to_nautilus_engine_config
 from crypto_lab.strategies import BtcusdtDailyPriceVsSma20Trend
@@ -195,11 +196,21 @@ class OwnerSmokeDailyStrategyIntegrationTests(unittest.TestCase):
                 Decimal(0),
             )
             observations = strategy.observations
+            native_completed = capture_native_completed_position_sequence(
+                engine.cache,
+                instrument_id=instrument_id,
+                source_run_id="owner-smoke-native-position-qualification",
+                expected_settlement_currency="USDT",
+                expected_closed_cycle_count=sum(
+                    item["event_type"] == "PositionClosed"
+                    for item in observations["position_sequence"]
+                ),
+            )
             engine.dispose()
-        return observations, orders, fills, signed_position
+        return observations, orders, fills, signed_position, native_completed
 
     def test_spot_daily_resampling_is_utc_complete_and_causal(self) -> None:
-        observations, orders, fills, signed = self._run(
+        observations, orders, fills, signed, native_completed = self._run(
             MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY,
         )
         daily = observations["daily_signal_bars"]
@@ -211,6 +222,9 @@ class OwnerSmokeDailyStrategyIntegrationTests(unittest.TestCase):
         self.assertEqual(len(orders), 2)
         self.assertEqual(len(fills), 2)
         self.assertEqual(signed, Decimal(0))
+        self.assertEqual(native_completed.completed_trade_count, 1)
+        self.assertEqual(native_completed.terminal_open_position_count, 0)
+        self.assertEqual(native_completed.units[0].source_kind, "CACHE_CLOSED_POSITION")
         for fill in fills:
             submitted = next(
                 item
@@ -220,13 +234,16 @@ class OwnerSmokeDailyStrategyIntegrationTests(unittest.TestCase):
             self.assertGreater(int(fill.ts_event), submitted["signal_bar_available_at_ns"])
 
     def test_perpetual_reversal_closes_flat_then_reopens_separately(self) -> None:
-        observations, orders, fills, signed = self._run(
+        observations, orders, fills, signed, native_completed = self._run(
             MarketProfile.BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING,
         )
         self.assertEqual([item["target"] for item in observations["signals"]], ["LONG", "SHORT"])
         self.assertEqual(len(orders), 3)
         self.assertEqual(len(fills), 3)
         self.assertEqual(signed, Decimal("-0.100"))
+        self.assertEqual(native_completed.completed_trade_count, 1)
+        self.assertEqual(native_completed.terminal_open_position_count, 1)
+        self.assertEqual(native_completed.units[0].source_kind, "CACHE_POSITION_SNAPSHOT")
         sequence = observations["reversal_sequence"]
         self.assertEqual(
             [item["event"] for item in sequence],
@@ -248,7 +265,7 @@ class OwnerSmokeDailyStrategyIntegrationTests(unittest.TestCase):
             second = self._run(profile)
 
             def semantic(value):
-                observations, orders, fills, signed = value
+                observations, orders, fills, signed, native_completed = value
                 return {
                     "signals": observations["signals"],
                     "submitted": [
@@ -286,6 +303,7 @@ class OwnerSmokeDailyStrategyIntegrationTests(unittest.TestCase):
                         for fill in fills
                     ],
                     "terminal_signed_position": str(signed),
+                    "native_completed_positions": native_completed.semantic_sequence_sha256,
                 }
 
             self.assertEqual(semantic(first), semantic(second))

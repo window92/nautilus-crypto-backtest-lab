@@ -23,8 +23,12 @@ def native_trades(*, unambiguous: bool = True) -> CompletedTradeSeries:
         source="NAUTILUS_NATIVE_COMPLETED_TRADES",
         evidence_sha256="a" * 64,
         settlement_currency="USDT",
+        stable_native_sequence=True,
+        native_completed_unit_count=len(NATIVE_TRADES),
+        realized_pnl_outcomes=NATIVE_TRADES,
+        realized_returns=tuple(item / Decimal("100") for item in NATIVE_TRADES),
         unambiguous_net_after_cost=unambiguous,
-        net_outcomes=NATIVE_TRADES,
+        net_outcomes=NATIVE_TRADES if unambiguous else (),
     )
 
 
@@ -84,6 +88,10 @@ class MonteCarloKnownResultTests(unittest.TestCase):
             source="NAUTILUS_NATIVE_COMPLETED_TRADES",
             evidence_sha256="9" * 64,
             settlement_currency="USDT",
+            stable_native_sequence=True,
+            native_completed_unit_count=4,
+            realized_pnl_outcomes=(Decimal("2"), Decimal("-1"), Decimal("3"), Decimal("-2")),
+            realized_returns=(Decimal("0.02"), Decimal("-0.01"), Decimal("0.03"), Decimal("-0.02")),
             unambiguous_net_after_cost=True,
             net_outcomes=(Decimal("2"), Decimal("-1"), Decimal("3"), Decimal("-2")),
         )
@@ -110,12 +118,31 @@ class MonteCarloKnownResultTests(unittest.TestCase):
             source="NAUTILUS_NATIVE_COMPLETED_TRADES",
             evidence_sha256="b" * 64,
             settlement_currency="USDT",
+            stable_native_sequence=True,
+            native_completed_unit_count=1,
+            realized_pnl_outcomes=(Decimal("1"),),
+            realized_returns=(Decimal("0.01"),),
             unambiguous_net_after_cost=True,
             net_outcomes=(Decimal("1"),),
         )
         self.assertEqual(evaluate_sample_adequacy(rule, one), SampleAdequacy.LOW_CONFIDENCE)
         self.assertEqual(
             evaluate_sample_adequacy(rule, native_trades(unambiguous=False)),
+            SampleAdequacy.ADEQUATE,
+        )
+        unavailable = CompletedTradeSeries(
+            source="NAUTILUS_NATIVE_COMPLETED_TRADES",
+            evidence_sha256="c" * 64,
+            settlement_currency="USDT",
+            stable_native_sequence=False,
+            native_completed_unit_count="UNDEFINED",
+            realized_pnl_outcomes=(),
+            realized_returns=(),
+            unambiguous_net_after_cost=False,
+            net_outcomes=(),
+        )
+        self.assertEqual(
+            evaluate_sample_adequacy(rule, unavailable),
             SampleAdequacy.LOW_CONFIDENCE,
         )
 
@@ -154,7 +181,7 @@ class PerformanceDiagnosticsKnownResultTests(unittest.TestCase):
         self.assertEqual(result.win_rate.value, "0.50000000")
         self.assertEqual(result.max_consecutive_losses.value, "1")
 
-    def test_missing_native_completed_trades_are_undefined_not_zero(self) -> None:
+    def test_stable_native_count_survives_cost_ambiguity(self) -> None:
         start = instant("2024-01-01T00:00:00Z")
         ambiguous = native_trades(unambiguous=False)
         result = generate_performance_diagnostics(
@@ -176,9 +203,9 @@ class PerformanceDiagnosticsKnownResultTests(unittest.TestCase):
             claim_scope="INSTRUMENT_ONLY",
             input_evidence_hashes={"account.csv": "c" * 64},
         )
-        self.assertEqual(result.completed_trade_count.status, "UNDEFINED")
-        self.assertEqual(result.completed_trade_count.value, "UNDEFINED")
-        self.assertNotEqual(result.completed_trade_count.value, "0")
+        self.assertEqual(result.completed_trade_count.status, "CALCULATED")
+        self.assertEqual(result.completed_trade_count.value, "2")
+        self.assertEqual(result.win_rate.status, "UNDEFINED")
         self.assertEqual(result.benchmark_comparison.status, "UNDEFINED")
 
     def test_empty_native_trade_sequence_has_zero_count_but_undefined_win_rate(self) -> None:
@@ -187,6 +214,10 @@ class PerformanceDiagnosticsKnownResultTests(unittest.TestCase):
             source="NAUTILUS_NATIVE_COMPLETED_TRADES",
             evidence_sha256="8" * 64,
             settlement_currency="USDT",
+            stable_native_sequence=True,
+            native_completed_unit_count=0,
+            realized_pnl_outcomes=(),
+            realized_returns=(),
             unambiguous_net_after_cost=True,
             net_outcomes=(),
         )
