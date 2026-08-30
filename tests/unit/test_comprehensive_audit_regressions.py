@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 import unittest
 from dataclasses import replace
 from datetime import UTC
@@ -33,7 +34,7 @@ class AuditRegressionTests(unittest.TestCase):
             phase = run_acceptance_phase(
                 ordinal=1,
                 label="EMPTY_OUTPUT",
-                command=(str(ROOT / ".venv/bin/python"), "-c", "pass"),
+                command=(sys.executable, "-c", "pass"),
                 log_root=logs,
                 pycache=root / "pycache",
             )
