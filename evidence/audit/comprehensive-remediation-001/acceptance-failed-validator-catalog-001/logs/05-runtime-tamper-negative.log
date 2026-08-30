@@ -1,0 +1,12 @@
+$ /home/builder/projects/nautilus-crypto-backtest-lab/.venv/bin/python -m unittest -v tests.unit.test_runtime_installed_files
+exit_code=0
+duration_seconds=0.780982
+
+test_cache_is_the_only_unrecorded_file_exception (tests.unit.test_runtime_installed_files.InstalledRuntimeFileTests.test_cache_is_the_only_unrecorded_file_exception) ... ok
+test_modify_delete_and_add_payload_files_fail_closed (tests.unit.test_runtime_installed_files.InstalledRuntimeFileTests.test_modify_delete_and_add_payload_files_fail_closed) ... ok
+test_official_runtime_proof_is_required_and_payload_tamper_fails_closed (tests.unit.test_runtime_installed_files.InstalledRuntimeFileTests.test_official_runtime_proof_is_required_and_payload_tamper_fails_closed) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.240s
+
+OK
