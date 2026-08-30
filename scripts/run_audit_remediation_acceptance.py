@@ -25,6 +25,7 @@ PROJECT_PYTHON = ROOT / ".venv/bin/python"
 DATA_PYTHON = ROOT / ".data-venv/bin/python"
 TARGETED_MODULES = (
     "tests.unit.test_audit_qualification_validator",
+    "tests.unit.test_audit_research_validator",
     "tests.unit.test_comprehensive_audit_regressions",
     "tests.unit.test_engine_data_window",
     "tests.unit.test_historical_contracts",
@@ -217,6 +218,14 @@ def main() -> int:
                 (
                     str(PROJECT_PYTHON),
                     str(ROOT / "scripts/validate_audit_qualification.py"),
+                ),
+                False,
+            ),
+            (
+                "FINAL_REMEDIATION_RESEARCH_RUNS",
+                (
+                    str(PROJECT_PYTHON),
+                    str(ROOT / "scripts/validate_audit_research_runs.py"),
                 ),
                 False,
             ),
