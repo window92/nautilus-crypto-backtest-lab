@@ -31,6 +31,9 @@ Historical report validation recovers the exact `research/trials.jsonl` and
 A normal merge commit retains those commits and their object IDs as ancestors.
 Squash merge discards that ancestry, while rebase merge replaces the commit
 IDs; either method can make the historical report snapshot checks fail closed.
+Historical SourceRevision verification requires every frozen source commit to
+remain an ancestor of the current `HEAD`; a normal merge satisfies that rule,
+whereas squash or rebase does not.
 Do not delete, rewrite, or reorder the historical report or Evidence commits.
 
 ## Supported V1 scope

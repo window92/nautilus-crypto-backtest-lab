@@ -24,6 +24,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PROJECT_PYTHON = ROOT / ".venv/bin/python"
 DATA_PYTHON = ROOT / ".data-venv/bin/python"
 TARGETED_MODULES = (
+    "tests.adversarial.test_aud006_source_revision.Aud006SourceRevisionTests.test_historical_source_revision_accepts_merge_commit_and_rejects_squash",
     "tests.unit.test_audit_qualification_validator",
     "tests.unit.test_audit_research_validator",
     "tests.unit.test_comprehensive_audit_regressions",

@@ -21,8 +21,11 @@ run-manifest bytes from that commit. A normal merge commit preserves every
 branch commit and object ID in ancestry, so these snapshots remain resolvable.
 Squash merge omits the report-addition commits from the target ancestry; rebase
 merge creates different commit IDs. Both therefore violate the historical
-snapshot contract and may produce fail-closed validation errors. No historical
-Commit or Evidence may be deleted or rewritten.
+snapshot contract and produce fail-closed validation errors. The historical
+SourceRevision verifier enforces this directly by requiring each frozen commit
+to remain an ancestor of the current `HEAD`, while the current-Official path
+continues to require exact branch and `HEAD` identity. No historical Commit or
+Evidence may be deleted or rewritten.
 
 ## Historical-result policy
 

@@ -58,6 +58,73 @@ class Aud006SourceRevisionTests(unittest.TestCase):
                     require_clean=True,
                 )
 
+    def test_historical_source_revision_accepts_merge_commit_and_rejects_squash(self) -> None:
+        for merge_mode in ("normal", "squash"):
+            with self.subTest(merge_mode=merge_mode), tempfile.TemporaryDirectory() as temporary:
+                root = self._repository(Path(temporary))
+                subprocess.run(
+                    ["git", "-C", str(root), "switch", "-c", "fix/history-proof"],
+                    check=True,
+                    capture_output=True,
+                )
+                (root / "tracked.txt").write_text("source\nfeature\n", encoding="utf-8")
+                subprocess.run(
+                    ["git", "-C", str(root), "commit", "-am", "feature"],
+                    check=True,
+                    capture_output=True,
+                )
+                source = capture_actual_source_revision(root)
+                subprocess.run(
+                    ["git", "-C", str(root), "switch", "main"],
+                    check=True,
+                    capture_output=True,
+                )
+                merge_arguments = [
+                    "git",
+                    "-C",
+                    str(root),
+                    "merge",
+                    "--no-ff" if merge_mode == "normal" else "--squash",
+                    "fix/history-proof",
+                ]
+                if merge_mode == "normal":
+                    merge_arguments.extend(("-m", "normal merge"))
+                subprocess.run(merge_arguments, check=True, capture_output=True)
+                if merge_mode == "squash":
+                    subprocess.run(
+                        ["git", "-C", str(root), "commit", "-m", "squash merge"],
+                        check=True,
+                        capture_output=True,
+                    )
+
+                if merge_mode == "normal":
+                    verification = verify_source_revision(
+                        source,
+                        repository=root,
+                        require_current_head=False,
+                        require_clean=True,
+                    )
+                    self.assertTrue(verification.frozen_commit_tree_valid)
+                    self.assertTrue(verification.frozen_commit_on_branch)
+                    with self.assertRaises(GitIdentityError):
+                        verify_source_revision(
+                            source,
+                            repository=root,
+                            require_current_head=True,
+                            require_clean=True,
+                        )
+                else:
+                    with self.assertRaisesRegex(
+                        GitIdentityError,
+                        "current_history_commit_lineage",
+                    ):
+                        verify_source_revision(
+                            source,
+                            repository=root,
+                            require_current_head=False,
+                            require_clean=True,
+                        )
+
     def test_official_runner_rejects_forged_repository_and_ref_before_engine(self) -> None:
         child_code = """
 import json

@@ -98,6 +98,7 @@ jobs:
           tests.unit.test_comprehensive_audit_regressions.AuditRegressionTests.test_f005_funding_converter_rejects_cross_instrument_relabel
           tests.unit.test_comprehensive_audit_regressions.AuditRegressionTests.test_f001_historical_impossible_spot_benchmark_is_financially_rejected
           tests.unit.test_audit_research_validator.AuditResearchValidatorTests.test_missing_raw_source_diagnostic_remains_fail_closed
+          tests.adversarial.test_aud006_source_revision.Aud006SourceRevisionTests.test_historical_source_revision_accepts_merge_commit_and_rejects_squash
           tests.unit.test_engine_data_window.EngineDataWindowTests.test_spot_release_larger_than_run_is_filtered_before_engine_boundary
           tests.unit.test_engine_data_window.EngineDataWindowTests.test_perpetual_boundary_keeps_final_mark_but_excludes_funding_at_end
           tests.unit.test_historical_contracts

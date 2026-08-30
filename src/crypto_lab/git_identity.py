@@ -141,21 +141,30 @@ def verify_source_revision(
     mismatches: list[str] = []
     if source.repository != actual.repository:
         mismatches.append("repository")
-    if source.branch_ref != actual.branch_ref:
+    if require_current_head and source.branch_ref != actual.branch_ref:
         mismatches.append("branch_ref")
     resolved_tree = _git(root, "rev-parse", f"{source.git_commit}^{{tree}}")
     tree_valid = resolved_tree == source.git_tree
     if not tree_valid:
         mismatches.append("git_tree")
+    lineage_ref = (
+        f"refs/heads/{source.branch_ref}"
+        if require_current_head
+        else "HEAD"
+    )
     branch_contains = subprocess.run(
-        ["git", "merge-base", "--is-ancestor", source.git_commit, f"refs/heads/{source.branch_ref}"],
+        ["git", "merge-base", "--is-ancestor", source.git_commit, lineage_ref],
         cwd=root,
         check=False,
         capture_output=True,
         text=True,
     ).returncode == 0
     if not branch_contains:
-        mismatches.append("branch_ref_commit_lineage")
+        mismatches.append(
+            "branch_ref_commit_lineage"
+            if require_current_head
+            else "current_history_commit_lineage"
+        )
     if require_current_head:
         if source.git_commit != actual.git_commit:
             mismatches.append("git_commit")
