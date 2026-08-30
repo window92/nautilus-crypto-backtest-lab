@@ -31,6 +31,7 @@ from crypto_lab.research import TrialJournal
 from crypto_lab.research import TrialState
 from crypto_lab.result_status import revoked_result_for_directory
 from crypto_lab.runtime import validate_persisted_runtime_identity
+from crypto_lab.timestamps import utc_datetime_to_ns
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -224,6 +225,7 @@ def _validate_run(
         window = checks["engine_half_open_scoring_window"]
         window_detail = window.get("window", {})
         config = LabRunConfig.from_json_bytes((directory / "lab_run_config.json").read_bytes())
+        scoring_end_exclusive_ns = utc_datetime_to_ns(config.scoring_end_exclusive)
         if (
             window.get("callback_window_pass") is not True
             or window_detail.get("status") != "PASS"
@@ -232,9 +234,9 @@ def _validate_run(
             or window_detail.get("point_events_at_scoring_end_included") is not False
             or window_detail.get("completed_interval_observations_at_scoring_end_included") is not True
             or window_detail.get("scoring_end_exclusive_ns")
-            != config.scoring_end_exclusive_ns
+            != scoring_end_exclusive_ns
             or window_detail.get("latest_qualified_valuation_observation_ns")
-            != config.scoring_end_exclusive_ns
+            != scoring_end_exclusive_ns
         ):
             raise ValueError(f"{role} half-open engine data window is not exact")
         result = _json_object(directory / "nautilus_result.json")
