@@ -9,6 +9,7 @@ from crypto_lab.hashing import canonical_sha256
 from crypto_lab.result_status import FinancialResultStatus
 from crypto_lab.result_status import HistoricalRunStatus
 from crypto_lab.result_status import load_historical_result_registry
+from crypto_lab.result_status import revoked_result_for_directory
 
 
 class HistoricalResultStatusTests(unittest.TestCase):
@@ -77,6 +78,19 @@ class HistoricalResultStatusTests(unittest.TestCase):
                 path.write_text(json.dumps(value), encoding="utf-8")
                 with self.assertRaises(ValueError):
                     load_historical_result_registry(path)
+
+    def test_superseded_remediation_run_is_revoked_by_default_lookup(self) -> None:
+        repository = Path(__file__).resolve().parents[2]
+        run = (
+            repository
+            / "runs/comprehensive-audit-remediation-001-spot-benchmark-run-28567cfbf8de"
+        )
+        record = revoked_result_for_directory(run, repository_root=repository)
+        self.assertIsNotNone(record)
+        assert record is not None
+        self.assertEqual(record.finding_ids, ("F-003",))
+        self.assertEqual(record.historical_run_status, HistoricalRunStatus.REVOKED)
+        self.assertEqual(record.financial_result_status, FinancialResultStatus.INVALIDATED)
 
 
 if __name__ == "__main__":
