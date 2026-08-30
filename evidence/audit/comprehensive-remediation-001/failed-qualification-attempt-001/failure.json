@@ -1,0 +1,24 @@
+{
+  "attempt_id": "COMPREHENSIVE_REMEDIATION_QUALIFICATION_ATTEMPT_001",
+  "command": [
+    ".venv/bin/python",
+    "scripts/run_m3_qualifications.py",
+    "--output",
+    "evidence/audit/comprehensive-remediation-001/qualification",
+    "--required-remote-ref",
+    "origin/fix/comprehensive-audit-remediation",
+    "--run-id-prefix",
+    "comprehensive-remediation-001"
+  ],
+  "disposition": "FAILED_RETAINED",
+  "exit_code": 1,
+  "failed_at_utc": "2026-08-30T03:47:50Z",
+  "failure_code": "SPOT_SHORT_OR_BORROW_DETECTED",
+  "financial_result_accepted": false,
+  "final_holdout_used": false,
+  "profitability_claim_authorized": false,
+  "root_cause": "The historical M3 Spot qualification plan expressed its MARKET BUY as base quantity; the repaired guard correctly could not prove that quantity funded at the Instrument maximum executable price.",
+  "source_commit": "189378d2b6cd019fe427a86b7e23889e289b9bd8",
+  "spot_primary_command_sha256": "15f9241117b929fbb03c1b21a821a7b666a9a7552193d838d36c56f8fad35ec0",
+  "spot_primary_summary_sha256": "dc2af793efa99a5f662d292c626fb679dcd27877059a6d723df26286063d9c6f"
+}

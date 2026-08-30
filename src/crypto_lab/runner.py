@@ -1486,7 +1486,14 @@ def _run_bound(
                 )
                 if isinstance(config, LabRunRequest):
                     strategy = GuardedCausalStrategy()
-                    strategy.configure(plan=config.strategy_plan, **strategy_configuration)
+                    strategy.configure(
+                        plan=config.strategy_plan,
+                        spot_plan_quote_notional_from_signal_close=(
+                            config.strategy_spec.parameters.get("spot_buy_sizing_mode")
+                            == "QUOTE_NOTIONAL_FROM_COMPLETED_SIGNAL_CLOSE"
+                        ),
+                        **strategy_configuration,
+                    )
                 else:
                     assert strategy_identity is not None
                     strategy = create_registered_strategy(

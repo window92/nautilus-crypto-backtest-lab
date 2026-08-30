@@ -91,6 +91,39 @@ class SpotCashReconciliationTests(unittest.TestCase):
         guard = result.strategy_observations["guard_failures"][0]
         self.assertIn("maximum executable price", guard["detail"])
 
+    def test_quote_denominated_buy_survives_adverse_gap_without_overspend(self) -> None:
+        rows = (
+            (60_000_000_000, "100.00", "101.00", "99.00", "100.00"),
+            (120_000_000_000, "300.00", "301.00", "299.00", "300.00"),
+            (180_000_000_000, "300.00", "301.00", "299.00", "300.00"),
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            result = run_lab(
+                make_request(
+                    Path(temporary),
+                    run_id="spot-adverse-gap-quote-denominated",
+                    profile=MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY,
+                    data=make_bars(SPOT_ID, rows),
+                    plan=plan({60_000_000_000: (intent("BUY", "9", "quote-gap"),)}),
+                    scoring_start_ns=0,
+                    scoring_end_ns=180_000_000_000,
+                    fee=Decimal("0.001"),
+                    spot_quote_from_signal_close=True,
+                ),
+            )
+            accounts = _read_csv(result.evidence_dir / "account.csv")
+        self.assertEqual(result.checker_outcome, CheckerOutcome.CHECK_PASS)
+        self.assertTrue(result.orders)
+        self.assertTrue(result.fills)
+        submitted = result.strategy_observations["submitted_intents"][0]
+        self.assertTrue(submitted["quote_quantity"])
+        self.assertEqual(submitted["order_quantity_unit"], "QUOTE")
+        self.assertLessEqual(
+            Decimal(submitted["submitted_quote_notional"]),
+            Decimal(submitted["available_quote_before"]),
+        )
+        self.assertTrue(all(Decimal(row["free"]) >= 0 for row in accounts))
+
     def test_balance_or_commission_tamper_fails_independent_reconciliation(self) -> None:
         result = self._run_partial()
         fills = [dict(row) for row in result.fills]

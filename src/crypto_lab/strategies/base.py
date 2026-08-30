@@ -181,6 +181,7 @@ class GuardedCausalStrategy(Strategy):
         self._size_increment = Decimal(0)
         self._initial_capital_amount = Decimal(0)
         self._initial_capital_currency = ""
+        self._spot_plan_quote_notional_from_signal_close = False
         self._live_client_order_id = None
         self.observations: dict[str, Any] = {
             "bars": [],
@@ -212,9 +213,13 @@ class GuardedCausalStrategy(Strategy):
         size_increment: Decimal,
         initial_capital_amount: Decimal,
         initial_capital_currency: str,
+        spot_plan_quote_notional_from_signal_close: bool = False,
     ) -> None:
         if not isinstance(plan, StrategyPlan):
             raise TypeError("qualification strategy requires StrategyPlan")
+        self._spot_plan_quote_notional_from_signal_close = (
+            spot_plan_quote_notional_from_signal_close
+        )
         self._configure_runtime(
             instrument_id=instrument_id,
             bar_type=bar_type,
@@ -665,7 +670,18 @@ class GuardedCausalStrategy(Strategy):
             for intent in intents:
                 self._submit_guarded(intent, bar)
             return
-        self._submit_guarded(intents[0], bar)
+        intent = intents[0]
+        self._submit_guarded(
+            intent,
+            bar,
+            spot_quote_notional=(
+                Decimal(intent.quantity) * Decimal(str(bar.close))
+                if self._spot_plan_quote_notional_from_signal_close
+                and self._profile is MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY
+                and intent.side == "BUY"
+                else None
+            ),
+        )
         for intent in intents[1:]:
             self.observations["suppressed_intents"].append(
                 {
