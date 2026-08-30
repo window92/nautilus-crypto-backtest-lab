@@ -1,6 +1,14 @@
 {
   "schema": "historical-contract-snapshots-v1",
   "snapshots": {
+    "audit-remediation-final-research-validator": {
+      "git_commit": "40cc44a7ec8f7d76565069c205287721578b58a7",
+      "files": {
+        "SSOT.md": "b4deb7048242239234de7eaa353b623b3e45247eb42f1021dbc26ffd910edb99",
+        "requirements.lock.txt": "0999d2b764f5949aa145bb931825a6d692428e2fb14afe24ed32a5eb2efd29e4",
+        "runtime.lock.json": "e0c0668fdd6886450d53fc184ef479361eee94a7294e39dba53ad0d96c973621"
+      }
+    },
     "audit-remediation-runtime-proof": {
       "git_commit": "7a65cc5ed5beb7cf00be131fd64ffbaa7ca9e196",
       "files": {
@@ -36,6 +44,7 @@
   },
   "validators": {
     "validate_audit_qualification.py": "audit-remediation-runtime-proof",
+    "validate_audit_research_runs.py": "audit-remediation-final-research-validator",
     "validate_data_provenance_evidence.py": "data-provenance-adopted",
     "validate_free_official_binance_rebuild.py": "release-v1-contract",
     "validate_free_official_raw_objects.py": "release-v1-contract",

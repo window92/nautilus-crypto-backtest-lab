@@ -19,6 +19,7 @@ from crypto_lab.historical_contracts import validate_validator_contract
 ROOT = Path(__file__).resolve().parents[1]
 VALIDATORS = (
     "validate_audit_qualification.py",
+    "validate_audit_research_runs.py",
     "validate_m1_evidence.py",
     "validate_m2_evidence.py",
     "validate_m3_evidence.py",
