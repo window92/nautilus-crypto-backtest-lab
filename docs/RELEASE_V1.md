@@ -1,5 +1,14 @@
 # Nautilus Crypto Backtest Lab v1.0.0
 
+> **Post-release audit notice (2026-08-30):** this page is a historical release
+> record. The original evidence is intentionally unchanged, but affected V1
+> financial runs/replays are now `REVOKED` and their financial conclusions are
+> `INVALIDATED` because the old acceptance contract did not prove Spot CASH
+> reconciliation, the scoring boundary, installed runtime payloads, or exact
+> funding binding. See [AUDIT_REMEDIATION.md](AUDIT_REMEDIATION.md) and the
+> additive status registry. This notice does not authorize Final Holdout use or
+> any profitability claim.
+
 V1 closes the repository as a functionally complete, strict cryptocurrency
 backtesting laboratory for the supported BTCUSDT profiles. The accepted product
 and pressure-test commit is
@@ -48,8 +57,9 @@ does not replace its financial engine.
 
 ## Final acceptance
 
-The recorded research verdict is
-`OWNER_STRATEGY_RESEARCH_001_PASS_COMMITTED_AND_PUSHED`.
+The historically recorded research verdict was
+`OWNER_STRATEGY_RESEARCH_001_PASS_COMMITTED_AND_PUSHED`. It is preserved as an
+old-contract fact and is not a current financial acceptance verdict.
 
 | Gate | Result |
 |---|---:|

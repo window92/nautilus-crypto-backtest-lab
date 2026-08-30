@@ -73,9 +73,16 @@ def _future(day: int) -> UtcInterval:
     )
 
 
-def _profile_record_id(profile: MarketProfile) -> str:
+def _profile_record_id(
+    profile: MarketProfile,
+    *,
+    registry_path: Path | None = None,
+) -> str:
+    path = registry_path or (
+        ROOT / "evidence/m3/m3-acceptance-001/qualified-profile-registry.json"
+    )
     registry = QualifiedProfileRegistry.from_json_bytes(
-        (ROOT / "evidence/m3/m3-acceptance-001/qualified-profile-registry.json").read_bytes(),
+        path.read_bytes(),
     )
     record = next(item for item in registry.records if item.profile_id is profile)
     if record.checker_result != "CHECK_PASS" or record.replay_result != "PASS":
@@ -101,6 +108,9 @@ def build_protocol(
     profile: MarketProfile,
     *,
     frozen_at_utc: datetime,
+    epoch: str = EPOCH,
+    research_family_id: str = RESEARCH_FAMILY,
+    qualified_profile_registry_path: Path | None = None,
 ) -> tuple[ResearchProtocol, tuple[OwnerWorkflowInput, ...]]:
     release = _release(profile)
     suffix = "spot" if profile is MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY else "perpetual"
@@ -125,7 +135,7 @@ def build_protocol(
     parameter_names = sorted(set(specs[0].parameters) | set(specs[1].parameters))
     protocol = ResearchProtocol.create(
         frozen_at_utc=frozen_at_utc,
-        research_family_id=RESEARCH_FAMILY,
+        research_family_id=research_family_id,
         hypothesis_id=(
             "published-short-horizon-tsmom-with-mixed-bitcoin-oos-and-crash-risk-"
             f"fixed-full-versus-vol20-{suffix}"
@@ -226,7 +236,10 @@ def build_protocol(
         schema_version=1,
         protocol=protocol,
         dataset_release_id=release.dataset_release_id,
-        qualified_profile_record_id=_profile_record_id(profile),
+        qualified_profile_record_id=_profile_record_id(
+            profile,
+            registry_path=qualified_profile_registry_path,
+        ),
         partition_role=PartitionRole.DEVELOPMENT,
         warmup_start=WARMUP_START,
         scoring_start=DEVELOPMENT.start_inclusive,
@@ -238,12 +251,12 @@ def build_protocol(
     benchmark_workflow = OwnerWorkflowInput(
         **common,
         workflow_purpose=OwnerWorkflowPurpose.BENCHMARK_STUDY,
-        trial_id=f"{EPOCH}-{suffix}-benchmark-buy-and-hold-1x-development",
+        trial_id=f"{epoch}-{suffix}-benchmark-buy-and-hold-1x-development",
         candidate_id=benchmark_trial_candidate_id(
             protocol.required_benchmark,
             strategy_spec_id=benchmark_spec.strategy_spec_id,
         ),
-        run_id=f"{EPOCH}-{suffix}-benchmark-run",
+        run_id=f"{epoch}-{suffix}-benchmark-run",
         registered_strategy_id=BUY_AND_HOLD_REGISTRATION_ID,
         strategy_spec=benchmark_spec,
     )
@@ -251,9 +264,9 @@ def build_protocol(
         OwnerWorkflowInput(
             **common,
             workflow_purpose=OwnerWorkflowPurpose.OWNER_STUDY,
-            trial_id=f"{EPOCH}-{suffix}-candidate-{label}-development",
+            trial_id=f"{epoch}-{suffix}-candidate-{label}-development",
             candidate_id=candidate.candidate_id,
-            run_id=f"{EPOCH}-{suffix}-candidate-{label}-run",
+            run_id=f"{epoch}-{suffix}-candidate-{label}-run",
             registered_strategy_id=registration,
             strategy_spec=spec,
         )

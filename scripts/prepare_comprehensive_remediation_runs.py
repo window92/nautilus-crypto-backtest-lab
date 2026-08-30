@@ -1,0 +1,108 @@
+#!/usr/bin/env python3
+"""Freeze six new Development-only workflows against repaired qualification."""
+
+from __future__ import annotations
+
+import argparse
+import json
+from datetime import UTC
+from datetime import datetime
+from pathlib import Path
+
+from crypto_lab.config import MarketProfile
+from crypto_lab.hashing import canonical_json_bytes
+from crypto_lab.hashing import canonical_sha256
+from crypto_lab.hashing import sha256_file
+from crypto_lab.m3 import QualifiedProfileRegistry
+from crypto_lab.research import PartitionRole
+from scripts.prepare_owner_strategy_research_001 import RESEARCH_FAMILY
+from scripts.prepare_owner_strategy_research_001 import build_protocol
+
+
+ROOT = Path(__file__).resolve().parents[1]
+AUDIT_ID = "COMPREHENSIVE_AUDIT_REMEDIATION_001"
+EPOCH = "comprehensive-audit-remediation-001"
+RESEARCH_FAMILY_ID = "BTCUSDT_WEEKLY_TSMOM28_V1_AUDIT_REMEDIATION_001"
+QUALIFICATION_REGISTRY = (
+    ROOT
+    / "evidence/audit/comprehensive-remediation-001/qualification/qualified-profile-registry.json"
+)
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--frozen-at-utc", required=True)
+    parser.add_argument("--output-dir", type=Path, required=True)
+    arguments = parser.parse_args()
+    frozen = datetime.fromisoformat(arguments.frozen_at_utc.replace("Z", "+00:00"))
+    if frozen.tzinfo is None or frozen.utcoffset() != UTC.utcoffset(frozen):
+        raise ValueError("frozen-at-utc must be explicit UTC")
+    output = arguments.output_dir.resolve()
+    if output.exists():
+        raise FileExistsError(f"fresh workflow output required: {output}")
+    if not QUALIFICATION_REGISTRY.is_file():
+        raise FileNotFoundError("repaired qualification registry is required before workflow freeze")
+    registry = QualifiedProfileRegistry.from_json_bytes(QUALIFICATION_REGISTRY.read_bytes())
+    active_runtime = sha256_file(ROOT / "runtime.lock.json")
+    if any(record.runtime_lock_sha256 != active_runtime for record in registry.records):
+        raise RuntimeError("repaired qualification registry does not bind the active Runtime Lock")
+    output.mkdir(parents=True)
+
+    workflows = []
+    protocols = []
+    for profile in (
+        MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY,
+        MarketProfile.BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING,
+    ):
+        protocol, profile_workflows = build_protocol(
+            profile,
+            frozen_at_utc=frozen,
+            epoch=EPOCH,
+            research_family_id=RESEARCH_FAMILY_ID,
+            qualified_profile_registry_path=QUALIFICATION_REGISTRY,
+        )
+        if (
+            protocol.strategy_family != RESEARCH_FAMILY
+            or protocol.development_interval.start_inclusive
+            != profile_workflows[0].scoring_start
+            or protocol.development_interval.end_exclusive
+            != profile_workflows[0].scoring_end_exclusive
+        ):
+            raise RuntimeError("repaired protocol changed the locked strategy/window contract")
+        protocols.append(protocol)
+        workflows.extend(profile_workflows)
+
+    for workflow in workflows:
+        if workflow.partition_role is not PartitionRole.DEVELOPMENT:
+            raise RuntimeError("remediation workflow must use exposed Development data only")
+        (output / f"{workflow.trial_id}.json").write_bytes(
+            workflow.to_json_bytes() + b"\n",
+        )
+    manifest = {
+        "schema": "comprehensive-audit-remediation-workflows-v1",
+        "audit_id": AUDIT_ID,
+        "frozen_at_utc": frozen.isoformat().replace("+00:00", "Z"),
+        "epoch": EPOCH,
+        "research_family_id": RESEARCH_FAMILY_ID,
+        "qualified_profile_registry": QUALIFICATION_REGISTRY.relative_to(ROOT).as_posix(),
+        "qualified_profile_registry_sha256": sha256_file(QUALIFICATION_REGISTRY),
+        "runtime_lock_sha256": active_runtime,
+        "protocol_ids": [protocol.protocol_id for protocol in protocols],
+        "workflow_files": sorted(f"{workflow.trial_id}.json" for workflow in workflows),
+        "workflow_count": len(workflows),
+        "profile_count": len(protocols),
+        "partition_role": PartitionRole.DEVELOPMENT.value,
+        "final_holdout_used": False,
+        "profitability_claim_authorized": False,
+        "optimization_performed": False,
+    }
+    if len(workflows) != 6 or len(protocols) != 2:
+        raise RuntimeError("exactly six workflows and two profile protocols are required")
+    manifest["manifest_identity"] = canonical_sha256(manifest)
+    (output / "manifest.json").write_bytes(canonical_json_bytes(manifest) + b"\n")
+    print(json.dumps(manifest, indent=2, sort_keys=True))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
