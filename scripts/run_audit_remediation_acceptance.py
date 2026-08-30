@@ -239,8 +239,10 @@ def main() -> int:
                         "root=Path('evidence/audit/comprehensive-remediation-001'); "
                         "historical=load_historical_result_registry(root/'historical-result-status.json'); "
                         "superseded=load_historical_result_registry(root/'runtime-proof-supersession-status.json'); "
+                        "warned=load_historical_result_registry(root/'owner-child-entrypoint-supersession-status.json'); "
                         "assert len(historical.records)==28; assert len(superseded.records)==12; "
-                        "print(len(historical.records), len(superseded.records))"
+                        "assert len(warned.records)==12; "
+                        "print(len(historical.records), len(superseded.records), len(warned.records))"
                     ),
                 ),
                 False,

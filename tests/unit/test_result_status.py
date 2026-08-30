@@ -92,6 +92,19 @@ class HistoricalResultStatusTests(unittest.TestCase):
         self.assertEqual(record.historical_run_status, HistoricalRunStatus.REVOKED)
         self.assertEqual(record.financial_result_status, FinancialResultStatus.INVALIDATED)
 
+    def test_warned_owner_child_run_is_revoked_by_default_lookup(self) -> None:
+        repository = Path(__file__).resolve().parents[2]
+        run = (
+            repository
+            / "runs/comprehensive-audit-remediation-002-spot-benchmark-run-301913ec060a"
+        )
+        record = revoked_result_for_directory(run, repository_root=repository)
+        self.assertIsNotNone(record)
+        assert record is not None
+        self.assertEqual(record.finding_ids, ("F-003",))
+        self.assertEqual(record.historical_run_status, HistoricalRunStatus.REVOKED)
+        self.assertEqual(record.financial_result_status, FinancialResultStatus.INVALIDATED)
+
 
 if __name__ == "__main__":
     unittest.main()

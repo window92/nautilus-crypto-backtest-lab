@@ -16,6 +16,7 @@ from crypto_lab.hashing import canonical_sha256
 DEFAULT_RESULT_STATUS_REFS = (
     "evidence/audit/comprehensive-remediation-001/historical-result-status.json",
     "evidence/audit/comprehensive-remediation-001/runtime-proof-supersession-status.json",
+    "evidence/audit/comprehensive-remediation-001/owner-child-entrypoint-supersession-status.json",
 )
 
 
