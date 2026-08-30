@@ -10,6 +10,7 @@ from typing import Any
 
 from crypto_lab.hashing import canonical_sha256
 from crypto_lab.hashing import sha256_file
+from crypto_lab.historical_contracts import validate_validator_contract
 from crypto_lab.reporting import PerformanceDiagnostics
 from crypto_lab.reporting import ReportOutput
 from crypto_lab.research import HoldoutLockSnapshot
@@ -47,6 +48,11 @@ def _run_manifest(directory: Path) -> bool:
 def validate(evidence: Path = DEFAULT_EVIDENCE) -> dict[str, Any]:
     evidence = Path(evidence)
     checks: dict[str, bool] = {}
+    historical_contract = validate_validator_contract(
+        Path(__file__).name,
+        repository_root=ROOT,
+    )
+    checks["historical_contract_snapshot"] = historical_contract.acceptable
     required = (
         "baseline-attestation.json",
         "preserved-history-before.json",
@@ -207,6 +213,7 @@ def validate(evidence: Path = DEFAULT_EVIDENCE) -> dict[str, Any]:
         "schema": "m4-evidence-validation-v1",
         "status": "PASS" if all(checks.values()) else "FAIL",
         "checks": checks,
+        "historical_contract": historical_contract.to_builtins(),
     }
 
 

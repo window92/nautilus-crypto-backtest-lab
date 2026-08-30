@@ -2,9 +2,15 @@
 
 from __future__ import annotations
 
+import base64
+import csv
+import hashlib
+import importlib.util
 import importlib.metadata
+import io
 import json
 import locale as locale_module
+import marshal
 import os
 import platform as platform_module
 import re
@@ -22,16 +28,21 @@ from crypto_lab.config import NAUTILUS_WHEEL_FILENAME
 from crypto_lab.config import NAUTILUS_WHEEL_SHA256
 from crypto_lab.config import RuntimeLock
 from crypto_lab.hashing import sha256_file
+from crypto_lab.hashing import canonical_sha256
 from crypto_lab.status import FailureCode
 
 
 T = TypeVar("T")
 _PROJECT_DISTRIBUTION = "nautilus-crypto-backtest-lab"
+_GENERATED_DIST_INFO_FILES = frozenset({"INSTALLER", "REQUESTED", "direct_url.json"})
 
 
 class RuntimeLockMismatch(RuntimeError):
     def __init__(self, code: FailureCode | str, mismatches: list[str]) -> None:
-        self.code = str(code)
+        try:
+            self.code = FailureCode(code).value
+        except ValueError as exc:
+            raise ValueError(f"unknown SSOT failure code: {code!r}") from exc
         self.mismatches = tuple(mismatches)
         super().__init__(f"{self.code}: " + "; ".join(mismatches))
 
@@ -102,6 +113,289 @@ def _direct_wheel_identity() -> tuple[str | None, str | None, str | None, Path |
     return filename, digest, url, local_path
 
 
+def _record_hash_bytes(value: str) -> bytes:
+    algorithm, separator, encoded = value.partition("=")
+    if separator != "=" or algorithm != "sha256" or not encoded:
+        raise RuntimeLockMismatch(
+            FailureCode.RUNTIME_LOCK_MISMATCH,
+            [f"unsupported installed RECORD hash {value!r}"],
+        )
+    try:
+        return base64.urlsafe_b64decode(encoded + "=" * (-len(encoded) % 4))
+    except Exception as exc:
+        raise RuntimeLockMismatch(
+            FailureCode.RUNTIME_LOCK_MISMATCH,
+            [f"malformed installed RECORD hash {value!r}"],
+        ) from exc
+
+
+def _safe_record_path(site_packages_root: Path, relative: str) -> Path:
+    candidate = Path(relative)
+    if not relative or candidate.is_absolute() or ".." in candidate.parts or "\\" in relative:
+        raise RuntimeLockMismatch(
+            FailureCode.RUNTIME_LOCK_MISMATCH,
+            [f"unsafe installed RECORD path {relative!r}"],
+        )
+    root = site_packages_root.resolve()
+    resolved = (root / candidate).resolve()
+    if not resolved.is_relative_to(root):
+        raise RuntimeLockMismatch(
+            FailureCode.RUNTIME_LOCK_MISMATCH,
+            [f"installed RECORD path escapes site-packages: {relative!r}"],
+        )
+    return resolved
+
+
+def _cache_verification_error(
+    cache_path: Path,
+    *,
+    site_packages_root: Path,
+    recorded_paths: set[str],
+) -> str | None:
+    """Return an error unless a cache is exactly compiled from hashed source."""
+
+    try:
+        source_path = Path(importlib.util.source_from_cache(str(cache_path))).resolve()
+        source_relative = source_path.relative_to(site_packages_root).as_posix()
+    except Exception:
+        return f"installed cache has no safe source mapping: {cache_path.name}"
+    if source_relative not in recorded_paths or not source_path.is_file() or source_path.is_symlink():
+        return f"installed cache source is not a recorded regular file: {source_relative}"
+    try:
+        source_bytes = source_path.read_bytes()
+        cache_bytes = cache_path.read_bytes()
+        if len(cache_bytes) < 16 or cache_bytes[:4] != importlib.util.MAGIC_NUMBER:
+            return f"installed cache header is invalid: {cache_path.name}"
+        flags = int.from_bytes(cache_bytes[4:8], "little")
+        if flags not in {0, 1, 3}:
+            return f"installed cache flags are invalid: {cache_path.name}"
+        if flags & 1:
+            if cache_bytes[8:16] != importlib.util.source_hash(source_bytes):
+                return f"installed cache source hash is invalid: {cache_path.name}"
+        else:
+            expected_mtime = int(source_path.stat().st_mtime) & 0xFFFFFFFF
+            expected_size = len(source_bytes) & 0xFFFFFFFF
+            if (
+                int.from_bytes(cache_bytes[8:12], "little") != expected_mtime
+                or int.from_bytes(cache_bytes[12:16], "little") != expected_size
+            ):
+                return f"installed cache source metadata is invalid: {cache_path.name}"
+        optimization = 0
+        if ".opt-" in cache_path.name:
+            optimization = int(cache_path.name.rsplit(".opt-", maxsplit=1)[1].split(".", maxsplit=1)[0])
+        expected_code = compile(
+            source_bytes,
+            str(source_path),
+            "exec",
+            dont_inherit=True,
+            optimize=optimization,
+        )
+        if cache_bytes[16:] != marshal.dumps(expected_code):
+            return f"installed cache bytecode differs from recorded source: {cache_path.name}"
+    except Exception as exc:
+        return f"installed cache verification failed for {cache_path.name}: {exc}"
+    return None
+
+
+def inspect_installed_distribution_files(
+    *,
+    site_packages_root: Path,
+    record_relative_path: str,
+    package_relative_path: str,
+) -> dict[str, Any]:
+    """Verify every installed RECORD entry and reject unrecorded payload files.
+
+    ``__pycache__/*.pyc`` is the only unrecorded-file exception, and every such
+    cache is recompiled and compared with its hashed source before acceptance.
+    Wheel payload identity omits
+    pip-owned INSTALLER/REQUESTED/direct_url.json and RECORD itself, whose
+    content may legitimately vary with the installation location.
+    """
+
+    root = Path(site_packages_root).resolve()
+    record_path = _safe_record_path(root, record_relative_path)
+    if not record_path.is_file() or record_path.is_symlink():
+        raise RuntimeLockMismatch(
+            FailureCode.RUNTIME_LOCK_MISMATCH,
+            ["installed distribution RECORD is missing or is a symlink"],
+        )
+    try:
+        rows = list(csv.reader(io.StringIO(record_path.read_text(encoding="utf-8"))))
+    except Exception as exc:
+        raise RuntimeLockMismatch(
+            FailureCode.RUNTIME_LOCK_MISMATCH,
+            [f"installed distribution RECORD is unreadable: {exc}"],
+        ) from exc
+    if not rows or any(len(row) != 3 for row in rows):
+        raise RuntimeLockMismatch(
+            FailureCode.RUNTIME_LOCK_MISMATCH,
+            ["installed distribution RECORD is empty or malformed"],
+        )
+
+    record_parent = Path(record_relative_path).parent
+    recorded_hashed_paths = {
+        relative
+        for relative, digest_text, size_text in rows
+        if digest_text and size_text
+    }
+    seen: set[str] = set()
+    payload: list[dict[str, Any]] = []
+    verified_hashed = 0
+    allowed_cache_files = 0
+    native_extensions = 0
+    mismatches: list[str] = []
+    for relative, digest_text, size_text in rows:
+        if relative in seen:
+            mismatches.append(f"duplicate installed RECORD path {relative!r}")
+            continue
+        seen.add(relative)
+        try:
+            path = _safe_record_path(root, relative)
+        except RuntimeLockMismatch as exc:
+            mismatches.extend(exc.mismatches)
+            continue
+        is_cache = "__pycache__" in Path(relative).parts and relative.endswith(".pyc")
+        if not path.exists():
+            if is_cache and not digest_text and not size_text:
+                continue
+            mismatches.append(f"installed RECORD file is missing: {relative}")
+            continue
+        if path.is_symlink() or not path.is_file():
+            mismatches.append(f"installed RECORD path is not a regular file: {relative}")
+            continue
+        if not digest_text or not size_text:
+            if relative == record_relative_path:
+                continue
+            if is_cache:
+                cache_error = _cache_verification_error(
+                    path,
+                    site_packages_root=root,
+                    recorded_paths=recorded_hashed_paths,
+                )
+                if cache_error is None:
+                    allowed_cache_files += 1
+                else:
+                    mismatches.append(cache_error)
+                continue
+            mismatches.append(f"installed RECORD entry lacks hash/size: {relative}")
+            continue
+        try:
+            expected_digest = _record_hash_bytes(digest_text)
+            expected_size = int(size_text)
+        except (RuntimeLockMismatch, ValueError) as exc:
+            mismatches.extend(
+                exc.mismatches
+                if isinstance(exc, RuntimeLockMismatch)
+                else [f"invalid installed RECORD size for {relative}"],
+            )
+            continue
+        actual_size = path.stat().st_size
+        actual_digest = hashlib.sha256(path.read_bytes()).digest()
+        if actual_size != expected_size:
+            mismatches.append(
+                f"installed file size differs from RECORD: {relative} expected={expected_size} actual={actual_size}",
+            )
+        if actual_digest != expected_digest:
+            mismatches.append(f"installed file hash differs from RECORD: {relative}")
+        verified_hashed += 1
+        if relative.endswith((".so", ".pyd", ".dylib")):
+            native_extensions += 1
+        generated = (
+            Path(relative).parent == record_parent
+            and Path(relative).name in _GENERATED_DIST_INFO_FILES
+        )
+        if not generated:
+            payload.append(
+                {
+                    "path": relative,
+                    "sha256": expected_digest.hex(),
+                    "size": expected_size,
+                },
+            )
+
+    package_root = _safe_record_path(root, package_relative_path)
+    dist_info_root = _safe_record_path(root, str(record_parent))
+    for scan_root in (package_root, dist_info_root):
+        if not scan_root.is_dir() or scan_root.is_symlink():
+            mismatches.append(f"installed payload root is missing or unsafe: {scan_root.name}")
+            continue
+        for path in scan_root.rglob("*"):
+            relative = path.relative_to(root).as_posix()
+            if path.is_symlink():
+                mismatches.append(f"unexpected installed symlink: {relative}")
+            elif path.is_file() and relative not in seen:
+                is_cache = "__pycache__" in path.parts and path.suffix == ".pyc"
+                if is_cache:
+                    cache_error = _cache_verification_error(
+                        path,
+                        site_packages_root=root,
+                        recorded_paths=recorded_hashed_paths,
+                    )
+                    if cache_error is None:
+                        allowed_cache_files += 1
+                    else:
+                        mismatches.append(cache_error)
+                else:
+                    mismatches.append(f"unrecorded installed payload file: {relative}")
+
+    if native_extensions == 0:
+        mismatches.append("installed Nautilus payload has no hashed native extension")
+    if mismatches:
+        raise RuntimeLockMismatch(FailureCode.RUNTIME_LOCK_MISMATCH, mismatches)
+    ordered_payload = sorted(payload, key=lambda item: item["path"])
+    return {
+        "installed_record_sha256": sha256_file(record_path),
+        "installed_payload_sha256": canonical_sha256(ordered_payload),
+        "installed_payload_file_count": len(ordered_payload),
+        "installed_record_hashed_file_count": verified_hashed,
+        "installed_native_extension_count": native_extensions,
+        "allowed_cache_file_count": allowed_cache_files,
+        "cache_files_recompiled_and_verified": True,
+        "installed_files_verified": True,
+    }
+
+
+def verify_installed_distribution_files(
+    *,
+    site_packages_root: Path,
+    record_relative_path: str,
+    package_relative_path: str,
+    expected_payload_sha256: str,
+    expected_payload_file_count: int,
+) -> dict[str, Any]:
+    """Verify installed bytes against both RECORD and an immutable lock identity."""
+
+    evidence = inspect_installed_distribution_files(
+        site_packages_root=site_packages_root,
+        record_relative_path=record_relative_path,
+        package_relative_path=package_relative_path,
+    )
+    mismatches: list[str] = []
+    if evidence["installed_payload_sha256"] != expected_payload_sha256:
+        mismatches.append("installed payload identity differs from runtime lock")
+    if evidence["installed_payload_file_count"] != expected_payload_file_count:
+        mismatches.append("installed payload file count differs from runtime lock")
+    if mismatches:
+        raise RuntimeLockMismatch(FailureCode.RUNTIME_LOCK_MISMATCH, mismatches)
+    return evidence
+
+
+def _inspect_installed_nautilus_files() -> dict[str, Any]:
+    distribution = importlib.metadata.distribution("nautilus_trader")
+    site_packages = Path(distribution.locate_file("")).resolve()
+    candidates = sorted(site_packages.glob("nautilus_trader-*.dist-info/RECORD"))
+    if len(candidates) != 1:
+        raise RuntimeLockMismatch(
+            FailureCode.RUNTIME_LOCK_MISMATCH,
+            [f"expected one installed Nautilus RECORD, found {len(candidates)}"],
+        )
+    return inspect_installed_distribution_files(
+        site_packages_root=site_packages,
+        record_relative_path=candidates[0].relative_to(site_packages).as_posix(),
+        package_relative_path="nautilus_trader",
+    )
+
+
 def collect_runtime_identity(
     *,
     dependency_lock_path: Path,
@@ -112,6 +406,7 @@ def collect_runtime_identity(
     libc_name, libc_version = platform_module.libc_ver()
     lock_versions = _locked_versions(dependency_lock_path)
     installed_versions = _installed_versions()
+    installed_files = _inspect_installed_nautilus_files()
     # The CPython venv bootstrap owns pip installation. Its exact version is
     # independently locked by runtime.lock.json and included in the complete
     # installed-distribution comparison here.
@@ -136,6 +431,7 @@ def collect_runtime_identity(
         "effective_timezone": list(time.tzname),
         "locale": os.environ.get("LC_ALL"),
         "effective_locale": locale_module.setlocale(locale_module.LC_ALL, None),
+        **installed_files,
     }
     if wheel_path is not None and wheel_path.is_file():
         evidence["wheel_file_present"] = True
@@ -202,6 +498,8 @@ def verify_runtime_lock(
         "pip_version": lock.pip_version,
         "timezone": lock.timezone,
         "locale": lock.locale,
+        "installed_payload_sha256": lock.nautilus_installed_payload_sha256,
+        "installed_payload_file_count": lock.nautilus_installed_payload_file_count,
     }
     for field, expected in current_pairs.items():
         actual = current[field]

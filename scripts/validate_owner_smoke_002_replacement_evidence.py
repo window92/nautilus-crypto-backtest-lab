@@ -8,6 +8,8 @@ import json
 from pathlib import Path
 from typing import Any
 
+from crypto_lab.historical_contracts import validate_validator_contract
+
 
 ROOT = Path(__file__).resolve().parents[1]
 EVIDENCE = ROOT / "evidence/research/owner-smoke-002-replacement-001"
@@ -122,6 +124,10 @@ def load(relative: str) -> Any:
 
 def main() -> int:
     failures: list[str] = []
+    historical_contract = validate_validator_contract(
+        Path(__file__).name,
+        repository_root=ROOT,
+    )
     present = {
         path.relative_to(EVIDENCE).as_posix()
         for path in EVIDENCE.rglob("*")
@@ -168,9 +174,8 @@ def main() -> int:
     ):
         failures.append("final_manifest_contract_invalid")
 
-    locks = {name: sha256_file(ROOT / name) for name in EXPECTED_LOCKS}
-    if locks != EXPECTED_LOCKS:
-        failures.append("locked_identity_changed")
+    if not historical_contract.acceptable:
+        failures.append("historical_contract_snapshot_invalid")
     baseline = load("baseline-attestation.json")
     if baseline.get("status") != "PASS" or baseline.get("locked_hashes") != EXPECTED_LOCKS:
         failures.append("baseline_invalid")
@@ -320,6 +325,7 @@ def main() -> int:
                 "file_count": len(present),
                 "failed_attempt_count": len(attempts),
                 "failures": failures,
+                "historical_contract": historical_contract.to_builtins(),
             },
             sort_keys=True,
         ),

@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from crypto_lab.hashing import canonical_sha256
+from crypto_lab.historical_contracts import validate_validator_contract
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -71,6 +72,10 @@ def load(relative: str) -> Any:
 
 def main() -> int:
     failures: list[str] = []
+    historical_contract = validate_validator_contract(
+        Path(__file__).name,
+        repository_root=ROOT,
+    )
     present = {
         path.relative_to(EVIDENCE).as_posix()
         for path in EVIDENCE.rglob("*")
@@ -237,9 +242,8 @@ def main() -> int:
         or any(value != "PASS" for value in tests.get("gates", {}).values())
     ):
         failures.append("test_results_invalid")
-    observed_locks = {name: sha256_file(ROOT / name) for name in EXPECTED_LOCKS}
-    if observed_locks != EXPECTED_LOCKS:
-        failures.append("locked_identity_changed")
+    if not historical_contract.acceptable:
+        failures.append("historical_contract_snapshot_invalid")
     failed_attempts = [
         json.loads(line)
         for line in (EVIDENCE / "failed-attempts.jsonl").read_text(encoding="utf-8").splitlines()
@@ -266,6 +270,7 @@ def main() -> int:
                 "run_result_count": len(EXPECTED_RESULTS),
                 "failed_attempt_count": len(failed_attempts),
                 "failures": failures,
+                "historical_contract": historical_contract.to_builtins(),
             },
             sort_keys=True,
         ),

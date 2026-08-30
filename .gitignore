@@ -26,6 +26,7 @@ build/
 *.temp
 *.swp
 *~
+.*.lock
 .cache/
 runs/**/cache/
 runs/**/caches/

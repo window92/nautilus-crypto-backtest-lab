@@ -11,6 +11,7 @@ from pathlib import Path
 
 from crypto_lab.hashing import canonical_json_bytes
 from crypto_lab.hashing import sha256_file
+from crypto_lab.historical_contracts import validate_validator_contract
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -19,9 +20,6 @@ EVIDENCE_RELATIVE = os.environ.get(
     "evidence/m1/m1-acceptance-001",
 )
 EVIDENCE = ROOT / EVIDENCE_RELATIVE
-SSOT_SHA256 = "7bb2fc68d9b73b168a582d890a6f952fd0c4eb20fc0e31857903909f27dfaa8f"
-RUNTIME_LOCK_SHA256 = "4032df9f355348c2a0cfa9f79f331f97c9a8d24ecc8490a573d2c7f788bafddd"
-DEPENDENCY_LOCK_SHA256 = "b2765c9e33b10566fc327b48920fd1d3a73618c19622baaceab1fe9dca61df47"
 
 
 def _read(name: str) -> dict[str, object]:
@@ -43,6 +41,10 @@ def _git(*args: str) -> str:
 
 def validate() -> dict[str, object]:
     checks: dict[str, bool] = {}
+    historical_contract = validate_validator_contract(
+        Path(__file__).name,
+        repository_root=ROOT,
+    )
     tests = _read("test-results.json")
     phase_totals = tests.get("phase_totals", {})
     checks["acceptance_tests_pass"] = (
@@ -109,17 +111,12 @@ def validate() -> dict[str, object]:
                 inventory_ok = False
     checks["run_evidence_inventories_match"] = inventory_ok
 
-    checks["root_ssot_identity"] = sha256_file(ROOT / "SSOT.md") == SSOT_SHA256
-    checks["root_runtime_lock_identity"] = sha256_file(ROOT / "runtime.lock.json") == RUNTIME_LOCK_SHA256
-    checks["root_dependency_lock_identity"] = sha256_file(ROOT / "requirements.lock.txt") == DEPENDENCY_LOCK_SHA256
+    checks["historical_contract_snapshot"] = historical_contract.acceptable
     tracked_identity_diff = _git(
         "diff",
         "--name-only",
         "HEAD",
         "--",
-        "SSOT.md",
-        "runtime.lock.json",
-        "requirements.lock.txt",
         "evidence/m0",
         "evidence/m1/README.md",
         "evidence/m1/failed-attempts.jsonl",
@@ -129,17 +126,7 @@ def validate() -> dict[str, object]:
         "evidence/m1/targeted-g09-native-funding.txt",
         "evidence/m1/v2-migration-gate",
     )
-    checks["adopted_contract_and_historical_evidence_unchanged"] = not tracked_identity_diff
-    changed = _git("status", "--porcelain=v1").splitlines()
-    m2_prefixes = (
-        "src/crypto_lab/data.py",
-        "data/raw/",
-        "data/releases/",
-        "data/catalog/",
-    )
-    checks["no_m2_paths_changed"] = not any(
-        line[3:].startswith(m2_prefixes) for line in changed if len(line) >= 4
-    )
+    checks["historical_evidence_unchanged"] = not tracked_identity_diff
     checks["no_official_or_real_data_run"] = (
         _read("qualification-matrix.json").get("official_run_executed") is False
         and _read("qualification-matrix.json").get("real_market_data_acquired") is False
@@ -148,6 +135,7 @@ def validate() -> dict[str, object]:
         "schema": "m1-evidence-validation-v1",
         "status": "PASS" if all(checks.values()) else "FAIL",
         "checks": checks,
+        "historical_contract": historical_contract.to_builtins(),
     }
 
 

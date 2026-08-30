@@ -43,6 +43,7 @@ from crypto_lab.research import ResultExposure
 from crypto_lab.research import TERMINAL_TRIAL_STATES
 from crypto_lab.research import TrialRecord
 from crypto_lab.research import TrialState
+from crypto_lab.status import FailureCode
 from crypto_lab.research import _evaluate_claim_from_resolved_evidence
 from crypto_lab.research import benchmark_trial_candidate_id
 from crypto_lab.strategies import RegisteredStrategyIdentity
@@ -125,7 +126,7 @@ class OfficialEvidenceLocator(StrictModel):
 
     def __post_init__(self) -> None:
         if self.schema_version != 1:
-            raise ResearchError("EVIDENCE_INCOMPLETE", "Official locator schema must be 1")
+            raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "Official locator schema must be 1")
         _require_sha256(self.protocol_id, "official_locator.protocol_id")
         _require_sha256(
             self.expected_history_anchor_sha256,
@@ -136,7 +137,7 @@ class OfficialEvidenceLocator(StrictModel):
             "OFFICIAL_RESEARCH_REPORT",
             "QUALIFICATION_WORKFLOW_FIXTURE",
         }:
-            raise ResearchError("EVIDENCE_INCOMPLETE", "unknown Official report purpose")
+            raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "unknown Official report purpose")
 
 
 @dataclass(frozen=True)
@@ -171,7 +172,7 @@ class OfficialEvidenceResolver:
         try:
             resolved.relative_to(self.repository_root)
         except ValueError as exc:
-            raise ResearchError("EVIDENCE_INCOMPLETE", "evidence locator escapes repository") from exc
+            raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "evidence locator escapes repository") from exc
         return resolved
 
     def _run_dir(self, record: TrialRecord) -> Path:
@@ -184,7 +185,7 @@ class OfficialEvidenceResolver:
         )
         protocol = ResearchProtocol.from_json_bytes(path.read_bytes())
         if protocol.protocol_id != protocol_id:
-            raise ResearchError("RESEARCH_PROTOCOL_INVALID", "protocol locator identity mismatch")
+            raise ResearchError(FailureCode.RESEARCH_PROTOCOL_INVALID, "protocol locator identity mismatch")
         return protocol, path
 
     @staticmethod
@@ -200,13 +201,13 @@ class OfficialEvidenceResolver:
     def _json(path: Path) -> dict[str, Any]:
         value = json.loads(path.read_text(encoding="utf-8"))
         if not isinstance(value, dict):
-            raise ResearchError("EVIDENCE_INCOMPLETE", f"{path.name} must be an object")
+            raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, f"{path.name} must be an object")
         return value
 
     def _verify_manifest(self, run_dir: Path, run_id: str) -> str:
         manifest_path = run_dir / "evidence_manifest.json"
         if manifest_path.is_symlink() or manifest_path.resolve(strict=True).parent != run_dir:
-            raise ResearchError("EVIDENCE_INCOMPLETE", "Run manifest escapes its evidence directory")
+            raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "Run manifest escapes its evidence directory")
         manifest = self._json(manifest_path)
         entries = manifest.get("entries")
         if (
@@ -214,11 +215,11 @@ class OfficialEvidenceResolver:
             or manifest.get("run_id") != run_id
             or not isinstance(entries, list)
         ):
-            raise ResearchError("EVIDENCE_INCOMPLETE", "invalid Run evidence manifest")
+            raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "invalid Run evidence manifest")
         declared: set[str] = set()
         for entry in entries:
             if not isinstance(entry, dict) or set(entry) != {"path", "sha256", "byte_size"}:
-                raise ResearchError("EVIDENCE_INCOMPLETE", "invalid manifest entry")
+                raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "invalid manifest entry")
             name = str(entry["path"])
             if (
                 not name
@@ -228,9 +229,9 @@ class OfficialEvidenceResolver:
                 or "\\" in name
                 or any(ord(character) < 32 or ord(character) == 127 for character in name)
             ):
-                raise ResearchError("EVIDENCE_INCOMPLETE", "unsafe manifest path")
+                raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "unsafe manifest path")
             if name in declared:
-                raise ResearchError("EVIDENCE_INCOMPLETE", "duplicate manifest path")
+                raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "duplicate manifest path")
             declared.add(name)
             path = run_dir / name
             if (
@@ -240,18 +241,17 @@ class OfficialEvidenceResolver:
                 or sha256_file(path) != entry["sha256"]
                 or path.stat().st_size != entry["byte_size"]
             ):
-                raise ResearchError("EVIDENCE_INCOMPLETE", f"manifest mismatch: {name}")
+                raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, f"manifest mismatch: {name}")
         children = tuple(run_dir.iterdir())
         if any(path.is_symlink() or not path.is_file() for path in children):
-            raise ResearchError(
-                "EVIDENCE_INCOMPLETE",
+            raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE,
                 "Run evidence contains a symlink or unmanifested non-file entry",
             )
         actual = {path.name for path in children}
         if declared != actual - {"evidence_manifest.json"}:
-            raise ResearchError("EVIDENCE_INCOMPLETE", "Run manifest inventory is incomplete")
+            raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "Run manifest inventory is incomplete")
         if canonical_sha256(entries) != manifest.get("inventory_content_sha256"):
-            raise ResearchError("EVIDENCE_INCOMPLETE", "Run manifest identity mismatch")
+            raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "Run manifest identity mismatch")
         return sha256_file(manifest_path)
 
     def _resolve_selected_run(
@@ -275,7 +275,7 @@ class OfficialEvidenceResolver:
         }
         missing = sorted(name for name in required if not (run_dir / name).is_file())
         if missing:
-            raise ResearchError("EVIDENCE_INCOMPLETE", "selected Run missing: " + ",".join(missing))
+            raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "selected Run missing: " + ",".join(missing))
         config = LabRunConfig.from_json_bytes((run_dir / "lab_run_config.json").read_bytes())
         source = SourceRevision.from_json_bytes((run_dir / "source_revision.json").read_bytes())
         release = DatasetRelease.from_json_bytes((run_dir / "dataset_release.json").read_bytes())
@@ -307,7 +307,7 @@ class OfficialEvidenceResolver:
             )
             or status.get("checker_outcome") != persisted_checker.get("outcome")
         ):
-            raise ResearchError("EVIDENCE_INCOMPLETE", "selected trial and Run evidence mismatch")
+            raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "selected trial and Run evidence mismatch")
         verify_source_revision(
             source,
             repository=self.repository_root,
@@ -320,7 +320,7 @@ class OfficialEvidenceResolver:
             source,
             repository_root=self.repository_root,
         ):
-            raise ResearchError("EVIDENCE_INCOMPLETE", "registered strategy identity is forged")
+            raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "registered strategy identity is forged")
         if revalidate_current_checker:
             regenerated = check_evidence_directory(
                 run_dir,
@@ -329,10 +329,9 @@ class OfficialEvidenceResolver:
                 source_revision_current_head_required=False,
             )
             if regenerated.to_builtins() != persisted_checker:
-                raise ResearchError("EVIDENCE_INCOMPLETE", "persisted checker is stale or forged")
+                raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "persisted checker is stale or forged")
         elif not historical_failed_retained:
-            raise ResearchError(
-                "EVIDENCE_INCOMPLETE",
+            raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE,
                 "historical failed checker evidence is inconsistent",
             )
         return run_dir, config, source, identity, manifest_sha
@@ -357,10 +356,10 @@ class OfficialEvidenceResolver:
             or payload.get("fresh_processes") is not True
             or payload.get("read_only_checker_revalidated") is not True
         ):
-            raise ResearchError("EVIDENCE_INCOMPLETE", "deterministic replay evidence is invalid")
+            raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "deterministic replay evidence is invalid")
         replay_dir = self._contained(self.repository_root / str(payload["replay_run_ref"]))
         if not replay_dir.is_dir():
-            raise ResearchError("EVIDENCE_INCOMPLETE", "deterministic replay Run is absent")
+            raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "deterministic replay Run is absent")
         primary_result = self._json(primary_run_dir / "nautilus_result.json")
         replay_result = self._json(replay_dir / "nautilus_result.json")
         replay_status = self._json(replay_dir / "status.json")
@@ -383,13 +382,13 @@ class OfficialEvidenceResolver:
             or payload.get("primary_semantic_digest") != primary_result.get("semantic_digest")
             or payload.get("replay_semantic_digest") != replay_result.get("semantic_digest")
         ):
-            raise ResearchError("EVIDENCE_INCOMPLETE", "deterministic replay no longer matches")
+            raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "deterministic replay no longer matches")
         return replay_path
 
     def resolve(self, locator: OfficialEvidenceLocator) -> ResolvedOfficialEvidence:
         latest_anchor = self.history.anchors.reconcile_committed()
         if latest_anchor.anchor_sha256 != locator.expected_history_anchor_sha256:
-            raise ResearchError("TRIAL_HISTORY_INCOMPLETE", "stale authoritative history head")
+            raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE, "stale authoritative history head")
         protocol, protocol_path = self._protocol(locator.protocol_id)
         records = self.history.journal.read_records()
         family_records = tuple(
@@ -402,15 +401,15 @@ class OfficialEvidenceResolver:
         )
         latest = {record.trial_id: record for record in family_records}
         if locator.selected_trial_id not in started_ids:
-            raise ResearchError("TRIAL_HISTORY_INCOMPLETE", "selected trial was not started")
+            raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE, "selected trial was not started")
         selected = latest[locator.selected_trial_id]
         if selected.state not in TERMINAL_TRIAL_STATES or selected.result_ref == "NOT_APPLICABLE":
-            raise ResearchError("TRIAL_HISTORY_INCOMPLETE", "selected trial is not terminal evidence")
+            raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE, "selected trial is not terminal evidence")
         complete_history = bool(started_ids) and all(
             latest[trial_id].state in TERMINAL_TRIAL_STATES for trial_id in started_ids
         )
         if not complete_history:
-            raise ResearchError("TRIAL_HISTORY_INCOMPLETE", "family contains a non-terminal trial")
+            raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE, "family contains a non-terminal trial")
         resolved_runs: dict[str, tuple[Path, LabRunConfig, SourceRevision, RegisteredStrategyIdentity, str]] = {}
         for trial_id in started_ids:
             record = latest[trial_id]
@@ -423,7 +422,7 @@ class OfficialEvidenceResolver:
                 revalidate_current_checker=(record.state is TrialState.COMPLETED),
             )
         if locator.selected_trial_id not in resolved_runs:
-            raise ResearchError("EVIDENCE_INCOMPLETE", "selected trial has no resolved Run evidence")
+            raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "selected trial has no resolved Run evidence")
         run_dir, config, source, strategy_identity, manifest_sha = resolved_runs[selected.trial_id]
         replay_evidence_path: Path | None = None
         if not strategy_identity.qualification_fixture_only:
@@ -438,7 +437,7 @@ class OfficialEvidenceResolver:
             None,
         )
         if qualified is None or qualified.checker_result != "CHECK_PASS" or qualified.replay_result != "PASS":
-            raise ResearchError("DOWNSTREAM_CONTRACT_FAILURE", "Market Profile is not qualified")
+            raise ResearchError(FailureCode.DOWNSTREAM_CONTRACT_FAILURE, "Market Profile is not qualified")
         diagnostic_path = self.repository_root / "research/diagnostics" / f"{config.run_id}.json"
         diagnostic = reconcile_diagnostic_resolution(
             path=diagnostic_path,
@@ -450,7 +449,7 @@ class OfficialEvidenceResolver:
         performance_path = self.repository_root / "research/performance" / f"{config.run_id}.json"
         if diagnostic.performance_diagnostics_status == "COMPLETE":
             if not performance_path.is_file():
-                raise ResearchError("EVIDENCE_INCOMPLETE", "selected performance evidence is missing")
+                raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "selected performance evidence is missing")
             performance = PerformanceDiagnostics.from_json_bytes(performance_path.read_bytes())
             strategy_family = strategy_identity.strategy_spec.get("parameters", {}).get(
                 "strategy_family",
@@ -461,7 +460,7 @@ class OfficialEvidenceResolver:
                 benchmark_directory=self.repository_root / "research/benchmarks",
                 resolve_benchmark=(strategy_family != "BUY_AND_HOLD_1X_V1"),
             ):
-                raise ResearchError("EVIDENCE_INCOMPLETE", "selected performance evidence is stale")
+                raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "selected performance evidence is stale")
         holdout = self.history.holdout.read()
         matching_holdout = next(
             (

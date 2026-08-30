@@ -20,6 +20,8 @@ class RuntimeIdentityQualificationTests(unittest.TestCase):
         self.assertEqual(evidence["python_implementation"], "CPython")
         self.assertEqual(evidence["python_version"], "3.12.3")
         self.assertEqual(evidence["machine_architecture"], "x86_64")
+        self.assertTrue(evidence["installed_files_verified"])
+        self.assertGreater(evidence["installed_native_extension_count"], 0)
         self.assertEqual(
             evidence["installed_wheel_sha256"],
             "716169aca15bfb615a27610a9230e670dec5be3d4606fea591fe64eca145a5ac",

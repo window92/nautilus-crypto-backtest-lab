@@ -3,14 +3,16 @@
     "nautilus-trader": "2.0.0rc2",
     "pip": "24.0"
   },
-  "dependency_lock_filename": "requirements.v2-candidate.lock.txt",
-  "dependency_lock_sha256": "b2765c9e33b10566fc327b48920fd1d3a73618c19622baaceab1fe9dca61df47",
+  "dependency_lock_filename": "requirements.lock.txt",
+  "dependency_lock_sha256": "0999d2b764f5949aa145bb931825a6d692428e2fb14afe24ed32a5eb2efd29e4",
   "glibc_version": "2.39",
   "locale": "C.UTF-8",
   "machine_architecture": "x86_64",
   "nautilus_provenance_status": "VERIFIED_SLSA_SOURCE_COMMIT",
   "nautilus_source_commit": "27a8e54e7ac3c57d6cbf8891f0283dfbaee97317",
   "nautilus_source_repository": "nautechsystems/nautilus_trader",
+  "nautilus_installed_payload_file_count": 93,
+  "nautilus_installed_payload_sha256": "8d984d8b69f13b313f3f05ca33513e374bfc0df69f63c3a70c8763a310db71e9",
   "nautilus_version": "2.0.0rc2",
   "nautilus_wheel_filename": "nautilus_trader-2.0.0rc2-cp312-cp312-manylinux_2_34_x86_64.whl",
   "nautilus_wheel_sha256": "716169aca15bfb615a27610a9230e670dec5be3d4606fea591fe64eca145a5ac",
@@ -21,6 +23,6 @@
   "python_implementation": "CPython",
   "python_version": "3.12.3",
   "runtime_implementation": "official Rust/PyO3 public Python API",
-  "schema_version": 2,
+  "schema_version": 3,
   "timezone": "UTC"
 }

@@ -7,12 +7,10 @@ the only owner of trading and financial truth.
 
 from __future__ import annotations
 
-import json
 import os
 import random
 import tempfile
 from dataclasses import fields
-from dataclasses import replace
 from datetime import datetime
 from decimal import Decimal
 from decimal import ROUND_HALF_EVEN
@@ -28,19 +26,24 @@ from crypto_lab.config import _require_nonempty
 from crypto_lab.config import _require_sha256
 from crypto_lab.config import _require_utc
 from crypto_lab.hashing import canonical_sha256
+from crypto_lab.locking import interprocess_file_lock
 from crypto_lab.m3 import MechanicalIntegrity
 from crypto_lab.m3 import QualificationDownstreamBundle
 from crypto_lab.m3 import QualifiedProfileRecord
 from crypto_lab.m3 import QualifiedProfileRegistry
+from crypto_lab.status import FailureCode
 
 
 class ResearchError(ValueError):
     """Fail-closed M4 contract error with an SSOT failure code."""
 
-    def __init__(self, code: str, message: str) -> None:
-        self.code = code
+    def __init__(self, code: FailureCode | str, message: str) -> None:
+        try:
+            self.code = FailureCode(code).value
+        except ValueError as exc:
+            raise ValueError(f"unknown SSOT failure code: {code!r}") from exc
         self.message = message
-        super().__init__(f"{code}: {message}")
+        super().__init__(f"{self.code}: {message}")
 
 
 class ResearchIntent(StrEnum):
@@ -117,7 +120,7 @@ class UtcInterval(StrictModel):
         _require_utc(self.start_inclusive, "interval.start_inclusive")
         _require_utc(self.end_exclusive, "interval.end_exclusive")
         if self.start_inclusive >= self.end_exclusive:
-            raise ResearchError("PARTITION_LEAKAGE", "interval must be non-empty and half-open")
+            raise ResearchError(FailureCode.PARTITION_LEAKAGE, "interval must be non-empty and half-open")
 
     def overlaps(self, other: UtcInterval) -> bool:
         return self.start_inclusive < other.end_exclusive and other.start_inclusive < self.end_exclusive
@@ -134,12 +137,12 @@ class CandidateSpec(StrictModel):
         _require_sha256(self.strategy_spec_id, "candidate.strategy_spec_id")
         _require_nonempty(self.candidate_label, "candidate.candidate_label")
         if not self.parameter_values:
-            raise ResearchError("RESEARCH_PROTOCOL_INVALID", "candidate parameters must not be empty")
+            raise ResearchError(FailureCode.RESEARCH_PROTOCOL_INVALID, "candidate parameters must not be empty")
         for key, value in self.parameter_values.items():
             _require_nonempty(key, "candidate.parameter_name")
             _require_nonempty(value, f"candidate.parameter_values.{key}")
         if canonical_sha256(self.material_payload()) != self.candidate_id:
-            raise ResearchError("RESEARCH_PROTOCOL_INVALID", "candidate content identity mismatch")
+            raise ResearchError(FailureCode.RESEARCH_PROTOCOL_INVALID, "candidate content identity mismatch")
         _freeze_field(self, "parameter_values")
 
     def material_payload(self) -> dict[str, Any]:
@@ -179,13 +182,11 @@ class BenchmarkSpec(StrictModel):
         for name in ("benchmark_id", "definition", "cost_basis"):
             _require_nonempty(getattr(self, name), f"benchmark.{name}")
         if not self.frozen_before_result_exposure:
-            raise ResearchError(
-                "RESEARCH_PROTOCOL_INVALID",
+            raise ResearchError(FailureCode.RESEARCH_PROTOCOL_INVALID,
                 "benchmark must be bound before result exposure",
             )
         if self.cost_basis in {"UNKNOWN", NOT_APPLICABLE}:
-            raise ResearchError(
-                "RESEARCH_PROTOCOL_INVALID",
+            raise ResearchError(FailureCode.RESEARCH_PROTOCOL_INVALID,
                 "benchmark cost basis must be explicit and compatible",
             )
 
@@ -226,13 +227,11 @@ class UniverseMembershipDecision(StrictModel):
         )
         _require_sha256(self.source_content_sha256, "universe_membership.source_content_sha256")
         if not self.available_fields:
-            raise ResearchError(
-                "RESEARCH_PROTOCOL_INVALID",
+            raise ResearchError(FailureCode.RESEARCH_PROTOCOL_INVALID,
                 "point-in-time membership requires source fields",
             )
         if self.source_observed_at_utc > self.selection_timestamp_utc:
-            raise ResearchError(
-                "RESEARCH_PROTOCOL_INVALID",
+            raise ResearchError(FailureCode.RESEARCH_PROTOCOL_INVALID,
                 "membership used information unavailable at selection time",
             )
 
@@ -244,16 +243,16 @@ class UniverseMembershipEvidence(StrictModel):
 
     def __post_init__(self) -> None:
         if self.schema_version != 1 or not self.decisions:
-            raise ResearchError("RESEARCH_PROTOCOL_INVALID", "invalid universe membership evidence")
+            raise ResearchError(FailureCode.RESEARCH_PROTOCOL_INVALID, "invalid universe membership evidence")
         _require_sha256(self.membership_sha256, "universe_membership.membership_sha256")
         keys = [
             (item.instrument_id, item.selection_timestamp_utc)
             for item in self.decisions
         ]
         if len(keys) != len(set(keys)):
-            raise ResearchError("RESEARCH_PROTOCOL_INVALID", "duplicate universe decision")
+            raise ResearchError(FailureCode.RESEARCH_PROTOCOL_INVALID, "duplicate universe decision")
         if canonical_sha256(self.material_payload()) != self.membership_sha256:
-            raise ResearchError("RESEARCH_PROTOCOL_INVALID", "universe membership identity mismatch")
+            raise ResearchError(FailureCode.RESEARCH_PROTOCOL_INVALID, "universe membership identity mismatch")
 
     def material_payload(self) -> dict[str, Any]:
         return {"schema_version": self.schema_version, "decisions": self.decisions}
@@ -280,18 +279,17 @@ class PurgeEmbargoRule(StrictModel):
 
     def __post_init__(self) -> None:
         if self.mode not in {"APPLICABLE", NOT_APPLICABLE}:
-            raise ResearchError("RESEARCH_PROTOCOL_INVALID", "unknown purge/embargo mode")
+            raise ResearchError(FailureCode.RESEARCH_PROTOCOL_INVALID, "unknown purge/embargo mode")
         _require_nonempty(self.reason, "purge_embargo.reason")
         if min(self.purge_seconds, self.embargo_seconds, self.max_forward_dependency_seconds) < 0:
-            raise ResearchError("PARTITION_LEAKAGE", "purge and embargo durations cannot be negative")
+            raise ResearchError(FailureCode.PARTITION_LEAKAGE, "purge and embargo durations cannot be negative")
         if self.mode == NOT_APPLICABLE:
             if self.reason == NOT_APPLICABLE or self.max_forward_dependency_seconds != 0:
-                raise ResearchError(
-                    "PARTITION_LEAKAGE",
+                raise ResearchError(FailureCode.PARTITION_LEAKAGE,
                     "NOT_APPLICABLE requires a reason and zero forward dependency",
                 )
         elif self.purge_seconds + self.embargo_seconds < self.max_forward_dependency_seconds:
-            raise ResearchError("PARTITION_LEAKAGE", "purge and embargo are insufficient")
+            raise ResearchError(FailureCode.PARTITION_LEAKAGE, "purge and embargo are insufficient")
 
 
 class SampleAdequacyRule(StrictModel):
@@ -304,17 +302,15 @@ class SampleAdequacyRule(StrictModel):
         _require_nonempty(self.rationale, "sample_adequacy.rationale")
         if isinstance(self.minimum_completed_trades, int):
             if self.minimum_completed_trades <= 0:
-                raise ResearchError(
-                    "RESEARCH_PROTOCOL_INVALID",
+                raise ResearchError(FailureCode.RESEARCH_PROTOCOL_INVALID,
                     "minimum_completed_trades must be a positive integer",
                 )
             if self.counted_observation != "NAUTILUS_NATIVE_COMPLETED_TRADE":
-                raise ResearchError(
-                    "RESEARCH_PROTOCOL_INVALID",
+                raise ResearchError(FailureCode.RESEARCH_PROTOCOL_INVALID,
                     "sample unit must be the native Nautilus completed trade",
                 )
         elif self.minimum_completed_trades != NOT_APPLICABLE:
-            raise ResearchError("RESEARCH_PROTOCOL_INVALID", "invalid sample adequacy rule")
+            raise ResearchError(FailureCode.RESEARCH_PROTOCOL_INVALID, "invalid sample adequacy rule")
 
 
 class MonteCarloSpec(StrictModel):
@@ -328,24 +324,24 @@ class MonteCarloSpec(StrictModel):
 
     def __post_init__(self) -> None:
         if self.quantile_method != "R7_LINEAR_INTERPOLATION":
-            raise ResearchError("RESEARCH_PROTOCOL_INVALID", "unsupported quantile method")
+            raise ResearchError(FailureCode.RESEARCH_PROTOCOL_INVALID, "unsupported quantile method")
         if not 0 <= self.decimal_places <= 18:
-            raise ResearchError("RESEARCH_PROTOCOL_INVALID", "invalid Monte Carlo precision")
+            raise ResearchError(FailureCode.RESEARCH_PROTOCOL_INVALID, "invalid Monte Carlo precision")
         if self.resampling_method is ResamplingMethod.NOT_APPLICABLE:
             if self.simulation_count != 0 or self.block_length != NOT_APPLICABLE:
-                raise ResearchError("RESEARCH_PROTOCOL_INVALID", "NOT_APPLICABLE Monte Carlo must not run")
+                raise ResearchError(FailureCode.RESEARCH_PROTOCOL_INVALID, "NOT_APPLICABLE Monte Carlo must not run")
             if self.not_applicable_reason == NOT_APPLICABLE:
-                raise ResearchError("RESEARCH_PROTOCOL_INVALID", "Monte Carlo N/A requires a reason")
+                raise ResearchError(FailureCode.RESEARCH_PROTOCOL_INVALID, "Monte Carlo N/A requires a reason")
             return
         if self.simulation_count <= 0:
-            raise ResearchError("RESEARCH_PROTOCOL_INVALID", "simulation_count must be positive")
+            raise ResearchError(FailureCode.RESEARCH_PROTOCOL_INVALID, "simulation_count must be positive")
         if self.resampling_method is ResamplingMethod.IID_BOOTSTRAP:
             if self.block_length != NOT_APPLICABLE:
-                raise ResearchError("RESEARCH_PROTOCOL_INVALID", "IID block length must be N/A")
+                raise ResearchError(FailureCode.RESEARCH_PROTOCOL_INVALID, "IID block length must be N/A")
         elif not isinstance(self.block_length, int) or self.block_length <= 0:
-            raise ResearchError("RESEARCH_PROTOCOL_INVALID", "moving-block length must be positive")
+            raise ResearchError(FailureCode.RESEARCH_PROTOCOL_INVALID, "moving-block length must be positive")
         if self.not_applicable_reason != NOT_APPLICABLE:
-            raise ResearchError("RESEARCH_PROTOCOL_INVALID", "applicable Monte Carlo reason must be N/A")
+            raise ResearchError(FailureCode.RESEARCH_PROTOCOL_INVALID, "applicable Monte Carlo reason must be N/A")
 
 
 def validate_partition_boundaries(
@@ -357,7 +353,7 @@ def validate_partition_boundaries(
 ) -> None:
     ordered = (development, validation, oos, final_holdout)
     if any(left.end_exclusive > right.start_inclusive for left, right in zip(ordered, ordered[1:])):
-        raise ResearchError("PARTITION_LEAKAGE", "chronological partitions overlap")
+        raise ResearchError(FailureCode.PARTITION_LEAKAGE, "chronological partitions overlap")
     PurgeEmbargoRule.from_json_bytes(purge_embargo.to_json_bytes())
 
 
@@ -383,28 +379,28 @@ class PartitionStartEvidence(StrictModel):
             "observed_starting_realized_pnl",
         ):
             if not getattr(self, name).is_finite():
-                raise ResearchError("PARTITION_LEAKAGE", f"{name} must be finite")
+                raise ResearchError(FailureCode.PARTITION_LEAKAGE, f"{name} must be finite")
         if self.configured_initial_capital <= 0:
-            raise ResearchError("PARTITION_LEAKAGE", "Initial Capital must be positive")
+            raise ResearchError(FailureCode.PARTITION_LEAKAGE, "Initial Capital must be positive")
         if self.observed_starting_cash != self.configured_initial_capital:
-            raise ResearchError("PARTITION_LEAKAGE", "scored partition did not reset Initial Capital")
+            raise ResearchError(FailureCode.PARTITION_LEAKAGE, "scored partition did not reset Initial Capital")
         if self.observed_starting_position_quantity != 0:
-            raise ResearchError("PARTITION_LEAKAGE", "position carried into scored partition")
+            raise ResearchError(FailureCode.PARTITION_LEAKAGE, "position carried into scored partition")
         if self.observed_starting_realized_pnl != 0:
-            raise ResearchError("PARTITION_LEAKAGE", "PnL carried into scored partition")
+            raise ResearchError(FailureCode.PARTITION_LEAKAGE, "PnL carried into scored partition")
         if self.pending_strategy_orders != 0:
-            raise ResearchError("PARTITION_LEAKAGE", "pending order carried into scored partition")
+            raise ResearchError(FailureCode.PARTITION_LEAKAGE, "pending order carried into scored partition")
         if self.warmup_scored_order_count != 0:
-            raise ResearchError("PARTITION_LEAKAGE", "warmup submitted a scored order")
+            raise ResearchError(FailureCode.PARTITION_LEAKAGE, "warmup submitted a scored order")
         _require_utc(self.scoring_start_utc, "partition_start.scoring_start")
         _require_utc(
             self.warmup_context_end_exclusive,
             "partition_start.warmup_context_end_exclusive",
         )
         if self.warmup_context_end_exclusive > self.scoring_start_utc:
-            raise ResearchError("PARTITION_LEAKAGE", "warmup used later-partition context")
+            raise ResearchError(FailureCode.PARTITION_LEAKAGE, "warmup used later-partition context")
         if self.source != "NAUTILUS_PERSISTED_RUN_EVIDENCE":
-            raise ResearchError("PARTITION_LEAKAGE", "partition state must come from Run evidence")
+            raise ResearchError(FailureCode.PARTITION_LEAKAGE, "partition state must come from Run evidence")
 
 
 class ResearchProtocol(StrictModel):
@@ -449,7 +445,7 @@ class ResearchProtocol(StrictModel):
 
     def __post_init__(self) -> None:
         if self.schema_version != 1:
-            raise ResearchError("RESEARCH_PROTOCOL_INVALID", "only ResearchProtocol v1 is supported")
+            raise ResearchError(FailureCode.RESEARCH_PROTOCOL_INVALID, "only ResearchProtocol v1 is supported")
         _require_sha256(self.protocol_id, "research_protocol.protocol_id")
         _require_utc(self.frozen_at_utc, "research_protocol.frozen_at_utc")
         for name in (
@@ -468,17 +464,16 @@ class ResearchProtocol(StrictModel):
         ):
             _require_nonempty(getattr(self, name), f"research_protocol.{name}")
         if not self.instrument_ids or len(set(self.instrument_ids)) != len(self.instrument_ids):
-            raise ResearchError("RESEARCH_PROTOCOL_INVALID", "Instrument scope must be non-empty and unique")
+            raise ResearchError(FailureCode.RESEARCH_PROTOCOL_INVALID, "Instrument scope must be non-empty and unique")
         if self.instrument_scope is InstrumentScope.SINGLE_INSTRUMENT and len(self.instrument_ids) != 1:
-            raise ResearchError("RESEARCH_PROTOCOL_INVALID", "SINGLE_INSTRUMENT requires exactly one Instrument")
+            raise ResearchError(FailureCode.RESEARCH_PROTOCOL_INVALID, "SINGLE_INSTRUMENT requires exactly one Instrument")
         if self.instrument_scope is InstrumentScope.POINT_IN_TIME_UNIVERSE:
             if (
                 self.universe_selection_rule == NOT_APPLICABLE
                 or self.universe_as_of_rule == NOT_APPLICABLE
                 or self.universe_membership_sha256 == NOT_APPLICABLE
             ):
-                raise ResearchError(
-                    "RESEARCH_PROTOCOL_INVALID",
+                raise ResearchError(FailureCode.RESEARCH_PROTOCOL_INVALID,
                     "point-in-time universe requires frozen rule, as-of rule, and membership identity",
                 )
             _require_sha256(
@@ -493,25 +488,25 @@ class ResearchProtocol(StrictModel):
                 self.universe_membership_sha256,
             )
         ):
-            raise ResearchError("RESEARCH_PROTOCOL_INVALID", "non-universe scope must mark universe fields N/A")
+            raise ResearchError(FailureCode.RESEARCH_PROTOCOL_INVALID, "non-universe scope must mark universe fields N/A")
         if not self.dataset_release_ids:
-            raise ResearchError("RESEARCH_PROTOCOL_INVALID", "Dataset Release identity is required")
+            raise ResearchError(FailureCode.RESEARCH_PROTOCOL_INVALID, "Dataset Release identity is required")
         for identity in self.dataset_release_ids:
             _require_sha256(identity, "research_protocol.dataset_release_ids")
         if not self.ordered_candidates or len({item.candidate_id for item in self.ordered_candidates}) != len(
             self.ordered_candidates
         ):
-            raise ResearchError("RESEARCH_PROTOCOL_INVALID", "candidate domain must be non-empty and unique")
+            raise ResearchError(FailureCode.RESEARCH_PROTOCOL_INVALID, "candidate domain must be non-empty and unique")
         if self.search_budget <= 0 or self.search_budget > len(self.ordered_candidates):
-            raise ResearchError("RESEARCH_PROTOCOL_INVALID", "search budget exceeds frozen candidates")
+            raise ResearchError(FailureCode.RESEARCH_PROTOCOL_INVALID, "search budget exceeds frozen candidates")
         if self.candidate_ordering != "AS_LISTED":
-            raise ResearchError("RESEARCH_PROTOCOL_INVALID", "V1 ordered set must use AS_LISTED")
+            raise ResearchError(FailureCode.RESEARCH_PROTOCOL_INVALID, "V1 ordered set must use AS_LISTED")
         if not self.random_seeds:
-            raise ResearchError("RESEARCH_PROTOCOL_INVALID", "random seeds must be frozen")
+            raise ResearchError(FailureCode.RESEARCH_PROTOCOL_INVALID, "random seeds must be frozen")
         for candidate in self.ordered_candidates:
             for name, domain in self.parameter_domain.items():
                 if name in candidate.parameter_values and candidate.parameter_values[name] not in domain:
-                    raise ResearchError("RESEARCH_PROTOCOL_INVALID", "candidate lies outside frozen domain")
+                    raise ResearchError(FailureCode.RESEARCH_PROTOCOL_INVALID, "candidate lies outside frozen domain")
         validate_partition_boundaries(
             self.development_interval,
             self.validation_interval,
@@ -525,18 +520,16 @@ class ResearchProtocol(StrictModel):
             self.oos_interval,
             self.final_holdout_interval,
         ):
-            raise ResearchError(
-                "RESEARCH_PROTOCOL_INVALID",
+            raise ResearchError(FailureCode.RESEARCH_PROTOCOL_INVALID,
                 "benchmark interval must match one declared scored partition",
             )
         if self.time_series_split != "CHRONOLOGICAL":
-            raise ResearchError("PARTITION_LEAKAGE", "random time-series shuffling is forbidden")
+            raise ResearchError(FailureCode.PARTITION_LEAKAGE, "random time-series shuffling is forbidden")
         if self.research_intent is ResearchIntent.CONFIRMATORY and not isinstance(
             self.sample_adequacy_rule.minimum_completed_trades,
             int,
         ):
-            raise ResearchError(
-                "RESEARCH_PROTOCOL_INVALID",
+            raise ResearchError(FailureCode.RESEARCH_PROTOCOL_INVALID,
                 "confirmatory trade claim requires a positive frozen sample threshold",
             )
         if (
@@ -544,19 +537,17 @@ class ResearchProtocol(StrictModel):
             and self.claim_basis == "TRADE_BASED_PROFITABILITY"
             and self.monte_carlo_spec.resampling_method is ResamplingMethod.NOT_APPLICABLE
         ):
-            raise ResearchError(
-                "RESEARCH_PROTOCOL_INVALID",
+            raise ResearchError(FailureCode.RESEARCH_PROTOCOL_INVALID,
                 "confirmatory trade claim must freeze an applicable Monte Carlo specification",
             )
         if len(self.ordered_candidates) > 1 and self.multiple_testing_treatment == NOT_APPLICABLE:
-            raise ResearchError(
-                "MULTIPLE_TESTING_UNDECLARED",
+            raise ResearchError(FailureCode.MULTIPLE_TESTING_UNDECLARED,
                 "NOT_APPLICABLE is valid only for one predeclared candidate",
             )
         if self.terminal_policy != "MARK_OPEN_POSITION_NO_SYNTHETIC_CLOSE":
-            raise ResearchError("RESEARCH_PROTOCOL_INVALID", "terminal policy differs from V1")
+            raise ResearchError(FailureCode.RESEARCH_PROTOCOL_INVALID, "terminal policy differs from V1")
         if canonical_sha256(self.material_payload()) != self.protocol_id:
-            raise ResearchError("RESEARCH_PROTOCOL_INVALID", "protocol content identity mismatch")
+            raise ResearchError(FailureCode.RESEARCH_PROTOCOL_INVALID, "protocol content identity mismatch")
         _freeze_field(self, "instrument_ids")
         _freeze_field(self, "dataset_release_ids")
         _freeze_field(self, "ordered_candidates")
@@ -695,7 +686,7 @@ class TrialRecord(StrictModel):
 
     def __post_init__(self) -> None:
         if self.schema_version != 1 or self.journal_sequence <= 0:
-            raise ResearchError("TRIAL_HISTORY_INCOMPLETE", "invalid trial journal schema or sequence")
+            raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE, "invalid trial journal schema or sequence")
         if self.previous_entry_sha256 != "GENESIS":
             _require_sha256(self.previous_entry_sha256, "trial.previous_entry_sha256")
         _require_sha256(self.journal_entry_sha256, "trial.journal_entry_sha256")
@@ -704,20 +695,20 @@ class TrialRecord(StrictModel):
         if isinstance(self.finished_at_utc, datetime):
             _require_utc(self.finished_at_utc, "trial.finished_at_utc")
         elif self.finished_at_utc != NOT_APPLICABLE:
-            raise ResearchError("TRIAL_HISTORY_INCOMPLETE", "invalid terminal timestamp marker")
+            raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE, "invalid terminal timestamp marker")
         if self.state in TERMINAL_TRIAL_STATES and not isinstance(self.finished_at_utc, datetime):
-            raise ResearchError("TRIAL_HISTORY_INCOMPLETE", "terminal trial needs finish time")
+            raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE, "terminal trial needs finish time")
         if self.state not in TERMINAL_TRIAL_STATES and self.finished_at_utc != NOT_APPLICABLE:
-            raise ResearchError("TRIAL_HISTORY_INCOMPLETE", "non-terminal trial cannot have finish time")
+            raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE, "non-terminal trial cannot have finish time")
         if self.result_exposed and self.result_ref == NOT_APPLICABLE:
-            raise ResearchError("TRIAL_HISTORY_INCOMPLETE", "exposed result needs an evidence reference")
+            raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE, "exposed result needs an evidence reference")
         if self.recorded_at_utc < self.started_at_utc:
-            raise ResearchError("TRIAL_HISTORY_INCOMPLETE", "trial record predates its start")
+            raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE, "trial record predates its start")
         if isinstance(self.finished_at_utc, datetime):
             if self.finished_at_utc != self.recorded_at_utc:
-                raise ResearchError("TRIAL_HISTORY_INCOMPLETE", "terminal timestamps diverge")
+                raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE, "terminal timestamps diverge")
         if canonical_sha256(self.material_payload()) != self.journal_entry_sha256:
-            raise ResearchError("TRIAL_HISTORY_INCOMPLETE", "trial journal entry hash mismatch")
+            raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE, "trial journal entry hash mismatch")
 
     def material_payload(self) -> dict[str, Any]:
         return {
@@ -758,31 +749,35 @@ class TrialRecord(StrictModel):
 
 
 class TrialJournal:
-    """Single-node, fsync-safe, append-only JSONL trial history."""
+    """Interprocess-serialized, fsync-safe, append-only JSONL trial history."""
 
     def __init__(self, path: Path) -> None:
         self.path = Path(path)
+        self.lock_path = self.path.parent / f".{self.path.name}.lock"
 
     def read_records(self) -> tuple[TrialRecord, ...]:
+        with interprocess_file_lock(self.lock_path, shared=True):
+            return self._read_records_unlocked()
+
+    def _read_records_unlocked(self) -> tuple[TrialRecord, ...]:
         if not self.path.exists():
             return ()
         payload = self.path.read_bytes()
         if payload and not payload.endswith(b"\n"):
-            raise ResearchError("TRIAL_HISTORY_INCOMPLETE", "truncated trial journal line")
+            raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE, "truncated trial journal line")
         records: list[TrialRecord] = []
         for line_number, line in enumerate(payload.splitlines(), start=1):
             if not line:
-                raise ResearchError("TRIAL_HISTORY_INCOMPLETE", "blank trial journal line")
+                raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE, "blank trial journal line")
             try:
                 record = TrialRecord.from_json_bytes(line)
             except Exception as exc:
-                raise ResearchError(
-                    "TRIAL_HISTORY_INCOMPLETE",
+                raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE,
                     f"malformed trial journal line {line_number}: {exc}",
                 ) from exc
             expected_previous = "GENESIS" if not records else records[-1].journal_entry_sha256
             if record.journal_sequence != line_number or record.previous_entry_sha256 != expected_previous:
-                raise ResearchError("TRIAL_HISTORY_INCOMPLETE", "trial journal hash chain is broken")
+                raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE, "trial journal hash chain is broken")
             records.append(record)
         self._validate_transitions(records)
         return tuple(records)
@@ -796,14 +791,13 @@ class TrialJournal:
         for trial_id, trial_records in by_trial.items():
             states = [item.state for item in trial_records]
             if not states or states[0] is not TrialState.PLANNED:
-                raise ResearchError(
-                    "TRIAL_HISTORY_INCOMPLETE",
+                raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE,
                     f"trial {trial_id} was not recorded before execution",
                 )
             if len(states) >= 2 and states[1] is not TrialState.STARTED:
-                raise ResearchError("TRIAL_HISTORY_INCOMPLETE", f"invalid transition for {trial_id}")
+                raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE, f"invalid transition for {trial_id}")
             if len(states) > 3 or (len(states) == 3 and states[2] not in TERMINAL_TRIAL_STATES):
-                raise ResearchError("TRIAL_HISTORY_INCOMPLETE", f"invalid transition for {trial_id}")
+                raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE, f"invalid transition for {trial_id}")
             frozen_definition = tuple(
                 getattr(trial_records[0], name) for name in definition_fields
             )
@@ -811,8 +805,7 @@ class TrialJournal:
                 tuple(getattr(item, name) for name in definition_fields) != frozen_definition
                 for item in trial_records[1:]
             ):
-                raise ResearchError(
-                    "TRIAL_HISTORY_INCOMPLETE",
+                raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE,
                     f"trial {trial_id} changed its frozen definition",
                 )
 
@@ -824,7 +817,7 @@ class TrialJournal:
             },
         )
 
-    def _append(
+    def _append_unlocked(
         self,
         definition: TrialDefinition,
         *,
@@ -836,19 +829,19 @@ class TrialJournal:
         reason: str,
         result_exposed: bool,
     ) -> TrialRecord:
-        records = list(self.read_records())
+        records = list(self._read_records_unlocked())
         existing = [item for item in records if item.trial_id == definition.trial_id]
         if not existing:
             if state is not TrialState.PLANNED:
-                raise ResearchError("TRIAL_HISTORY_INCOMPLETE", "new trial must begin PLANNED")
+                raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE, "new trial must begin PLANNED")
         elif existing[-1].state is TrialState.PLANNED:
             if state is not TrialState.STARTED:
-                raise ResearchError("TRIAL_HISTORY_INCOMPLETE", "PLANNED must transition to STARTED")
+                raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE, "PLANNED must transition to STARTED")
         elif existing[-1].state is TrialState.STARTED:
             if state not in TERMINAL_TRIAL_STATES:
-                raise ResearchError("TRIAL_HISTORY_INCOMPLETE", "STARTED must become terminal")
+                raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE, "STARTED must become terminal")
         else:
-            raise ResearchError("TRIAL_HISTORY_INCOMPLETE", "terminal trial cannot transition")
+            raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE, "terminal trial cannot transition")
         record = TrialRecord.create(
             definition=definition,
             journal_sequence=len(records) + 1,
@@ -871,33 +864,39 @@ class TrialJournal:
             os.fsync(fd)
         finally:
             os.close(fd)
+        directory_fd = os.open(self.path.parent, os.O_RDONLY | os.O_CLOEXEC)
+        try:
+            os.fsync(directory_fd)
+        finally:
+            os.close(directory_fd)
         return record
 
     def start(self, definition: TrialDefinition, *, at_utc: datetime) -> tuple[TrialRecord, TrialRecord]:
         _require_utc(at_utc, "trial.start")
-        if any(item.trial_id == definition.trial_id for item in self.read_records()):
-            raise ResearchError("TRIAL_HISTORY_INCOMPLETE", "retry requires a new trial_id")
-        planned = self._append(
-            definition,
-            state=TrialState.PLANNED,
-            started_at_utc=at_utc,
-            recorded_at_utc=at_utc,
-            finished_at_utc=NOT_APPLICABLE,
-            result_ref=NOT_APPLICABLE,
-            reason=NOT_APPLICABLE,
-            result_exposed=False,
-        )
-        started = self._append(
-            definition,
-            state=TrialState.STARTED,
-            started_at_utc=at_utc,
-            recorded_at_utc=at_utc,
-            finished_at_utc=NOT_APPLICABLE,
-            result_ref=NOT_APPLICABLE,
-            reason=NOT_APPLICABLE,
-            result_exposed=False,
-        )
-        return planned, started
+        with interprocess_file_lock(self.lock_path):
+            if any(item.trial_id == definition.trial_id for item in self._read_records_unlocked()):
+                raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE, "retry requires a new trial_id")
+            planned = self._append_unlocked(
+                definition,
+                state=TrialState.PLANNED,
+                started_at_utc=at_utc,
+                recorded_at_utc=at_utc,
+                finished_at_utc=NOT_APPLICABLE,
+                result_ref=NOT_APPLICABLE,
+                reason=NOT_APPLICABLE,
+                result_exposed=False,
+            )
+            started = self._append_unlocked(
+                definition,
+                state=TrialState.STARTED,
+                started_at_utc=at_utc,
+                recorded_at_utc=at_utc,
+                finished_at_utc=NOT_APPLICABLE,
+                result_ref=NOT_APPLICABLE,
+                reason=NOT_APPLICABLE,
+                result_exposed=False,
+            )
+            return planned, started
 
     def finish(
         self,
@@ -910,35 +909,41 @@ class TrialJournal:
         result_exposed: bool,
     ) -> TrialRecord:
         if state not in TERMINAL_TRIAL_STATES:
-            raise ResearchError("TRIAL_HISTORY_INCOMPLETE", "finish requires a terminal state")
-        records = [item for item in self.read_records() if item.trial_id == trial_id]
-        if not records:
-            raise ResearchError("TRIAL_HISTORY_INCOMPLETE", "unknown trial")
-        return self._append(
-            self._definition_for(records[-1]),
-            state=state,
-            started_at_utc=records[0].started_at_utc,
-            recorded_at_utc=at_utc,
-            finished_at_utc=at_utc,
-            result_ref=result_ref,
-            reason=reason,
-            result_exposed=result_exposed,
-        )
+            raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE, "finish requires a terminal state")
+        with interprocess_file_lock(self.lock_path):
+            records = [
+                item for item in self._read_records_unlocked() if item.trial_id == trial_id
+            ]
+            if not records:
+                raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE, "unknown trial")
+            return self._append_unlocked(
+                self._definition_for(records[-1]),
+                state=state,
+                started_at_utc=records[0].started_at_utc,
+                recorded_at_utc=at_utc,
+                finished_at_utc=at_utc,
+                result_ref=result_ref,
+                reason=reason,
+                result_exposed=result_exposed,
+            )
 
     def transition(self, trial_id: str, *, state: TrialState, at_utc: datetime) -> TrialRecord:
-        records = [item for item in self.read_records() if item.trial_id == trial_id]
-        if not records:
-            raise ResearchError("TRIAL_HISTORY_INCOMPLETE", "unknown trial")
-        return self._append(
-            self._definition_for(records[-1]),
-            state=state,
-            started_at_utc=records[0].started_at_utc,
-            recorded_at_utc=at_utc,
-            finished_at_utc=NOT_APPLICABLE,
-            result_ref=NOT_APPLICABLE,
-            reason=NOT_APPLICABLE,
-            result_exposed=False,
-        )
+        with interprocess_file_lock(self.lock_path):
+            records = [
+                item for item in self._read_records_unlocked() if item.trial_id == trial_id
+            ]
+            if not records:
+                raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE, "unknown trial")
+            return self._append_unlocked(
+                self._definition_for(records[-1]),
+                state=state,
+                started_at_utc=records[0].started_at_utc,
+                recorded_at_utc=at_utc,
+                finished_at_utc=NOT_APPLICABLE,
+                result_ref=NOT_APPLICABLE,
+                reason=NOT_APPLICABLE,
+                result_exposed=False,
+            )
 
     def started_trial_ids(self) -> tuple[str, ...]:
         result: list[str] = []
@@ -957,19 +962,19 @@ class ResearchScheduler:
             self.validate_trial(definition)
         identities = [item.candidate_id for item in started]
         if len(set(identities)) != len(identities):
-            raise ResearchError("RESEARCH_PROTOCOL_INVALID", "candidate relabel cannot hide a repeat")
+            raise ResearchError(FailureCode.RESEARCH_PROTOCOL_INVALID, "candidate relabel cannot hide a repeat")
         expected_prefix = [item.candidate_id for item in self.protocol.ordered_candidates[: len(started)]]
         if identities != expected_prefix:
-            raise ResearchError("RESEARCH_PROTOCOL_INVALID", "candidate order diverged from protocol")
+            raise ResearchError(FailureCode.RESEARCH_PROTOCOL_INVALID, "candidate order diverged from protocol")
         if len(started) >= self.protocol.search_budget:
-            raise ResearchError("RESEARCH_PROTOCOL_INVALID", "frozen search budget exhausted")
+            raise ResearchError(FailureCode.RESEARCH_PROTOCOL_INVALID, "frozen search budget exhausted")
         return self.protocol.ordered_candidates[len(started)]
 
     def validate_trial(self, definition: TrialDefinition) -> None:
         candidates = {item.candidate_id: item for item in self.protocol.ordered_candidates}
         candidate = candidates.get(definition.candidate_id)
         if candidate is None:
-            raise ResearchError("RESEARCH_PROTOCOL_INVALID", "trial candidate is outside frozen domain")
+            raise ResearchError(FailureCode.RESEARCH_PROTOCOL_INVALID, "trial candidate is outside frozen domain")
         expected = {
             "research_family_id": self.protocol.research_family_id,
             "hypothesis_id": self.protocol.hypothesis_id,
@@ -994,8 +999,7 @@ class ResearchScheduler:
             name for name, value in expected.items() if getattr(definition, name) != value
         ]
         if mismatches:
-            raise ResearchError(
-                "RESEARCH_PROTOCOL_INVALID",
+            raise ResearchError(FailureCode.RESEARCH_PROTOCOL_INVALID,
                 f"trial changed frozen protocol inputs: {','.join(mismatches)}",
             )
 
@@ -1029,10 +1033,10 @@ class ResultExposure(StrictModel):
             _require_nonempty(getattr(self, name), f"exposure.{name}")
         _require_sha256(self.dataset_release_id, "exposure.dataset_release_id")
         if len(self.source_commit) != 40 or any(char not in "0123456789abcdef" for char in self.source_commit):
-            raise ResearchError("HOLDOUT_HISTORY_VIOLATION", "invalid source commit identity")
+            raise ResearchError(FailureCode.HOLDOUT_HISTORY_VIOLATION, "invalid source commit identity")
         _require_utc(self.first_exposure_at_utc, "exposure.first_exposure_at_utc")
         if not self.hypothesis_lineage or not self.strategy_lineage:
-            raise ResearchError("HOLDOUT_HISTORY_VIOLATION", "exposure lineage is required")
+            raise ResearchError(FailureCode.HOLDOUT_HISTORY_VIOLATION, "exposure lineage is required")
 
 
 class HoldoutEntry(StrictModel):
@@ -1045,7 +1049,7 @@ class HoldoutEntry(StrictModel):
         if self.previous_entry_sha256 != "GENESIS":
             _require_sha256(self.previous_entry_sha256, "holdout.previous_entry_sha256")
         if canonical_sha256(self.exposure) != self.entry_id:
-            raise ResearchError("HOLDOUT_HISTORY_VIOLATION", "holdout entry identity mismatch")
+            raise ResearchError(FailureCode.HOLDOUT_HISTORY_VIOLATION, "holdout entry identity mismatch")
 
     @classmethod
     def create(cls, exposure: ResultExposure, previous: str) -> HoldoutEntry:
@@ -1063,14 +1067,14 @@ class HoldoutLockSnapshot(StrictModel):
 
     def __post_init__(self) -> None:
         if self.schema_version != 1:
-            raise ResearchError("HOLDOUT_HISTORY_VIOLATION", "invalid holdout schema")
+            raise ResearchError(FailureCode.HOLDOUT_HISTORY_VIOLATION, "invalid holdout schema")
         _require_sha256(self.history_sha256, "holdout.history_sha256")
         if canonical_sha256(self.entries) != self.history_sha256:
-            raise ResearchError("HOLDOUT_HISTORY_VIOLATION", "holdout history hash mismatch")
+            raise ResearchError(FailureCode.HOLDOUT_HISTORY_VIOLATION, "holdout history hash mismatch")
         previous = "GENESIS"
         for entry in self.entries:
             if entry.previous_entry_sha256 != previous:
-                raise ResearchError("HOLDOUT_HISTORY_VIOLATION", "holdout chain was shortened")
+                raise ResearchError(FailureCode.HOLDOUT_HISTORY_VIOLATION, "holdout chain was shortened")
             previous = entry.entry_id
 
     @classmethod
@@ -1089,16 +1093,21 @@ def _same_market_overlap(left: ResultExposure, right: ResultExposure) -> bool:
 class HoldoutLockStore:
     def __init__(self, path: Path) -> None:
         self.path = Path(path)
+        self.lock_path = self.path.parent / f".{self.path.name}.lock"
 
     def read(self) -> HoldoutLockSnapshot:
+        with interprocess_file_lock(self.lock_path, shared=True):
+            return self._read_unlocked()
+
+    def _read_unlocked(self) -> HoldoutLockSnapshot:
         if not self.path.exists() or self.path.read_bytes().strip() in {b"", b"{}"}:
             return HoldoutLockSnapshot.create(())
         try:
             return HoldoutLockSnapshot.from_json_bytes(self.path.read_bytes())
         except Exception as exc:
-            raise ResearchError("HOLDOUT_HISTORY_VIOLATION", str(exc)) from exc
+            raise ResearchError(FailureCode.HOLDOUT_HISTORY_VIOLATION, str(exc)) from exc
 
-    def _write(self, snapshot: HoldoutLockSnapshot) -> None:
+    def _write_unlocked(self, snapshot: HoldoutLockSnapshot) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         handle = tempfile.NamedTemporaryFile(
             mode="wb",
@@ -1123,6 +1132,12 @@ class HoldoutLockStore:
                 handle.close()
             temporary.unlink(missing_ok=True)
 
+    def _write(self, snapshot: HoldoutLockSnapshot) -> None:
+        """Test/support boundary which preserves the same interprocess serialization."""
+
+        with interprocess_file_lock(self.lock_path):
+            self._write_unlocked(snapshot)
+
     def consume(
         self,
         exposure: ResultExposure,
@@ -1131,24 +1146,26 @@ class HoldoutLockStore:
         exposure_resolver: dict[str, ResultExposure],
     ) -> HoldoutEntry:
         if not exposure.result_bearing:
-            raise ResearchError("HOLDOUT_HISTORY_VIOLATION", "non-result cannot consume Holdout")
-        self.require_fresh(
-            exposure,
-            journal=journal,
-            exposure_resolver=exposure_resolver,
-            consuming_trial_id=exposure.trial_id,
-        )
-        snapshot = self.read()
-        identity = canonical_sha256(exposure)
-        for entry in snapshot.entries:
-            if entry.entry_id == identity:
-                return entry
-            if _same_market_overlap(entry.exposure, exposure):
-                raise ResearchError("HOLDOUT_ALREADY_CONSUMED", "overlapping Holdout is consumed")
-        previous = "GENESIS" if not snapshot.entries else snapshot.entries[-1].entry_id
-        entry = HoldoutEntry.create(exposure, previous)
-        self._write(HoldoutLockSnapshot.create((*snapshot.entries, entry)))
-        return entry
+            raise ResearchError(FailureCode.HOLDOUT_HISTORY_VIOLATION, "non-result cannot consume Holdout")
+        with interprocess_file_lock(self.lock_path):
+            snapshot = self._read_unlocked()
+            self._require_fresh_against_snapshot(
+                exposure,
+                snapshot=snapshot,
+                journal=journal,
+                exposure_resolver=exposure_resolver,
+                consuming_trial_id=exposure.trial_id,
+            )
+            identity = canonical_sha256(exposure)
+            for entry in snapshot.entries:
+                if entry.entry_id == identity:
+                    return entry
+                if _same_market_overlap(entry.exposure, exposure):
+                    raise ResearchError(FailureCode.HOLDOUT_ALREADY_CONSUMED, "overlapping Holdout is consumed")
+            previous = "GENESIS" if not snapshot.entries else snapshot.entries[-1].entry_id
+            entry = HoldoutEntry.create(exposure, previous)
+            self._write_unlocked(HoldoutLockSnapshot.create((*snapshot.entries, entry)))
+            return entry
 
     def require_fresh(
         self,
@@ -1158,6 +1175,25 @@ class HoldoutLockStore:
         exposure_resolver: dict[str, ResultExposure],
         consuming_trial_id: str | None = None,
     ) -> None:
+        with interprocess_file_lock(self.lock_path, shared=True):
+            snapshot = self._read_unlocked()
+        self._require_fresh_against_snapshot(
+            candidate,
+            snapshot=snapshot,
+            journal=journal,
+            exposure_resolver=exposure_resolver,
+            consuming_trial_id=consuming_trial_id,
+        )
+
+    @staticmethod
+    def _require_fresh_against_snapshot(
+        candidate: ResultExposure,
+        *,
+        snapshot: HoldoutLockSnapshot,
+        journal: TrialJournal,
+        exposure_resolver: dict[str, ResultExposure],
+        consuming_trial_id: str | None,
+    ) -> None:
         records = journal.read_records()
         exposed_ids = {
             record.trial_id
@@ -1166,23 +1202,21 @@ class HoldoutLockStore:
         }
         for trial_id in sorted(exposed_ids):
             if trial_id not in exposure_resolver:
-                raise ResearchError(
-                    "HOLDOUT_HISTORY_VIOLATION",
+                raise ResearchError(FailureCode.HOLDOUT_HISTORY_VIOLATION,
                     f"result-bearing trial {trial_id} has unresolved exposure",
                 )
             prior = exposure_resolver[trial_id]
             if trial_id == consuming_trial_id:
                 if prior != candidate:
-                    raise ResearchError(
-                        "HOLDOUT_HISTORY_VIOLATION",
+                    raise ResearchError(FailureCode.HOLDOUT_HISTORY_VIOLATION,
                         "current trial exposure does not match the frozen candidate exposure",
                     )
                 continue
             if _same_market_overlap(prior, candidate):
-                raise ResearchError("HOLDOUT_ALREADY_CONSUMED", "prior result exposed the interval")
-        for entry in self.read().entries:
+                raise ResearchError(FailureCode.HOLDOUT_ALREADY_CONSUMED, "prior result exposed the interval")
+        for entry in snapshot.entries:
             if _same_market_overlap(entry.exposure, candidate):
-                raise ResearchError("HOLDOUT_ALREADY_CONSUMED", "Holdout lock already covers interval")
+                raise ResearchError(FailureCode.HOLDOUT_ALREADY_CONSUMED, "Holdout lock already covers interval")
 
 
 class CompletedTradeSeries(StrictModel):
@@ -1198,49 +1232,44 @@ class CompletedTradeSeries(StrictModel):
 
     def __post_init__(self) -> None:
         if self.source != "NAUTILUS_NATIVE_COMPLETED_TRADES":
-            raise ResearchError("CLAIM_INELIGIBLE", "project trade pairing is forbidden")
+            raise ResearchError(FailureCode.CLAIM_INELIGIBLE, "project trade pairing is forbidden")
         _require_sha256(self.evidence_sha256, "completed_trades.evidence_sha256")
         _require_nonempty(self.settlement_currency, "completed_trades.settlement_currency")
         values = (*self.realized_pnl_outcomes, *self.realized_returns, *self.net_outcomes)
         if any(not outcome.is_finite() for outcome in values):
-            raise ResearchError("CLAIM_INELIGIBLE", "trade outcome must be finite")
+            raise ResearchError(FailureCode.CLAIM_INELIGIBLE, "trade outcome must be finite")
         if not self.stable_native_sequence:
             if self.native_completed_unit_count != "UNDEFINED":
-                raise ResearchError(
-                    "CLAIM_INELIGIBLE",
+                raise ResearchError(FailureCode.CLAIM_INELIGIBLE,
                     "unstable native sequence cannot publish a completed-unit count",
                 )
             if self.realized_pnl_outcomes or self.realized_returns or self.net_outcomes:
-                raise ResearchError(
-                    "CLAIM_INELIGIBLE",
+                raise ResearchError(FailureCode.CLAIM_INELIGIBLE,
                     "unstable native sequence cannot publish unit outcomes",
                 )
             if self.unambiguous_net_after_cost:
-                raise ResearchError(
-                    "CLAIM_INELIGIBLE",
+                raise ResearchError(FailureCode.CLAIM_INELIGIBLE,
                     "unstable native sequence cannot claim net-after-cost outcomes",
                 )
             return
         if type(self.native_completed_unit_count) is not int:
-            raise ResearchError("CLAIM_INELIGIBLE", "native completed-unit count must be integer")
+            raise ResearchError(FailureCode.CLAIM_INELIGIBLE, "native completed-unit count must be integer")
         count = self.native_completed_unit_count
         if count < 0:
-            raise ResearchError("CLAIM_INELIGIBLE", "native completed-unit count is negative")
+            raise ResearchError(FailureCode.CLAIM_INELIGIBLE, "native completed-unit count is negative")
         if len(self.realized_pnl_outcomes) != count or len(self.realized_returns) != count:
-            raise ResearchError(
-                "CLAIM_INELIGIBLE",
+            raise ResearchError(FailureCode.CLAIM_INELIGIBLE,
                 "native completed-unit values are incomplete",
             )
         if self.unambiguous_net_after_cost:
             if len(self.net_outcomes) != count:
-                raise ResearchError("CLAIM_INELIGIBLE", "native net outcome sequence is incomplete")
+                raise ResearchError(FailureCode.CLAIM_INELIGIBLE, "native net outcome sequence is incomplete")
             if self.net_outcomes != self.realized_pnl_outcomes:
-                raise ResearchError(
-                    "CLAIM_INELIGIBLE",
+                raise ResearchError(FailureCode.CLAIM_INELIGIBLE,
                     "native net outcomes must be the persisted Position.realized_pnl sequence",
                 )
         elif self.net_outcomes:
-            raise ResearchError("CLAIM_INELIGIBLE", "ambiguous costs forbid net outcomes")
+            raise ResearchError(FailureCode.CLAIM_INELIGIBLE, "ambiguous costs forbid net outcomes")
 
 
 def evaluate_sample_adequacy(
@@ -1291,11 +1320,11 @@ class MonteCarloResult(StrictModel):
 
     def __post_init__(self) -> None:
         if self.schema_version != 1:
-            raise ResearchError("CLAIM_INELIGIBLE", "unknown Monte Carlo result schema")
+            raise ResearchError(FailureCode.CLAIM_INELIGIBLE, "unknown Monte Carlo result schema")
         _require_sha256(self.diagnostic_id, "monte_carlo.diagnostic_id")
         _require_sha256(self.input_trade_evidence_sha256, "monte_carlo.input_trade_evidence_sha256")
         if canonical_sha256(self.material_payload()) != self.diagnostic_id:
-            raise ResearchError("CLAIM_INELIGIBLE", "Monte Carlo result identity mismatch")
+            raise ResearchError(FailureCode.CLAIM_INELIGIBLE, "Monte Carlo result identity mismatch")
         _freeze_field(self, "outlier_dependency")
 
     def material_payload(self) -> dict[str, Any]:
@@ -1350,7 +1379,7 @@ def run_monte_carlo(
     sample_adequacy: SampleAdequacy,
 ) -> MonteCarloResult:
     if not initial_capital.is_finite() or initial_capital <= 0:
-        raise ResearchError("CLAIM_INELIGIBLE", "Monte Carlo initial capital must be positive")
+        raise ResearchError(FailureCode.CLAIM_INELIGIBLE, "Monte Carlo initial capital must be positive")
     unavailable_reason = ""
     status = MonteCarloStatus.COMPLETED
     if spec.resampling_method is ResamplingMethod.NOT_APPLICABLE:
@@ -1391,7 +1420,7 @@ def run_monte_carlo(
     if spec.resampling_method is ResamplingMethod.MOVING_BLOCK_BOOTSTRAP:
         assert isinstance(spec.block_length, int)
         if spec.block_length > len(outcomes):
-            raise ResearchError("CLAIM_INELIGIBLE", "block length exceeds native trade sample")
+            raise ResearchError(FailureCode.CLAIM_INELIGIBLE, "block length exceeds native trade sample")
     generator = random.Random(spec.random_seed)
     final_equities: list[Decimal] = []
     max_drawdowns: list[Decimal] = []
@@ -1512,14 +1541,14 @@ class ClaimEvaluation(StrictModel):
 
     def __post_init__(self) -> None:
         if self.schema_version != 1:
-            raise ResearchError("CLAIM_INELIGIBLE", "unknown claim result schema")
+            raise ResearchError(FailureCode.CLAIM_INELIGIBLE, "unknown claim result schema")
         _require_sha256(self.claim_evaluation_id, "claim.claim_evaluation_id")
         if self.protocol_id != NOT_APPLICABLE:
             _require_sha256(self.protocol_id, "claim.protocol_id")
         if self.eligible_confirmatory_profitability_claim and self.research_eligibility is not ResearchEligibility.ELIGIBLE:
-            raise ResearchError("CLAIM_INELIGIBLE", "claim cannot override eligibility")
+            raise ResearchError(FailureCode.CLAIM_INELIGIBLE, "claim cannot override eligibility")
         if canonical_sha256(self.material_payload()) != self.claim_evaluation_id:
-            raise ResearchError("CLAIM_INELIGIBLE", "claim result identity mismatch")
+            raise ResearchError(FailureCode.CLAIM_INELIGIBLE, "claim result identity mismatch")
 
     def material_payload(self) -> dict[str, Any]:
         return {
@@ -1657,8 +1686,7 @@ def evaluate_claim(value: ClaimEvaluationInput) -> ClaimEvaluation:
         result.research_eligibility is ResearchEligibility.ELIGIBLE
         and not value.synthetic_contract_fixture
     ):
-        raise ResearchError(
-            "EVIDENCE_INCOMPLETE",
+        raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE,
             "eligible Official claims require OfficialEvidenceResolver identities",
         )
     return result
@@ -1671,10 +1699,9 @@ class M3QualificationResearchView(StrictModel):
 
     def __post_init__(self) -> None:
         if self.qualification_bundle.profile_record != self.profile_record:
-            raise ResearchError("DOWNSTREAM_CONTRACT_FAILURE", "M3 view record mismatch")
+            raise ResearchError(FailureCode.DOWNSTREAM_CONTRACT_FAILURE, "M3 view record mismatch")
         if self.claim_evaluation.research_eligibility is not ResearchEligibility.INELIGIBLE:
-            raise ResearchError(
-                "CLAIM_INELIGIBLE",
+            raise ResearchError(FailureCode.CLAIM_INELIGIBLE,
                 "qualification evidence must remain ineligible for profitability claims",
             )
 
@@ -1696,21 +1723,21 @@ class M3ResearchBoundary:
     ) -> M3ResearchBoundary:
         registry = QualifiedProfileRegistry.from_json_bytes(Path(registry_path).read_bytes())
         if registry.registry_content_sha256 != expected_registry_identity:
-            raise ResearchError("DOWNSTREAM_CONTRACT_FAILURE", "M3 registry identity mismatch")
+            raise ResearchError(FailureCode.DOWNSTREAM_CONTRACT_FAILURE, "M3 registry identity mismatch")
         views: list[M3QualificationResearchView] = []
         for record in registry.records:
             bundle = QualificationDownstreamBundle.from_json_bytes(
                 (Path(downstream_directory) / f"{record.profile_id.value}.json").read_bytes(),
             )
             if bundle.profile_record != record:
-                raise ResearchError("DOWNSTREAM_CONTRACT_FAILURE", "M3 bundle diverges from registry")
+                raise ResearchError(FailureCode.DOWNSTREAM_CONTRACT_FAILURE, "M3 bundle diverges from registry")
             claim = ClaimEvaluation.create(
                 protocol_id=NOT_APPLICABLE,
                 mechanical_integrity=MechanicalIntegrity.PASS,
                 research_intent=ResearchIntent.EXPLORATORY,
                 research_eligibility=ResearchEligibility.INELIGIBLE,
                 eligible_confirmatory_profitability_claim=False,
-                failure_codes=("CLAIM_INELIGIBLE",),
+                failure_codes=(FailureCode.CLAIM_INELIGIBLE.value,),
                 reasons=("QUALIFICATION_EVIDENCE_NOT_PROFITABILITY_PROOF",),
                 limitations=tuple(bundle.qualification_limitations),
             )
