@@ -46,6 +46,7 @@ class M1EvidenceContractTests(unittest.TestCase):
                 "lab_run_config.json",
                 "lab_run_config.sha256",
                 "runtime.lock.json",
+                "runtime_identity.json",
                 "source_revision.json",
                 "dataset_release.json",
                 "strategy_spec.json",
