@@ -1,0 +1,140 @@
+{
+  "schema": "comprehensive-audit-remediation-clean-environment-acceptance-v1",
+  "audit_id": "COMPREHENSIVE_AUDIT_REMEDIATION_001",
+  "status": "PASS",
+  "recorded_at_utc": "2026-08-30T06:44:50Z",
+  "source_commit": "c5261397eac205b0b30f2f95a837066fd0bc7d40",
+  "branch": "fix/comprehensive-audit-remediation",
+  "official_acceptance_identity": "f794e9dc9cc76e177bff3d94c815e54e94f376b347079a7db7de5f796897a4c0",
+  "clean_environment": {
+    "venv_path": "/tmp/nautilus-audit-clean-001",
+    "preexisting_path_rejected": true,
+    "base_python": "Python 3.12.3",
+    "pip": "24.0",
+    "timezone": "UTC",
+    "locale": "C.UTF-8",
+    "python_hash_seed": "0",
+    "network_used": false,
+    "install_mode": "--no-index exact local wheel",
+    "final_holdout_used": false,
+    "profitability_claim_authorized": false
+  },
+  "wheel": {
+    "filename": "nautilus_trader-2.0.0rc2-cp312-cp312-manylinux_2_34_x86_64.whl",
+    "source_path": "/tmp/nautilus-v2-gate.UKpWnpmd/download/nautilus_trader-2.0.0rc2-cp312-cp312-manylinux_2_34_x86_64.whl",
+    "sha256": "716169aca15bfb615a27610a9230e670dec5be3d4606fea591fe64eca145a5ac",
+    "size_bytes": 66118782,
+    "version": "2.0.0rc2"
+  },
+  "installed_runtime_proof": {
+    "status": "VERIFIED",
+    "installed_files_verified": true,
+    "installed_payload_sha256": "8d984d8b69f13b313f3f05ca33513e374bfc0df69f63c3a70c8763a310db71e9",
+    "installed_payload_file_count": 93,
+    "installed_native_extension_count": 1,
+    "installed_wheel_sha256": "716169aca15bfb615a27610a9230e670dec5be3d4606fea591fe64eca145a5ac"
+  },
+  "phases": [
+    {
+      "label": "CLEAN_TARGET_ABSENT",
+      "command": "test ! -e /tmp/nautilus-audit-clean-001",
+      "exit_code": 0,
+      "status": "PASS"
+    },
+    {
+      "label": "LOCKED_WHEEL_SHA256",
+      "command": "sha256sum /tmp/nautilus-v2-gate.UKpWnpmd/download/nautilus_trader-2.0.0rc2-cp312-cp312-manylinux_2_34_x86_64.whl",
+      "exit_code": 0,
+      "status": "PASS"
+    },
+    {
+      "label": "LOCKED_WHEEL_SIZE",
+      "command": "stat --format=%s /tmp/nautilus-v2-gate.UKpWnpmd/download/nautilus_trader-2.0.0rc2-cp312-cp312-manylinux_2_34_x86_64.whl",
+      "exit_code": 0,
+      "status": "PASS"
+    },
+    {
+      "label": "BASE_PYTHON",
+      "command": "python3.12 --version",
+      "exit_code": 0,
+      "status": "PASS"
+    },
+    {
+      "label": "CREATE_CLEAN_VENV",
+      "command": "python3.12 -m venv /tmp/nautilus-audit-clean-001",
+      "exit_code": 0,
+      "status": "PASS"
+    },
+    {
+      "label": "INSTALL_EXACT_LOCKED_WHEEL",
+      "command": "/tmp/nautilus-audit-clean-001/bin/python -m pip install --no-index /tmp/nautilus-v2-gate.UKpWnpmd/download/nautilus_trader-2.0.0rc2-cp312-cp312-manylinux_2_34_x86_64.whl",
+      "exit_code": 0,
+      "status": "PASS"
+    },
+    {
+      "label": "CLEAN_PIP_CHECK",
+      "command": "/tmp/nautilus-audit-clean-001/bin/python -m pip check",
+      "exit_code": 0,
+      "status": "PASS",
+      "result": "No broken requirements found."
+    },
+    {
+      "label": "CLEAN_RUNTIME_LOCK_PREFLIGHT",
+      "command": "env TZ=UTC LANG=C.UTF-8 LC_ALL=C.UTF-8 PYTHONHASHSEED=0 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src:. /tmp/nautilus-audit-clean-001/bin/python -c \"from pathlib import Path; from crypto_lab.config import RuntimeLock; from crypto_lab.runtime import verify_runtime_lock; r=Path.cwd(); e=verify_runtime_lock(RuntimeLock.from_json_bytes((r/'runtime.lock.json').read_bytes()), dependency_lock_path=r/'requirements.lock.txt'); print({k:e[k] for k in ('nautilus_version','python_version','pip_version','installed_wheel_sha256','installed_payload_sha256','installed_payload_file_count','installed_native_extension_count','installed_files_verified')})\"",
+      "exit_code": 0,
+      "status": "PASS"
+    },
+    {
+      "label": "CLEAN_TARGETED_REGRESSIONS",
+      "command": "env TZ=UTC LANG=C.UTF-8 LC_ALL=C.UTF-8 PYTHONHASHSEED=0 PYTHONDONTWRITEBYTECODE=1 PYTHONPYCACHEPREFIX=/tmp/nautilus-audit-clean-pyc PYTHONPATH=src:. /tmp/nautilus-audit-clean-001/bin/python -m unittest -v tests.unit.test_audit_qualification_validator tests.unit.test_audit_research_validator tests.unit.test_comprehensive_audit_regressions tests.unit.test_engine_data_window tests.unit.test_historical_contracts tests.unit.test_instrument_representation_funding_checker_repair tests.unit.test_m4_multiprocess_locking tests.unit.test_profile_authority tests.unit.test_result_status tests.unit.test_runtime_installed_files tests.unit.test_spot_cash_reconciliation tests.unit.test_timestamps",
+      "exit_code": 0,
+      "status": "PASS",
+      "tests_run": 60,
+      "passed": 60,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "reported_duration_seconds": 99.621
+    },
+    {
+      "label": "CLEAN_HISTORICAL_EVIDENCE_VALIDATORS",
+      "command": "env TZ=UTC LANG=C.UTF-8 LC_ALL=C.UTF-8 PYTHONHASHSEED=0 PYTHONDONTWRITEBYTECODE=1 PYTHONPYCACHEPREFIX=/tmp/nautilus-audit-clean-pyc PYTHONPATH=src:. /tmp/nautilus-audit-clean-001/bin/python scripts/run_historical_evidence_acceptance.py --output /tmp/nautilus-audit-clean-historical-001.json",
+      "exit_code": 0,
+      "status": "PASS",
+      "validator_count": 11,
+      "passed": 11,
+      "failed": 0,
+      "historical_evidence_mutated": false,
+      "note": "The provenance validator intentionally uses the separately locked .data-venv; the other validators use the clean project venv.",
+      "evidence_path": "historical-evidence.json",
+      "evidence_sha256": "f22a6d99a4d0890656c3eab67d0e6182ad24a3dad459e7dd6454a1ec4c597b6d"
+    },
+    {
+      "label": "CLEAN_FULL_TEST_DISCOVERY",
+      "command": "env TZ=UTC LANG=C.UTF-8 LC_ALL=C.UTF-8 PYTHONHASHSEED=0 PYTHONDWRITEBYTECODE=1 PYTHONPYCACHEPREFIX=/tmp/nautilus-audit-clean-pyc PYTHONPATH=src:. /tmp/nautilus-audit-clean-001/bin/python -m unittest discover -s tests -t .",
+      "exit_code": 0,
+      "status": "PASS",
+      "tests_run": 342,
+      "passed": 342,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "reported_duration_seconds": 428.575,
+      "expected_negative_log": "Nautilus emitted an insufficient-BTC transaction error inside an asserted negative test; unittest completed OK."
+    },
+    {
+      "label": "CLEAN_COMPILEALL",
+      "command": "env TZ=UTC LANG=C.UTF-8 LC_ALL=C.UTF-8 PYTHONHASHSEED=0 PYTHONDONTWRITEBYTECODE=1 PYTHONPYCACHEPREFIX=/tmp/nautilus-audit-clean-compile-pyc PYTHONPATH=src:. /tmp/nautilus-audit-clean-001/bin/python -m compileall -q src scripts tests",
+      "exit_code": 0,
+      "status": "PASS"
+    }
+  ],
+  "phase_count": 12,
+  "failed_phase_count": 0,
+  "warnings": [
+    "pip disabled its unwritable user cache; installation remained local and succeeded without network access.",
+    "multiprocessing emitted the CPython fork-from-multithreaded-process deprecation warning; all five synchronization/crash tests passed."
+  ],
+  "evidence_identity_scope": "canonical JSON object excluding evidence_identity",
+  "evidence_identity": "b1cd6316254a58a2d07c170c1383c163f1dd57523780c50c9e6246ca4537eb7e"
+}
