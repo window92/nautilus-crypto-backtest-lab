@@ -1,0 +1,4 @@
+$ /home/builder/projects/nautilus-crypto-backtest-lab/.venv/bin/python -m compileall -q src scripts tests
+exit_code=0
+duration_seconds=0.165915
+

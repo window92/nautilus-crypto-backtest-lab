@@ -1,0 +1,16 @@
+$ /home/builder/projects/nautilus-crypto-backtest-lab/.venv/bin/python -m unittest -v tests.unit.test_instrument_representation_funding_checker_repair.FundingCheckerRepairTests
+exit_code=0
+duration_seconds=0.505166
+
+test_duplicate_source_pair_and_genuine_second_settlement_fail (tests.unit.test_instrument_representation_funding_checker_repair.FundingCheckerRepairTests.test_duplicate_source_pair_and_genuine_second_settlement_fail) ... ok
+test_millisecond_offset_exact_boundary_long_short_and_no_position (tests.unit.test_instrument_representation_funding_checker_repair.FundingCheckerRepairTests.test_millisecond_offset_exact_boundary_long_short_and_no_position) ... ok
+test_missing_future_and_stale_mark_fail_closed (tests.unit.test_instrument_representation_funding_checker_repair.FundingCheckerRepairTests.test_missing_future_and_stale_mark_fail_closed) ... ok
+test_missing_settlement_and_wrong_rate_fail_closed (tests.unit.test_instrument_representation_funding_checker_repair.FundingCheckerRepairTests.test_missing_settlement_and_wrong_rate_fail_closed) ... ok
+test_position_opened_after_boundary_is_a_no_position_boundary (tests.unit.test_instrument_representation_funding_checker_repair.FundingCheckerRepairTests.test_position_opened_after_boundary_is_a_no_position_boundary) ... ok
+test_wrong_account_delta_and_no_position_settlement_fail_closed (tests.unit.test_instrument_representation_funding_checker_repair.FundingCheckerRepairTests.test_wrong_account_delta_and_no_position_settlement_fail_closed) ... ok
+test_wrong_mark_position_and_boundary_fail_closed (tests.unit.test_instrument_representation_funding_checker_repair.FundingCheckerRepairTests.test_wrong_mark_position_and_boundary_fail_closed) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.001s
+
+OK
