@@ -1,0 +1,5 @@
+$ /home/builder/projects/nautilus-crypto-backtest-lab/.venv/bin/python -c 'from pathlib import Path; from crypto_lab.result_status import load_historical_result_registry; root=Path('"'"'evidence/audit/comprehensive-remediation-001'"'"'); historical=load_historical_result_registry(root/'"'"'historical-result-status.json'"'"'); superseded=load_historical_result_registry(root/'"'"'runtime-proof-supersession-status.json'"'"'); warned=load_historical_result_registry(root/'"'"'owner-child-entrypoint-supersession-status.json'"'"'); assert len(historical.records)==28; assert len(superseded.records)==12; assert len(warned.records)==12; print(len(historical.records), len(superseded.records), len(warned.records))'
+exit_code=0
+duration_seconds=0.404589
+
+28 12 12
