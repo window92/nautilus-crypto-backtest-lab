@@ -211,6 +211,14 @@ def main() -> int:
                 False,
             ),
             (
+                "REPAIRED_PROFILE_QUALIFICATION",
+                (
+                    str(PROJECT_PYTHON),
+                    str(ROOT / "scripts/validate_audit_qualification.py"),
+                ),
+                False,
+            ),
+            (
                 "DATA_PROVENANCE_VALIDATION",
                 (
                     str(DATA_PYTHON),

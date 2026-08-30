@@ -1,0 +1,2 @@
+client_order_id,instrument_id,side,order_type,time_in_force,quantity,filled_qty,leaves_qty,status,initialized_ns,terminal_ns
+O-20250101-000000-001-140727305399040-1,BTCUSDT.BINANCE,BUY,MARKET,GTC,0.00100,0.00100,0.00000,FILLED,1735689600000000000,1735689660000000000
