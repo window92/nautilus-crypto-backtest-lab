@@ -1,0 +1,34 @@
+{
+  "adoption_authority": "Owner instruction for Pull Request #1 final sign-off on 2026-08-30",
+  "contract_boundary": "## 0. Read this first",
+  "contract_semantics_changed": false,
+  "current_ssot": {
+    "git_commit": "e7c2786d6779b3a037700d870728914b5312c00b",
+    "header_sha256": "e9c878c2c8c1caaf8d1fb14e2fd45da65e16be9185b49e931f7558dd8c4ddba0",
+    "material_body_sha256": "8c2ab92819398f55cb35fff965895ebc61ebcc8bb0d90bd8f7ba49148b59307e",
+    "path": "SSOT.md",
+    "sha256": "9232ebca20e3933b8b36538991001880ae54dbbe37b2da322dca2ac6608d0917"
+  },
+  "engineering_contract_changed": false,
+  "existing_owner_adoption_evidence": {
+    "path": "evidence/repair/free-official-binance-data-duckdb-001/owner-adoption.json",
+    "sha256": "5026e0a67ce81e3d086ce0f28a66c884da4e819d76d35ff23f9c4e0af957a03c"
+  },
+  "financial_contract_changed": false,
+  "financial_results_rerun_required": false,
+  "final_holdout_authorized": false,
+  "historical_snapshot_id": "owner-signoff-adopted-status",
+  "live_trading_authorized": false,
+  "previous_ssot": {
+    "adoption_commit": "01a8d59d9cca295d13392ee120609a57a8d11bf8",
+    "header_sha256": "a6919af4ef40c868af56f13badeb18dcff60d047b321b7bb22de8fad29da32a0",
+    "material_body_sha256": "8c2ab92819398f55cb35fff965895ebc61ebcc8bb0d90bd8f7ba49148b59307e",
+    "preserved_path": "evidence/repair/free-official-binance-data-duckdb-001/ssot-candidate-004/SSOT.candidate-004.md",
+    "sha256": "b4deb7048242239234de7eaa353b623b3e45247eb42f1021dbc26ffd910edb99"
+  },
+  "profitability_claim_authorized": false,
+  "runtime_or_dependency_lock_changed": false,
+  "schema": "owner-signoff-ssot-adoption-status-v1",
+  "scientific_contract_changed": false,
+  "status": "PASS"
+}

@@ -33,6 +33,14 @@
         "runtime.lock.json": "4032df9f355348c2a0cfa9f79f331f97c9a8d24ecc8490a573d2c7f788bafddd"
       }
     },
+    "owner-signoff-adopted-status": {
+      "git_commit": "e7c2786d6779b3a037700d870728914b5312c00b",
+      "files": {
+        "SSOT.md": "9232ebca20e3933b8b36538991001880ae54dbbe37b2da322dca2ac6608d0917",
+        "requirements.lock.txt": "0999d2b764f5949aa145bb931825a6d692428e2fb14afe24ed32a5eb2efd29e4",
+        "runtime.lock.json": "e0c0668fdd6886450d53fc184ef479361eee94a7294e39dba53ad0d96c973621"
+      }
+    },
     "release-v1-contract": {
       "git_commit": "890b9d41cc05ff091f41c82409d196c91b86d452",
       "files": {

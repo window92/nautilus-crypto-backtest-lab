@@ -45,6 +45,17 @@ class HistoricalContractTests(unittest.TestCase):
         )
         self.assertTrue(result.snapshot_files_match)
         self.assertFalse(result.current_root_matches_snapshot)
+        adopted_status = validate_historical_contract(
+            "owner-signoff-adopted-status",
+            repository_root=ROOT,
+        )
+        self.assertEqual(
+            adopted_status.state,
+            HistoricalValidationState.HISTORICAL_SNAPSHOT_VALID,
+        )
+        self.assertTrue(adopted_status.snapshot_is_ancestor)
+        self.assertTrue(adopted_status.snapshot_files_match)
+        self.assertTrue(adopted_status.current_root_matches_snapshot)
 
     def test_matching_current_file_reports_historical_snapshot_valid(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
