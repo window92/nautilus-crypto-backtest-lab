@@ -392,6 +392,26 @@ def _official_child_environment() -> dict[str, str]:
     }
 
 
+def _official_child_command(repository: Path, workflow_path: Path) -> list[str]:
+    """Use the repository CLI once, avoiding ``runpy`` module re-execution."""
+
+    child_entrypoint = repository / "scripts/run_owner_workflow.py"
+    if child_entrypoint.is_symlink() or not child_entrypoint.is_file():
+        raise ResearchError(
+            FailureCode.EVIDENCE_INCOMPLETE,
+            "Official child entrypoint is missing or is a symlink",
+        )
+    return [
+        sys.executable,
+        str(child_entrypoint),
+        "--child",
+        "--input",
+        str(workflow_path),
+        "--repository",
+        str(repository),
+    ]
+
+
 def _checkpoint(
     repository: Path,
     *,
@@ -1487,16 +1507,7 @@ def execute_owner_workflow(
         ),
     )
 
-    command = [
-        sys.executable,
-        "-m",
-        "crypto_lab.owner",
-        "--child",
-        "--input",
-        str(workflow_path),
-        "--repository",
-        str(repository),
-    ]
+    command = _official_child_command(repository, workflow_path)
     replay_path: Path | None = None
     replay_evidence: dict[str, Any] | None = None
     run_name = f"{value.run_id}-{definition.config_sha256[:12]}"

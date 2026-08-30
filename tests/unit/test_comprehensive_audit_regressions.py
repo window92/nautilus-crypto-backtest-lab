@@ -13,6 +13,7 @@ from crypto_lab.data import DataContractError
 from crypto_lab.data import FundingEvent
 from crypto_lab.data import to_nautilus_funding_updates
 from crypto_lab.data import to_nautilus_mark_updates
+from crypto_lab.owner import _official_child_command
 from crypto_lab.status import FailureCode
 from tests.m2_helpers import perp_mark_bars
 from tests.unit.test_instrument_representation_funding_checker_repair import repaired_perp
@@ -22,6 +23,13 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class AuditRegressionTests(unittest.TestCase):
+    def test_owner_child_uses_single_cli_module_identity(self) -> None:
+        workflow = ROOT / "research/workflows/owner-smoke-002-spot-sma20-development.json"
+        command = _official_child_command(ROOT, workflow)
+        self.assertEqual(command[1], str(ROOT / "scripts/run_owner_workflow.py"))
+        self.assertNotIn("-m", command)
+        self.assertNotIn("crypto_lab.owner", command)
+
     def test_f009_failure_code_vocabulary_exactly_matches_ssot_section_15(self) -> None:
         expected = {
             "RUNTIME_LOCK_MISMATCH",
