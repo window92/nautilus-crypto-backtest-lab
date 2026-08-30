@@ -570,6 +570,8 @@ def _qualified_profile(
 ) -> tuple[QualifiedProfileRecord, Path]:
     candidates = (
         repository
+        / "evidence/audit/comprehensive-remediation-001/qualification-runtime-proof/qualified-profile-registry.json",
+        repository
         / "evidence/audit/comprehensive-remediation-001/qualification/qualified-profile-registry.json",
         repository / "evidence/m3/m3-acceptance-001/qualified-profile-registry.json",
     )
@@ -726,6 +728,9 @@ def build_official_request(
         strategy_spec=spec,
         dataset_release=release,
         registered_strategy_id=value.registered_strategy_id,
+        qualified_profile_record_id=profile.qualified_profile_record_id,
+        qualified_profile_registry_ref=registry_path.relative_to(repository).as_posix(),
+        qualified_profile_registry_sha256=sha256_file(registry_path),
         evidence_root=repository / "runs",
         repository_root=repository,
     )
@@ -910,12 +915,20 @@ def qualification_workflow_fixture_input(
     repository = Path(repository_root).resolve(strict=True)
     current_registry = (
         repository
+        / "evidence/audit/comprehensive-remediation-001/qualification-runtime-proof/qualified-profile-registry.json"
+    )
+    prior_audit_registry = (
+        repository
         / "evidence/audit/comprehensive-remediation-001/qualification/qualified-profile-registry.json"
     )
-    registry_path = (
-        current_registry
-        if current_registry.is_file()
-        else repository / "evidence/m3/m3-acceptance-001/qualified-profile-registry.json"
+    registry_path = next(
+        path
+        for path in (
+            current_registry,
+            prior_audit_registry,
+            repository / "evidence/m3/m3-acceptance-001/qualified-profile-registry.json",
+        )
+        if path.is_file()
     )
     registry = QualifiedProfileRegistry.from_json_bytes(
         registry_path.read_bytes(),

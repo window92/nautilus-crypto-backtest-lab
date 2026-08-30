@@ -48,6 +48,7 @@ jobs:
           tests.unit.test_historical_contracts
           tests.unit.test_instrument_representation_funding_checker_repair
           tests.unit.test_m4_multiprocess_locking
+          tests.unit.test_profile_authority
           tests.unit.test_result_status
           tests.unit.test_runtime_installed_files
           tests.unit.test_spot_cash_reconciliation

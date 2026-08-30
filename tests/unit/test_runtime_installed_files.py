@@ -13,11 +13,9 @@ import venv
 from pathlib import Path
 
 from crypto_lab.checker import check_evidence_directory
-from crypto_lab.config import RuntimeLock
 from crypto_lab.runtime import RuntimeLockMismatch
 from crypto_lab.runtime import inspect_installed_distribution_files
 from crypto_lab.runtime import verify_installed_distribution_files
-from crypto_lab.runtime import verify_runtime_lock
 
 
 def _record_hash(payload: bytes) -> str:
@@ -195,12 +193,21 @@ class InstalledRuntimeFileTests(unittest.TestCase):
                 if item["name"] == "installed_runtime_payload_proof"
             )
             self.assertFalse(proof_check["pass"])
-            self.assertIn("installed_payload_sha256", proof_check["mismatches"])
-
-            verified_proof = verify_runtime_lock(
-                RuntimeLock.from_json_bytes((copied / "runtime.lock.json").read_bytes()),
-                dependency_lock_path=repository / "requirements.lock.txt",
+            self.assertTrue(
+                any(
+                    "installed_payload_sha256" in mismatch
+                    for mismatch in proof_check["mismatches"]
+                ),
             )
+
+            proof_paths = sorted(
+                (
+                    repository
+                    / "evidence/audit/comprehensive-remediation-001/qualification-runtime-proof"
+                ).glob("runs/spot-primary/*/runtime_identity.json"),
+            )
+            self.assertEqual(len(proof_paths), 1)
+            verified_proof = json.loads(proof_paths[0].read_text(encoding="utf-8"))
             (copied / "runtime_identity.json").write_text(
                 json.dumps(verified_proof, sort_keys=True) + "\n",
                 encoding="utf-8",

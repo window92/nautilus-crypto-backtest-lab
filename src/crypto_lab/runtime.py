@@ -535,6 +535,71 @@ def verify_runtime_lock(
     return current
 
 
+def validate_persisted_runtime_identity(
+    lock: RuntimeLock,
+    evidence: dict[str, Any],
+) -> dict[str, Any]:
+    """Validate a Run's observed installed-runtime proof against its frozen lock."""
+
+    required = {
+        "installed_files_verified": True,
+        "cache_files_recompiled_and_verified": True,
+        "installed_payload_sha256": lock.nautilus_installed_payload_sha256,
+        "installed_payload_file_count": lock.nautilus_installed_payload_file_count,
+        "installed_wheel_filename": lock.nautilus_wheel_filename,
+        "installed_wheel_sha256": lock.nautilus_wheel_sha256,
+        "nautilus_version": lock.nautilus_version,
+        "python_version": lock.python_version,
+        "python_implementation": lock.python_implementation,
+        "python_abi": lock.python_abi,
+        "platform": lock.platform,
+        "machine_architecture": lock.machine_architecture,
+        "glibc_version": lock.glibc_version,
+        "dependency_lock_sha256": lock.dependency_lock_sha256,
+        "dependency_versions": lock.dependencies,
+        "installed_distributions": lock.dependencies,
+        "pip_version": lock.pip_version,
+        "timezone": lock.timezone,
+        "locale": lock.locale,
+    }
+    mismatches = [
+        name
+        for name, expected in required.items()
+        if evidence.get(name) != expected
+    ]
+    record_sha = evidence.get("installed_record_sha256")
+    if (
+        not isinstance(record_sha, str)
+        or len(record_sha) != 64
+        or any(character not in "0123456789abcdef" for character in record_sha)
+    ):
+        mismatches.append("installed_record_sha256")
+    for name in (
+        "installed_record_hashed_file_count",
+        "installed_native_extension_count",
+    ):
+        value = evidence.get(name)
+        if not isinstance(value, int) or isinstance(value, bool) or value <= 0:
+            mismatches.append(name)
+    cache_count = evidence.get("allowed_cache_file_count")
+    if not isinstance(cache_count, int) or isinstance(cache_count, bool) or cache_count < 0:
+        mismatches.append("allowed_cache_file_count")
+    wheel_present = evidence.get("wheel_file_present")
+    if not isinstance(wheel_present, bool):
+        mismatches.append("wheel_file_present")
+    elif wheel_present and (
+        evidence.get("wheel_file_sha256") != lock.nautilus_wheel_sha256
+        or evidence.get("wheel_file_size_bytes") != lock.nautilus_wheel_size_bytes
+    ):
+        mismatches.append("wheel_file_identity")
+    if mismatches:
+        raise RuntimeLockMismatch(
+            FailureCode.RUNTIME_LOCK_MISMATCH,
+            [f"persisted runtime identity mismatch: {name}" for name in dict.fromkeys(mismatches)],
+        )
+    return evidence
+
+
 def run_after_runtime_preflight(
     lock: RuntimeLock,
     *,

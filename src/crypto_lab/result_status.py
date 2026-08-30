@@ -13,6 +13,12 @@ from typing import Any
 from crypto_lab.hashing import canonical_sha256
 
 
+DEFAULT_RESULT_STATUS_REFS = (
+    "evidence/audit/comprehensive-remediation-001/historical-result-status.json",
+    "evidence/audit/comprehensive-remediation-001/runtime-proof-supersession-status.json",
+)
+
+
 class HistoricalRunStatus(StrEnum):
     REVOKED = "REVOKED"
 
@@ -174,17 +180,26 @@ def revoked_result_for_directory(
 ) -> HistoricalResultRecord | None:
     root = Path(repository_root).resolve(strict=True)
     relative = Path(run_directory).resolve(strict=True).relative_to(root).as_posix()
-    registry_file = registry_path or (
-        root
-        / "evidence/audit/comprehensive-remediation-001/historical-result-status.json"
+    registry_files = (
+        (Path(registry_path),)
+        if registry_path is not None
+        else tuple(root / reference for reference in DEFAULT_RESULT_STATUS_REFS)
     )
-    if not registry_file.is_file():
-        return None
-    return load_historical_result_registry(registry_file).for_path(relative)
+    matches = [
+        record
+        for registry_file in registry_files
+        if registry_file.is_file()
+        for record in (load_historical_result_registry(registry_file).for_path(relative),)
+        if record is not None
+    ]
+    if len(matches) > 1:
+        raise ValueError(f"historical result appears in multiple status registries: {relative}")
+    return None if not matches else matches[0]
 
 
 __all__ = [
     "FinancialResultStatus",
+    "DEFAULT_RESULT_STATUS_REFS",
     "HistoricalResultRecord",
     "HistoricalResultRegistry",
     "HistoricalRunStatus",

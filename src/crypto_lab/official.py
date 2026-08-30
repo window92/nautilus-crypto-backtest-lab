@@ -27,6 +27,7 @@ from crypto_lab.history import HistoryAnchorStore
 from crypto_lab.m3 import MechanicalIntegrity
 from crypto_lab.m3 import QualifiedProfileRegistry
 from crypto_lab.paths import validate_safe_component
+from crypto_lab.profile_authority import validate_persisted_profile_authority
 from crypto_lab.reporting import ReportInput
 from crypto_lab.reporting import ReportOutput
 from crypto_lab.reporting import PerformanceDiagnostics
@@ -268,6 +269,8 @@ class OfficialEvidenceResolver:
             "evidence_manifest.json",
             "lab_run_config.json",
             "native_completed_trades.json",
+            "qualification_authority.json",
+            "runtime_identity.json",
             "source_revision.json",
             "status.json",
             "strategy_identity.json",
@@ -430,13 +433,37 @@ class OfficialEvidenceResolver:
                 record=selected,
                 primary_run_dir=run_dir,
             )
-        registry_path = self.repository_root / "evidence/m3/m3-acceptance-001/qualified-profile-registry.json"
+        try:
+            authority = validate_persisted_profile_authority(
+                self._json(run_dir / "qualification_authority.json"),
+                repository_root=self.repository_root,
+                expected_profile_id=config.market_profile.value,
+                expected_runtime_lock_sha256=config.runtime_lock_sha256,
+            )
+        except Exception as exc:
+            raise ResearchError(
+                FailureCode.DOWNSTREAM_CONTRACT_FAILURE,
+                f"Qualified Profile authority is invalid: {exc}",
+            ) from exc
+        registry_path = self._contained(
+            self.repository_root / authority["qualified_profile_registry_ref"],
+        )
         registry = QualifiedProfileRegistry.from_json_bytes(registry_path.read_bytes())
         qualified = next(
-            (record for record in registry.records if record.profile_id is config.market_profile),
+            (
+                record
+                for record in registry.records
+                if record.qualified_profile_record_id
+                == authority["qualified_profile_record_id"]
+            ),
             None,
         )
-        if qualified is None or qualified.checker_result != "CHECK_PASS" or qualified.replay_result != "PASS":
+        if (
+            qualified is None
+            or qualified.profile_id is not config.market_profile
+            or qualified.checker_result != "CHECK_PASS"
+            or qualified.replay_result != "PASS"
+        ):
             raise ResearchError(FailureCode.DOWNSTREAM_CONTRACT_FAILURE, "Market Profile is not qualified")
         diagnostic_path = self.repository_root / "research/diagnostics" / f"{config.run_id}.json"
         diagnostic = reconcile_diagnostic_resolution(
@@ -649,7 +676,7 @@ class OfficialEvidenceResolver:
         source_hashes = {
             "history_anchors.jsonl": sha256_file(self.history.anchors.anchor_path),
             "holdout_lock.json": sha256_file(self.history.anchors.holdout_path),
-            "m3_qualified_profile_registry": sha256_file(registry_path),
+            "qualified_profile_registry": sha256_file(registry_path),
             "protocol": sha256_file(protocol_path),
             "selected_diagnostics": sha256_file(diagnostic_path),
             "selected_run_manifest": manifest_sha,

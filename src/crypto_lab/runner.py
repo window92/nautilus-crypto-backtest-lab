@@ -48,6 +48,8 @@ from crypto_lab.offline import activate_process_network_isolation
 from crypto_lab.offline import offline_network_guard
 from crypto_lab.paths import atomic_create_run_directory
 from crypto_lab.paths import validate_safe_component
+from crypto_lab.profile_authority import ProfileAuthorityError
+from crypto_lab.profile_authority import resolve_profile_authority
 from crypto_lab.runtime import RuntimeLockMismatch
 from crypto_lab.runtime import verify_runtime_lock
 from crypto_lab.status import FailureCode
@@ -119,6 +121,9 @@ class OfficialLabRunRequest:
     strategy_spec: StrategySpec
     dataset_release: DatasetRelease
     registered_strategy_id: str
+    qualified_profile_record_id: str
+    qualified_profile_registry_ref: str
+    qualified_profile_registry_sha256: str
     evidence_root: Path
     repository_root: Path
 
@@ -140,6 +145,7 @@ class OfficialLabRunRequest:
         # Reject an unregistered or incomplete material identity before an
         # Official request can reach preflight or evidence creation.
         self.strategy_identity
+        self.qualification_authority
 
     @property
     def strategy_identity(self) -> RegisteredStrategyIdentity:
@@ -147,6 +153,17 @@ class OfficialLabRunRequest:
             self.registered_strategy_id,
             strategy_spec=self.strategy_spec,
             source_revision=self.source_revision,
+        )
+
+    @property
+    def qualification_authority(self) -> dict[str, Any]:
+        return resolve_profile_authority(
+            repository_root=self.repository_root,
+            registry_ref=self.qualified_profile_registry_ref,
+            registry_sha256=self.qualified_profile_registry_sha256,
+            qualified_profile_record_id=self.qualified_profile_record_id,
+            expected_profile_id=self.lab_run_config.market_profile.value,
+            expected_runtime_lock_sha256=self.lab_run_config.runtime_lock_sha256,
         )
 
 
@@ -266,11 +283,17 @@ def select_engine_data_window(
 
 def _preflight_identity(
     config: LabRunRequest | OfficialLabRunRequest,
-) -> tuple[list[str], list[dict[str, Any]], dict[str, Any] | None]:
+) -> tuple[
+    list[str],
+    list[dict[str, Any]],
+    dict[str, Any] | None,
+    dict[str, Any] | None,
+]:
     run = config.lab_run_config
     failures: list[str] = []
     diagnostics: list[dict[str, Any]] = []
     runtime_identity: dict[str, Any] | None = None
+    qualification_authority: dict[str, Any] | None = None
     repository_root = config.repository_root if isinstance(config, OfficialLabRunRequest) else ROOT
     observed_runtime_lock_sha256 = sha256_file(repository_root / "runtime.lock.json")
     if observed_runtime_lock_sha256 != run.runtime_lock_sha256:
@@ -323,6 +346,17 @@ def _preflight_identity(
             config.strategy_identity
         except Exception:
             failures.append(FailureCode.CONFIG_INVALID.value)
+        try:
+            qualification_authority = config.qualification_authority
+        except ProfileAuthorityError as exc:
+            failures.append(FailureCode.DOWNSTREAM_CONTRACT_FAILURE.value)
+            diagnostics.append(
+                {
+                    "phase": "QUALIFIED_PROFILE_AUTHORITY",
+                    "code": FailureCode.DOWNSTREAM_CONTRACT_FAILURE.value,
+                    "detail": str(exc),
+                },
+            )
     if (
         config.strategy_spec.market_profile is not run.market_profile
         or config.strategy_spec.instrument_id != run.instrument_id
@@ -417,7 +451,12 @@ def _preflight_identity(
             )
         except GitIdentityError:
             failures.append(FailureCode.EVIDENCE_INCOMPLETE.value)
-    return list(dict.fromkeys(failures)), diagnostics, runtime_identity
+    return (
+        list(dict.fromkeys(failures)),
+        diagnostics,
+        runtime_identity,
+        qualification_authority,
+    )
 
 
 def _preflight_data(
@@ -1314,7 +1353,12 @@ def _run_bound(
 
     run = config.lab_run_config
     repository_root = config.repository_root if isinstance(config, OfficialLabRunRequest) else ROOT
-    preflight, preflight_diagnostics, runtime_identity = _preflight_identity(config)
+    (
+        preflight,
+        preflight_diagnostics,
+        runtime_identity,
+        qualification_authority,
+    ) = _preflight_identity(config)
     instrument = config.instrument if isinstance(config, LabRunRequest) else None
     data = config.data if isinstance(config, LabRunRequest) else ()
     resolved_release: ResolvedDatasetRelease | None = None
@@ -1386,6 +1430,8 @@ def _run_bound(
     )
     if runtime_identity is not None:
         _write_json(run_dir / "runtime_identity.json", runtime_identity)
+    if qualification_authority is not None:
+        _write_json(run_dir / "qualification_authority.json", qualification_authority)
     (run_dir / "source_revision.json").write_bytes(config.source_revision.to_json_bytes() + b"\n")
     (run_dir / "dataset_release.json").write_bytes(config.dataset_release.to_json_bytes() + b"\n")
     (run_dir / "strategy_spec.json").write_bytes(config.strategy_spec.to_json_bytes() + b"\n")
@@ -1729,6 +1775,10 @@ def _run_bound(
         evidence_bindings["runtime_identity_sha256"] = sha256_file(
             run_dir / "runtime_identity.json",
         )
+    if (run_dir / "qualification_authority.json").is_file():
+        evidence_bindings["qualification_authority_sha256"] = sha256_file(
+            run_dir / "qualification_authority.json",
+        )
     if isinstance(config, LabRunRequest):
         evidence_bindings["strategy_plan_sha256"] = config.strategy_plan.strategy_plan_sha256
     else:
@@ -1761,6 +1811,7 @@ def _run_bound(
         "preflight_failure_codes": list(dict.fromkeys(preflight)),
         "preflight_diagnostics": preflight_diagnostics,
         "runtime_identity_verified": runtime_identity is not None,
+        "qualified_profile_authority_verified": qualification_authority is not None,
         "backtest_result": capture["backtest_result"],
         "strategy_observations": observations,
         "semantic_sequence": capture["semantic_sequence"],

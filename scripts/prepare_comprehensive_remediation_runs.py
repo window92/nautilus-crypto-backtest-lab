@@ -14,6 +14,7 @@ from crypto_lab.hashing import canonical_json_bytes
 from crypto_lab.hashing import canonical_sha256
 from crypto_lab.hashing import sha256_file
 from crypto_lab.m3 import QualifiedProfileRegistry
+from crypto_lab.paths import validate_safe_component
 from crypto_lab.research import PartitionRole
 from scripts.prepare_owner_strategy_research_001 import RESEARCH_FAMILY
 from scripts.prepare_owner_strategy_research_001 import build_protocol
@@ -21,28 +22,42 @@ from scripts.prepare_owner_strategy_research_001 import build_protocol
 
 ROOT = Path(__file__).resolve().parents[1]
 AUDIT_ID = "COMPREHENSIVE_AUDIT_REMEDIATION_001"
-EPOCH = "comprehensive-audit-remediation-001"
-RESEARCH_FAMILY_ID = "BTCUSDT_WEEKLY_TSMOM28_V1_AUDIT_REMEDIATION_001"
-QUALIFICATION_REGISTRY = (
-    ROOT
-    / "evidence/audit/comprehensive-remediation-001/qualification/qualified-profile-registry.json"
-)
 
 
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--frozen-at-utc", required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument("--epoch", required=True)
+    parser.add_argument("--research-family-id", required=True)
+    parser.add_argument("--qualification-registry", type=Path, required=True)
     arguments = parser.parse_args()
+    epoch = validate_safe_component(arguments.epoch, field="epoch")
+    research_family_id = validate_safe_component(
+        arguments.research_family_id,
+        field="research_family_id",
+    )
     frozen = datetime.fromisoformat(arguments.frozen_at_utc.replace("Z", "+00:00"))
     if frozen.tzinfo is None or frozen.utcoffset() != UTC.utcoffset(frozen):
         raise ValueError("frozen-at-utc must be explicit UTC")
     output = arguments.output_dir.resolve()
     if output.exists():
         raise FileExistsError(f"fresh workflow output required: {output}")
-    if not QUALIFICATION_REGISTRY.is_file():
+    qualification_candidate = (
+        arguments.qualification_registry
+        if arguments.qualification_registry.is_absolute()
+        else ROOT / arguments.qualification_registry
+    )
+    if qualification_candidate.is_symlink():
+        raise ValueError("qualification registry must not be a symlink")
+    qualification_registry = qualification_candidate.resolve(strict=True)
+    try:
+        qualification_registry.relative_to(ROOT)
+    except ValueError as exc:
+        raise ValueError("qualification registry must be inside the repository") from exc
+    if not qualification_registry.is_file():
         raise FileNotFoundError("repaired qualification registry is required before workflow freeze")
-    registry = QualifiedProfileRegistry.from_json_bytes(QUALIFICATION_REGISTRY.read_bytes())
+    registry = QualifiedProfileRegistry.from_json_bytes(qualification_registry.read_bytes())
     active_runtime = sha256_file(ROOT / "runtime.lock.json")
     if any(record.runtime_lock_sha256 != active_runtime for record in registry.records):
         raise RuntimeError("repaired qualification registry does not bind the active Runtime Lock")
@@ -57,9 +72,9 @@ def main() -> int:
         protocol, profile_workflows = build_protocol(
             profile,
             frozen_at_utc=frozen,
-            epoch=EPOCH,
-            research_family_id=RESEARCH_FAMILY_ID,
-            qualified_profile_registry_path=QUALIFICATION_REGISTRY,
+            epoch=epoch,
+            research_family_id=research_family_id,
+            qualified_profile_registry_path=qualification_registry,
         )
         if (
             protocol.strategy_family != RESEARCH_FAMILY
@@ -82,10 +97,10 @@ def main() -> int:
         "schema": "comprehensive-audit-remediation-workflows-v1",
         "audit_id": AUDIT_ID,
         "frozen_at_utc": frozen.isoformat().replace("+00:00", "Z"),
-        "epoch": EPOCH,
-        "research_family_id": RESEARCH_FAMILY_ID,
-        "qualified_profile_registry": QUALIFICATION_REGISTRY.relative_to(ROOT).as_posix(),
-        "qualified_profile_registry_sha256": sha256_file(QUALIFICATION_REGISTRY),
+        "epoch": epoch,
+        "research_family_id": research_family_id,
+        "qualified_profile_registry": qualification_registry.relative_to(ROOT).as_posix(),
+        "qualified_profile_registry_sha256": sha256_file(qualification_registry),
         "runtime_lock_sha256": active_runtime,
         "protocol_ids": [protocol.protocol_id for protocol in protocols],
         "workflow_files": sorted(f"{workflow.trial_id}.json" for workflow in workflows),

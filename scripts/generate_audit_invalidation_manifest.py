@@ -36,6 +36,14 @@ HISTORICAL_PRIMARY_RUNS = (
     "owner-strategy-research-001-spot-candidate-a-run-retry-001-f1e2c8bc7b40",
     "owner-strategy-research-001-spot-candidate-b-run-91f36cf4151c",
 )
+SUPERSEDED_REMEDIATION_PRIMARY_RUNS = (
+    "comprehensive-audit-remediation-001-perpetual-benchmark-run-29fd33c29504",
+    "comprehensive-audit-remediation-001-perpetual-candidate-a-run-f76adf0cf931",
+    "comprehensive-audit-remediation-001-perpetual-candidate-b-run-bf60298911ac",
+    "comprehensive-audit-remediation-001-spot-benchmark-run-28567cfbf8de",
+    "comprehensive-audit-remediation-001-spot-candidate-a-run-ccaf8bd16c10",
+    "comprehensive-audit-remediation-001-spot-candidate-b-run-3e1f8986c6d6",
+)
 
 
 def _git_head() -> str:
@@ -55,7 +63,11 @@ def _replay_for(run_name: str) -> Path:
     return matches[0]
 
 
-def _record(run_dir: Path) -> dict[str, Any]:
+def _record(
+    run_dir: Path,
+    *,
+    finding_ids: list[str] | None = None,
+) -> dict[str, Any]:
     report = check_evidence_directory(
         run_dir,
         repository_root=ROOT,
@@ -63,13 +75,13 @@ def _record(run_dir: Path) -> dict[str, Any]:
     )
     config = LabRunConfig.from_json_bytes((run_dir / "lab_run_config.json").read_bytes())
     spot = config.market_profile.value == "BINANCE_SPOT_CASH_LONG_ONLY"
-    finding_ids = ["F-002", "F-003", "F-001" if spot else "F-004"]
+    active_findings = finding_ids or ["F-002", "F-003", "F-001" if spot else "F-004"]
     return {
         "path": run_dir.relative_to(ROOT).as_posix(),
         "market_profile": config.market_profile.value,
         "historical_run_status": "REVOKED",
         "financial_result_status": "INVALIDATED",
-        "finding_ids": finding_ids,
+        "finding_ids": active_findings,
         "current_checker_outcome": report.outcome.value,
         "current_failure_codes": list(report.failure_codes),
         "historical_bytes_preserved": True,
@@ -98,27 +110,45 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--recorded-at-utc", required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument(
+        "--scope",
+        choices=("audited-baseline", "runtime-proof-supersession"),
+        default="audited-baseline",
+    )
     arguments = parser.parse_args()
     recorded = datetime.fromisoformat(arguments.recorded_at_utc.replace("Z", "+00:00"))
     if recorded.tzinfo is None or recorded.utcoffset() != UTC.utcoffset(recorded):
         raise ValueError("recorded-at-utc must be explicit UTC")
     records: list[dict[str, Any]] = []
-    for run_name in HISTORICAL_PRIMARY_RUNS:
-        records.append(_record(ROOT / "runs" / run_name))
-        records.append(_record(_replay_for(run_name)))
+    run_names = (
+        HISTORICAL_PRIMARY_RUNS
+        if arguments.scope == "audited-baseline"
+        else SUPERSEDED_REMEDIATION_PRIMARY_RUNS
+    )
+    findings = None if arguments.scope == "audited-baseline" else ["F-003"]
+    for run_name in run_names:
+        records.append(_record(ROOT / "runs" / run_name, finding_ids=findings))
+        records.append(_record(_replay_for(run_name), finding_ids=findings))
     records.sort(key=lambda item: item["path"])
-    if len(records) != 2 * len(HISTORICAL_PRIMARY_RUNS):
+    if len(records) != 2 * len(run_names):
         raise RuntimeError("historical primary/replay inventory is incomplete")
+    policy = (
+        "Original evidence bytes remain immutable; this additive registry is the current "
+        "authority for financial-result trust status."
+        if arguments.scope == "audited-baseline"
+        else (
+            "The first remediation result generation remains immutable but is superseded: "
+            "runtime verification executed fail-closed yet its positive installed-file identity "
+            "was not persisted inside each Run. New content-addressed Runs are required."
+        )
+    )
     manifest = {
         "schema": "audit-historical-result-status-v1",
         "audit_id": "COMPREHENSIVE_AUDIT_REMEDIATION_001",
         "audited_baseline_commit": "890b9d41cc05ff091f41c82409d196c91b86d452",
         "source_commit": _git_head(),
         "recorded_at_utc": recorded.isoformat().replace("+00:00", "Z"),
-        "historical_policy": (
-            "Original evidence bytes remain immutable; this additive registry is the current "
-            "authority for financial-result trust status."
-        ),
+        "historical_policy": policy,
         "final_holdout_authorized": False,
         "profitability_claim_authorized": False,
         "record_count": len(records),

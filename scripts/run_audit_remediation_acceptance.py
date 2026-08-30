@@ -24,11 +24,13 @@ ROOT = Path(__file__).resolve().parents[1]
 PROJECT_PYTHON = ROOT / ".venv/bin/python"
 DATA_PYTHON = ROOT / ".data-venv/bin/python"
 TARGETED_MODULES = (
+    "tests.unit.test_audit_qualification_validator",
     "tests.unit.test_comprehensive_audit_regressions",
     "tests.unit.test_engine_data_window",
     "tests.unit.test_historical_contracts",
     "tests.unit.test_instrument_representation_funding_checker_repair",
     "tests.unit.test_m4_multiprocess_locking",
+    "tests.unit.test_profile_authority",
     "tests.unit.test_result_status",
     "tests.unit.test_runtime_installed_files",
     "tests.unit.test_spot_cash_reconciliation",
@@ -234,10 +236,11 @@ def main() -> int:
                     (
                         "from pathlib import Path; "
                         "from crypto_lab.result_status import load_historical_result_registry; "
-                        "p=Path('evidence/audit/comprehensive-remediation-001/"
-                        "historical-result-status.json'); "
-                        "r=load_historical_result_registry(p); "
-                        "assert len(r.records)==28; print(len(r.records))"
+                        "root=Path('evidence/audit/comprehensive-remediation-001'); "
+                        "historical=load_historical_result_registry(root/'historical-result-status.json'); "
+                        "superseded=load_historical_result_registry(root/'runtime-proof-supersession-status.json'); "
+                        "assert len(historical.records)==28; assert len(superseded.records)==12; "
+                        "print(len(historical.records), len(superseded.records))"
                     ),
                 ),
                 False,

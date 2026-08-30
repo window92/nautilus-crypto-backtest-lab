@@ -10,14 +10,18 @@ from pathlib import Path
 from typing import Any
 
 from crypto_lab.checker import check_evidence_directory
+from crypto_lab.config import RuntimeLock
 from crypto_lab.hashing import canonical_json_bytes
 from crypto_lab.hashing import canonical_sha256
 from crypto_lab.hashing import sha256_file
 from crypto_lab.m3 import QualifiedProfileRegistry
+from crypto_lab.runtime import validate_persisted_runtime_identity
 
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_EVIDENCE = ROOT / "evidence/audit/comprehensive-remediation-001/qualification"
+DEFAULT_EVIDENCE = (
+    ROOT / "evidence/audit/comprehensive-remediation-001/qualification-runtime-proof"
+)
 
 
 def _json(path: Path) -> dict[str, Any]:
@@ -125,12 +129,33 @@ def validate(evidence: Path) -> dict[str, Any]:
     )
 
     checker_revalidations: dict[str, Any] = {}
+    runtime_proof_revalidations: dict[str, Any] = {}
     for record in registry.records:
         for reference in record.evidence_references:
             relative = Path(reference)
             run_dir = root / relative
             persisted = _json(run_dir / "checker.json")
             regenerated = check_evidence_directory(run_dir)
+            runtime_proof_pass = False
+            runtime_proof_detail: str | None = None
+            try:
+                result = _json(run_dir / "nautilus_result.json")
+                identity_path = run_dir / "runtime_identity.json"
+                lock = RuntimeLock.from_json_bytes((run_dir / "runtime.lock.json").read_bytes())
+                validate_persisted_runtime_identity(lock, _json(identity_path))
+                runtime_proof_pass = bool(
+                    result.get("runtime_identity_verified") is True
+                    and result.get("evidence_bindings", {}).get("runtime_identity_sha256")
+                    == sha256_file(identity_path)
+                )
+                if not runtime_proof_pass:
+                    runtime_proof_detail = "runtime identity flag or binding mismatch"
+            except Exception as exc:
+                runtime_proof_detail = f"{type(exc).__name__}: {exc}"
+            runtime_proof_revalidations[reference] = {
+                "pass": runtime_proof_pass,
+                "detail": runtime_proof_detail,
+            }
             accepted = bool(
                 not relative.is_absolute()
                 and ".." not in relative.parts
@@ -146,6 +171,10 @@ def validate(evidence: Path) -> dict[str, Any]:
     checks["current_checker_revalidation"] = bool(
         len(checker_revalidations) == 4
         and all(item["pass"] for item in checker_revalidations.values())
+    )
+    checks["persisted_runtime_payload_proof"] = bool(
+        len(runtime_proof_revalidations) == 4
+        and all(item["pass"] for item in runtime_proof_revalidations.values())
     )
 
     controls = _json(root / "negative-controls.json")
@@ -185,6 +214,7 @@ def validate(evidence: Path) -> dict[str, Any]:
         "failed_checks": failed,
         "qualified_profile_registry_identity": registry.registry_content_sha256,
         "checker_revalidations": checker_revalidations,
+        "runtime_proof_revalidations": runtime_proof_revalidations,
         "final_holdout_used": False,
         "profitability_claim_authorized": False,
     }

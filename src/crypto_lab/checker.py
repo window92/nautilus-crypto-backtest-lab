@@ -30,6 +30,8 @@ from crypto_lab.data import SyntheticQualificationDatasetRelease
 from crypto_lab.hashing import canonical_sha256
 from crypto_lab.hashing import sha256_file
 from crypto_lab.git_identity import verify_source_revision
+from crypto_lab.profile_authority import validate_persisted_profile_authority
+from crypto_lab.runtime import validate_persisted_runtime_identity
 from crypto_lab.status import FailureCode
 from crypto_lab.timestamps import utc_datetime_to_ns
 from crypto_lab.strategies import RegisteredStrategyIdentity
@@ -734,6 +736,7 @@ def check_evidence_directory(
         official_missing = sorted(
             {
                 "native_completed_trades.json",
+                "qualification_authority.json",
                 "runtime_identity.json",
                 "strategy_identity.json",
                 "strategy_identity.sha256",
@@ -806,6 +809,8 @@ def check_evidence_directory(
         binding_paths["strategy_identity_bytes_sha256"] = "strategy_identity.json"
     if official and (run_dir / "runtime_identity.json").is_file():
         binding_paths["runtime_identity_sha256"] = "runtime_identity.json"
+    if official and (run_dir / "qualification_authority.json").is_file():
+        binding_paths["qualification_authority_sha256"] = "qualification_authority.json"
     binding_mismatches = [
         name
         for name, filename in binding_paths.items()
@@ -837,34 +842,10 @@ def check_evidence_directory(
                 (run_dir / "runtime.lock.json").read_bytes(),
             )
             runtime_identity = _read_json(run_dir / "runtime_identity.json")
-            required_runtime_proof = {
-                "installed_files_verified": True,
-                "cache_files_recompiled_and_verified": True,
-                "installed_payload_sha256": runtime_lock.nautilus_installed_payload_sha256,
-                "installed_payload_file_count": runtime_lock.nautilus_installed_payload_file_count,
-                "installed_wheel_sha256": runtime_lock.nautilus_wheel_sha256,
-                "nautilus_version": runtime_lock.nautilus_version,
-                "python_version": runtime_lock.python_version,
-                "python_implementation": runtime_lock.python_implementation,
-                "python_abi": runtime_lock.python_abi,
-                "machine_architecture": runtime_lock.machine_architecture,
-                "dependency_lock_sha256": runtime_lock.dependency_lock_sha256,
-            }
-            runtime_proof_mismatches = [
-                name
-                for name, expected in required_runtime_proof.items()
-                if runtime_identity.get(name) != expected
-            ]
-            record_sha = runtime_identity.get("installed_record_sha256")
-            runtime_proof_ok = bool(
-                not runtime_proof_mismatches
-                and isinstance(record_sha, str)
-                and len(record_sha) == 64
-                and all(character in "0123456789abcdef" for character in record_sha)
-                and int(runtime_identity.get("installed_record_hashed_file_count", 0)) > 0
-                and int(runtime_identity.get("installed_native_extension_count", 0)) > 0
-                and result.get("runtime_identity_verified") is True
-            )
+            validate_persisted_runtime_identity(runtime_lock, runtime_identity)
+            runtime_proof_ok = result.get("runtime_identity_verified") is True
+            if not runtime_proof_ok:
+                runtime_proof_mismatches = ["runtime_identity_verified"]
         except Exception as exc:
             runtime_proof_mismatches = [f"{type(exc).__name__}: {exc}"]
             runtime_proof_ok = False
@@ -877,6 +858,35 @@ def check_evidence_directory(
     )
     if not runtime_proof_ok:
         blocked.append(FailureCode.RUNTIME_LOCK_MISMATCH.value)
+
+    profile_authority_ok = not official
+    profile_authority_detail: str | None = None
+    if official and (run_dir / "qualification_authority.json").is_file():
+        try:
+            validate_persisted_profile_authority(
+                _read_json(run_dir / "qualification_authority.json"),
+                repository_root=repository_root,
+                expected_profile_id=config.market_profile.value,
+                expected_runtime_lock_sha256=config.runtime_lock_sha256,
+            )
+            profile_authority_ok = (
+                result.get("qualified_profile_authority_verified") is True
+            )
+            if not profile_authority_ok:
+                profile_authority_detail = "Run did not attest Qualified Profile resolution"
+        except Exception as exc:
+            profile_authority_ok = False
+            profile_authority_detail = f"{type(exc).__name__}: {exc}"
+    if official:
+        checks.append(
+            {
+                "name": "qualified_profile_authority",
+                "pass": profile_authority_ok,
+                "detail": profile_authority_detail,
+            },
+        )
+        if not profile_authority_ok:
+            blocked.append(FailureCode.DOWNSTREAM_CONTRACT_FAILURE.value)
 
     try:
         source = SourceRevision.from_json_bytes((run_dir / "source_revision.json").read_bytes())
