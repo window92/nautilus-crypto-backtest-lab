@@ -113,11 +113,13 @@ def _run(
     duration = time.monotonic() - started
     combined = completed.stdout + completed.stderr
     log_path = log_root / f"{ordinal:02d}-{label.lower().replace('_', '-')}.log"
-    log_payload = (
+    log_header = (
         f"$ {shlex.join(command)}\n"
         f"exit_code={completed.returncode}\n"
-        f"duration_seconds={duration:.6f}\n\n"
-        f"{combined}"
+        f"duration_seconds={duration:.6f}\n"
+    )
+    log_payload = (
+        log_header if not combined else f"{log_header}\n{combined}"
     ).encode("utf-8")
     log_path.write_bytes(log_payload)
     counts = _test_counts(combined)

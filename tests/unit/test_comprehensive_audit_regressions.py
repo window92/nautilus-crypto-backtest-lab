@@ -6,6 +6,7 @@ from datetime import UTC
 from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 from crypto_lab import runner
 from crypto_lab.checker import check_evidence_directory
@@ -15,6 +16,7 @@ from crypto_lab.data import to_nautilus_funding_updates
 from crypto_lab.data import to_nautilus_mark_updates
 from crypto_lab.owner import _official_child_command
 from crypto_lab.status import FailureCode
+from scripts.run_audit_remediation_acceptance import _run as run_acceptance_phase
 from tests.m2_helpers import perp_mark_bars
 from tests.unit.test_instrument_representation_funding_checker_repair import repaired_perp
 
@@ -23,6 +25,24 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class AuditRegressionTests(unittest.TestCase):
+    def test_acceptance_empty_output_log_has_no_blank_line_at_eof(self) -> None:
+        with TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            logs = root / "logs"
+            logs.mkdir()
+            phase = run_acceptance_phase(
+                ordinal=1,
+                label="EMPTY_OUTPUT",
+                command=(str(ROOT / ".venv/bin/python"), "-c", "pass"),
+                log_root=logs,
+                pycache=root / "pycache",
+            )
+
+            payload = (logs / "01-empty-output.log").read_bytes()
+            self.assertEqual(phase["status"], "PASS")
+            self.assertTrue(payload.endswith(b"\n"))
+            self.assertFalse(payload.endswith(b"\n\n"))
+
     def test_owner_child_uses_single_cli_module_identity(self) -> None:
         workflow = ROOT / "research/workflows/owner-smoke-002-spot-sma20-development.json"
         command = _official_child_command(ROOT, workflow)
