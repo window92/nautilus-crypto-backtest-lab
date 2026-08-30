@@ -30,6 +30,16 @@ remains `SSOT.md`; this file does not change normative behavior.
 - Synchronized the `FailureCode` type with the complete SSOT vocabulary.
 - Added an additive `REVOKED` / `INVALIDATED` registry for affected historical
   runs and replays without changing their bytes.
+- Persisted and bound the executed installed-file Runtime identity in every new
+  Run, and bound Official runs/reports to the exact qualified-profile registry
+  and record rather than a mutable or historical default.
+- Replaced the duplicate-module child invocation with the repository CLI,
+  superseded the warned epoch additively, and published a clean six-workflow
+  Development epoch with 12 read-only-revalidated primary/replay directories.
+- Added a central fail-closed result validator which checks Spot reconciliation,
+  exact Perpetual Funding binding, half-open engine windows, Runtime/profile
+  authority, deterministic replay, historical report snapshots, journal/anchor
+  history, and the empty Holdout lock.
 
 ### Status and limits
 

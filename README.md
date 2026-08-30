@@ -240,12 +240,19 @@ PY
 
 ## Results and reports
 
-The following V1 reports are preserved for audit history. Their affected
-financial Run results are not currently accepted. The additive status registry
-at
-`evidence/audit/comprehensive-remediation-001/historical-result-status.json`
-is authoritative once generated and committed; it does not edit the original
-Run directories.
+The pre-remediation V1 reports are preserved for audit history. Their affected
+financial Run results are not accepted. The three additive status registries
+under `evidence/audit/comprehensive-remediation-001/` are authoritative for
+revocation and supersession; they do not edit the original Run directories.
+
+The mechanically accepted replacement evidence is the Development-only
+`comprehensive-audit-remediation-003` epoch. Its six primary Runs and six
+fresh-process replays are bound by
+`evidence/audit/comprehensive-remediation-001/final-research-validation.json`.
+Every report remains `INELIGIBLE` for a real profitability claim, Final Holdout
+was not used, and the Holdout lock remains empty. See
+[docs/AUDIT_REMEDIATION.md](docs/AUDIT_REMEDIATION.md) for exact Run, replay,
+report, qualification, and revocation identities.
 
 - Trial JSON/Markdown reports: `research/reports/`.
 - Immutable run evidence: `runs/` and `runs/replays/`.
