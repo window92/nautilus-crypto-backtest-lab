@@ -90,8 +90,6 @@ jobs:
       - name: Run portable audit regressions
         run: >-
           python -m unittest -v
-          tests.unit.test_audit_qualification_validator
-          tests.unit.test_audit_research_validator
           tests.unit.test_comprehensive_audit_regressions.AuditRegressionTests.test_owner_child_uses_single_cli_module_identity
           tests.unit.test_comprehensive_audit_regressions.AuditRegressionTests.test_f009_failure_code_vocabulary_exactly_matches_ssot_section_15
           tests.unit.test_comprehensive_audit_regressions.AuditRegressionTests.test_f007_utc_conversion_uses_exact_integer_arithmetic
@@ -111,6 +109,8 @@ jobs:
 
 # This workflow is intentionally not the Official acceptance runner. It proves
 # the locked wheel and installed payload, then runs only host-portable tests.
-# The eight synthetic engine tests which require the exact host-specific
-# Runtime Lock remain mandatory in scripts/run_audit_remediation_acceptance.py;
-# CI must not bypass or rewrite that lock to make a GitHub runner look Official.
+# The seven synthetic engine tests which require the exact host-specific
+# Runtime Lock, and evidence checks which reopen the preserved untracked raw-data
+# corpus, remain mandatory in scripts/run_audit_remediation_acceptance.py. CI
+# must not bypass/rewrite that lock or silently omit source objects to look
+# Official.
