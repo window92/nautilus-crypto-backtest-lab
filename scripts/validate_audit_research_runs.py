@@ -97,6 +97,57 @@ def _named_checks(checker: dict[str, Any]) -> dict[str, dict[str, Any]]:
     return dict(zip(names, raw, strict=True))
 
 
+def _checker_rebuild_diagnostic(checker: dict[str, Any]) -> dict[str, Any]:
+    """Retain the original fail-closed cause when regenerated evidence differs."""
+
+    failed_checks: list[dict[str, Any]] = []
+    raw_checks = checker.get("checks")
+    if isinstance(raw_checks, list):
+        for item in raw_checks:
+            if not isinstance(item, dict) or item.get("pass") is True:
+                continue
+            diagnostic = {
+                key: item[key]
+                for key in (
+                    "name",
+                    "pass",
+                    "detail",
+                    "reason",
+                    "error",
+                    "errors",
+                    "failure_code",
+                    "failure_codes",
+                )
+                if key in item
+            }
+            failed_checks.append(diagnostic or {"name": item.get("name"), "pass": False})
+    return {
+        "outcome": checker.get("outcome"),
+        "failure_codes": checker.get("failure_codes"),
+        "failed_checks": failed_checks,
+    }
+
+
+def _require_exact_checker_match(
+    *,
+    role: str,
+    persisted: dict[str, Any],
+    regenerated: dict[str, Any],
+) -> None:
+    if regenerated == persisted:
+        return
+    diagnostic = json.dumps(
+        _checker_rebuild_diagnostic(regenerated),
+        ensure_ascii=False,
+        separators=(",", ":"),
+        sort_keys=True,
+    )
+    raise ValueError(
+        f"{role} persisted checker differs from current read-only checker; "
+        f"original_rebuild_diagnostic={diagnostic}",
+    )
+
+
 def _validate_report_snapshot(
     *,
     workflow: OwnerWorkflowInput,
@@ -194,14 +245,23 @@ def _validate_run(
     authority: dict[str, Any] | None = None
     for role, directory in (("PRIMARY", primary), ("REPLAY", replay_dir)):
         persisted = _json_object(directory / "checker.json")
-        regenerated = check_evidence_directory(
-            directory,
-            repository_root=ROOT,
-            official_source_required=True,
-            source_revision_current_head_required=False,
+        try:
+            regenerated = check_evidence_directory(
+                directory,
+                repository_root=ROOT,
+                official_source_required=True,
+                source_revision_current_head_required=False,
+            ).to_builtins()
+        except Exception as exc:
+            raise ValueError(
+                f"{role} current read-only checker rebuild failed; "
+                f"original_cause={type(exc).__name__}:{exc}",
+            ) from exc
+        _require_exact_checker_match(
+            role=role,
+            persisted=persisted,
+            regenerated=regenerated,
         )
-        if regenerated.to_builtins() != persisted:
-            raise ValueError(f"{role} persisted checker differs from current read-only checker")
         checks = _named_checks(persisted)
         if (
             persisted.get("outcome") != "CHECK_PASS"
