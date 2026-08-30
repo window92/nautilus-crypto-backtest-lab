@@ -3,16 +3,21 @@ from __future__ import annotations
 import base64
 import csv
 import hashlib
+import json
 import py_compile
+import shutil
 import sys
 import tempfile
 import unittest
 import venv
 from pathlib import Path
 
+from crypto_lab.checker import check_evidence_directory
+from crypto_lab.config import RuntimeLock
 from crypto_lab.runtime import RuntimeLockMismatch
 from crypto_lab.runtime import inspect_installed_distribution_files
 from crypto_lab.runtime import verify_installed_distribution_files
+from crypto_lab.runtime import verify_runtime_lock
 
 
 def _record_hash(payload: bytes) -> str:
@@ -125,6 +130,101 @@ class InstalledRuntimeFileTests(unittest.TestCase):
                     record_relative_path=record,
                     package_relative_path=package,
                 )
+
+    def test_official_runtime_proof_is_required_and_payload_tamper_fails_closed(self) -> None:
+        repository = Path(__file__).resolve().parents[2]
+        matches = sorted(
+            (repository / "runs").glob(
+                "comprehensive-audit-remediation-001-spot-benchmark-run-*",
+            ),
+        )
+        self.assertEqual(len(matches), 1)
+        with tempfile.TemporaryDirectory() as temporary:
+            copied = Path(temporary) / "run"
+            shutil.copytree(matches[0], copied)
+            missing = check_evidence_directory(
+                copied,
+                repository_root=repository,
+                official_source_required=True,
+                source_revision_current_head_required=False,
+            )
+            self.assertEqual(missing.outcome.value, "CHECK_BLOCKED")
+            self.assertIn("RUNTIME_LOCK_MISMATCH", missing.failure_codes)
+
+            lock = json.loads((copied / "runtime.lock.json").read_text(encoding="utf-8"))
+            proof = {
+                "installed_files_verified": True,
+                "cache_files_recompiled_and_verified": True,
+                "installed_payload_sha256": "f" * 64,
+                "installed_payload_file_count": lock["nautilus_installed_payload_file_count"],
+                "installed_wheel_sha256": lock["nautilus_wheel_sha256"],
+                "nautilus_version": lock["nautilus_version"],
+                "python_version": lock["python_version"],
+                "python_implementation": lock["python_implementation"],
+                "python_abi": lock["python_abi"],
+                "machine_architecture": lock["machine_architecture"],
+                "dependency_lock_sha256": lock["dependency_lock_sha256"],
+                "installed_record_sha256": "0" * 64,
+                "installed_record_hashed_file_count": 1,
+                "installed_native_extension_count": 1,
+            }
+            (copied / "runtime_identity.json").write_text(
+                json.dumps(proof, sort_keys=True) + "\n",
+                encoding="utf-8",
+            )
+            result = json.loads((copied / "nautilus_result.json").read_text(encoding="utf-8"))
+            result["runtime_identity_verified"] = True
+            result["evidence_bindings"]["runtime_identity_sha256"] = hashlib.sha256(
+                (copied / "runtime_identity.json").read_bytes(),
+            ).hexdigest()
+            (copied / "nautilus_result.json").write_text(
+                json.dumps(result, sort_keys=True) + "\n",
+                encoding="utf-8",
+            )
+            tampered = check_evidence_directory(
+                copied,
+                repository_root=repository,
+                official_source_required=True,
+                source_revision_current_head_required=False,
+            )
+            self.assertEqual(tampered.outcome.value, "CHECK_BLOCKED")
+            self.assertIn("RUNTIME_LOCK_MISMATCH", tampered.failure_codes)
+            proof_check = next(
+                item
+                for item in tampered.checks
+                if item["name"] == "installed_runtime_payload_proof"
+            )
+            self.assertFalse(proof_check["pass"])
+            self.assertIn("installed_payload_sha256", proof_check["mismatches"])
+
+            verified_proof = verify_runtime_lock(
+                RuntimeLock.from_json_bytes((copied / "runtime.lock.json").read_bytes()),
+                dependency_lock_path=repository / "requirements.lock.txt",
+            )
+            (copied / "runtime_identity.json").write_text(
+                json.dumps(verified_proof, sort_keys=True) + "\n",
+                encoding="utf-8",
+            )
+            result["evidence_bindings"]["runtime_identity_sha256"] = hashlib.sha256(
+                (copied / "runtime_identity.json").read_bytes(),
+            ).hexdigest()
+            (copied / "nautilus_result.json").write_text(
+                json.dumps(result, sort_keys=True) + "\n",
+                encoding="utf-8",
+            )
+            verified = check_evidence_directory(
+                copied,
+                repository_root=repository,
+                official_source_required=True,
+                source_revision_current_head_required=False,
+            )
+            proof_check = next(
+                item
+                for item in verified.checks
+                if item["name"] == "installed_runtime_payload_proof"
+            )
+            self.assertTrue(proof_check["pass"])
+            self.assertNotIn("RUNTIME_LOCK_MISMATCH", verified.failure_codes)
 
 
 if __name__ == "__main__":

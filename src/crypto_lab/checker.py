@@ -18,6 +18,7 @@ from nautilus_trader.model import MarkPriceUpdate
 
 from crypto_lab.config import LabRunConfig
 from crypto_lab.config import MarketProfile
+from crypto_lab.config import RuntimeLock
 from crypto_lab.config import SourceRevision
 from crypto_lab.data import DatasetRelease
 from crypto_lab.data import FUNDING_NATIVE_BINDING_RC2_INTERVAL_BOUNDARY
@@ -733,6 +734,7 @@ def check_evidence_directory(
         official_missing = sorted(
             {
                 "native_completed_trades.json",
+                "runtime_identity.json",
                 "strategy_identity.json",
                 "strategy_identity.sha256",
             }
@@ -802,6 +804,8 @@ def check_evidence_directory(
     }
     if official and (run_dir / "strategy_identity.json").is_file():
         binding_paths["strategy_identity_bytes_sha256"] = "strategy_identity.json"
+    if official and (run_dir / "runtime_identity.json").is_file():
+        binding_paths["runtime_identity_sha256"] = "runtime_identity.json"
     binding_mismatches = [
         name
         for name, filename in binding_paths.items()
@@ -823,6 +827,55 @@ def check_evidence_directory(
     )
     checks.append({"name": "runtime_lock_binding", "pass": runtime_ok})
     if not runtime_ok:
+        blocked.append(FailureCode.RUNTIME_LOCK_MISMATCH.value)
+
+    runtime_proof_ok = not official
+    runtime_proof_mismatches: list[str] = []
+    if official and (run_dir / "runtime_identity.json").is_file():
+        try:
+            runtime_lock = RuntimeLock.from_json_bytes(
+                (run_dir / "runtime.lock.json").read_bytes(),
+            )
+            runtime_identity = _read_json(run_dir / "runtime_identity.json")
+            required_runtime_proof = {
+                "installed_files_verified": True,
+                "cache_files_recompiled_and_verified": True,
+                "installed_payload_sha256": runtime_lock.nautilus_installed_payload_sha256,
+                "installed_payload_file_count": runtime_lock.nautilus_installed_payload_file_count,
+                "installed_wheel_sha256": runtime_lock.nautilus_wheel_sha256,
+                "nautilus_version": runtime_lock.nautilus_version,
+                "python_version": runtime_lock.python_version,
+                "python_implementation": runtime_lock.python_implementation,
+                "python_abi": runtime_lock.python_abi,
+                "machine_architecture": runtime_lock.machine_architecture,
+                "dependency_lock_sha256": runtime_lock.dependency_lock_sha256,
+            }
+            runtime_proof_mismatches = [
+                name
+                for name, expected in required_runtime_proof.items()
+                if runtime_identity.get(name) != expected
+            ]
+            record_sha = runtime_identity.get("installed_record_sha256")
+            runtime_proof_ok = bool(
+                not runtime_proof_mismatches
+                and isinstance(record_sha, str)
+                and len(record_sha) == 64
+                and all(character in "0123456789abcdef" for character in record_sha)
+                and int(runtime_identity.get("installed_record_hashed_file_count", 0)) > 0
+                and int(runtime_identity.get("installed_native_extension_count", 0)) > 0
+                and result.get("runtime_identity_verified") is True
+            )
+        except Exception as exc:
+            runtime_proof_mismatches = [f"{type(exc).__name__}: {exc}"]
+            runtime_proof_ok = False
+    checks.append(
+        {
+            "name": "installed_runtime_payload_proof",
+            "pass": runtime_proof_ok,
+            "mismatches": runtime_proof_mismatches,
+        },
+    )
+    if not runtime_proof_ok:
         blocked.append(FailureCode.RUNTIME_LOCK_MISMATCH.value)
 
     try:

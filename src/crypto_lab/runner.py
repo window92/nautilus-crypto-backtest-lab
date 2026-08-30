@@ -266,10 +266,11 @@ def select_engine_data_window(
 
 def _preflight_identity(
     config: LabRunRequest | OfficialLabRunRequest,
-) -> tuple[list[str], list[dict[str, Any]]]:
+) -> tuple[list[str], list[dict[str, Any]], dict[str, Any] | None]:
     run = config.lab_run_config
     failures: list[str] = []
     diagnostics: list[dict[str, Any]] = []
+    runtime_identity: dict[str, Any] | None = None
     repository_root = config.repository_root if isinstance(config, OfficialLabRunRequest) else ROOT
     observed_runtime_lock_sha256 = sha256_file(repository_root / "runtime.lock.json")
     if observed_runtime_lock_sha256 != run.runtime_lock_sha256:
@@ -285,7 +286,7 @@ def _preflight_identity(
     else:
         lock = RuntimeLock.from_json_bytes((repository_root / "runtime.lock.json").read_bytes())
         try:
-            verify_runtime_lock(
+            runtime_identity = verify_runtime_lock(
                 lock,
                 dependency_lock_path=repository_root / "requirements.lock.txt",
             )
@@ -416,7 +417,7 @@ def _preflight_identity(
             )
         except GitIdentityError:
             failures.append(FailureCode.EVIDENCE_INCOMPLETE.value)
-    return list(dict.fromkeys(failures)), diagnostics
+    return list(dict.fromkeys(failures)), diagnostics, runtime_identity
 
 
 def _preflight_data(
@@ -1313,7 +1314,7 @@ def _run_bound(
 
     run = config.lab_run_config
     repository_root = config.repository_root if isinstance(config, OfficialLabRunRequest) else ROOT
-    preflight, preflight_diagnostics = _preflight_identity(config)
+    preflight, preflight_diagnostics, runtime_identity = _preflight_identity(config)
     instrument = config.instrument if isinstance(config, LabRunRequest) else None
     data = config.data if isinstance(config, LabRunRequest) else ()
     resolved_release: ResolvedDatasetRelease | None = None
@@ -1383,6 +1384,8 @@ def _run_bound(
     (run_dir / "runtime.lock.json").write_bytes(
         (repository_root / "runtime.lock.json").read_bytes(),
     )
+    if runtime_identity is not None:
+        _write_json(run_dir / "runtime_identity.json", runtime_identity)
     (run_dir / "source_revision.json").write_bytes(config.source_revision.to_json_bytes() + b"\n")
     (run_dir / "dataset_release.json").write_bytes(config.dataset_release.to_json_bytes() + b"\n")
     (run_dir / "strategy_spec.json").write_bytes(config.strategy_spec.to_json_bytes() + b"\n")
@@ -1722,6 +1725,10 @@ def _run_bound(
         "dataset_release_sha256": sha256_file(run_dir / "dataset_release.json"),
         "strategy_spec_sha256": sha256_file(run_dir / "strategy_spec.json"),
     }
+    if (run_dir / "runtime_identity.json").is_file():
+        evidence_bindings["runtime_identity_sha256"] = sha256_file(
+            run_dir / "runtime_identity.json",
+        )
     if isinstance(config, LabRunRequest):
         evidence_bindings["strategy_plan_sha256"] = config.strategy_plan.strategy_plan_sha256
     else:
@@ -1753,6 +1760,7 @@ def _run_bound(
         "engine_error": engine_error,
         "preflight_failure_codes": list(dict.fromkeys(preflight)),
         "preflight_diagnostics": preflight_diagnostics,
+        "runtime_identity_verified": runtime_identity is not None,
         "backtest_result": capture["backtest_result"],
         "strategy_observations": observations,
         "semantic_sequence": capture["semantic_sequence"],
