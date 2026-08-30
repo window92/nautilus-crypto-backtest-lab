@@ -395,6 +395,7 @@ class GuardedCausalStrategy(Strategy):
         bar: Bar,
         *,
         decision_timestamp_ns: int | None = None,
+        spot_quote_notional: Decimal | None = None,
     ) -> None:
         assert self._instrument_id is not None
         assert self._profile is not None
@@ -485,15 +486,120 @@ class GuardedCausalStrategy(Strategy):
             )
             return
         signed = self._signed_position()
+        runtime_order_quantity = quantity
+        runtime_quantity_text = str(quantity)
+        quote_quantity = False
+        affordability: dict[str, str | bool] = {
+            "cash_affordability_proven": self._profile is not MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY,
+            "order_quantity_unit": "BASE",
+        }
         if self._profile is MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY:
-            if signed < 0 or (intent.side == "SELL" and requested > signed):
+            account = self.cache.account_for_venue(self._instrument_id.venue)
+            if account is None:
                 self._record_guard_failure(
                     FailureCode.SPOT_SHORT_OR_BORROW_DETECTED,
                     intent=intent,
                     timestamp_ns=now,
-                    detail="Spot sell would exceed available long inventory",
+                    detail="native CASH Account is unavailable before order submission",
                 )
                 return
+            base_balance = account.balance(instrument.base_currency)
+            quote_balance = account.balance(instrument.quote_currency)
+            available_base = (
+                Decimal(0)
+                if base_balance is None
+                else Decimal(str(base_balance.free.as_decimal()))
+            )
+            available_quote = (
+                Decimal(0)
+                if quote_balance is None
+                else Decimal(str(quote_balance.free.as_decimal()))
+            )
+            if signed < 0 or (
+                intent.side == "SELL"
+                and (requested > signed or requested > available_base)
+            ):
+                self._record_guard_failure(
+                    FailureCode.SPOT_SHORT_OR_BORROW_DETECTED,
+                    intent=intent,
+                    timestamp_ns=now,
+                    detail="Spot sell would exceed native Position or free base balance",
+                )
+                return
+            if intent.side == "BUY":
+                maximum = instrument.max_price
+                if maximum is None:
+                    self._record_guard_failure(
+                        FailureCode.SPOT_SHORT_OR_BORROW_DETECTED,
+                        intent=intent,
+                        timestamp_ns=now,
+                        detail="Spot buy has no Instrument maximum-price bound",
+                    )
+                    return
+                maximum_fill_price = Decimal(str(maximum.as_decimal())) + Decimal(
+                    str(instrument.price_increment.as_decimal()),
+                )
+                fee_rate = Decimal(str(instrument.taker_fee))
+                money_quantum = Decimal(1).scaleb(-instrument.quote_currency.precision)
+                if spot_quote_notional is None:
+                    maximum_cost = requested * maximum_fill_price * (Decimal(1) + fee_rate)
+                    if maximum_cost > available_quote:
+                        self._record_guard_failure(
+                            FailureCode.SPOT_SHORT_OR_BORROW_DETECTED,
+                            intent=intent,
+                            timestamp_ns=now,
+                            detail=(
+                                "base-quantity Spot MARKET buy is not provably funded at the "
+                                "Instrument maximum executable price"
+                            ),
+                        )
+                        return
+                    affordability = {
+                        "cash_affordability_proven": True,
+                        "order_quantity_unit": "BASE",
+                        "available_quote_before": str(available_quote),
+                        "maximum_fill_price_bound": str(maximum_fill_price),
+                        "maximum_cost_bound": str(maximum_cost),
+                    }
+                else:
+                    if not spot_quote_notional.is_finite() or spot_quote_notional <= 0:
+                        raise ValueError("Spot quote notional must be finite and positive")
+                    rounding_reserve = (
+                        Decimal(str(instrument.size_increment.as_decimal()))
+                        * maximum_fill_price
+                    )
+                    maximum_quote_notional = (
+                        (available_quote - money_quantum) / (Decimal(1) + fee_rate)
+                        - rounding_reserve
+                    )
+                    quantity_quantum = Decimal(1).scaleb(-self._size_precision)
+                    safe_quote_notional = min(spot_quote_notional, maximum_quote_notional)
+                    safe_quote_notional = (
+                        safe_quote_notional // quantity_quantum
+                    ) * quantity_quantum
+                    if safe_quote_notional <= 0:
+                        self._record_guard_failure(
+                            FailureCode.SPOT_SHORT_OR_BORROW_DETECTED,
+                            intent=intent,
+                            timestamp_ns=now,
+                            detail="no positive quote-denominated Spot buy is provably funded",
+                        )
+                        return
+                    runtime_quantity_text = f"{safe_quote_notional:.{self._size_precision}f}"
+                    runtime_order_quantity = Quantity.from_str(runtime_quantity_text)
+                    quote_quantity = True
+                    affordability = {
+                        "cash_affordability_proven": True,
+                        "order_quantity_unit": "QUOTE",
+                        "available_quote_before": str(available_quote),
+                        "requested_quote_notional": str(spot_quote_notional),
+                        "submitted_quote_notional": str(safe_quote_notional),
+                        "maximum_fill_price_bound": str(maximum_fill_price),
+                        "base_rounding_reserve": str(rounding_reserve),
+                        "commission_rounding_reserve": str(money_quantum),
+                    }
+            elif spot_quote_notional is not None:
+                raise ValueError("Spot quote notional is valid only for BUY intents")
         elif (signed > 0 and intent.side == "SELL" and requested > signed) or (
             signed < 0 and intent.side == "BUY" and requested > abs(signed)
         ):
@@ -509,8 +615,9 @@ class GuardedCausalStrategy(Strategy):
         order = self.order_factory.market(
             self._instrument_id,
             side,
-            quantity,
+            runtime_order_quantity,
             time_in_force=TimeInForce.GTC,
+            quote_quantity=quote_quantity,
         )
         self._live_client_order_id = order.client_order_id
         self.observations["submitted_intents"].append(
@@ -522,7 +629,11 @@ class GuardedCausalStrategy(Strategy):
                 "time_in_force": "GTC",
                 "canonical_quantity": intent.quantity,
                 "runtime_quantity": runtime_quantity_text,
-                "runtime_zero_padding_only": Decimal(runtime_quantity_text) == requested,
+                "runtime_zero_padding_only": (
+                    not quote_quantity and Decimal(runtime_quantity_text) == requested
+                ),
+                "quote_quantity": quote_quantity,
+                **affordability,
             },
         )
         self.submit_order(order)
@@ -656,4 +767,13 @@ class FirstEligibleBarQualificationFixture(GuardedCausalStrategy):
             and interval_end <= self._scoring_end_exclusive_ns
         ):
             self._fixture_attempted = True
-            self._submit_guarded(self._fixture_intent, bar)
+            self._submit_guarded(
+                self._fixture_intent,
+                bar,
+                spot_quote_notional=(
+                    Decimal(self._fixture_intent.quantity) * Decimal(str(bar.close))
+                    if self._profile is MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY
+                    and self._fixture_intent.side == "BUY"
+                    else None
+                ),
+            )

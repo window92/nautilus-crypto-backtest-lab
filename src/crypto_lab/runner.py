@@ -8,7 +8,6 @@ import json
 import math
 import subprocess
 from dataclasses import dataclass
-from datetime import UTC
 from datetime import datetime
 from decimal import Decimal
 from enum import StrEnum
@@ -49,9 +48,11 @@ from crypto_lab.offline import activate_process_network_isolation
 from crypto_lab.offline import offline_network_guard
 from crypto_lab.paths import atomic_create_run_directory
 from crypto_lab.paths import validate_safe_component
+from crypto_lab.runtime import RuntimeLockMismatch
 from crypto_lab.runtime import verify_runtime_lock
 from crypto_lab.status import FailureCode
 from crypto_lab.status import RunState
+from crypto_lab.timestamps import utc_datetime_to_ns
 from crypto_lab.strategies import GuardedCausalStrategy
 from crypto_lab.strategies import RegisteredStrategyIdentity
 from crypto_lab.strategies import StrategyPlan
@@ -189,15 +190,98 @@ def capture_source_revision(repository: Path = ROOT) -> SourceRevision:
 
 
 def _timestamp_ns(value: datetime) -> int:
-    return int(value.timestamp() * 1_000_000_000)
+    return utc_datetime_to_ns(value)
 
 
-def _preflight_identity(config: LabRunRequest | OfficialLabRunRequest) -> list[str]:
+def select_engine_data_window(
+    data: tuple[Any, ...],
+    *,
+    warmup_start_ns: int,
+    scoring_end_exclusive_ns: int,
+) -> tuple[tuple[Any, ...], dict[str, Any]]:
+    """Select the type-aware half-open economic window before engine ingestion.
+
+    Bar and Mark objects represent completed intervals and are eligible when
+    their availability timestamp is in ``(warmup_start, scoring_end]``. Funding
+    is a point settlement and is eligible only in
+    ``[warmup_start, scoring_end)``. Thus a final completed valuation
+    observation at the boundary is allowed while a settlement at that same
+    boundary is not.
+    """
+
+    if warmup_start_ns < 0 or scoring_end_exclusive_ns <= warmup_start_ns:
+        raise DataContractError(
+            FailureCode.DATA_TIMESTAMP_INVALID,
+            "invalid execution data window",
+        )
+    selected: list[Any] = []
+    dropped_before = 0
+    dropped_after = 0
+    selected_counts = {"Bar": 0, "MarkPriceUpdate": 0, "FundingRateUpdate": 0}
+    for item in data:
+        timestamp = int(item.ts_init)
+        if isinstance(item, FundingRateUpdate):
+            eligible = warmup_start_ns <= timestamp < scoring_end_exclusive_ns
+            before = timestamp < warmup_start_ns
+        elif isinstance(item, Bar | MarkPriceUpdate):
+            eligible = warmup_start_ns < timestamp <= scoring_end_exclusive_ns
+            before = timestamp <= warmup_start_ns
+        else:
+            raise DataContractError(
+                FailureCode.DATA_ROLE_MISMATCH,
+                f"unsupported engine data object {type(item).__name__}",
+            )
+        if eligible:
+            selected.append(item)
+            selected_counts[type(item).__name__] += 1
+        elif before:
+            dropped_before += 1
+        else:
+            dropped_after += 1
+    if not any(isinstance(item, Bar) for item in selected):
+        raise DataContractError(FailureCode.DATA_GAP, "execution window has no eligible Bar")
+    valuation_times = [
+        int(item.ts_init)
+        for item in selected
+        if isinstance(item, Bar | MarkPriceUpdate)
+    ]
+    return (
+        tuple(selected),
+        {
+            "schema": "engine-data-window-v1",
+            "warmup_start_ns": warmup_start_ns,
+            "scoring_end_exclusive_ns": scoring_end_exclusive_ns,
+            "source_object_count": len(data),
+            "engine_object_count": len(selected),
+            "selected_counts": selected_counts,
+            "dropped_before_warmup_count": dropped_before,
+            "dropped_after_scoring_count": dropped_after,
+            "point_events_at_scoring_end_included": False,
+            "completed_interval_observations_at_scoring_end_included": True,
+            "latest_qualified_valuation_observation_ns": max(valuation_times),
+            "engine_received_post_boundary_data": False,
+        },
+    )
+
+
+def _preflight_identity(
+    config: LabRunRequest | OfficialLabRunRequest,
+) -> tuple[list[str], list[dict[str, Any]]]:
     run = config.lab_run_config
     failures: list[str] = []
+    diagnostics: list[dict[str, Any]] = []
     repository_root = config.repository_root if isinstance(config, OfficialLabRunRequest) else ROOT
-    if sha256_file(repository_root / "runtime.lock.json") != run.runtime_lock_sha256:
+    observed_runtime_lock_sha256 = sha256_file(repository_root / "runtime.lock.json")
+    if observed_runtime_lock_sha256 != run.runtime_lock_sha256:
         failures.append(FailureCode.RUNTIME_LOCK_MISMATCH.value)
+        diagnostics.append(
+            {
+                "phase": "RUNTIME_LOCK_BYTES",
+                "code": FailureCode.RUNTIME_LOCK_MISMATCH.value,
+                "expected_runtime_lock_sha256": run.runtime_lock_sha256,
+                "observed_runtime_lock_sha256": observed_runtime_lock_sha256,
+            },
+        )
     else:
         lock = RuntimeLock.from_json_bytes((repository_root / "runtime.lock.json").read_bytes())
         try:
@@ -205,8 +289,25 @@ def _preflight_identity(config: LabRunRequest | OfficialLabRunRequest) -> list[s
                 lock,
                 dependency_lock_path=repository_root / "requirements.lock.txt",
             )
-        except Exception:
+        except RuntimeLockMismatch as exc:
             failures.append(FailureCode.RUNTIME_LOCK_MISMATCH.value)
+            diagnostics.append(
+                {
+                    "phase": "INSTALLED_RUNTIME_FILES",
+                    "code": exc.code,
+                    "mismatches": list(exc.mismatches),
+                },
+            )
+        except Exception as exc:
+            failures.append(FailureCode.RUNTIME_LOCK_MISMATCH.value)
+            diagnostics.append(
+                {
+                    "phase": "INSTALLED_RUNTIME_FILES",
+                    "code": FailureCode.RUNTIME_LOCK_MISMATCH.value,
+                    "error_type": type(exc).__name__,
+                    "detail": str(exc),
+                },
+            )
 
     if config.strategy_spec.strategy_spec_id != run.strategy_spec_id:
         failures.append(FailureCode.CONFIG_HASH_MISMATCH.value)
@@ -315,7 +416,7 @@ def _preflight_identity(config: LabRunRequest | OfficialLabRunRequest) -> list[s
             )
         except GitIdentityError:
             failures.append(FailureCode.EVIDENCE_INCOMPLETE.value)
-    return list(dict.fromkeys(failures))
+    return list(dict.fromkeys(failures)), diagnostics
 
 
 def _preflight_data(
@@ -384,8 +485,31 @@ def _preflight_data(
             and bar.high >= bar.low
             and volume_ok
         )
+        minimum_price = (
+            None if instrument.min_price is None else instrument.min_price.as_decimal()
+        )
+        maximum_price = (
+            None if instrument.max_price is None else instrument.max_price.as_decimal()
+        )
+        increment = instrument.price_increment.as_decimal()
+        observed_prices = tuple(
+            value.as_decimal() for value in (bar.open, bar.high, bar.low, bar.close)
+        )
+        executable_price_bounds_ok = bool(
+            minimum_price is not None
+            and maximum_price is not None
+            and all(minimum_price <= value <= maximum_price for value in observed_prices)
+            and bar.open.as_decimal() - increment >= minimum_price
+            and bar.open.as_decimal() + increment <= maximum_price
+        )
         timestamp_ok = int(bar.ts_init) == int(bar.ts_event)
-        if not (precision_ok and identity_ok and ohlc_ok and timestamp_ok):
+        if not (
+            precision_ok
+            and identity_ok
+            and ohlc_ok
+            and timestamp_ok
+            and executable_price_bounds_ok
+        ):
             failures.append(FailureCode.INSTRUMENT_METADATA_INVALID.value)
     if bar_timestamps != sorted(bar_timestamps) or len(set(bar_timestamps)) != len(bar_timestamps):
         failures.append(FailureCode.DATA_TIMESTAMP_INVALID.value)
@@ -399,7 +523,12 @@ def _preflight_data(
                 ONE_MINUTE_NS,
             ),
         )
-        if bar_timestamps != required_bar_timestamps:
+        execution_window_bar_timestamps = [
+            timestamp
+            for timestamp in bar_timestamps
+            if warmup_start_ns < timestamp <= scoring_end_ns
+        ]
+        if execution_window_bar_timestamps != required_bar_timestamps:
             failures.append(FailureCode.DATA_GAP.value)
         descriptors = tuple(
             {
@@ -514,9 +643,6 @@ def _preflight_data(
             funding_ok = funding_ok and release.funding_data_identity != "NOT_APPLICABLE"
         if not funding_ok:
             failures.append(FailureCode.FUNDING_MISSING.value)
-        if any(int(event.ts_event) >= _timestamp_ns(run.scoring_end_exclusive) for event in funding):
-            failures.append(FailureCode.DATA_TIMESTAMP_INVALID.value)
-
     all_timestamps = [int(item.ts_init) for item in data]
     if all_timestamps != sorted(all_timestamps):
         failures.append(FailureCode.DATA_TIMESTAMP_INVALID.value)
@@ -589,6 +715,19 @@ def _money_projection(value: Any) -> dict[str, str]:
         "amount": str(value.as_decimal()),
         "currency": str(value.currency),
     }
+
+
+def _exact_native_signed_position(position: Any) -> Decimal:
+    """Project the native fixed-point Quantity with its native direction."""
+
+    quantity = Decimal(str(position.quantity.as_decimal()))
+    if position.is_long:
+        return quantity
+    if position.is_short:
+        return -quantity
+    if quantity == 0:
+        return Decimal(0)
+    raise RuntimeError("native Position has quantity but no LONG/SHORT direction")
 
 
 def _native_statistic_value(value: Any) -> str:
@@ -782,7 +921,7 @@ def _capture_engine(
                 "ts_event": int(position.ts_last),
                 "instrument_id": str(position.instrument_id),
                 "side": str(position.side),
-                "signed_qty": str(position.signed_qty),
+                "signed_qty": str(_exact_native_signed_position(position)),
                 "quantity": str(position.quantity),
                 "avg_px_open": str(position.avg_px_open),
                 "realized_pnl": str(position.realized_pnl),
@@ -922,6 +1061,7 @@ def _run_real_data_with_native_funding_checkpoints(
     instrument_id: Any,
     funding_source_events: tuple[dict[str, Any], ...] = (),
     start_ns: int | None = None,
+    end_ns: int,
 ) -> tuple[tuple[dict[str, Any], ...], tuple[dict[str, Any], ...]]:
     """Run public streaming batches and preserve native adjustments before NETTING reuse.
 
@@ -943,8 +1083,13 @@ def _run_real_data_with_native_funding_checkpoints(
     )
     if not boundaries:
         engine.add_data(list(data))
-        engine.run(start=start_ns)
+        engine.run(start=start_ns, end=end_ns)
         return (), ()
+    if boundaries[-1] >= end_ns:
+        raise DataContractError(
+            FailureCode.DATA_TIMESTAMP_INVALID,
+            "funding checkpoint reaches or exceeds scoring_end_exclusive",
+        )
 
     ordered = list(data)
     cursor = 0
@@ -979,11 +1124,25 @@ def _run_real_data_with_native_funding_checkpoints(
             {
                 "instrument_id": str(position.instrument_id),
                 "position_id": str(position.id),
-                "signed_qty": str(position.signed_qty),
+                "signed_qty": str(_exact_native_signed_position(position)),
                 "ts_last": int(position.ts_last),
             }
             for position in engine.cache.positions_open(instrument_id=instrument_id)
         ]
+        account_before = engine.cache.account_for_venue(instrument_id.venue)
+        balances_before = (
+            []
+            if account_before is None
+            else [
+                {
+                    "currency": str(balance.currency),
+                    "total": str(balance.total),
+                    "locked": str(balance.locked),
+                    "free": str(balance.free),
+                }
+                for balance in account_before.balances().values()
+            ]
+        )
 
         boundary_start = cursor
         while cursor < len(ordered) and int(ordered[cursor].ts_init) == boundary_ns:
@@ -1005,6 +1164,19 @@ def _run_real_data_with_native_funding_checkpoints(
         preserved.extend(native_adjustments)
         account = engine.cache.account_for_venue(instrument_id.venue)
         account_events = [] if account is None else [event.to_dict() for event in account.events]
+        balances_after = (
+            []
+            if account is None
+            else [
+                {
+                    "currency": str(balance.currency),
+                    "total": str(balance.total),
+                    "locked": str(balance.locked),
+                    "free": str(balance.free),
+                }
+                for balance in account.balances().values()
+            ]
+        )
         native_mark = engine.cache.mark_price(instrument_id)
         runtime_updates = [
             item
@@ -1060,7 +1232,7 @@ def _run_real_data_with_native_funding_checkpoints(
                     {
                         "instrument_id": str(position.instrument_id),
                         "position_id": str(position.id),
-                        "signed_qty": str(position.signed_qty),
+                        "signed_qty": str(_exact_native_signed_position(position)),
                         "ts_last": int(position.ts_last),
                     }
                     for position in engine.cache.positions_open(instrument_id=instrument_id)
@@ -1068,6 +1240,8 @@ def _run_real_data_with_native_funding_checkpoints(
                 "account_events_at_boundary": [
                     event for event in account_events if int(event["ts_event"]) == boundary_ns
                 ],
+                "account_balances_before_boundary": balances_before,
+                "account_balances_after_boundary": balances_after,
                 "capture_api": "nautilus_trader.backtest.BacktestEngine.run(streaming=True)",
                 "financial_state_mutated_by_project": False,
             },
@@ -1077,7 +1251,17 @@ def _run_real_data_with_native_funding_checkpoints(
     remaining = ordered[cursor:]
     if remaining:
         engine.add_data(remaining)
-        engine.run(start=start_ns if first_batch else None, streaming=True)
+        engine.run(
+            start=start_ns if first_batch else None,
+            end=end_ns,
+            streaming=True,
+        )
+    else:
+        engine.run(
+            start=start_ns if first_batch else None,
+            end=end_ns,
+            streaming=True,
+        )
     engine.end()
     return tuple(preserved), tuple(checkpoints)
 
@@ -1129,12 +1313,17 @@ def _run_bound(
 
     run = config.lab_run_config
     repository_root = config.repository_root if isinstance(config, OfficialLabRunRequest) else ROOT
-    preflight = _preflight_identity(config)
+    preflight, preflight_diagnostics = _preflight_identity(config)
     instrument = config.instrument if isinstance(config, LabRunRequest) else None
     data = config.data if isinstance(config, LabRunRequest) else ()
     resolved_release: ResolvedDatasetRelease | None = None
     metadata_path: Path | None = None
     funding_path: Path | None = None
+    execution_window_evidence: dict[str, Any] = {
+        "schema": "engine-data-window-v1",
+        "status": "NOT_SELECTED_PREFLIGHT_FAILED",
+        "engine_received_post_boundary_data": False,
+    }
     if not preflight and isinstance(config.dataset_release, DatasetRelease):
         try:
             resolved_release = config.dataset_release.resolve_runtime_data(repository_root / "data")
@@ -1165,6 +1354,16 @@ def _run_bound(
                 resolved=resolved_release,
             ),
         )
+    if not preflight:
+        try:
+            data, execution_window_evidence = select_engine_data_window(
+                data,
+                warmup_start_ns=_timestamp_ns(run.warmup_start),
+                scoring_end_exclusive_ns=_timestamp_ns(run.scoring_end_exclusive),
+            )
+            execution_window_evidence["status"] = "PASS"
+        except DataContractError as exc:
+            preflight.append(exc.code)
 
     # Caller-controlled run_id is validated before evidence_root or any other
     # filesystem path is created.  Creation is one atomic mkdir under a resolved
@@ -1298,12 +1497,7 @@ def _run_bound(
                     )
                 engine.add_strategy(strategy)
                 engine_started = True
-                signal_bar_type = BarType.from_str(run.signal_bar_types[0])
-                explicit_time_origin_ns = (
-                    _timestamp_ns(run.warmup_start)
-                    if signal_bar_type.is_composite()
-                    else None
-                )
+                explicit_time_origin_ns = _timestamp_ns(run.warmup_start)
                 if (
                     isinstance(config, LabRunRequest)
                     and config.qualification_control
@@ -1324,15 +1518,25 @@ def _run_bound(
                             funding_source_events=(
                                 ()
                                 if resolved_release is None
-                                else resolved_release.funding_source_events
+                                else tuple(
+                                    item
+                                    for item in resolved_release.funding_source_events
+                                    if _timestamp_ns(run.warmup_start)
+                                    <= int(item["calc_time_ns"])
+                                    < _timestamp_ns(run.scoring_end_exclusive)
+                                )
                             ),
                             start_ns=explicit_time_origin_ns,
+                            end_ns=_timestamp_ns(run.scoring_end_exclusive),
                         )
                     )
                 else:
                     preserved_funding = ()
                     engine.add_data(list(data))
-                    engine.run(start=explicit_time_origin_ns)
+                    engine.run(
+                        start=explicit_time_origin_ns,
+                        end=_timestamp_ns(run.scoring_end_exclusive),
+                    )
                 network_guard_evidence["attempts"] = list(network_evidence.attempts)
             engine_completed = True
             observations = json.loads(json.dumps(strategy.observations))
@@ -1541,6 +1745,7 @@ def _run_bound(
         "engine_completed": engine_completed,
         "engine_error": engine_error,
         "preflight_failure_codes": list(dict.fromkeys(preflight)),
+        "preflight_diagnostics": preflight_diagnostics,
         "backtest_result": capture["backtest_result"],
         "strategy_observations": observations,
         "semantic_sequence": capture["semantic_sequence"],
@@ -1557,6 +1762,7 @@ def _run_bound(
         "project_funding_postings": 0,
         "project_financial_ledger": False,
         "network_guard": network_guard_evidence,
+        "execution_data_window": execution_window_evidence,
         "terminal_policy": run.terminal_policy,
         "dataset_contract": {
             "type": type(config.dataset_release).__name__,
@@ -1592,6 +1798,11 @@ def _run_bound(
                 else {
                     "native_class": f"{type(instrument).__module__}:{type(instrument).__name__}",
                     "instrument_id": str(instrument.id),
+                    "base_currency": str(instrument.base_currency),
+                    "quote_currency": str(instrument.quote_currency),
+                    "settlement_currency": str(
+                        getattr(instrument, "settlement_currency", instrument.quote_currency)
+                    ),
                     "maker_fee": str(instrument.maker_fee),
                     "taker_fee": str(instrument.taker_fee),
                     "min_quantity": (
@@ -1602,6 +1813,12 @@ def _run_bound(
                     ),
                     "size_increment": str(instrument.size_increment),
                     "price_increment": str(instrument.price_increment),
+                    "min_price": (
+                        None if instrument.min_price is None else str(instrument.min_price)
+                    ),
+                    "max_price": (
+                        None if instrument.max_price is None else str(instrument.max_price)
+                    ),
                     "price_precision": instrument.price_precision,
                     "size_precision": instrument.size_precision,
                     "project_financial_engine": False,
@@ -1615,6 +1832,16 @@ def _run_bound(
             ),
             "funding_runtime_update_count": (
                 0 if resolved_release is None else resolved_release.funding_runtime_update_count
+            ),
+            "execution_funding_source_event_count": len(
+                {
+                    int(item.ts_init)
+                    for item in data
+                    if isinstance(item, FundingRateUpdate)
+                },
+            ),
+            "execution_funding_runtime_update_count": sum(
+                isinstance(item, FundingRateUpdate) for item in data
             ),
             "market_state_acceptance": (
                 None if resolved_release is None else resolved_release.market_state_acceptance

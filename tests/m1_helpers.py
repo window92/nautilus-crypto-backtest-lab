@@ -36,6 +36,7 @@ from crypto_lab.runner import QualificationControl
 from crypto_lab.strategies import OrderIntent
 from crypto_lab.strategies import StrategyPlan
 from crypto_lab.strategies import StrategySpec
+from crypto_lab.timestamps import unix_ns_to_utc_datetime
 from tests.helpers import load_spot_config_dict
 
 
@@ -48,7 +49,7 @@ USDT = Currency.from_str("USDT")
 
 
 def iso_ns(timestamp_ns: int) -> str:
-    return datetime.fromtimestamp(timestamp_ns / 1_000_000_000, tz=UTC).isoformat().replace(
+    return unix_ns_to_utc_datetime(timestamp_ns).isoformat().replace(
         "+00:00",
         "Z",
     )
@@ -155,6 +156,8 @@ def make_instrument(
         size_precision=0,
         price_increment=Price.from_str("0.01"),
         size_increment=Quantity.from_str("1"),
+        min_price=Price.from_str("0.01"),
+        max_price=Price.from_str("301.01"),
         ts_event=0,
         ts_init=0,
         multiplier=Quantity.from_str("1"),

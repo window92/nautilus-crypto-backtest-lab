@@ -19,7 +19,6 @@ import zipfile
 from dataclasses import dataclass
 from dataclasses import fields
 from dataclasses import replace
-from datetime import UTC
 from datetime import date
 from datetime import datetime
 from datetime import timedelta
@@ -58,9 +57,10 @@ from crypto_lab.config import MarketProfile
 from crypto_lab.config import StrictModel
 from crypto_lab.config import _decode_json
 from crypto_lab.config import _decode_typed
-from crypto_lab.hashing import canonical_json_bytes
 from crypto_lab.hashing import canonical_sha256
 from crypto_lab.status import FailureCode
+from crypto_lab.timestamps import unix_ns_to_utc_datetime
+from crypto_lab.timestamps import utc_datetime_to_ns
 
 
 ONE_MINUTE_NS = 60_000_000_000
@@ -114,7 +114,10 @@ class DataContractError(ValueError):
         *,
         evidence: dict[str, str] | None = None,
     ) -> None:
-        self.code = code.value if isinstance(code, FailureCode) else code
+        try:
+            self.code = FailureCode(code).value
+        except ValueError as exc:
+            raise ValueError(f"unknown SSOT failure code: {code!r}") from exc
         self.evidence = MappingProxyType(dict(evidence or {}))
         super().__init__(f"{self.code}: {message}")
 
@@ -826,23 +829,20 @@ def _deep_freeze(value: Any) -> Any:
 
 
 def _datetime_to_ns(value: datetime) -> int:
-    if value.tzinfo is None or value.utcoffset() != timedelta(0):
-        raise DataContractError(FailureCode.DATA_TIMESTAMP_INVALID, "timestamp must use UTC")
-    delta = value - datetime(1970, 1, 1, tzinfo=UTC)
-    return (
-        delta.days * 86_400_000_000_000
-        + delta.seconds * 1_000_000_000
-        + delta.microseconds * 1_000
-    )
+    try:
+        return utc_datetime_to_ns(value)
+    except (TypeError, ValueError) as exc:
+        raise DataContractError(FailureCode.DATA_TIMESTAMP_INVALID, "timestamp must use UTC") from exc
 
 
 def _ns_to_datetime(value: int) -> datetime:
-    if value % 1_000:
+    try:
+        return unix_ns_to_utc_datetime(value)
+    except (TypeError, ValueError) as exc:
         raise DataContractError(
             FailureCode.DATA_TIMESTAMP_INVALID,
             "timestamp cannot be represented by the UTC evidence schema",
-        )
-    return datetime(1970, 1, 1, tzinfo=UTC) + timedelta(microseconds=value // 1_000)
+        ) from exc
 
 
 def _validate_source_locator(role: SourceRole, locator: str) -> None:
@@ -2423,7 +2423,10 @@ def to_nautilus_mark_updates(
     batch_precision = metadata.price_precision
     result: list[MarkPriceUpdate] = []
     for item in bars:
-        if item.source_role is not SourceRole.USDM_PERPETUAL_MARK_1M:
+        if (
+            item.source_role is not SourceRole.USDM_PERPETUAL_MARK_1M
+            or item.instrument_id != metadata.instrument_id
+        ):
             raise DataContractError(FailureCode.MARK_ROLE_INVALID, "prohibited mark source role")
         result.append(
             MarkPriceUpdate(
@@ -2464,6 +2467,11 @@ def to_nautilus_funding_updates(
         }
         else 1
     )
+    if any(item.instrument_id != metadata.instrument_id for item in events):
+        raise DataContractError(
+            FailureCode.DATA_ROLE_MISMATCH,
+            "funding event Instrument does not match metadata",
+        )
     return tuple(
         FundingRateUpdate(
             instrument_id,
@@ -2649,6 +2657,11 @@ def _resolve_dataset_release_runtime(
             FailureCode.INSTRUMENT_METADATA_INVALID,
             "native Instrument is not bound to release metadata",
         )
+    if any(str(mark.instrument_id) != metadata.instrument_id for mark in marks):
+        raise DataContractError(
+            FailureCode.MARK_ROLE_INVALID,
+            "catalog mark Instrument does not match release metadata",
+        )
 
     funding_updates: tuple[FundingRateUpdate, ...] = ()
     funding_native_binding = FUNDING_NATIVE_BINDING_SINGLE
@@ -2671,6 +2684,15 @@ def _resolve_dataset_release_runtime(
         events = funding_payload.get("events")
         if not isinstance(events, list) or not events:
             raise DataContractError(FailureCode.FUNDING_MISSING, "funding evidence has no events")
+        if any(
+            not isinstance(item, dict)
+            or item.get("instrument_id") != metadata.instrument_id
+            for item in events
+        ):
+            raise DataContractError(
+                FailureCode.DATA_ROLE_MISMATCH,
+                "catalog funding Instrument does not match release metadata",
+            )
         funding_native_binding = str(
             funding_payload.get("native_binding", FUNDING_NATIVE_BINDING_SINGLE),
         )

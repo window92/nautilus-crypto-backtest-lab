@@ -33,7 +33,6 @@ from crypto_lab.strategies import resolve_registered_strategy_identity
 from crypto_lab.strategies.daily_sma_trend import DAY_NS
 from tests.m1_helpers import SPOT_ID
 from tests.m1_helpers import PERP_ID
-from tests.m1_helpers import a4_bars
 from tests.m1_helpers import complete_perpetual_roles
 from tests.m1_helpers import make_request
 from tests.m1_helpers import plan
@@ -57,6 +56,8 @@ def _instrument(profile: MarketProfile):
     common = dict(
         price_precision=2,
         price_increment=Price.from_str("0.01"),
+        min_price=Price.from_str("0.01"),
+        max_price=Price.from_str("1000.00"),
         ts_event=0,
         ts_init=0,
         multiplier=Quantity.from_str("1"),

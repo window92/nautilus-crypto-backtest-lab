@@ -38,17 +38,17 @@ from crypto_lab.data_provenance import HttpRawStore  # noqa: E402
 from crypto_lab.data_provenance import KlineSource  # noqa: E402
 from crypto_lab.data_provenance import ProvenanceError  # noqa: E402
 from crypto_lab.data_provenance import canonical_json_bytes  # noqa: E402
-from crypto_lab.data_provenance import iter_aggtrade_archive  # noqa: E402
 from crypto_lab.data_provenance import parse_kline_rest_page  # noqa: E402
 from crypto_lab.data_provenance import sha256_bytes  # noqa: E402
 from crypto_lab.data_provenance import utc_now_text  # noqa: E402
 from crypto_lab.data_provenance import verify_checksum  # noqa: E402
+from crypto_lab.timestamps import utc_datetime_to_ms  # noqa: E402
 
 
 WINDOW_START = datetime(2020, 12, 1, tzinfo=UTC)
 WINDOW_END = datetime(2021, 7, 1, tzinfo=UTC)
-WINDOW_START_MS = int(WINDOW_START.timestamp() * 1000)
-WINDOW_END_MS = int(WINDOW_END.timestamp() * 1000)
+WINDOW_START_MS = utc_datetime_to_ms(WINDOW_START)
+WINDOW_END_MS = utc_datetime_to_ms(WINDOW_END)
 SYMBOL = "BTCUSDT"
 AGGTRADE_REPAIR_DAYS = (
     date(2020, 12, 21),
@@ -117,7 +117,7 @@ def _append_failure(value: dict[str, Any]) -> None:
 
 
 def _datetime_ms(value: datetime) -> int:
-    return int(value.timestamp() * 1000)
+    return utc_datetime_to_ms(value)
 
 
 def _days() -> list[date]:
@@ -612,13 +612,13 @@ def _acquire_aggtrade_rest(store: HttpRawStore, index: dict[str, Any]) -> list[d
     ranges = (
         (
             "2020-12-21-conflict",
-            int(datetime(2020, 12, 21, 13, 35, tzinfo=UTC).timestamp() * 1000),
-            int(datetime(2020, 12, 21, 18, 5, tzinfo=UTC).timestamp() * 1000),
+            utc_datetime_to_ms(datetime(2020, 12, 21, 13, 35, tzinfo=UTC)),
+            utc_datetime_to_ms(datetime(2020, 12, 21, 18, 5, tzinfo=UTC)),
         ),
         (
             "2020-12-25-gap",
-            int(datetime(2020, 12, 25, 1, 55, tzinfo=UTC).timestamp() * 1000),
-            int(datetime(2020, 12, 25, 3, 5, tzinfo=UTC).timestamp() * 1000),
+            utc_datetime_to_ms(datetime(2020, 12, 25, 1, 55, tzinfo=UTC)),
+            utc_datetime_to_ms(datetime(2020, 12, 25, 3, 5, tzinfo=UTC)),
         ),
     )
     del index  # The REST stream has a documented 2022 aggregate-ID reindex and is time-anchored.

@@ -19,6 +19,7 @@ from crypto_lab.research import ResearchError
 from crypto_lab.research import ResultExposure
 from crypto_lab.research import TERMINAL_TRIAL_STATES
 from crypto_lab.research import UtcInterval
+from crypto_lab.status import FailureCode
 
 
 @dataclass(frozen=True)
@@ -62,8 +63,7 @@ class AuthoritativeExposureResolver:
         try:
             resolved.relative_to(self.repository_root)
         except ValueError as exc:
-            raise ResearchError(
-                "HOLDOUT_HISTORY_VIOLATION",
+            raise ResearchError(FailureCode.HOLDOUT_HISTORY_VIOLATION,
                 f"exposure evidence escapes repository: {resolved}",
             ) from exc
         return resolved
@@ -93,13 +93,11 @@ class AuthoritativeExposureResolver:
                 continue
             observed += 1
             if process.stdout != current:
-                raise ResearchError(
-                    "HOLDOUT_HISTORY_VIOLATION",
+                raise ResearchError(FailureCode.HOLDOUT_HISTORY_VIOLATION,
                     "committed M3 qualification authority was replaced",
                 )
         if observed == 0:
-            raise ResearchError(
-                "HOLDOUT_HISTORY_VIOLATION",
+            raise ResearchError(FailureCode.HOLDOUT_HISTORY_VIOLATION,
                 "M3 qualification authority is not committed in SourceRevision history",
             )
 
@@ -109,7 +107,7 @@ class AuthoritativeExposureResolver:
         try:
             manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         except Exception as exc:
-            raise ResearchError("HOLDOUT_HISTORY_VIOLATION", "invalid M3 manifest") from exc
+            raise ResearchError(FailureCode.HOLDOUT_HISTORY_VIOLATION, "invalid M3 manifest") from exc
         entries = manifest.get("entries")
         if (
             manifest.get("schema") != "m3-acceptance-manifest-v1"
@@ -117,11 +115,11 @@ class AuthoritativeExposureResolver:
             or not isinstance(entries, list)
             or canonical_sha256(entries) != manifest.get("content_sha256")
         ):
-            raise ResearchError("HOLDOUT_HISTORY_VIOLATION", "M3 manifest identity mismatch")
+            raise ResearchError(FailureCode.HOLDOUT_HISTORY_VIOLATION, "M3 manifest identity mismatch")
         declared: set[str] = set()
         for entry in entries:
             if not isinstance(entry, dict) or set(entry) != {"path", "sha256", "byte_size"}:
-                raise ResearchError("HOLDOUT_HISTORY_VIOLATION", "invalid M3 manifest entry")
+                raise ResearchError(FailureCode.HOLDOUT_HISTORY_VIOLATION, "invalid M3 manifest entry")
             relative = str(entry["path"])
             candidate = Path(relative)
             if (
@@ -132,15 +130,14 @@ class AuthoritativeExposureResolver:
                 or any(ord(character) < 32 or ord(character) == 127 for character in relative)
                 or relative in declared
             ):
-                raise ResearchError("HOLDOUT_HISTORY_VIOLATION", "unsafe M3 manifest path")
+                raise ResearchError(FailureCode.HOLDOUT_HISTORY_VIOLATION, "unsafe M3 manifest path")
             declared.add(relative)
             lexical = self.m3_root / candidate
             cursor = self.m3_root
             for component in candidate.parts:
                 cursor = cursor / component
                 if cursor.is_symlink():
-                    raise ResearchError(
-                        "HOLDOUT_HISTORY_VIOLATION",
+                    raise ResearchError(FailureCode.HOLDOUT_HISTORY_VIOLATION,
                         "M3 manifest path contains a symlink",
                     )
             resolved = self._contained(lexical)
@@ -149,8 +146,7 @@ class AuthoritativeExposureResolver:
                 or resolved.stat().st_size != entry["byte_size"]
                 or sha256_file(resolved) != entry["sha256"]
             ):
-                raise ResearchError(
-                    "HOLDOUT_HISTORY_VIOLATION",
+                raise ResearchError(FailureCode.HOLDOUT_HISTORY_VIOLATION,
                     f"M3 manifest mismatch: {relative}",
                 )
         # The qualification manifest is an immutable epoch manifest.  Later M3
@@ -163,13 +159,11 @@ class AuthoritativeExposureResolver:
         try:
             registry_relative = self.m3_registry_path.relative_to(self.m3_root).as_posix()
         except ValueError as exc:
-            raise ResearchError(
-                "HOLDOUT_HISTORY_VIOLATION",
+            raise ResearchError(FailureCode.HOLDOUT_HISTORY_VIOLATION,
                 "M3 registry is outside the immutable qualification-manifest scope",
             ) from exc
         if registry_relative not in declared:
-            raise ResearchError(
-                "HOLDOUT_HISTORY_VIOLATION",
+            raise ResearchError(FailureCode.HOLDOUT_HISTORY_VIOLATION,
                 "M3 registry is not declared by the immutable qualification manifest",
             )
         registry = QualifiedProfileRegistry.from_json_bytes(self.m3_registry_path.read_bytes())
@@ -177,8 +171,7 @@ class AuthoritativeExposureResolver:
         seen: set[tuple[MarketProfile, str, object, object]] = set()
         for profile in registry.records:
             if profile.checker_result != "CHECK_PASS" or profile.replay_result != "PASS":
-                raise ResearchError(
-                    "HOLDOUT_HISTORY_VIOLATION",
+                raise ResearchError(FailureCode.HOLDOUT_HISTORY_VIOLATION,
                     f"M3 profile authority is not accepted: {profile.profile_id.value}",
                 )
             for reference in profile.evidence_references:
@@ -194,8 +187,7 @@ class AuthoritativeExposureResolver:
                     )
                 }
                 if not consumed.issubset(declared):
-                    raise ResearchError(
-                        "HOLDOUT_HISTORY_VIOLATION",
+                    raise ResearchError(FailureCode.HOLDOUT_HISTORY_VIOLATION,
                         f"M3 exposure evidence is outside the qualification manifest: {reference}",
                     )
                 config = LabRunConfig.from_json_bytes((run_dir / "lab_run_config.json").read_bytes())
@@ -211,8 +203,7 @@ class AuthoritativeExposureResolver:
                     or status.get("state") != "COMPLETED"
                     or checker.get("outcome") != "CHECK_PASS"
                 ):
-                    raise ResearchError(
-                        "HOLDOUT_HISTORY_VIOLATION",
+                    raise ResearchError(FailureCode.HOLDOUT_HISTORY_VIOLATION,
                         f"M3 exposure evidence does not reconcile: {reference}",
                     )
                 interval = UtcInterval(
@@ -266,8 +257,7 @@ class AuthoritativeExposureResolver:
                 "checker.json",
             )
             if any(not (run_dir / name).is_file() for name in required):
-                raise ResearchError(
-                    "HOLDOUT_HISTORY_VIOLATION",
+                raise ResearchError(FailureCode.HOLDOUT_HISTORY_VIOLATION,
                     f"result-bearing trial {trial_id} has incomplete Run evidence",
                 )
             config = LabRunConfig.from_json_bytes((run_dir / "lab_run_config.json").read_bytes())
@@ -283,8 +273,7 @@ class AuthoritativeExposureResolver:
                 or config.scoring_start != record.scored_interval.start_inclusive
                 or config.scoring_end_exclusive != record.scored_interval.end_exclusive
             ):
-                raise ResearchError(
-                    "HOLDOUT_HISTORY_VIOLATION",
+                raise ResearchError(FailureCode.HOLDOUT_HISTORY_VIOLATION,
                     f"trial {trial_id} does not match resolved Run evidence",
                 )
             exposure = ResultExposure(
@@ -312,8 +301,7 @@ class AuthoritativeExposureResolver:
                 config.warmup_start < release.normalized_time_range.start_inclusive
                 or config.scoring_end_exclusive > release.normalized_time_range.end_exclusive
             ):
-                raise ResearchError(
-                    "HOLDOUT_HISTORY_VIOLATION",
+                raise ResearchError(FailureCode.HOLDOUT_HISTORY_VIOLATION,
                     f"trial {trial_id} Run window escapes its Dataset Release",
                 )
             full_run_interval = UtcInterval(
@@ -361,8 +349,7 @@ class AuthoritativeExposureResolver:
             entry.entry_id == entry_id and entry.exposure == candidate
             for entry in snapshot.entries
         ):
-            raise ResearchError(
-                "HOLDOUT_HISTORY_VIOLATION",
+            raise ResearchError(FailureCode.HOLDOUT_HISTORY_VIOLATION,
                 "selected Holdout exposure is absent from authoritative history",
             )
         self._require_no_conflict(
@@ -413,8 +400,7 @@ class AuthoritativeExposureResolver:
             ):
                 continue
             if exposure.overlaps(candidate):
-                raise ResearchError(
-                    "HOLDOUT_ALREADY_CONSUMED",
+                raise ResearchError(FailureCode.HOLDOUT_ALREADY_CONSUMED,
                     f"overlap with {exposure.authority}:{exposure.authority_id}",
                 )
         return mapping

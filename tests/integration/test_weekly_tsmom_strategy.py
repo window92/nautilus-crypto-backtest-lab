@@ -56,6 +56,8 @@ def _instrument(profile: MarketProfile):
     common = dict(
         price_precision=2,
         price_increment=Price.from_str("0.01"),
+        min_price=Price.from_str("0.01"),
+        max_price=Price.from_str("1000000.00"),
         ts_event=0,
         ts_init=0,
         multiplier=Quantity.from_str("1"),

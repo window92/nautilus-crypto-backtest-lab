@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-import hashlib
 import json
 import os
 import sys
@@ -41,8 +40,8 @@ from crypto_lab.data import timestamp_rules_identity
 from crypto_lab.data import validate_one_minute_grid
 from crypto_lab.data import verify_catalog_identity
 from crypto_lab.hashing import canonical_json_bytes
-from crypto_lab.hashing import canonical_sha256
 from crypto_lab.hashing import sha256_file
+from crypto_lab.timestamps import unix_ns_to_utc_datetime
 
 
 EVIDENCE = ROOT / "evidence/m2/m2-acceptance-001"
@@ -207,7 +206,7 @@ def write_once(path: Path, value: Any) -> None:
 
 
 def acquired_at(path: Path) -> datetime:
-    return datetime.fromtimestamp(path.stat().st_mtime, tz=UTC)
+    return unix_ns_to_utc_datetime(path.stat().st_mtime_ns)
 
 
 def request_for_archive(item: dict[str, Any], *, checksum: bool = False) -> AcquisitionRequest:

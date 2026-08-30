@@ -32,20 +32,13 @@ from typing import Iterator
 from urllib.parse import parse_qsl
 from urllib.parse import urlsplit
 
+from crypto_lab.status import FailureCode
+
 
 ONE_MINUTE_MS = 60_000
 SPOT_SYMBOL = "BTCUSDT"
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 _INTEGER = re.compile(r"0|[1-9][0-9]*\Z")
-
-
-class ProvenanceError(ValueError):
-    """A fail-closed official-data validation error."""
-
-    def __init__(self, code: str, message: str, *, evidence: dict[str, Any] | None = None) -> None:
-        self.code = code
-        self.evidence = dict(evidence or {})
-        super().__init__(f"{code}: {message}")
 
 
 class CoverageDisposition(StrEnum):
@@ -55,6 +48,44 @@ class CoverageDisposition(StrEnum):
     SOURCE_CONFLICT = "SOURCE_CONFLICT"
     SOURCE_INCOMPLETE = "SOURCE_INCOMPLETE"
     UNRESOLVED_GAP = "UNRESOLVED_GAP"
+
+
+_PROVENANCE_ERROR_DISPOSITIONS = frozenset(
+    {
+        CoverageDisposition.SOURCE_CONFLICT,
+        CoverageDisposition.SOURCE_INCOMPLETE,
+        CoverageDisposition.UNRESOLVED_GAP,
+    },
+)
+
+
+class ProvenanceError(ValueError):
+    """A fail-closed official-data error with a controlled code vocabulary."""
+
+    def __init__(
+        self,
+        code: FailureCode | CoverageDisposition | str,
+        message: str,
+        *,
+        evidence: dict[str, Any] | None = None,
+    ) -> None:
+        try:
+            if isinstance(code, FailureCode):
+                normalized = code.value
+            else:
+                text = str(code)
+                try:
+                    normalized = FailureCode(text).value
+                except ValueError:
+                    disposition = CoverageDisposition(text)
+                    if disposition not in _PROVENANCE_ERROR_DISPOSITIONS:
+                        raise ValueError
+                    normalized = disposition.value
+        except ValueError as exc:
+            raise ValueError(f"unknown provenance failure code: {code!r}") from exc
+        self.code = normalized
+        self.evidence = dict(evidence or {})
+        super().__init__(f"{self.code}: {message}")
 
 
 class KlineSource(StrEnum):
