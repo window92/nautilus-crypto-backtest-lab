@@ -1,0 +1,1 @@
+{"checker_outcome":"CHECK_FAIL","failure_codes":["FUNDING_DOUBLE_COUNT","PERP_PROFILE_INVALID"],"run_id":"comprehensive-remediation-003-control-perp_post_boundary_open","started_run_retained":true,"state":"FAILED"}
