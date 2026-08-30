@@ -20,6 +20,19 @@ and validation rules are described in
 [docs/AUDIT_REMEDIATION.md](docs/AUDIT_REMEDIATION.md). Nothing in this branch
 authorizes Final Holdout use, a profitability claim, or live trading.
 
+## Merge-history safety
+
+> [!CAUTION]
+> **DO NOT SQUASH OR REBASE.** Pull Request #1 must be merged with GitHub's
+> **Create a merge commit** option only.
+
+Historical report validation recovers the exact `research/trials.jsonl` and
+`research/history_anchors.jsonl` snapshots from each report-addition commit.
+A normal merge commit retains those commits and their object IDs as ancestors.
+Squash merge discards that ancestry, while rebase merge replaces the commit
+IDs; either method can make the historical report snapshot checks fail closed.
+Do not delete, rewrite, or reorder the historical report or Evidence commits.
+
 ## Supported V1 scope
 
 | Profile | Instrument | Account/position model | Direction |

@@ -101,7 +101,7 @@ class M2OfficialSampleQualificationTests(unittest.TestCase):
         self.assertTrue(catalog["perpetual"]["semantic_inventory_equal"])
 
     def test_historical_ssot_and_runtime_are_validated_against_their_snapshot(self) -> None:
-        self.assertEqual(
+        self.assertNotEqual(
             sha256_file(ROOT / "SSOT.md"),
             "b4deb7048242239234de7eaa353b623b3e45247eb42f1021dbc26ffd910edb99",
         )

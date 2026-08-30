@@ -1,14 +1,19 @@
 # Nautilus Crypto Backtest Lab — SSOT v1
 
-Status: `OWNER_REVIEW_CANDIDATE`
+Status: `OWNER_ADOPTED`
 
-Adoption: `PENDING_OWNER_ADOPTION`
+Adoption: `ADOPTED_BY_OWNER`; the previously frozen contract bytes remain
+preserved and content-bound by the repository's Owner-adoption evidence. This
+header correction is documentary only.
 
-Candidate runtime: official Rust/PyO3 `nautilus_trader==2.0.0rc2`, pending Owner adoption and all required qualifications before any Official Run.
+Adopted runtime: official Rust/PyO3 `nautilus_trader==2.0.0rc2`; all required
+qualifications remain mandatory before any Official Run.
 
 This document defines one strict, offline crypto backtesting laboratory built on NautilusTrader. It is the complete engineering specification for V1.
 
-This document does not authorize implementation. Implementation starts only after the Owner adopts the exact document bytes and gives a separate implementation instruction.
+The Owner has adopted the engineering contract. Implementation authority
+remains a separate Owner instruction; adoption alone does not authorize Final
+Holdout use, a profitability claim, or live trading.
 
 ## 0. Read this first
 

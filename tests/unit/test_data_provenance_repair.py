@@ -153,7 +153,7 @@ class DataProvenanceContractTests(unittest.TestCase):
         self.assertEqual(digest, "f51971ed7a09b172c82ff5965f2899d2a302dd71a2af60eb7c920133567b4354")
         self.assertEqual(manifest["candidate_ssot_sha256"], digest)
 
-    def test_candidate_004_and_adopted_root_bytes_are_identical(self) -> None:
+    def test_candidate_004_historical_bytes_and_current_material_contract_match(self) -> None:
         candidate_dir = (
             ROOT
             / "evidence/repair/free-official-binance-data-duckdb-001/ssot-candidate-004"
@@ -163,10 +163,18 @@ class DataProvenanceContractTests(unittest.TestCase):
         manifest = json.loads(
             (candidate_dir / "candidate-004-manifest.json").read_text(encoding="utf-8"),
         )
-        digest = hashlib.sha256(root_bytes).hexdigest()
-        self.assertEqual(root_bytes, candidate_bytes)
-        self.assertEqual(digest, "b4deb7048242239234de7eaa353b623b3e45247eb42f1021dbc26ffd910edb99")
-        self.assertEqual(manifest["candidate_ssot_sha256"], digest)
+        historical_digest = hashlib.sha256(candidate_bytes).hexdigest()
+        self.assertNotEqual(root_bytes, candidate_bytes)
+        self.assertEqual(
+            historical_digest,
+            "b4deb7048242239234de7eaa353b623b3e45247eb42f1021dbc26ffd910edb99",
+        )
+        self.assertEqual(manifest["candidate_ssot_sha256"], historical_digest)
+        contract_boundary = b"## 0. Read this first\n"
+        self.assertEqual(
+            root_bytes.partition(contract_boundary)[2],
+            candidate_bytes.partition(contract_boundary)[2],
+        )
 
     def test_three_way_official_kline_agreement(self) -> None:
         rest = kline(KlineSource.SPOT_REST, source_sha=SOURCE_A)

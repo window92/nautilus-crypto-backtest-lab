@@ -2,9 +2,27 @@
 
 This document is the central non-normative guide to
 `COMPREHENSIVE_AUDIT_REMEDIATION_001`. `SSOT.md` remains the sole engineering
-authority and has not been modified. The Owner authorized implementation and
-Development-data reruns only; Final Holdout use, a real profitability claim,
-live trading, automatic merge, a tag, and a release remain unauthorized.
+authority. Its Owner-adoption status header was corrected under explicit Owner
+authorization without changing any engineering, financial, or scientific
+contract. The Owner authorized implementation and Development-data reruns
+only; Final Holdout use, a real profitability claim, live trading, automatic
+merge, a tag, and a release remain unauthorized.
+
+## Mandatory merge method
+
+> [!CAUTION]
+> **DO NOT SQUASH OR REBASE.** Merge Pull Request #1 only with GitHub's
+> **Create a merge commit** option.
+
+The final research validator locates each report's unique addition commit and
+loads the contemporaneous `research/trials.jsonl`,
+`research/history_anchors.jsonl`, Holdout, protocol, replay, diagnostics, and
+run-manifest bytes from that commit. A normal merge commit preserves every
+branch commit and object ID in ancestry, so these snapshots remain resolvable.
+Squash merge omits the report-addition commits from the target ancestry; rebase
+merge creates different commit IDs. Both therefore violate the historical
+snapshot contract and may produce fail-closed validation errors. No historical
+Commit or Evidence may be deleted or rewritten.
 
 ## Historical-result policy
 

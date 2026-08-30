@@ -54,11 +54,11 @@ class HistoricalContractTests(unittest.TestCase):
                     {
                         "schema": "historical-contract-snapshots-v1",
                         "snapshots": {
-                            "ssot-only": {
-                                "git_commit": "890b9d41cc05ff091f41c82409d196c91b86d452",
+                            "current-lock": {
+                                "git_commit": "40cc44a7ec8f7d76565069c205287721578b58a7",
                                 "files": {
-                                    "SSOT.md": (
-                                        "b4deb7048242239234de7eaa353b623b3e45247eb42f1021dbc26ffd910edb99"
+                                    "requirements.lock.txt": (
+                                        "0999d2b764f5949aa145bb931825a6d692428e2fb14afe24ed32a5eb2efd29e4"
                                     ),
                                 },
                             },
@@ -69,7 +69,7 @@ class HistoricalContractTests(unittest.TestCase):
                 encoding="utf-8",
             )
             result = validate_historical_contract(
-                "ssot-only",
+                "current-lock",
                 repository_root=ROOT,
                 manifest_path=path,
             )
