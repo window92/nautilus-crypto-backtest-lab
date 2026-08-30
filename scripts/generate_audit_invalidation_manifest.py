@@ -44,6 +44,14 @@ SUPERSEDED_REMEDIATION_PRIMARY_RUNS = (
     "comprehensive-audit-remediation-001-spot-candidate-a-run-ccaf8bd16c10",
     "comprehensive-audit-remediation-001-spot-candidate-b-run-3e1f8986c6d6",
 )
+SUPERSEDED_OWNER_CHILD_PRIMARY_RUNS = (
+    "comprehensive-audit-remediation-002-perpetual-benchmark-run-f32911c7fe50",
+    "comprehensive-audit-remediation-002-perpetual-candidate-a-run-2c6cb58ce11d",
+    "comprehensive-audit-remediation-002-perpetual-candidate-b-run-2b14df8a4d69",
+    "comprehensive-audit-remediation-002-spot-benchmark-run-301913ec060a",
+    "comprehensive-audit-remediation-002-spot-candidate-a-run-6d25cce0b1d3",
+    "comprehensive-audit-remediation-002-spot-candidate-b-run-cc88d44bf6db",
+)
 
 
 def _git_head() -> str:
@@ -112,7 +120,11 @@ def main() -> int:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument(
         "--scope",
-        choices=("audited-baseline", "runtime-proof-supersession"),
+        choices=(
+            "audited-baseline",
+            "runtime-proof-supersession",
+            "owner-child-entrypoint-supersession",
+        ),
         default="audited-baseline",
     )
     arguments = parser.parse_args()
@@ -120,11 +132,11 @@ def main() -> int:
     if recorded.tzinfo is None or recorded.utcoffset() != UTC.utcoffset(recorded):
         raise ValueError("recorded-at-utc must be explicit UTC")
     records: list[dict[str, Any]] = []
-    run_names = (
-        HISTORICAL_PRIMARY_RUNS
-        if arguments.scope == "audited-baseline"
-        else SUPERSEDED_REMEDIATION_PRIMARY_RUNS
-    )
+    run_names = {
+        "audited-baseline": HISTORICAL_PRIMARY_RUNS,
+        "runtime-proof-supersession": SUPERSEDED_REMEDIATION_PRIMARY_RUNS,
+        "owner-child-entrypoint-supersession": SUPERSEDED_OWNER_CHILD_PRIMARY_RUNS,
+    }[arguments.scope]
     findings = None if arguments.scope == "audited-baseline" else ["F-003"]
     for run_name in run_names:
         records.append(_record(ROOT / "runs" / run_name, finding_ids=findings))
@@ -132,16 +144,23 @@ def main() -> int:
     records.sort(key=lambda item: item["path"])
     if len(records) != 2 * len(run_names):
         raise RuntimeError("historical primary/replay inventory is incomplete")
-    policy = (
-        "Original evidence bytes remain immutable; this additive registry is the current "
-        "authority for financial-result trust status."
-        if arguments.scope == "audited-baseline"
-        else (
+    policy = {
+        "audited-baseline": (
+            "Original evidence bytes remain immutable; this additive registry is the current "
+            "authority for financial-result trust status."
+        ),
+        "runtime-proof-supersession": (
             "The first remediation result generation remains immutable but is superseded: "
             "runtime verification executed fail-closed yet its positive installed-file identity "
             "was not persisted inside each Run. New content-addressed Runs are required."
-        )
-    )
+        ),
+        "owner-child-entrypoint-supersession": (
+            "The second remediation result generation remains immutable but is superseded: "
+            "both owner child processes emitted the Python runpy duplicate-module RuntimeWarning. "
+            "Although the native evidence and deterministic replay matched, a clean child "
+            "entrypoint and new content-addressed Runs are required for final audit authority."
+        ),
+    }[arguments.scope]
     manifest = {
         "schema": "audit-historical-result-status-v1",
         "audit_id": "COMPREHENSIVE_AUDIT_REMEDIATION_001",
