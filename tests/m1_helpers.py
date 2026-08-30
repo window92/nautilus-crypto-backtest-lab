@@ -36,6 +36,7 @@ from crypto_lab.runner import QualificationControl
 from crypto_lab.strategies import OrderIntent
 from crypto_lab.strategies import StrategyPlan
 from crypto_lab.strategies import StrategySpec
+from crypto_lab.timestamps import unix_ns_to_utc_datetime
 from tests.helpers import load_spot_config_dict
 
 
@@ -48,7 +49,7 @@ USDT = Currency.from_str("USDT")
 
 
 def iso_ns(timestamp_ns: int) -> str:
-    return datetime.fromtimestamp(timestamp_ns / 1_000_000_000, tz=UTC).isoformat().replace(
+    return unix_ns_to_utc_datetime(timestamp_ns).isoformat().replace(
         "+00:00",
         "Z",
     )
@@ -65,14 +66,30 @@ def source_revision() -> SourceRevision:
     )
 
 
-def make_strategy_spec(profile: MarketProfile, instrument_id: str) -> StrategySpec:
+def make_strategy_spec(
+    profile: MarketProfile,
+    instrument_id: str,
+    *,
+    spot_quote_from_signal_close: bool = False,
+) -> StrategySpec:
     return StrategySpec(
         strategy_id="m1-synthetic-guarded-strategy",
         strategy_version="1",
         market_profile=profile,
         instrument_id=instrument_id,
         signal_bar_types=(f"{instrument_id}-1-MINUTE-LAST-EXTERNAL",),
-        parameters={"fixture": "M1_SYNTHETIC"},
+        parameters={
+            "fixture": "M1_SYNTHETIC",
+            **(
+                {
+                    "spot_buy_sizing_mode": (
+                        "QUOTE_NOTIONAL_FROM_COMPLETED_SIGNAL_CLOSE"
+                    ),
+                }
+                if spot_quote_from_signal_close
+                else {}
+            ),
+        },
         indicator_definitions=(),
         warmup_requirement="EXPLICIT_SCORING_WINDOW_ONLY",
         sizing_rule="EXPLICIT_INTENT_QUANTITY",
@@ -155,6 +172,8 @@ def make_instrument(
         size_precision=0,
         price_increment=Price.from_str("0.01"),
         size_increment=Quantity.from_str("1"),
+        min_price=Price.from_str("0.01"),
+        max_price=Price.from_str("301.01"),
         ts_event=0,
         ts_init=0,
         multiplier=Quantity.from_str("1"),
@@ -227,10 +246,15 @@ def make_request(
     qualification_control: QualificationControl = QualificationControl.STANDARD,
     mark_complete: bool = True,
     expected_funding_settlements: tuple[dict[str, Any], ...] = (),
+    spot_quote_from_signal_close: bool = False,
 ) -> LabRunRequest:
     instrument = make_instrument(profile, maker_fee=fee, taker_fee=fee)
     instrument_id = str(instrument.id)
-    spec = make_strategy_spec(profile, instrument_id)
+    spec = make_strategy_spec(
+        profile,
+        instrument_id,
+        spot_quote_from_signal_close=spot_quote_from_signal_close,
+    )
     data_material = tuple(
         SyntheticDataDescriptor(
             type=type(item).__name__,

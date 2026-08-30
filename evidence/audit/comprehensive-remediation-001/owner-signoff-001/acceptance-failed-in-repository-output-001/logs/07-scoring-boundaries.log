@@ -1,0 +1,13 @@
+$ /home/builder/projects/nautilus-crypto-backtest-lab/.venv/bin/python -m unittest -v tests.unit.test_engine_data_window
+exit_code=0
+duration_seconds=1.589678
+
+test_perpetual_boundary_keeps_final_mark_but_excludes_funding_at_end (tests.unit.test_engine_data_window.EngineDataWindowTests.test_perpetual_boundary_keeps_final_mark_but_excludes_funding_at_end) ... ok
+test_perpetual_callbacks_exclude_boundary_funding_and_all_future_data (tests.unit.test_engine_data_window.EngineDataWindowTests.test_perpetual_callbacks_exclude_boundary_funding_and_all_future_data) ... ok
+test_spot_engine_callbacks_never_receive_post_boundary_release_data (tests.unit.test_engine_data_window.EngineDataWindowTests.test_spot_engine_callbacks_never_receive_post_boundary_release_data) ... ok
+test_spot_release_larger_than_run_is_filtered_before_engine_boundary (tests.unit.test_engine_data_window.EngineDataWindowTests.test_spot_release_larger_than_run_is_filtered_before_engine_boundary) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 1.157s
+
+OK

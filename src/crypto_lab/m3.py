@@ -295,7 +295,11 @@ def qualification_strategy_inputs(profile: MarketProfile) -> QualificationStrate
             qualification_attempt_all_intents=False,
         )
         base_release = SPOT_BASE_RELEASE_ID
-        sizing = "FIXED_0.00100_BTC_WITHIN_REPAIRED_MARKET_LIMITS"
+        sizing = (
+            "QUOTE_NOTIONAL_EQUAL_TO_0.00100_BTC_TIMES_COMPLETED_SIGNAL_CLOSE_"
+            "CAPPED_BY_NATIVE_FREE_QUOTE_AND_FEE_ROUNDING_RESERVES"
+        )
+        spot_buy_sizing_mode = "QUOTE_NOTIONAL_FROM_COMPLETED_SIGNAL_CLOSE"
         entry = "BUY_ON_FIXED_COMPLETED_BAR_ENDING_2025_01_01T00_00_00Z"
         exit_rule = "NO_EXIT_TERMINAL_OPEN_POSITION_DISCLOSED"
         warmup = "ONE_COMPLETE_MINUTE_BEFORE_SCORING"
@@ -321,6 +325,7 @@ def qualification_strategy_inputs(profile: MarketProfile) -> QualificationStrate
         )
         base_release = PERPETUAL_BASE_RELEASE_ID
         sizing = "FIXED_0.004_OPEN_0.001_REDUCE_0.003_CLOSE_0.001_REOPEN"
+        spot_buy_sizing_mode = "NOT_APPLICABLE"
         entry = "FROZEN_COMPLETED_BAR_SEQUENCE"
         exit_rule = "REDUCE_THEN_EXACT_FLAT_THEN_SEPARATE_SHORT_FROM_FLAT"
         warmup = "ZERO_DURATION_EXPLICIT_QUALIFICATION_WARMUP"
@@ -335,6 +340,7 @@ def qualification_strategy_inputs(profile: MarketProfile) -> QualificationStrate
         "qualification_interval_exposed": "true",
         "result_dependent_branching": "false",
         "run_purpose": "QUALIFICATION",
+        "spot_buy_sizing_mode": spot_buy_sizing_mode,
         "strategy_plan_sha256": plan.strategy_plan_sha256,
     }
     strategy_spec = StrategySpec(

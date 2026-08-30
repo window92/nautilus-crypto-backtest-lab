@@ -14,8 +14,8 @@ from crypto_lab.config import StrictModel
 from crypto_lab.config import _require_sha256
 from crypto_lab.config import _require_utc
 from crypto_lab.hashing import canonical_sha256
+from crypto_lab.locking import interprocess_file_lock
 from crypto_lab.research import HoldoutEntry
-from crypto_lab.research import HoldoutLockSnapshot
 from crypto_lab.research import HoldoutLockStore
 from crypto_lab.research import ResearchError
 from crypto_lab.research import ResultExposure
@@ -23,6 +23,7 @@ from crypto_lab.research import TrialDefinition
 from crypto_lab.research import TrialJournal
 from crypto_lab.research import TrialRecord
 from crypto_lab.research import TrialState
+from crypto_lab.status import FailureCode
 
 
 class HistoryAnchor(StrictModel):
@@ -43,7 +44,7 @@ class HistoryAnchor(StrictModel):
 
     def __post_init__(self) -> None:
         if self.schema_version != 1 or self.anchor_sequence <= 0:
-            raise ResearchError("TRIAL_HISTORY_INCOMPLETE", "invalid history anchor schema")
+            raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE, "invalid history anchor schema")
         if self.previous_anchor_sha256 != "GENESIS":
             _require_sha256(self.previous_anchor_sha256, "anchor.previous_anchor_sha256")
         for name in (
@@ -56,14 +57,14 @@ class HistoryAnchor(StrictModel):
         if self.trial_head_sha256 != "GENESIS":
             _require_sha256(self.trial_head_sha256, "anchor.trial_head_sha256")
         if self.trial_record_count < 0 or self.holdout_entry_count < 0:
-            raise ResearchError("TRIAL_HISTORY_INCOMPLETE", "negative history anchor count")
+            raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE, "negative history anchor count")
         if not self.operation:
-            raise ResearchError("TRIAL_HISTORY_INCOMPLETE", "anchor operation is required")
+            raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE, "anchor operation is required")
         if len(self.source_git_commit) != 40 or len(self.source_git_tree) != 40:
-            raise ResearchError("TRIAL_HISTORY_INCOMPLETE", "anchor needs full Git identities")
+            raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE, "anchor needs full Git identities")
         _require_utc(self.created_at_utc, "anchor.created_at_utc")
         if canonical_sha256(self.material_payload()) != self.anchor_sha256:
-            raise ResearchError("TRIAL_HISTORY_INCOMPLETE", "history anchor hash mismatch")
+            raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE, "history anchor hash mismatch")
 
     def material_payload(self) -> dict[str, Any]:
         return {
@@ -101,8 +102,7 @@ class HistoryAnchorStore:
         try:
             resolved.relative_to(self.repository_root)
         except ValueError as exc:
-            raise ResearchError(
-                "TRIAL_HISTORY_INCOMPLETE",
+            raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE,
                 f"authoritative history path escapes repository: {resolved}",
             ) from exc
         return resolved
@@ -117,7 +117,7 @@ class HistoryAnchorStore:
         )
         if check and process.returncode != 0:
             detail = process.stderr.strip() or process.stdout.strip() or "git command failed"
-            raise ResearchError("TRIAL_HISTORY_INCOMPLETE", detail)
+            raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE, detail)
         return process.stdout.strip()
 
     def _relative(self, path: Path) -> str:
@@ -130,16 +130,15 @@ class HistoryAnchorStore:
 
     def _records_from_bytes(self, payload: bytes) -> tuple[HistoryAnchor, ...]:
         if payload and not payload.endswith(b"\n"):
-            raise ResearchError("TRIAL_HISTORY_INCOMPLETE", "truncated anchor line")
+            raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE, "truncated anchor line")
         records: list[HistoryAnchor] = []
         for number, line in enumerate(payload.splitlines(), start=1):
             if not line:
-                raise ResearchError("TRIAL_HISTORY_INCOMPLETE", "blank anchor line")
+                raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE, "blank anchor line")
             try:
                 record = HistoryAnchor.from_json_bytes(line)
             except Exception as exc:
-                raise ResearchError(
-                    "TRIAL_HISTORY_INCOMPLETE",
+                raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE,
                     f"malformed history anchor {number}: {exc}",
                 ) from exc
             expected_previous = "GENESIS" if not records else records[-1].anchor_sha256
@@ -147,31 +146,28 @@ class HistoryAnchorStore:
                 record.anchor_sequence != number
                 or record.previous_anchor_sha256 != expected_previous
             ):
-                raise ResearchError("TRIAL_HISTORY_INCOMPLETE", "history anchor chain reset")
+                raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE, "history anchor chain reset")
             if records:
                 previous = records[-1]
                 if (
                     record.trial_record_count < previous.trial_record_count
                     or record.holdout_entry_count < previous.holdout_entry_count
                 ):
-                    raise ResearchError(
-                        "TRIAL_HISTORY_INCOMPLETE",
+                    raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE,
                         "history anchor counts rolled back",
                     )
                 if record.trial_record_count == previous.trial_record_count and (
                     record.trial_journal_sha256 != previous.trial_journal_sha256
                     or record.trial_head_sha256 != previous.trial_head_sha256
                 ):
-                    raise ResearchError(
-                        "TRIAL_HISTORY_INCOMPLETE",
+                    raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE,
                         "Trial Journal changed without an append",
                     )
                 if record.holdout_entry_count == previous.holdout_entry_count and (
                     record.holdout_lock_sha256 != previous.holdout_lock_sha256
                     or record.holdout_history_sha256 != previous.holdout_history_sha256
                 ):
-                    raise ResearchError(
-                        "TRIAL_HISTORY_INCOMPLETE",
+                    raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE,
                         "Holdout history changed without an append",
                     )
             records.append(record)
@@ -224,8 +220,7 @@ class HistoryAnchorStore:
     ) -> None:
         for version in self._committed_anchor_history():
             if len(current) < len(version) or current[: len(version)] != version:
-                raise ResearchError(
-                    "TRIAL_HISTORY_INCOMPLETE",
+                raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE,
                     "current anchors do not extend every reachable committed Git anchor version",
                 )
 
@@ -237,8 +232,7 @@ class HistoryAnchorStore:
         empty_journal_sha256 = hashlib.sha256(b"").hexdigest()
         for anchor in anchors:
             if anchor.trial_record_count > len(journal_records):
-                raise ResearchError(
-                    "TRIAL_HISTORY_INCOMPLETE",
+                raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE,
                     "Trial Journal is shorter than an authoritative anchor",
                 )
             journal_prefix = journal_records[: anchor.trial_record_count]
@@ -252,19 +246,16 @@ class HistoryAnchorStore:
                 or prefix_head != anchor.trial_head_sha256
                 or (not journal_prefix and prefix_sha256 != empty_journal_sha256)
             ):
-                raise ResearchError(
-                    "TRIAL_HISTORY_INCOMPLETE",
+                raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE,
                     "Trial Journal no longer contains an anchored byte-identical prefix",
                 )
             if anchor.holdout_entry_count > len(holdout_entries):
-                raise ResearchError(
-                    "TRIAL_HISTORY_INCOMPLETE",
+                raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE,
                     "Holdout history is shorter than an authoritative anchor",
                 )
             holdout_prefix = holdout_entries[: anchor.holdout_entry_count]
             if canonical_sha256(holdout_prefix) != anchor.holdout_history_sha256:
-                raise ResearchError(
-                    "TRIAL_HISTORY_INCOMPLETE",
+                raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE,
                     "Holdout history no longer contains an anchored semantic prefix",
                 )
 
@@ -282,14 +273,12 @@ class HistoryAnchorStore:
             text=True,
         )
         if process.returncode != 0:
-            raise ResearchError(
-                "TRIAL_HISTORY_INCOMPLETE",
+            raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE,
                 f"authoritative remote tracking ref is absent: {remote_ref}",
             )
         remote = self._git("rev-parse", remote_ref)
         if local != remote:
-            raise ResearchError(
-                "TRIAL_HISTORY_INCOMPLETE",
+            raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE,
                 "HEAD rollback/divergence from authoritative origin branch",
             )
 
@@ -312,10 +301,9 @@ class HistoryAnchorStore:
         current = self.read_anchors()
         committed = self._committed_anchors()
         if not current:
-            raise ResearchError("TRIAL_HISTORY_INCOMPLETE", "authoritative history anchor is absent")
+            raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE, "authoritative history anchor is absent")
         if len(current) < len(committed) or current[: len(committed)] != committed:
-            raise ResearchError(
-                "TRIAL_HISTORY_INCOMPLETE",
+            raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE,
                 "history anchor replacement, truncation, reorder, rollback, or genesis reset",
             )
         self._verify_committed_anchor_prefixes(current)
@@ -323,20 +311,19 @@ class HistoryAnchorStore:
         for anchor in current:
             resolved_tree = self._git("rev-parse", f"{anchor.source_git_commit}^{{tree}}")
             if resolved_tree != anchor.source_git_tree:
-                raise ResearchError("TRIAL_HISTORY_INCOMPLETE", "anchor Git tree mismatch")
+                raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE, "anchor Git tree mismatch")
             if subprocess.run(
                 ["git", "merge-base", "--is-ancestor", anchor.source_git_commit, "HEAD"],
                 cwd=self.repository_root,
                 check=False,
                 capture_output=True,
             ).returncode != 0:
-                raise ResearchError("TRIAL_HISTORY_INCOMPLETE", "anchor Git lineage rollback")
+                raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE, "anchor Git lineage rollback")
         state = self._current_state()
         latest = current[-1]
         mismatches = [name for name, value in state.items() if getattr(latest, name) != value]
         if mismatches:
-            raise ResearchError(
-                "TRIAL_HISTORY_INCOMPLETE",
+            raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE,
                 "authoritative state differs from latest anchor: " + ",".join(mismatches),
             )
         return latest
@@ -348,8 +335,7 @@ class HistoryAnchorStore:
         current = self.read_anchors()
         committed = self._committed_anchors()
         if current != committed:
-            raise ResearchError(
-                "TRIAL_HISTORY_INCOMPLETE",
+            raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE,
                 "current history/anchor update is not committed before Official resolution",
             )
         return latest
@@ -357,7 +343,7 @@ class HistoryAnchorStore:
     def initialize(self, *, at_utc: datetime) -> HistoryAnchor:
         _require_utc(at_utc, "anchor.initialize")
         if self.read_anchors() or self._committed_anchors():
-            raise ResearchError("TRIAL_HISTORY_INCOMPLETE", "history anchor is already initialized")
+            raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE, "history anchor is already initialized")
         for path in (self.journal_path, self.holdout_path):
             relative = self._relative(path)
             committed = subprocess.run(
@@ -367,8 +353,7 @@ class HistoryAnchorStore:
                 capture_output=True,
             )
             if committed.returncode != 0 or committed.stdout != path.read_bytes():
-                raise ResearchError(
-                    "TRIAL_HISTORY_INCOMPLETE",
+                raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE,
                     f"genesis authority requires committed current bytes for {relative}",
                 )
         return self._append_current(operation="GENESIS_FROM_COMMITTED_HISTORY", at_utc=at_utc)
@@ -378,7 +363,7 @@ class HistoryAnchorStore:
         anchors = self.read_anchors()
         committed = self._committed_anchors()
         if len(anchors) < len(committed) or anchors[: len(committed)] != committed:
-            raise ResearchError("TRIAL_HISTORY_INCOMPLETE", "committed anchor prefix was replaced")
+            raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE, "committed anchor prefix was replaced")
         commit = self._git("rev-parse", "HEAD")
         tree = self._git("rev-parse", "HEAD^{tree}")
         record = HistoryAnchor.create(
@@ -420,6 +405,7 @@ class AuthoritativeResearchHistory:
         self.anchors = anchors
         self.journal = TrialJournal(anchors.journal_path)
         self.holdout = HoldoutLockStore(anchors.holdout_path)
+        self.mutation_lock_path = anchors.anchor_path.parent / f".{anchors.anchor_path.name}.lock"
 
     def reconcile(self) -> HistoryAnchor:
         return self.anchors.reconcile()
@@ -430,10 +416,14 @@ class AuthoritativeResearchHistory:
         *,
         at_utc: datetime,
     ) -> tuple[TrialRecord, TrialRecord]:
-        self.anchors.reconcile_committed()
-        result = self.journal.start(definition, at_utc=at_utc)
-        self.anchors.anchor_mutation(operation=f"TRIAL_STARTED:{definition.trial_id}", at_utc=at_utc)
-        return result
+        with interprocess_file_lock(self.mutation_lock_path):
+            self.anchors.reconcile_committed()
+            result = self.journal.start(definition, at_utc=at_utc)
+            self.anchors.anchor_mutation(
+                operation=f"TRIAL_STARTED:{definition.trial_id}",
+                at_utc=at_utc,
+            )
+            return result
 
     def finish_trial(
         self,
@@ -445,15 +435,16 @@ class AuthoritativeResearchHistory:
         reason: str,
         result_exposed: bool,
     ) -> TrialRecord:
-        self.anchors.reconcile_committed()
-        return self._finish_reconciled(
-            trial_id,
-            state=state,
-            at_utc=at_utc,
-            result_ref=result_ref,
-            reason=reason,
-            result_exposed=result_exposed,
-        )
+        with interprocess_file_lock(self.mutation_lock_path):
+            self.anchors.reconcile_committed()
+            return self._finish_reconciled(
+                trial_id,
+                state=state,
+                at_utc=at_utc,
+                result_ref=result_ref,
+                reason=reason,
+                result_exposed=result_exposed,
+            )
 
     def _finish_reconciled(
         self,
@@ -488,15 +479,16 @@ class AuthoritativeResearchHistory:
     ) -> TrialRecord:
         """Terminalize a reconciled fsynced-but-uncommitted crash extension."""
 
-        self.reconcile()
-        return self._finish_reconciled(
-            trial_id,
-            state=state,
-            at_utc=at_utc,
-            result_ref=result_ref,
-            reason=reason,
-            result_exposed=result_exposed,
-        )
+        with interprocess_file_lock(self.mutation_lock_path):
+            self.reconcile()
+            return self._finish_reconciled(
+                trial_id,
+                state=state,
+                at_utc=at_utc,
+                result_ref=result_ref,
+                reason=reason,
+                result_exposed=result_exposed,
+            )
 
     def consume_holdout(
         self,
@@ -505,15 +497,19 @@ class AuthoritativeResearchHistory:
         exposure_resolver: Any,
         at_utc: datetime,
     ) -> HoldoutEntry:
-        self.anchors.reconcile_committed()
-        mapping = exposure_resolver.require_fresh(exposure, history=self)
-        entry = self.holdout.consume(
-            exposure,
-            journal=self.journal,
-            exposure_resolver=mapping,
-        )
-        self.anchors.anchor_mutation(operation=f"HOLDOUT_CONSUMED:{entry.entry_id}", at_utc=at_utc)
-        return entry
+        with interprocess_file_lock(self.mutation_lock_path):
+            self.anchors.reconcile_committed()
+            mapping = exposure_resolver.require_fresh(exposure, history=self)
+            entry = self.holdout.consume(
+                exposure,
+                journal=self.journal,
+                exposure_resolver=mapping,
+            )
+            self.anchors.anchor_mutation(
+                operation=f"HOLDOUT_CONSUMED:{entry.entry_id}",
+                at_utc=at_utc,
+            )
+            return entry
 
 
 __all__ = ["AuthoritativeResearchHistory", "HistoryAnchor", "HistoryAnchorStore"]

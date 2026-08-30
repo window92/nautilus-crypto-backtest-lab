@@ -1,5 +1,5 @@
-# OWNER_REVIEW_CANDIDATE / PENDING_OWNER_ADOPTION
-# CPython 3.12, Linux x86-64. Base distribution has no mandatory Requires-Dist entries.
+# Active execution dependency lock for the authorized audit-remediation branch.
+# CPython 3.12, Linux x86-64. The distribution has no mandatory Requires-Dist entries.
 --only-binary :all:
 nautilus_trader==2.0.0rc2 \
     --hash=sha256:716169aca15bfb615a27610a9230e670dec5be3d4606fea591fe64eca145a5ac

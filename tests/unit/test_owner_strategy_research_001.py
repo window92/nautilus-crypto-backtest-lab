@@ -16,6 +16,7 @@ from crypto_lab.config import MarketProfile
 from crypto_lab.config import NOT_APPLICABLE
 from crypto_lab.config import SourceRevision
 from crypto_lab.checker import check_evidence_directory
+from crypto_lab.historical_contracts import validate_validator_contract
 from crypto_lab.owner import OwnerWorkflowPurpose
 from crypto_lab.owner import _validate_candidate_order
 from crypto_lab.research import BenchmarkSpec
@@ -45,6 +46,8 @@ from crypto_lab.strategies import momentum_28d
 from crypto_lab.strategies import registered_strategy_identity_matches_frozen_source
 from crypto_lab.strategies import resolve_registered_strategy_identity
 from crypto_lab.strategies import volatility_target_fraction
+from crypto_lab.timestamps import utc_datetime_to_ns
+from crypto_lab.status import FailureCode
 from scripts.validate_owner_smoke_002_replacement_evidence import source_binding_matches
 
 
@@ -115,13 +118,15 @@ class OwnerStrategyResearch001Tests(unittest.TestCase):
             ),
         )
 
-    def test_historical_completed_checker_revalidates_exactly(self) -> None:
+    def test_historical_checker_is_preserved_but_current_checker_revokes_invalid_run(self) -> None:
         root = Path(__file__).resolve().parents[2]
         run_dir = (
             root
             / "runs/owner-strategy-research-001-spot-benchmark-run-ef60cf17606c"
         )
-        persisted = json.loads((run_dir / "checker.json").read_text(encoding="utf-8"))
+        checker_path = run_dir / "checker.json"
+        persisted_bytes = checker_path.read_bytes()
+        persisted = json.loads(persisted_bytes)
         with patch(
             "crypto_lab.checker.verify_source_revision",
             return_value=SimpleNamespace(
@@ -135,7 +140,18 @@ class OwnerStrategyResearch001Tests(unittest.TestCase):
                 official_source_required=True,
                 source_revision_current_head_required=False,
             )
-        self.assertEqual(regenerated.to_builtins(), persisted)
+        self.assertEqual(persisted["outcome"], "CHECK_PASS")
+        self.assertEqual(regenerated.outcome.value, "CHECK_FAIL")
+        self.assertIn(
+            FailureCode.SPOT_SHORT_OR_BORROW_DETECTED.value,
+            regenerated.failure_codes,
+        )
+        self.assertEqual(checker_path.read_bytes(), persisted_bytes)
+        snapshot = validate_validator_contract(
+            "validate_owner_strategy_research_001_evidence.py",
+            repository_root=root,
+        )
+        self.assertTrue(snapshot.acceptable, snapshot.to_builtins())
 
     def test_exact_momentum_golden_and_29_close_requirement(self) -> None:
         closes = tuple(Decimal(100 + index) for index in range(29))
@@ -171,7 +187,7 @@ class OwnerStrategyResearch001Tests(unittest.TestCase):
             annualized_realized_volatility_28d((Decimal(1),) * 28 + (Decimal("NaN"),))
 
     def test_monday_schedule_and_increment_floor_are_exact(self) -> None:
-        monday = int(datetime(2021, 2, 1, tzinfo=UTC).timestamp() * 1_000_000_000)
+        monday = utc_datetime_to_ns(datetime(2021, 2, 1, tzinfo=UTC))
         self.assertTrue(is_monday_utc_boundary(monday))
         self.assertFalse(is_monday_utc_boundary(monday + DAY_NS))
         self.assertFalse(is_monday_utc_boundary(monday + 1))

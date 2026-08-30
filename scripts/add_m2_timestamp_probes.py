@@ -19,12 +19,12 @@ if str(ROOT) not in sys.path:
 
 from crypto_lab.config import MarketProfile
 from crypto_lab.data import AcquisitionRequest
-from crypto_lab.data import NOT_APPLICABLE
 from crypto_lab.data import OfficialBinanceAcquirer
 from crypto_lab.data import RawObjectStore
 from crypto_lab.data import SourceRole
 from crypto_lab.data import TimeRange
 from crypto_lab.hashing import canonical_json_bytes
+from crypto_lab.timestamps import unix_ns_to_utc_datetime
 
 
 SOURCE_DIR = Path(os.environ.get("M2_SOURCE_DIR", ""))
@@ -79,7 +79,7 @@ def main() -> int:
         )
         record, _ = acquirer.acquire(
             request,
-            acquired_at_utc=datetime.fromtimestamp(path.stat().st_mtime, tz=UTC),
+            acquired_at_utc=unix_ns_to_utc_datetime(path.stat().st_mtime_ns),
         )
         records[item["name"]] = record
         responses[item["name"]] = json.loads(store.read_bytes(record.sha256))

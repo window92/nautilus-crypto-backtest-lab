@@ -6,10 +6,35 @@ bar-based cryptocurrency backtests on official Binance data. NautilusTrader
 positions, accounts, portfolio state, PnL, fees, funding settlement, and mark
 valuation.
 
-The V1 release is functionally complete for the two locked BTCUSDT profiles
-below. Its final pressure test passed 294 unique tests, six mechanical runs, and
-six fresh-process deterministic replays. That proves the laboratory contract,
-not future profitability.
+The repository is currently at `1.0.1.dev0`, an authorized audit-remediation
+candidate for the two locked BTCUSDT profiles below. A post-release audit found
+that the V1 checker could accept unreconciled Spot CASH activity, engine data
+beyond the scoring boundary, incompletely attested runtime files, and
+insufficiently bound Perpetual funding. The affected historical financial
+results and replays are retained byte-for-byte but are `REVOKED` /
+`INVALIDATED`; they must not be used as accepted financial evidence.
+
+The recorded V1 test results remain historical facts about the old contract,
+not proof under the repaired contract. Current remediation status, contracts,
+and validation rules are described in
+[docs/AUDIT_REMEDIATION.md](docs/AUDIT_REMEDIATION.md). Nothing in this branch
+authorizes Final Holdout use, a profitability claim, or live trading.
+
+## Merge-history safety
+
+> [!CAUTION]
+> **DO NOT SQUASH OR REBASE.** Pull Request #1 must be merged with GitHub's
+> **Create a merge commit** option only.
+
+Historical report validation recovers the exact `research/trials.jsonl` and
+`research/history_anchors.jsonl` snapshots from each report-addition commit.
+A normal merge commit retains those commits and their object IDs as ancestors.
+Squash merge discards that ancestry, while rebase merge replaces the commit
+IDs; either method can make the historical report snapshot checks fail closed.
+Historical SourceRevision verification requires every frozen source commit to
+remain an ancestor of the current `HEAD`; a normal merge satisfies that rule,
+whereas squash or rebase does not.
+Do not delete, rewrite, or reorder the historical report or Evidence commits.
 
 ## Supported V1 scope
 
@@ -184,7 +209,9 @@ The supported public entry point is the strict Owner Workflow. It deliberately
 has no material defaults: first create and review an `OwnerWorkflowInput` JSON
 with a registered strategy, frozen protocol, new trial/run identities, accepted
 DatasetRelease, and qualified profile. Then run from a clean commit whose
-`HEAD` equals `origin/main`:
+`HEAD` equals the matching published remote branch tip (for example
+`origin/fix/comprehensive-audit-remediation` during review, or `origin/main`
+after an Owner-approved merge):
 
 ```bash
 OWNER_INPUT=/tmp/strict-owner-workflow.json
@@ -229,18 +256,32 @@ PY
 
 ## Results and reports
 
+The pre-remediation V1 reports are preserved for audit history. Their affected
+financial Run results are not accepted. The three additive status registries
+under `evidence/audit/comprehensive-remediation-001/` are authoritative for
+revocation and supersession; they do not edit the original Run directories.
+
+The mechanically accepted replacement evidence is the Development-only
+`comprehensive-audit-remediation-003` epoch. Its six primary Runs and six
+fresh-process replays are bound by
+`evidence/audit/comprehensive-remediation-001/final-research-validation.json`.
+Every report remains `INELIGIBLE` for a real profitability claim, Final Holdout
+was not used, and the Holdout lock remains empty. See
+[docs/AUDIT_REMEDIATION.md](docs/AUDIT_REMEDIATION.md) for exact Run, replay,
+report, qualification, and revocation identities.
+
 - Trial JSON/Markdown reports: `research/reports/`.
 - Immutable run evidence: `runs/` and `runs/replays/`.
-- Final Owner research report:
+- Historical Owner research report:
   [evidence/research/owner-strategy-research-001/owner-report/README.md](evidence/research/owner-strategy-research-001/owner-report/README.md).
-- Final mechanical integrity report:
+- Historical mechanical integrity report:
   [evidence/research/owner-strategy-research-001/mechanical-integrity/README.md](evidence/research/owner-strategy-research-001/mechanical-integrity/README.md).
 - Data repair report:
   [evidence/repair/instrument-representation-funding-checker-001/owner-report/README.md](evidence/repair/instrument-representation-funding-checker-001/owner-report/README.md).
 
 Open any `README.md` directly in GitHub, or serve the repository through your
-normal authenticated GitHub browser session. Historical failed and blocked
-attempts remain part of the evidence and are not rewritten.
+normal authenticated GitHub browser session. Historical failed, blocked, and
+now-revoked attempts remain part of the evidence and are never rewritten.
 
 ## Simulation limits and disclaimer
 

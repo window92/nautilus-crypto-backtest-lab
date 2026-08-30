@@ -10,13 +10,13 @@ import io
 import json
 import subprocess
 import zipfile
-from datetime import UTC
-from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
 import duckdb
+
+from crypto_lab.timestamps import unix_ms_to_utc_datetime
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -65,7 +65,7 @@ def write_json(relative: str, value: Any) -> None:
 
 
 def utc_ms(value: int) -> str:
-    return datetime.fromtimestamp(value / 1000, UTC).isoformat().replace("+00:00", "Z")
+    return unix_ms_to_utc_datetime(value).isoformat().replace("+00:00", "Z")
 
 
 def normalize(value: Any) -> Any:

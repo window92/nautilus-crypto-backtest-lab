@@ -124,6 +124,14 @@ class M3ContractTests(unittest.TestCase):
             )
             self.assertEqual(inputs.strategy_spec.parameters["run_purpose"], "QUALIFICATION")
             self.assertEqual(inputs.strategy_spec.parameters["result_dependent_branching"], "false")
+        self.assertEqual(
+            spot.strategy_spec.parameters["spot_buy_sizing_mode"],
+            "QUOTE_NOTIONAL_FROM_COMPLETED_SIGNAL_CLOSE",
+        )
+        self.assertEqual(
+            perpetual.strategy_spec.parameters["spot_buy_sizing_mode"],
+            "NOT_APPLICABLE",
+        )
 
     def test_registry_is_strict_content_addressed_and_has_exactly_two_profiles(self) -> None:
         spot = qualified_record(MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY, "2")

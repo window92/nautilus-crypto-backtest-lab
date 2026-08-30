@@ -6,13 +6,11 @@ import os
 import tempfile
 import json
 from dataclasses import fields
-from datetime import UTC
 from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
-from crypto_lab.config import NOT_APPLICABLE
 from crypto_lab.config import LabRunConfig
 from crypto_lab.config import StrictModel
 from crypto_lab.config import _require_sha256
@@ -29,6 +27,9 @@ from crypto_lab.research import ResearchProtocol
 from crypto_lab.research import ResamplingMethod
 from crypto_lab.research import SampleAdequacy
 from crypto_lab.research import evaluate_sample_adequacy
+from crypto_lab.status import FailureCode
+from crypto_lab.timestamps import unix_ns_to_utc_datetime
+from crypto_lab.timestamps import utc_datetime_to_ns
 
 
 SUPPORTED_RESEARCH_STRATEGY_FAMILIES = {
@@ -64,7 +65,7 @@ class BenchmarkEvidence(StrictModel):
 
     def __post_init__(self) -> None:
         if self.schema_version != 1:
-            raise ResearchError("EVIDENCE_INCOMPLETE", "invalid benchmark evidence schema")
+            raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "invalid benchmark evidence schema")
         for name in (
             "benchmark_evidence_id",
             "protocol_id",
@@ -77,9 +78,9 @@ class BenchmarkEvidence(StrictModel):
         ):
             _require_sha256(getattr(self, name), f"benchmark.{name}")
         if not self.total_return.is_finite() or self.final_holdout_used:
-            raise ResearchError("EVIDENCE_INCOMPLETE", "benchmark return/holdout status is invalid")
+            raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "benchmark return/holdout status is invalid")
         if canonical_sha256(self.material_payload()) != self.benchmark_evidence_id:
-            raise ResearchError("EVIDENCE_INCOMPLETE", "benchmark evidence identity mismatch")
+            raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "benchmark evidence identity mismatch")
 
     def material_payload(self) -> dict[str, Any]:
         return {
@@ -113,21 +114,21 @@ class DiagnosticResolution(StrictModel):
 
     def __post_init__(self) -> None:
         if self.schema_version != 1:
-            raise ResearchError("EVIDENCE_INCOMPLETE", "invalid diagnostic resolution schema")
+            raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "invalid diagnostic resolution schema")
         _require_sha256(self.diagnostic_resolution_id, "diagnostic_resolution.id")
         _require_sha256(self.protocol_id, "diagnostic_resolution.protocol_id")
         if not self.run_id:
-            raise ResearchError("EVIDENCE_INCOMPLETE", "diagnostic run_id is required")
+            raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "diagnostic run_id is required")
         for digest in self.run_evidence_hashes.values():
             _require_sha256(digest, "diagnostic_resolution.run_evidence_hashes")
         if self.native_completed_trades_status not in {"AVAILABLE", "UNAVAILABLE"}:
-            raise ResearchError("EVIDENCE_INCOMPLETE", "unknown native trade status")
+            raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "unknown native trade status")
         if self.performance_diagnostics_status not in {"COMPLETE", "INCOMPLETE"}:
-            raise ResearchError("EVIDENCE_INCOMPLETE", "unknown performance diagnostic status")
+            raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "unknown performance diagnostic status")
         if self.benchmark_status not in {"COMPLETE", "MISSING"}:
-            raise ResearchError("EVIDENCE_INCOMPLETE", "unknown benchmark status")
+            raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "unknown benchmark status")
         if canonical_sha256(self.material_payload()) != self.diagnostic_resolution_id:
-            raise ResearchError("EVIDENCE_INCOMPLETE", "diagnostic resolution identity mismatch")
+            raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "diagnostic resolution identity mismatch")
 
     def material_payload(self) -> dict[str, Any]:
         return {
@@ -169,10 +170,9 @@ def _completed_trade_series(
     if schema == "nautilus-native-completed-trades-v2":
         sequence = NativeCompletedPositionSequence.from_json_bytes(path.read_bytes())
         if sequence.source_run_id != expected_run_id:
-            raise ResearchError("EVIDENCE_INCOMPLETE", "native completed sequence Run mismatch")
+            raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "native completed sequence Run mismatch")
         if sequence.settlement_currency != settlement_currency:
-            raise ResearchError(
-                "EVIDENCE_INCOMPLETE",
+            raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE,
                 "native completed sequence settlement currency mismatch",
             )
         return CompletedTradeSeries(
@@ -192,7 +192,7 @@ def _completed_trade_series(
         or payload.get("project_trade_pairing_used") is not False
         or payload.get("status") != "UNAVAILABLE"
     ):
-        raise ResearchError("EVIDENCE_INCOMPLETE", "native completed-trade evidence is invalid")
+        raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "native completed-trade evidence is invalid")
     return CompletedTradeSeries(
         source="NAUTILUS_NATIVE_COMPLETED_TRADES",
         evidence_sha256=sha256_file(path),
@@ -208,14 +208,14 @@ def _completed_trade_series(
 
 def _money_total(items: Any, currency: str) -> Decimal:
     if not isinstance(items, list):
-        raise ResearchError("EVIDENCE_INCOMPLETE", "native snapshot money list is invalid")
+        raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "native snapshot money list is invalid")
     total = Decimal(0)
     for item in items:
         if not isinstance(item, dict) or set(item) != {"amount", "currency"}:
-            raise ResearchError("EVIDENCE_INCOMPLETE", "native snapshot money value is invalid")
+            raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "native snapshot money value is invalid")
         amount = Decimal(str(item["amount"]))
         if not amount.is_finite():
-            raise ResearchError("EVIDENCE_INCOMPLETE", "native snapshot money is non-finite")
+            raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "native snapshot money is non-finite")
         if item["currency"] == currency:
             total += amount
     return total
@@ -228,7 +228,7 @@ def _load_benchmark_evidence(
 ) -> tuple[BenchmarkEvidence, Path]:
     path = Path(benchmark_directory) / f"{protocol.required_benchmark.benchmark_id}.json"
     if not path.is_file():
-        raise ResearchError("EVIDENCE_INCOMPLETE", "frozen benchmark evidence is missing")
+        raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "frozen benchmark evidence is missing")
     value = BenchmarkEvidence.from_json_bytes(path.read_bytes())
     benchmark = protocol.required_benchmark
     if (
@@ -241,10 +241,10 @@ def _load_benchmark_evidence(
         or value.scoring_end_exclusive != benchmark.scored_interval.end_exclusive
         or value.cost_basis != benchmark.cost_basis
     ):
-        raise ResearchError("EVIDENCE_INCOMPLETE", "benchmark evidence binding mismatch")
+        raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "benchmark evidence binding mismatch")
     performance_path = path.parent.parent / "performance" / f"{value.source_run_id}.json"
     if not performance_path.is_file() or sha256_file(performance_path) != value.performance_evidence_sha256:
-        raise ResearchError("EVIDENCE_INCOMPLETE", "benchmark performance binding is stale")
+        raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "benchmark performance binding is stale")
     performance = PerformanceDiagnostics.from_json_bytes(performance_path.read_bytes())
     if (
         performance.diagnostics_id != value.performance_diagnostics_id
@@ -252,7 +252,7 @@ def _load_benchmark_evidence(
         or performance.total_return.status == "UNDEFINED"
         or Decimal(str(performance.total_return.value)) != value.total_return
     ):
-        raise ResearchError("EVIDENCE_INCOMPLETE", "benchmark total return is stale")
+        raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "benchmark total return is stale")
     return value, path
 
 
@@ -281,7 +281,7 @@ def derive_benchmark_evidence(
         or performance.run_id != config.run_id
         or performance.total_return.status == "UNDEFINED"
     ):
-        raise ResearchError("EVIDENCE_INCOMPLETE", "benchmark Run is not the frozen benchmark")
+        raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "benchmark Run is not the frozen benchmark")
     return BenchmarkEvidence.create(
         benchmark_id=benchmark.benchmark_id,
         protocol_id=protocol.protocol_id,
@@ -333,12 +333,11 @@ def derive_performance_diagnostics(
     run_dir = Path(run_dir)
     config = LabRunConfig.from_json_bytes((run_dir / "lab_run_config.json").read_bytes())
     if config.research_protocol_id != protocol.protocol_id:
-        raise ResearchError("EVIDENCE_INCOMPLETE", "performance protocol binding mismatch")
+        raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "performance protocol binding mismatch")
     spec = json.loads((run_dir / "strategy_spec.json").read_text(encoding="utf-8"))
     strategy_family = spec.get("parameters", {}).get("strategy_family")
     if strategy_family not in SUPPORTED_RESEARCH_STRATEGY_FAMILIES:
-        raise ResearchError(
-            "EVIDENCE_INCOMPLETE",
+        raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE,
             "performance resolver does not recognize the registered research family",
         )
     snapshot_path = run_dir / "native_portfolio_snapshots.jsonl"
@@ -346,7 +345,7 @@ def derive_performance_diagnostics(
     completed_path = run_dir / "native_completed_trades.json"
     for path in (snapshot_path, statistics_path, completed_path):
         if not path.is_file():
-            raise ResearchError("EVIDENCE_INCOMPLETE", f"missing {path.name}")
+            raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, f"missing {path.name}")
     snapshots = [
         json.loads(line)
         for line in snapshot_path.read_text(encoding="utf-8").splitlines()
@@ -354,8 +353,8 @@ def derive_performance_diagnostics(
     ]
     by_timestamp: dict[int, Decimal] = {}
     currency = config.initial_capital.currency
-    scored_start_ns = int(config.scoring_start.timestamp() * 1_000_000_000)
-    scoring_end_ns = int(config.scoring_end_exclusive.timestamp() * 1_000_000_000)
+    scored_start_ns = utc_datetime_to_ns(config.scoring_start)
+    scoring_end_ns = utc_datetime_to_ns(config.scoring_end_exclusive)
     for row in snapshots:
         if (
             not isinstance(row, dict)
@@ -364,7 +363,7 @@ def derive_performance_diagnostics(
             or row.get("stale_instruments")
             or row.get("unpriced_instruments")
         ):
-            raise ResearchError("EVIDENCE_INCOMPLETE", "native portfolio snapshot is stale or malformed")
+            raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "native portfolio snapshot is stale or malformed")
         timestamp = int(row["ts_event"])
         if scored_start_ns <= timestamp <= scoring_end_ns:
             # SSOT fallback Equity path: the frozen Initial Capital plus the
@@ -380,13 +379,12 @@ def derive_performance_diagnostics(
         or min(by_timestamp) != scored_start_ns
         or max(by_timestamp) != scoring_end_ns
     ):
-        raise ResearchError(
-            "EVIDENCE_INCOMPLETE",
+        raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE,
             "native Equity snapshots do not cover both scoring boundaries",
         )
     observations = tuple(
         EquityObservation(
-            timestamp=datetime.fromtimestamp(timestamp / 1_000_000_000, tz=UTC),
+            timestamp=unix_ns_to_utc_datetime(timestamp),
             equity=equity,
         )
         for timestamp, equity in sorted(by_timestamp.items())
@@ -467,8 +465,7 @@ def derive_diagnostic_resolution(
     run_dir = Path(run_dir)
     missing = [name for name in _RUN_DIAGNOSTIC_INPUTS if not (run_dir / name).is_file()]
     if missing:
-        raise ResearchError(
-            "EVIDENCE_INCOMPLETE",
+        raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE,
             "diagnostic Run inputs are incomplete: " + ",".join(missing),
         )
     config = LabRunConfig.from_json_bytes((run_dir / "lab_run_config.json").read_bytes())
@@ -600,8 +597,7 @@ def reconcile_diagnostic_resolution(
         benchmark_directory=benchmark_directory,
     )
     if persisted != derived:
-        raise ResearchError(
-            "EVIDENCE_INCOMPLETE",
+        raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE,
             "diagnostics/metrics/trades/Monte Carlo/benchmark evidence is stale or forged",
         )
     return persisted

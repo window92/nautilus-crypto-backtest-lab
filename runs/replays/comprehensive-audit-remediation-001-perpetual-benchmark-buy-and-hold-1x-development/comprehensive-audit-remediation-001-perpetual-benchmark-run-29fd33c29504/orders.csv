@@ -1,0 +1,2 @@
+client_order_id,instrument_id,side,order_type,time_in_force,quantity,filled_qty,leaves_qty,status,initialized_ns,terminal_ns
+O-20210201-000100-001-140726797335328-1,BTCUSDT-PERP.BINANCE,BUY,MARKET,GTC,0.302,0.302,0.000,FILLED,1612137660000000000,1612137720000000000

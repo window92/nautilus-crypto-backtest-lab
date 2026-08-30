@@ -16,7 +16,6 @@ from pathlib import Path
 from xml.sax.saxutils import escape
 
 from crypto_lab.checker import check_evidence_directory
-from crypto_lab.config import MarketProfile
 from crypto_lab.diagnostics import derive_performance_diagnostics
 from crypto_lab.exposure import AuthoritativeExposureResolver
 from crypto_lab.hashing import canonical_json_bytes
@@ -32,6 +31,7 @@ from crypto_lab.research import ResultExposure
 from crypto_lab.research import TrialState
 from crypto_lab.research import UtcInterval
 from crypto_lab.reporting import PerformanceDiagnostics
+from crypto_lab.timestamps import utc_datetime_to_ns
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -304,8 +304,12 @@ def _line_svg(
 
 
 def _position_svg(view: dict, source_sha256: str) -> str:
-    start_ns = int(datetime.fromisoformat(view["config"]["scoring_start"].replace("Z", "+00:00")).timestamp() * 1e9)
-    end_ns = int(datetime.fromisoformat(view["config"]["scoring_end_exclusive"].replace("Z", "+00:00")).timestamp() * 1e9)
+    start_ns = utc_datetime_to_ns(
+        datetime.fromisoformat(view["config"]["scoring_start"].replace("Z", "+00:00")),
+    )
+    end_ns = utc_datetime_to_ns(
+        datetime.fromisoformat(view["config"]["scoring_end_exclusive"].replace("Z", "+00:00")),
+    )
     points: list[tuple[int, Decimal]] = [(start_ns, Decimal(0))]
     for item in view["native"]["strategy_observations"].get("position_sequence", []):
         timestamp = min(end_ns, max(start_ns, int(item["timestamp_ns"])))
@@ -750,11 +754,11 @@ def main() -> int:
         charts.mkdir()
         for label, view in views.items():
             equity_points = [
-                (int(item.timestamp.timestamp() * 1e9), item.equity)
+                (utc_datetime_to_ns(item.timestamp), item.equity)
                 for item in view["performance"].equity_curve
             ]
             drawdown_points = [
-                (int(item.timestamp.timestamp() * 1e9), item.drawdown)
+                (utc_datetime_to_ns(item.timestamp), item.drawdown)
                 for item in view["performance"].drawdown_curve
             ]
             _write_text(
@@ -783,8 +787,14 @@ def main() -> int:
                 ),
             )
         perp = views["perpetual"]
-        start_ns = int(datetime.fromisoformat(perp["config"]["scoring_start"].replace("Z", "+00:00")).timestamp() * 1e9)
-        end_ns = int(datetime.fromisoformat(perp["config"]["scoring_end_exclusive"].replace("Z", "+00:00")).timestamp() * 1e9)
+        start_ns = utc_datetime_to_ns(
+            datetime.fromisoformat(perp["config"]["scoring_start"].replace("Z", "+00:00")),
+        )
+        end_ns = utc_datetime_to_ns(
+            datetime.fromisoformat(
+                perp["config"]["scoring_end_exclusive"].replace("Z", "+00:00"),
+            ),
+        )
         _write_text(
             charts / "perpetual-fees.svg",
             _line_svg(

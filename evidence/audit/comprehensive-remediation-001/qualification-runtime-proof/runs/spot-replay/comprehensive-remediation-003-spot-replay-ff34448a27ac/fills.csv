@@ -1,0 +1,2 @@
+fill_index,event_id,client_order_id,venue_order_id,trade_id,position_id,account_id,instrument_id,order_side,order_type,last_qty,last_px,commission,currency,liquidity_side,ts_event,ts_init
+0,48ac79a1-aad8-43ca-b9fe-20d06998cf0a,O-20250101-000000-001-140737176158864-1,BINANCE-1-1,T-540ada179c172788-009,BTCUSDT.BINANCE-DataActor-140737176158864,BINANCE-001,BTCUSDT.BINANCE,BUY,MARKET,0.00100,93610.94,0.09361094 USDT,USDT,TAKER,1735689660000000000,1735689660000000000

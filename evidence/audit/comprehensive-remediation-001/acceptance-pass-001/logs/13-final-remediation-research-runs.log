@@ -1,0 +1,200 @@
+$ /home/builder/projects/nautilus-crypto-backtest-lab/.venv/bin/python /home/builder/projects/nautilus-crypto-backtest-lab/scripts/validate_audit_research_runs.py
+exit_code=0
+duration_seconds=86.439408
+
+{
+  "audit_id": "COMPREHENSIVE_AUDIT_REMEDIATION_001",
+  "epoch": "comprehensive-audit-remediation-003",
+  "failures": [],
+  "final_holdout_used": false,
+  "holdout_entry_count": 0,
+  "latest_history_anchor_sha256": "2b4a71f07601de5788d56c511dbf759bdd4eeecdb63fc953a848bc8fcc80e6af",
+  "profitability_claim_authorized": false,
+  "research_family_id": "BTCUSDT_WEEKLY_TSMOM28_V1_AUDIT_REMEDIATION_003",
+  "runs": [
+    {
+      "evidence": [
+        {
+          "checker_outcome": "CHECK_PASS",
+          "reference": "runs/comprehensive-audit-remediation-003-perpetual-benchmark-run-a0e2b2553ed4",
+          "role": "PRIMARY",
+          "runtime_identity_sha256": "f9f4a9ae0f2d4b7a35e943f8a6a5aaa84f32f3afeca8097bc44194e0e3a15263",
+          "semantic_digest": "b6f07040ddb54cd3f5aa4445c952d801641b07d44f455e30aa17cf97c8124897"
+        },
+        {
+          "checker_outcome": "CHECK_PASS",
+          "reference": "runs/replays/comprehensive-audit-remediation-003-perpetual-benchmark-buy-and-hold-1x-development/comprehensive-audit-remediation-003-perpetual-benchmark-run-a0e2b2553ed4",
+          "role": "REPLAY",
+          "runtime_identity_sha256": "f9f4a9ae0f2d4b7a35e943f8a6a5aaa84f32f3afeca8097bc44194e0e3a15263",
+          "semantic_digest": "b6f07040ddb54cd3f5aa4445c952d801641b07d44f455e30aa17cf97c8124897"
+        }
+      ],
+      "funding_native_settlement_count": 542,
+      "funding_no_position_boundary_count": 94,
+      "funding_source_event_count": 636,
+      "market_profile": "BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING",
+      "partition_role": "DEVELOPMENT",
+      "primary_run_ref": "runs/comprehensive-audit-remediation-003-perpetual-benchmark-run-a0e2b2553ed4",
+      "replay_identity": "25f82d464999cdbd5d68609ad829c30f8c72fa6e40ac699fbbeeb42e1830c6ad",
+      "replay_run_ref": "runs/replays/comprehensive-audit-remediation-003-perpetual-benchmark-buy-and-hold-1x-development/comprehensive-audit-remediation-003-perpetual-benchmark-run-a0e2b2553ed4",
+      "report_commit": "81decd646616dd5a6f1adbf29f82e8e466ed9656",
+      "report_id": "0f7be820df1cddfda3aad22248946eb58645fe4d964f7e1e897e765447d66238",
+      "run_id": "comprehensive-audit-remediation-003-perpetual-benchmark-run",
+      "trial_id": "comprehensive-audit-remediation-003-perpetual-benchmark-buy-and-hold-1x-development"
+    },
+    {
+      "evidence": [
+        {
+          "checker_outcome": "CHECK_PASS",
+          "reference": "runs/comprehensive-audit-remediation-003-perpetual-candidate-a-run-5b7c5dba7f8b",
+          "role": "PRIMARY",
+          "runtime_identity_sha256": "f9f4a9ae0f2d4b7a35e943f8a6a5aaa84f32f3afeca8097bc44194e0e3a15263",
+          "semantic_digest": "e96c436955c217632d8174afc460c46fcaf3e77fe59a35a9f6335e457764e623"
+        },
+        {
+          "checker_outcome": "CHECK_PASS",
+          "reference": "runs/replays/comprehensive-audit-remediation-003-perpetual-candidate-a-development/comprehensive-audit-remediation-003-perpetual-candidate-a-run-5b7c5dba7f8b",
+          "role": "REPLAY",
+          "runtime_identity_sha256": "f9f4a9ae0f2d4b7a35e943f8a6a5aaa84f32f3afeca8097bc44194e0e3a15263",
+          "semantic_digest": "e96c436955c217632d8174afc460c46fcaf3e77fe59a35a9f6335e457764e623"
+        }
+      ],
+      "funding_native_settlement_count": 542,
+      "funding_no_position_boundary_count": 94,
+      "funding_source_event_count": 636,
+      "market_profile": "BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING",
+      "partition_role": "DEVELOPMENT",
+      "primary_run_ref": "runs/comprehensive-audit-remediation-003-perpetual-candidate-a-run-5b7c5dba7f8b",
+      "replay_identity": "f777d6a5fccd451a4504bb85f6f9a7fdabaca649a0b3139636bce6bcbb72ff90",
+      "replay_run_ref": "runs/replays/comprehensive-audit-remediation-003-perpetual-candidate-a-development/comprehensive-audit-remediation-003-perpetual-candidate-a-run-5b7c5dba7f8b",
+      "report_commit": "2dfd50378801350408405046c2c08d5dac636211",
+      "report_id": "1f1e8639399b8a8463c38448bb628097139ba2a14da3377ba03570956971b301",
+      "run_id": "comprehensive-audit-remediation-003-perpetual-candidate-a-run",
+      "trial_id": "comprehensive-audit-remediation-003-perpetual-candidate-a-development"
+    },
+    {
+      "evidence": [
+        {
+          "checker_outcome": "CHECK_PASS",
+          "reference": "runs/comprehensive-audit-remediation-003-perpetual-candidate-b-run-85bb3192f559",
+          "role": "PRIMARY",
+          "runtime_identity_sha256": "f9f4a9ae0f2d4b7a35e943f8a6a5aaa84f32f3afeca8097bc44194e0e3a15263",
+          "semantic_digest": "c4fc1f569c831b7c8786e599c1106645015cf670a7c75b97d86d8716665dc142"
+        },
+        {
+          "checker_outcome": "CHECK_PASS",
+          "reference": "runs/replays/comprehensive-audit-remediation-003-perpetual-candidate-b-development/comprehensive-audit-remediation-003-perpetual-candidate-b-run-85bb3192f559",
+          "role": "REPLAY",
+          "runtime_identity_sha256": "f9f4a9ae0f2d4b7a35e943f8a6a5aaa84f32f3afeca8097bc44194e0e3a15263",
+          "semantic_digest": "c4fc1f569c831b7c8786e599c1106645015cf670a7c75b97d86d8716665dc142"
+        }
+      ],
+      "funding_native_settlement_count": 542,
+      "funding_no_position_boundary_count": 94,
+      "funding_source_event_count": 636,
+      "market_profile": "BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING",
+      "partition_role": "DEVELOPMENT",
+      "primary_run_ref": "runs/comprehensive-audit-remediation-003-perpetual-candidate-b-run-85bb3192f559",
+      "replay_identity": "82fa0f2304e41399232d59c8e9c80280136ca9d68e3aca22cdec5f1a7b630aed",
+      "replay_run_ref": "runs/replays/comprehensive-audit-remediation-003-perpetual-candidate-b-development/comprehensive-audit-remediation-003-perpetual-candidate-b-run-85bb3192f559",
+      "report_commit": "ddf55fb2a30fcdbbfa2f76db4101dc9852d6dcd4",
+      "report_id": "320a54dd4452ed9f711ec75878f93f46701d5a52573cdf52fcf9132aa19276fb",
+      "run_id": "comprehensive-audit-remediation-003-perpetual-candidate-b-run",
+      "trial_id": "comprehensive-audit-remediation-003-perpetual-candidate-b-development"
+    },
+    {
+      "evidence": [
+        {
+          "checker_outcome": "CHECK_PASS",
+          "reference": "runs/comprehensive-audit-remediation-003-spot-benchmark-run-d3e25d52686e",
+          "role": "PRIMARY",
+          "runtime_identity_sha256": "f9f4a9ae0f2d4b7a35e943f8a6a5aaa84f32f3afeca8097bc44194e0e3a15263",
+          "semantic_digest": "1b4b48bab4f42a16ee99f13cf9fd555b8f6affe8bb5232d55b83b652a5c64601"
+        },
+        {
+          "checker_outcome": "CHECK_PASS",
+          "reference": "runs/replays/comprehensive-audit-remediation-003-spot-benchmark-buy-and-hold-1x-development/comprehensive-audit-remediation-003-spot-benchmark-run-d3e25d52686e",
+          "role": "REPLAY",
+          "runtime_identity_sha256": "f9f4a9ae0f2d4b7a35e943f8a6a5aaa84f32f3afeca8097bc44194e0e3a15263",
+          "semantic_digest": "1b4b48bab4f42a16ee99f13cf9fd555b8f6affe8bb5232d55b83b652a5c64601"
+        }
+      ],
+      "market_profile": "BINANCE_SPOT_CASH_LONG_ONLY",
+      "partition_role": "DEVELOPMENT",
+      "primary_run_ref": "runs/comprehensive-audit-remediation-003-spot-benchmark-run-d3e25d52686e",
+      "replay_identity": "7edbaaf191ae62638384225452124b53c3d6c18f33f68c40673c75738396bb4f",
+      "replay_run_ref": "runs/replays/comprehensive-audit-remediation-003-spot-benchmark-buy-and-hold-1x-development/comprehensive-audit-remediation-003-spot-benchmark-run-d3e25d52686e",
+      "report_commit": "31467fa24cca6cee3b2f6f9ab2f5d94e5a3e1fb2",
+      "report_id": "36cecb3f692d3fc7f722de5c1f944002d8f4243bd0bf29663f0a210e68f9e7e7",
+      "run_id": "comprehensive-audit-remediation-003-spot-benchmark-run",
+      "spot_reconciled_fill_count": 1,
+      "spot_reconciliation_errors": [],
+      "trial_id": "comprehensive-audit-remediation-003-spot-benchmark-buy-and-hold-1x-development"
+    },
+    {
+      "evidence": [
+        {
+          "checker_outcome": "CHECK_PASS",
+          "reference": "runs/comprehensive-audit-remediation-003-spot-candidate-a-run-253086685e94",
+          "role": "PRIMARY",
+          "runtime_identity_sha256": "f9f4a9ae0f2d4b7a35e943f8a6a5aaa84f32f3afeca8097bc44194e0e3a15263",
+          "semantic_digest": "da8180f05b526dbe025e4a7d720b2add97c4006797604744a0fa6afaa97552af"
+        },
+        {
+          "checker_outcome": "CHECK_PASS",
+          "reference": "runs/replays/comprehensive-audit-remediation-003-spot-candidate-a-development/comprehensive-audit-remediation-003-spot-candidate-a-run-253086685e94",
+          "role": "REPLAY",
+          "runtime_identity_sha256": "f9f4a9ae0f2d4b7a35e943f8a6a5aaa84f32f3afeca8097bc44194e0e3a15263",
+          "semantic_digest": "da8180f05b526dbe025e4a7d720b2add97c4006797604744a0fa6afaa97552af"
+        }
+      ],
+      "market_profile": "BINANCE_SPOT_CASH_LONG_ONLY",
+      "partition_role": "DEVELOPMENT",
+      "primary_run_ref": "runs/comprehensive-audit-remediation-003-spot-candidate-a-run-253086685e94",
+      "replay_identity": "c8cf2837d311a86c93dce89bd5bd4b059ae22527514a48b8504ea13427fbf2da",
+      "replay_run_ref": "runs/replays/comprehensive-audit-remediation-003-spot-candidate-a-development/comprehensive-audit-remediation-003-spot-candidate-a-run-253086685e94",
+      "report_commit": "b4da94a5b8fe9d50f94c37b5764f5a4587660b63",
+      "report_id": "95fbce923d933808c8e86b1fa2e922db99d10317ce9c3f7e452ba37d823c6dda",
+      "run_id": "comprehensive-audit-remediation-003-spot-candidate-a-run",
+      "spot_reconciled_fill_count": 7,
+      "spot_reconciliation_errors": [],
+      "trial_id": "comprehensive-audit-remediation-003-spot-candidate-a-development"
+    },
+    {
+      "evidence": [
+        {
+          "checker_outcome": "CHECK_PASS",
+          "reference": "runs/comprehensive-audit-remediation-003-spot-candidate-b-run-736f07f7755e",
+          "role": "PRIMARY",
+          "runtime_identity_sha256": "f9f4a9ae0f2d4b7a35e943f8a6a5aaa84f32f3afeca8097bc44194e0e3a15263",
+          "semantic_digest": "cc89f2a795f4d30e0faf755ee9cf7ac671fe20f87e6a1ed0da8ee24764180301"
+        },
+        {
+          "checker_outcome": "CHECK_PASS",
+          "reference": "runs/replays/comprehensive-audit-remediation-003-spot-candidate-b-development/comprehensive-audit-remediation-003-spot-candidate-b-run-736f07f7755e",
+          "role": "REPLAY",
+          "runtime_identity_sha256": "f9f4a9ae0f2d4b7a35e943f8a6a5aaa84f32f3afeca8097bc44194e0e3a15263",
+          "semantic_digest": "cc89f2a795f4d30e0faf755ee9cf7ac671fe20f87e6a1ed0da8ee24764180301"
+        }
+      ],
+      "market_profile": "BINANCE_SPOT_CASH_LONG_ONLY",
+      "partition_role": "DEVELOPMENT",
+      "primary_run_ref": "runs/comprehensive-audit-remediation-003-spot-candidate-b-run-736f07f7755e",
+      "replay_identity": "c01743e3b92b024d9f5f5b54b7499bd08a9f7f8cddf2aebb6dc78ca243c2b592",
+      "replay_run_ref": "runs/replays/comprehensive-audit-remediation-003-spot-candidate-b-development/comprehensive-audit-remediation-003-spot-candidate-b-run-736f07f7755e",
+      "report_commit": "19feca4877a8e061f3c236c68fe43e8534365c0d",
+      "report_id": "4b3911b90bb3e2ff6750addb69c7b0e16a06c1fc2c4461a2bf41533b36635004",
+      "run_id": "comprehensive-audit-remediation-003-spot-candidate-b-run",
+      "spot_reconciled_fill_count": 15,
+      "spot_reconciliation_errors": [],
+      "trial_id": "comprehensive-audit-remediation-003-spot-candidate-b-development"
+    }
+  ],
+  "schema": "comprehensive-audit-remediation-research-validation-v1",
+  "source_commit": "1bbf6b09c8690ba7e9afea5460924e7321513f65",
+  "status": "PASS",
+  "validated_evidence_directory_count": 12,
+  "validated_run_count": 6,
+  "validation_identity": "1b88b8e7cc32731b149e04478b86094d5d5abc4692d02d5f7741e2ceab13723b",
+  "workflow_count": 6
+}

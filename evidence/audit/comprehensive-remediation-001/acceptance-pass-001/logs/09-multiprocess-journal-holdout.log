@@ -1,0 +1,14 @@
+$ /home/builder/projects/nautilus-crypto-backtest-lab/.venv/bin/python -m unittest -v tests.unit.test_m4_multiprocess_locking
+exit_code=0
+duration_seconds=0.924762
+
+test_holdout_crash_before_atomic_replace_preserves_head_and_recovers (tests.unit.test_m4_multiprocess_locking.MultiprocessHistoryLockTests.test_holdout_crash_before_atomic_replace_preserves_head_and_recovers) ... ok
+test_nonoverlapping_holdout_updates_are_not_lost (tests.unit.test_m4_multiprocess_locking.MultiprocessHistoryLockTests.test_nonoverlapping_holdout_updates_are_not_lost) ... ok
+test_overlapping_holdout_consumers_have_exactly_one_winner (tests.unit.test_m4_multiprocess_locking.MultiprocessHistoryLockTests.test_overlapping_holdout_consumers_have_exactly_one_winner) ... ok
+test_process_crash_releases_lock_but_partial_state_remains_fail_closed (tests.unit.test_m4_multiprocess_locking.MultiprocessHistoryLockTests.test_process_crash_releases_lock_but_partial_state_remains_fail_closed) ... ok
+test_trial_start_sequence_and_hash_chain_are_atomic_across_processes (tests.unit.test_m4_multiprocess_locking.MultiprocessHistoryLockTests.test_trial_start_sequence_and_hash_chain_are_atomic_across_processes) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.477s
+
+OK

@@ -6,24 +6,34 @@ import csv
 import hashlib
 import json
 import subprocess
+from bisect import bisect_left
+from bisect import bisect_right
 from dataclasses import dataclass
 from decimal import Decimal
 from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
+from nautilus_trader.model import MarkPriceUpdate
+
 from crypto_lab.config import LabRunConfig
 from crypto_lab.config import MarketProfile
+from crypto_lab.config import RuntimeLock
 from crypto_lab.config import SourceRevision
 from crypto_lab.data import DatasetRelease
+from crypto_lab.data import FUNDING_NATIVE_BINDING_RC2_INTERVAL_BOUNDARY
 from crypto_lab.data import FUNDING_NATIVE_BINDING_RC2_EXPLICIT_BOUNDARY_PAIR
+from crypto_lab.data import FUNDING_NATIVE_BINDING_SINGLE
 from crypto_lab.data import HISTORICAL_NORMALIZER_VERSIONS
 from crypto_lab.data import INSTRUMENT_REPAIR_NORMALIZER_VERSION
 from crypto_lab.data import SyntheticQualificationDatasetRelease
 from crypto_lab.hashing import canonical_sha256
 from crypto_lab.hashing import sha256_file
 from crypto_lab.git_identity import verify_source_revision
+from crypto_lab.profile_authority import validate_persisted_profile_authority
+from crypto_lab.runtime import validate_persisted_runtime_identity
 from crypto_lab.status import FailureCode
+from crypto_lab.timestamps import utc_datetime_to_ns
 from crypto_lab.strategies import RegisteredStrategyIdentity
 from crypto_lab.strategies import StrategySpec
 from crypto_lab.strategies import registered_strategy_identity_matches_frozen_source
@@ -101,16 +111,259 @@ def _commission_amount(value: str) -> Decimal:
     return Decimal(amount)
 
 
-def validate_owner_smoke_funding_binding(
+def _account_balance_totals(rows: Any) -> dict[str, Decimal] | None:
+    """Parse persisted native balance snapshots without depending on formatting."""
+
+    if not isinstance(rows, list):
+        return None
+    values: dict[str, Decimal] = {}
+    for row in rows:
+        if not isinstance(row, dict) or not isinstance(row.get("currency"), str):
+            return None
+        currency = str(row["currency"])
+        if currency in values:
+            return None
+        try:
+            values[currency] = Decimal(str(row["total"]).split(" ", maxsplit=1)[0])
+        except Exception:
+            return None
+    return values
+
+
+def validate_spot_cash_reconciliation(
+    *,
+    fills: list[dict[str, str]],
+    account_rows: list[dict[str, str]],
+    position_rows: list[dict[str, str]],
+    instrument_id: str,
+    base_currency: str,
+    quote_currency: str,
+    initial_quote_balance: Decimal,
+) -> tuple[bool, dict[str, Any]]:
+    """Independently prove native CASH Fill/Account/Position consistency.
+
+    This is a read-only invariant projection, not an accounting authority.  It
+    derives the balance change each native Fill must have caused, then requires
+    the persisted native AccountState and Position snapshots to agree exactly.
+    """
+
+    errors: list[str] = []
+    grouped: dict[int, list[dict[str, str]]] = {}
+    for row in account_rows:
+        try:
+            grouped.setdefault(int(row["event_index"]), []).append(row)
+        except Exception:
+            errors.append("ACCOUNT_EVENT_INDEX_INVALID")
+    groups = [grouped[index] for index in sorted(grouped)]
+    if sorted(grouped) != list(range(len(grouped))):
+        errors.append("ACCOUNT_EVENT_SEQUENCE_GAP")
+
+    def balances(rows: list[dict[str, str]], *, initial: bool = False) -> dict[str, Decimal]:
+        result: dict[str, Decimal] = {}
+        for row in rows:
+            currency = row.get("currency", "")
+            try:
+                total = Decimal(row["total"])
+                free = Decimal(row["free"])
+                locked = Decimal(row["locked"])
+            except Exception:
+                errors.append("ACCOUNT_BALANCE_INVALID")
+                continue
+            if currency in result:
+                errors.append("ACCOUNT_CURRENCY_DUPLICATE")
+            if total != free + locked or min(total, free, locked) < 0:
+                errors.append("ACCOUNT_BALANCE_COMPONENT_MISMATCH")
+            if row.get("account_type") != "CASH":
+                errors.append("ACCOUNT_TYPE_NOT_CASH")
+            result[currency] = total
+        allowed = {base_currency, quote_currency}
+        if not set(result).issubset(allowed):
+            errors.append("ACCOUNT_UNEXPECTED_CURRENCY")
+        if quote_currency not in result:
+            errors.append("ACCOUNT_REQUIRED_CURRENCY_MISSING")
+        return result
+
+    def exact_cash_totals(
+        actual: dict[str, Decimal],
+        *,
+        expected_base: Decimal,
+        expected_quote: Decimal,
+    ) -> bool:
+        return bool(
+            actual.get(base_currency, Decimal(0)) == expected_base
+            and actual.get(quote_currency) == expected_quote
+        )
+
+    initial_balances = balances(groups[0], initial=True) if groups else {}
+    expected_base = initial_balances.get(base_currency, Decimal(0))
+    expected_quote = initial_balances.get(quote_currency, Decimal(0))
+    if expected_base != 0 or expected_quote != initial_quote_balance:
+        errors.append("INITIAL_CASH_BALANCE_MISMATCH")
+
+    account_timestamps: list[int] = []
+    for group in groups:
+        try:
+            account_timestamps.append(int(group[0]["ts_event"]))
+        except Exception:
+            errors.append("ACCOUNT_TIMESTAMP_INVALID")
+            account_timestamps.append(-1)
+    if account_timestamps != sorted(account_timestamps):
+        errors.append("ACCOUNT_TIMESTAMP_ORDER_INVALID")
+
+    position_events = [row for row in position_rows if row.get("row_type") != "FINAL_NATIVE_POSITION"]
+    if len(position_events) != len(fills):
+        errors.append("FILL_POSITION_CARDINALITY_MISMATCH")
+    reconciled_fills = 0
+    account_cursor = 1
+    for index, fill in enumerate(fills):
+        try:
+            if fill["instrument_id"] != instrument_id:
+                errors.append("FILL_INSTRUMENT_MISMATCH")
+            quantity = Decimal(fill["last_qty"])
+            price = Decimal(fill["last_px"])
+            commission_text = fill["commission"]
+            commission_amount_text, commission_currency = commission_text.split(" ", maxsplit=1)
+            commission = Decimal(commission_amount_text)
+            if (
+                quantity <= 0
+                or price <= 0
+                or commission < 0
+                or commission_currency != quote_currency
+                or fill.get("currency") != quote_currency
+            ):
+                errors.append("FILL_CURRENCY_OR_AMOUNT_INVALID")
+                continue
+            side = fill["order_side"]
+            notional = quantity * price
+            prior_base = expected_base
+            prior_quote = expected_quote
+            if side == "BUY":
+                expected_base += quantity
+                expected_quote -= notional + commission
+            elif side == "SELL":
+                expected_base -= quantity
+                expected_quote += notional - commission
+            else:
+                errors.append("FILL_SIDE_INVALID")
+                continue
+            if expected_base < 0:
+                errors.append("SPOT_SELL_EXCEEDS_AVAILABLE_BASE")
+            if expected_quote < 0:
+                errors.append("SPOT_BUY_EXCEEDS_AVAILABLE_QUOTE")
+            fill_timestamp = int(fill["ts_event"])
+            account_match = False
+            while account_cursor < len(groups):
+                group = groups[account_cursor]
+                actual = balances(group)
+                account_timestamp = account_timestamps[account_cursor]
+                if account_timestamp > fill_timestamp:
+                    break
+                if account_timestamp < fill_timestamp:
+                    if not exact_cash_totals(
+                        actual,
+                        expected_base=prior_base,
+                        expected_quote=prior_quote,
+                    ):
+                        errors.append("UNBOUND_ACCOUNT_BALANCE_CHANGE")
+                    account_cursor += 1
+                    continue
+                if exact_cash_totals(
+                    actual,
+                    expected_base=expected_base,
+                    expected_quote=expected_quote,
+                ):
+                    account_match = True
+                    account_cursor += 1
+                    break
+                if not exact_cash_totals(
+                    actual,
+                    expected_base=prior_base,
+                    expected_quote=prior_quote,
+                ):
+                    if actual.get(base_currency, Decimal(0)) != expected_base:
+                        errors.append("BASE_BALANCE_DELTA_MISMATCH")
+                    if actual.get(quote_currency) != expected_quote:
+                        errors.append("QUOTE_BALANCE_DELTA_MISMATCH")
+                account_cursor += 1
+            if not account_match:
+                errors.append("FILL_ACCOUNT_BINDING_MISSING")
+                if account_cursor >= len(groups):
+                    errors.append("BASE_BALANCE_DELTA_MISMATCH")
+                    errors.append("QUOTE_BALANCE_DELTA_MISMATCH")
+            if index < len(position_events):
+                position = position_events[index]
+                try:
+                    signed = Decimal(position["signed_qty"])
+                except Exception:
+                    errors.append("POSITION_QUANTITY_INVALID")
+                else:
+                    if (
+                        position.get("instrument_id") != instrument_id
+                        or int(position.get("ts_event", -1)) != int(fill["ts_event"])
+                        or signed != expected_base
+                    ):
+                        errors.append("FILL_POSITION_DELTA_MISMATCH")
+            if account_match:
+                reconciled_fills += 1
+        except Exception:
+            errors.append("FILL_RECONCILIATION_MALFORMED")
+
+    while account_cursor < len(groups):
+        actual = balances(groups[account_cursor])
+        if not exact_cash_totals(
+            actual,
+            expected_base=expected_base,
+            expected_quote=expected_quote,
+        ):
+            errors.append("UNBOUND_ACCOUNT_BALANCE_CHANGE")
+        account_cursor += 1
+
+    final_positions = [row for row in position_rows if row.get("row_type") == "FINAL_NATIVE_POSITION"]
+    final_signed = Decimal(0)
+    for row in final_positions:
+        try:
+            quantity = Decimal(row["quantity"])
+            if row.get("side") == "LONG":
+                final_signed += quantity
+            elif row.get("side") == "SHORT":
+                final_signed -= quantity
+            elif quantity != 0:
+                errors.append("FINAL_POSITION_SIDE_INVALID")
+        except Exception:
+            errors.append("FINAL_POSITION_QUANTITY_INVALID")
+    if final_signed != expected_base:
+        errors.append("FINAL_POSITION_BALANCE_MISMATCH")
+
+    unique_errors = tuple(dict.fromkeys(errors))
+    return (
+        not unique_errors,
+        {
+            "errors": list(unique_errors),
+            "fill_count": len(fills),
+            "reconciled_fill_count": reconciled_fills,
+            "account_event_count": len(groups),
+            "position_event_count": len(position_events),
+            "base_currency": base_currency,
+            "quote_currency": quote_currency,
+            "expected_terminal_base": str(expected_base),
+            "expected_terminal_quote": str(expected_quote),
+            "native_financial_state_mutated_by_checker": False,
+        },
+    )
+
+
+def validate_official_funding_binding(
     *,
     source_events: list[dict[str, Any]],
+    mark_source_events: list[dict[str, Any]],
+    position_rows: list[dict[str, str]],
     checkpoints: list[dict[str, Any]],
     funding_rows: list[dict[str, str]],
     dataset_contract: dict[str, Any],
     instrument_id: str,
     max_mark_staleness_ns: int = MAX_FUNDING_MARK_STALENESS_NS,
 ) -> tuple[bool, tuple[str, ...], dict[str, Any]]:
-    """Validate source-event, runtime-update and native-settlement cardinality.
+    """Validate exact source/runtime/position/mark/account settlement binding.
 
     Two identical pinned-runtime updates are transport/binding events for one
     official source event.  Financial cardinality is counted only from native
@@ -130,8 +383,43 @@ def validate_owner_smoke_funding_binding(
             continue
         if boundary in source_by_boundary or event_key in source_keys:
             failures.append(FailureCode.FUNDING_AMBIGUOUS.value)
+        if item.get("instrument_id") != instrument_id:
+            failures.append(FailureCode.FUNDING_AMBIGUOUS.value)
         source_by_boundary[boundary] = item
         source_keys.add(event_key)
+
+    mark_by_timestamp: dict[int, dict[str, Any]] = {}
+    for item in mark_source_events:
+        try:
+            timestamp = int(item["ts_event"])
+            Decimal(str(item["value"]))
+        except Exception:
+            failures.append(FailureCode.MARK_ROLE_INVALID.value)
+            continue
+        if (
+            item.get("instrument_id") != instrument_id
+            or int(item.get("ts_init", -1)) != timestamp
+            or timestamp in mark_by_timestamp
+        ):
+            failures.append(FailureCode.MARK_ROLE_INVALID.value)
+        mark_by_timestamp[timestamp] = item
+    mark_timestamps = sorted(mark_by_timestamp)
+
+    source_positions: list[tuple[int, int, Decimal]] = []
+    for sequence, row in enumerate(position_rows):
+        if row.get("row_type") == "FINAL_NATIVE_POSITION":
+            continue
+        try:
+            timestamp = int(row["ts_event"])
+            signed_qty = Decimal(str(row["signed_qty"]))
+        except Exception:
+            failures.append(FailureCode.FUNDING_AMBIGUOUS.value)
+            continue
+        if row.get("instrument_id") != instrument_id:
+            failures.append(FailureCode.FUNDING_AMBIGUOUS.value)
+        source_positions.append((timestamp, sequence, signed_qty))
+    source_positions.sort()
+    position_timestamps = [item[0] for item in source_positions]
 
     checkpoint_by_boundary: dict[int, dict[str, Any]] = {}
     for item in checkpoints:
@@ -144,12 +432,28 @@ def validate_owner_smoke_funding_binding(
             failures.append(FailureCode.FUNDING_DOUBLE_COUNT.value)
         checkpoint_by_boundary[boundary] = item
 
+    declared_source_count = int(
+        dataset_contract.get(
+            "execution_funding_source_event_count",
+            dataset_contract.get("funding_source_event_count", -1),
+        ),
+    )
+    declared_runtime_count = int(
+        dataset_contract.get(
+            "execution_funding_runtime_update_count",
+            dataset_contract.get("funding_runtime_update_count", -1),
+        ),
+    )
+    native_binding = dataset_contract.get("funding_native_binding")
+    repetitions = {
+        FUNDING_NATIVE_BINDING_SINGLE: 1,
+        FUNDING_NATIVE_BINDING_RC2_INTERVAL_BOUNDARY: 2,
+        FUNDING_NATIVE_BINDING_RC2_EXPLICIT_BOUNDARY_PAIR: 2,
+    }.get(native_binding)
     if (
-        dataset_contract.get("funding_native_binding")
-        != FUNDING_NATIVE_BINDING_RC2_EXPLICIT_BOUNDARY_PAIR
-        or int(dataset_contract.get("funding_source_event_count", -1)) != len(source_events)
-        or int(dataset_contract.get("funding_runtime_update_count", -1))
-        != 2 * len(source_events)
+        repetitions is None
+        or declared_source_count != len(source_events)
+        or declared_runtime_count != repetitions * len(source_events)
         or set(source_by_boundary) != set(checkpoint_by_boundary)
     ):
         failures.append(FailureCode.FUNDING_AMBIGUOUS.value)
@@ -164,14 +468,22 @@ def validate_owner_smoke_funding_binding(
             continue
         runtime_updates = checkpoint.get("runtime_updates_at_boundary", [])
         rate = Decimal(str(source_event["funding_rate"]))
+        expected_next_funding_ns = (
+            boundary
+            if native_binding == FUNDING_NATIVE_BINDING_RC2_EXPLICIT_BOUNDARY_PAIR
+            else None
+        )
         runtime_pair_ok = bool(
-            len(runtime_updates) == 2
+            repetitions is not None
+            and len(runtime_updates) == repetitions
             and checkpoint.get("source_event_key") == source_event["event_key"]
             and all(
                 Decimal(str(item.get("rate"))) == rate
+                and int(item.get("interval", -1))
+                == int(source_event["funding_interval_hours"]) * 60
                 and int(item.get("ts_event", -1)) == boundary
                 and int(item.get("ts_init", -1)) == boundary
-                and int(item.get("next_funding_ns", -1)) == boundary
+                and item.get("next_funding_ns") == expected_next_funding_ns
                 for item in runtime_updates
             )
         )
@@ -189,15 +501,74 @@ def validate_owner_smoke_funding_binding(
         ):
             failures.append(FailureCode.FUNDING_AMBIGUOUS.value)
             continue
-        if not positions:
+        position_index = bisect_left(position_timestamps, boundary) - 1
+        expected_signed_qty = (
+            Decimal(0)
+            if position_index < 0
+            else source_positions[position_index][2]
+        )
+        checkpoint_signed_qty = Decimal(0)
+        if positions:
+            try:
+                checkpoint_signed_qty = Decimal(str(positions[0]["signed_qty"]))
+            except Exception:
+                failures.append(FailureCode.FUNDING_AMBIGUOUS.value)
+                continue
+        checkpoint_position_ok = not (
+            checkpoint_signed_qty != expected_signed_qty
+            or (
+                positions
+                and (
+                    positions[0].get("instrument_id") != instrument_id
+                    or int(positions[0].get("ts_last", boundary)) >= boundary
+                )
+            )
+        )
+        if expected_signed_qty == 0:
             no_position += 1
-            if native:
+        else:
+            applicable += 1
+        if not checkpoint_position_ok:
+            failures.append(FailureCode.FUNDING_AMBIGUOUS.value)
+            continue
+        if expected_signed_qty == 0:
+            if positions or native:
                 failures.append(FailureCode.FUNDING_DOUBLE_COUNT.value)
+            if checkpoint.get("account_events_at_boundary"):
+                failures.append(FailureCode.FUNDING_DOUBLE_COUNT.value)
+            before_totals = _account_balance_totals(
+                checkpoint.get("account_balances_before_boundary"),
+            )
+            after_totals = _account_balance_totals(
+                checkpoint.get("account_balances_after_boundary"),
+            )
+            # The pinned engine creates its initial AccountState lazily when
+            # the first data batch is processed.  At a first-event funding
+            # boundary, an empty pre-boundary cache and unchanged configured
+            # opening balances after the batch are initialization, not a
+            # settlement.  The absence of a native adjustment, funding row,
+            # and boundary AccountState remains mandatory and is cross-checked
+            # below.
+            lazy_initialization = before_totals == {} and bool(after_totals)
+            if (
+                before_totals is None
+                or after_totals is None
+                or (not lazy_initialization and before_totals != after_totals)
+            ):
+                failures.append(FailureCode.FUNDING_AMBIGUOUS.value)
             continue
 
-        applicable += 1
         mark = checkpoint.get("native_mark_price")
-        if not isinstance(mark, dict) or mark.get("instrument_id") != instrument_id:
+        mark_index = bisect_right(mark_timestamps, boundary) - 1
+        expected_mark = None if mark_index < 0 else mark_by_timestamp[mark_timestamps[mark_index]]
+        if (
+            not isinstance(mark, dict)
+            or expected_mark is None
+            or mark.get("instrument_id") != instrument_id
+            or int(mark.get("ts_event", -1)) != int(expected_mark["ts_event"])
+            or int(mark.get("ts_init", -1)) != int(expected_mark["ts_init"])
+            or Decimal(str(mark.get("value"))) != Decimal(str(expected_mark["value"]))
+        ):
             failures.append(FailureCode.MARK_ROLE_INVALID.value)
             continue
         mark_ts = int(mark.get("ts_event", -1))
@@ -214,29 +585,77 @@ def validate_owner_smoke_funding_binding(
             failures.append(FailureCode.MARK_ROLE_INVALID.value)
             continue
 
-        signed_qty = Decimal(str(positions[0]["signed_qty"]))
         expected = (
-            -signed_qty * Decimal(str(mark["value"])) * rate
+            -expected_signed_qty * Decimal(str(mark["value"])) * rate
         ).quantize(Decimal("0.00000001"))
         if len(native) != 1:
             failures.append(FailureCode.FUNDING_DOUBLE_COUNT.value)
             continue
         adjustment = native[0]
+        instrument_contract = dataset_contract.get("instrument")
+        settlement_currency = (
+            None
+            if not isinstance(instrument_contract, dict)
+            else instrument_contract.get("settlement_currency")
+        )
+        adjustment_money = str(adjustment.get("pnl_change", "")).split(" ", maxsplit=1)
+        account_events = checkpoint.get("account_events_at_boundary")
         if not (
             adjustment.get("adjustment_type") == "FUNDING"
+            and adjustment.get("instrument_id") == instrument_id
             and int(adjustment.get("ts_event", -1)) == boundary
             and _commission_amount(str(adjustment.get("pnl_change"))) == expected
+            and len(adjustment_money) == 2
+            and adjustment_money[1] == settlement_currency
             and str(adjustment.get("reason", "")).startswith("funding_settlement:")
-            and checkpoint.get("account_events_at_boundary")
+            and isinstance(account_events, list)
+            and bool(account_events)
+            and all(int(event.get("ts_event", -1)) == boundary for event in account_events)
         ):
+            failures.append(FailureCode.FUNDING_DOUBLE_COUNT.value)
+            continue
+
+        before_totals = _account_balance_totals(
+            checkpoint.get("account_balances_before_boundary"),
+        )
+        after_totals = _account_balance_totals(
+            checkpoint.get("account_balances_after_boundary"),
+        )
+        account_delta_ok = bool(
+            len(adjustment_money) == 2
+            and before_totals is not None
+            and after_totals is not None
+            and set(before_totals) == set(after_totals)
+            and adjustment_money[1] in before_totals
+            and after_totals[adjustment_money[1]]
+            - before_totals[adjustment_money[1]]
+            == expected
+            and all(
+                after_totals[currency] == before_totals[currency]
+                for currency in before_totals
+                if currency != adjustment_money[1]
+            )
+        )
+        if not account_delta_ok:
             failures.append(FailureCode.FUNDING_DOUBLE_COUNT.value)
             continue
         expected_adjustments.append((boundary, expected))
 
-    actual_adjustments = sorted(
-        (int(row["ts_event"]), _commission_amount(row["pnl_change"]))
-        for row in funding_rows
-    )
+    actual_adjustments: list[tuple[int, Decimal]] = []
+    for row in funding_rows:
+        try:
+            if (
+                row.get("adjustment_type") != "FUNDING"
+                or row.get("instrument_id") != instrument_id
+                or not str(row.get("reason", "")).startswith("funding_settlement:")
+            ):
+                raise ValueError("funding row role mismatch")
+            actual_adjustments.append(
+                (int(row["ts_event"]), _commission_amount(row["pnl_change"])),
+            )
+        except Exception:
+            failures.append(FailureCode.FUNDING_AMBIGUOUS.value)
+    actual_adjustments.sort()
     if actual_adjustments != sorted(expected_adjustments):
         failures.append(FailureCode.FUNDING_DOUBLE_COUNT.value)
 
@@ -246,17 +665,23 @@ def validate_owner_smoke_funding_binding(
         unique_failures,
         {
             "source_event_count": len(source_events),
+            "source_mark_event_count": len(mark_source_events),
+            "source_position_event_count": len(source_positions),
             "processed_checkpoint_count": len(checkpoints),
             "applicable_open_position_boundaries": applicable,
             "no_position_boundaries": no_position,
             "native_settlement_count": len(funding_rows),
-            "runtime_update_count": dataset_contract.get("funding_runtime_update_count"),
+            "runtime_update_count": declared_runtime_count,
             "mark_age_ns_min": min(mark_ages) if mark_ages else None,
             "mark_age_ns_max": max(mark_ages) if mark_ages else None,
             "maximum_mark_staleness_ns": max_mark_staleness_ns,
             "mark_binding": "LATEST_CAUSAL_AT_OR_BEFORE_FUNDING_TIMESTAMP",
         },
     )
+
+
+# Historical import compatibility; active code and evidence use the generic name.
+validate_owner_smoke_funding_binding = validate_official_funding_binding
 
 
 def check_evidence_directory(
@@ -311,6 +736,8 @@ def check_evidence_directory(
         official_missing = sorted(
             {
                 "native_completed_trades.json",
+                "qualification_authority.json",
+                "runtime_identity.json",
                 "strategy_identity.json",
                 "strategy_identity.sha256",
             }
@@ -327,6 +754,49 @@ def check_evidence_directory(
             blocked.append(FailureCode.EVIDENCE_INCOMPLETE.value)
 
     result = _read_json(run_dir / "nautilus_result.json")
+    scoring_end_ns_contract = utc_datetime_to_ns(config.scoring_end_exclusive)
+    warmup_start_ns_contract = utc_datetime_to_ns(config.warmup_start)
+    execution_window = result.get("execution_data_window")
+    observations_for_window = result.get("strategy_observations", {})
+    callback_window_ok = bool(
+        isinstance(observations_for_window, dict)
+        and all(
+            int(item.get("ts_init", -1)) <= scoring_end_ns_contract
+            for item in observations_for_window.get("bars", [])
+        )
+        and all(
+            int(item.get("ts_init", -1)) <= scoring_end_ns_contract
+            for item in observations_for_window.get("mark_price_updates", [])
+        )
+        and all(
+            int(item.get("ts_init", -1)) < scoring_end_ns_contract
+            for item in observations_for_window.get("funding_rate_updates", [])
+        )
+    )
+    execution_window_ok = bool(
+        isinstance(execution_window, dict)
+        and execution_window.get("status") == "PASS"
+        and int(execution_window.get("warmup_start_ns", -1)) == warmup_start_ns_contract
+        and int(execution_window.get("scoring_end_exclusive_ns", -1))
+        == scoring_end_ns_contract
+        and execution_window.get("engine_received_post_boundary_data") is False
+        and execution_window.get("point_events_at_scoring_end_included") is False
+        and execution_window.get("completed_interval_observations_at_scoring_end_included")
+        is True
+        and int(execution_window.get("latest_qualified_valuation_observation_ns", -1))
+        <= scoring_end_ns_contract
+        and callback_window_ok
+    )
+    checks.append(
+        {
+            "name": "engine_half_open_scoring_window",
+            "pass": execution_window_ok,
+            "callback_window_pass": callback_window_ok,
+            "window": execution_window,
+        },
+    )
+    if not execution_window_ok:
+        failures.append(FailureCode.LOOKAHEAD_DETECTED.value)
     bindings = result.get("evidence_bindings", {})
     binding_paths = {
         "lab_run_config_sha256": "lab_run_config.json",
@@ -337,6 +807,10 @@ def check_evidence_directory(
     }
     if official and (run_dir / "strategy_identity.json").is_file():
         binding_paths["strategy_identity_bytes_sha256"] = "strategy_identity.json"
+    if official and (run_dir / "runtime_identity.json").is_file():
+        binding_paths["runtime_identity_sha256"] = "runtime_identity.json"
+    if official and (run_dir / "qualification_authority.json").is_file():
+        binding_paths["qualification_authority_sha256"] = "qualification_authority.json"
     binding_mismatches = [
         name
         for name, filename in binding_paths.items()
@@ -359,6 +833,60 @@ def check_evidence_directory(
     checks.append({"name": "runtime_lock_binding", "pass": runtime_ok})
     if not runtime_ok:
         blocked.append(FailureCode.RUNTIME_LOCK_MISMATCH.value)
+
+    runtime_proof_ok = not official
+    runtime_proof_mismatches: list[str] = []
+    if official and (run_dir / "runtime_identity.json").is_file():
+        try:
+            runtime_lock = RuntimeLock.from_json_bytes(
+                (run_dir / "runtime.lock.json").read_bytes(),
+            )
+            runtime_identity = _read_json(run_dir / "runtime_identity.json")
+            validate_persisted_runtime_identity(runtime_lock, runtime_identity)
+            runtime_proof_ok = result.get("runtime_identity_verified") is True
+            if not runtime_proof_ok:
+                runtime_proof_mismatches = ["runtime_identity_verified"]
+        except Exception as exc:
+            runtime_proof_mismatches = [f"{type(exc).__name__}: {exc}"]
+            runtime_proof_ok = False
+    checks.append(
+        {
+            "name": "installed_runtime_payload_proof",
+            "pass": runtime_proof_ok,
+            "mismatches": runtime_proof_mismatches,
+        },
+    )
+    if not runtime_proof_ok:
+        blocked.append(FailureCode.RUNTIME_LOCK_MISMATCH.value)
+
+    profile_authority_ok = not official
+    profile_authority_detail: str | None = None
+    if official and (run_dir / "qualification_authority.json").is_file():
+        try:
+            validate_persisted_profile_authority(
+                _read_json(run_dir / "qualification_authority.json"),
+                repository_root=repository_root,
+                expected_profile_id=config.market_profile.value,
+                expected_runtime_lock_sha256=config.runtime_lock_sha256,
+            )
+            profile_authority_ok = (
+                result.get("qualified_profile_authority_verified") is True
+            )
+            if not profile_authority_ok:
+                profile_authority_detail = "Run did not attest Qualified Profile resolution"
+        except Exception as exc:
+            profile_authority_ok = False
+            profile_authority_detail = f"{type(exc).__name__}: {exc}"
+    if official:
+        checks.append(
+            {
+                "name": "qualified_profile_authority",
+                "pass": profile_authority_ok,
+                "detail": profile_authority_detail,
+            },
+        )
+        if not profile_authority_ok:
+            blocked.append(FailureCode.DOWNSTREAM_CONTRACT_FAILURE.value)
 
     try:
         source = SourceRevision.from_json_bytes((run_dir / "source_revision.json").read_bytes())
@@ -792,8 +1320,8 @@ def check_evidence_directory(
             start_ns = end_ns - DAY_NS
             if (
                 index >= sma_lookback - 1
-                and start_ns >= int(config.scoring_start.timestamp() * 1e9)
-                and end_ns <= int(config.scoring_end_exclusive.timestamp() * 1e9)
+                and start_ns >= utc_datetime_to_ns(config.scoring_start)
+                and end_ns <= utc_datetime_to_ns(config.scoring_end_exclusive)
             ):
                 expected_signals += 1
         if len(signals) != expected_signals:
@@ -858,8 +1386,8 @@ def check_evidence_directory(
         )
         ends = [int(item["interval_end_exclusive_ns"]) for item in daily]
         closes = [Decimal(str(item["close"])) for item in daily]
-        scoring_start_ns = int(config.scoring_start.timestamp() * 1_000_000_000)
-        scoring_end_ns = int(config.scoring_end_exclusive.timestamp() * 1_000_000_000)
+        scoring_start_ns = utc_datetime_to_ns(config.scoring_start)
+        scoring_end_ns = utc_datetime_to_ns(config.scoring_end_exclusive)
         expected_indices = [
             index
             for index, end_ns in enumerate(ends)
@@ -929,7 +1457,7 @@ def check_evidence_directory(
             len(entries) == 1
             and len(submitted_entries) == 1
             and int(entries[0]["signal_bar_interval_start_ns"])
-            == int(config.scoring_start.timestamp() * 1_000_000_000)
+            == utc_datetime_to_ns(config.scoring_start)
             and Decimal(str(entries[0]["target_quantity"])) > 0
         )
         checks.append(
@@ -947,8 +1475,8 @@ def check_evidence_directory(
         item["client_order_id"]: item
         for item in observations.get("submitted_intents", [])
     }
-    scoring_start_ns = int(config.scoring_start.timestamp() * 1e9)
-    scoring_end_ns = int(config.scoring_end_exclusive.timestamp() * 1e9)
+    scoring_start_ns = utc_datetime_to_ns(config.scoring_start)
+    scoring_end_ns = utc_datetime_to_ns(config.scoring_end_exclusive)
     eligibility_ok = all(
         int(item.get("decision_timestamp_ns", item["signal_bar_interval_start_ns"]))
         >= scoring_start_ns
@@ -1112,6 +1640,48 @@ def check_evidence_directory(
     positions = _read_csv(run_dir / "positions.csv")
     account_rows = _read_csv(run_dir / "account.csv")
     if config.market_profile is MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY:
+        quote_currency = config.initial_capital.currency
+        metadata_path = run_dir / "instrument_metadata.json"
+        if metadata_path.is_file():
+            metadata_raw = _read_json(metadata_path)
+            base_currency = str(metadata_raw.get("base_currency", ""))
+            metadata_currency_ok = bool(
+                metadata_raw.get("instrument_id") == config.instrument_id
+                and metadata_raw.get("quote_currency") == quote_currency
+                and base_currency
+                and base_currency != quote_currency
+            )
+        else:
+            raw_symbol = config.instrument_id.split(".", maxsplit=1)[0]
+            metadata_currency_ok = raw_symbol.endswith(quote_currency)
+            base_currency = (
+                raw_symbol[: -len(quote_currency)] if metadata_currency_ok else ""
+            )
+        if metadata_currency_ok:
+            reconciliation_ok, reconciliation_detail = validate_spot_cash_reconciliation(
+                fills=fills,
+                account_rows=account_rows,
+                position_rows=positions,
+                instrument_id=config.instrument_id,
+                base_currency=base_currency,
+                quote_currency=quote_currency,
+                initial_quote_balance=config.initial_capital.amount,
+            )
+        else:
+            reconciliation_ok = False
+            reconciliation_detail = {
+                "errors": ["INSTRUMENT_CURRENCY_BINDING_INVALID"],
+                "native_financial_state_mutated_by_checker": False,
+            }
+        checks.append(
+            {
+                "name": "spot_cash_reconciliation",
+                "pass": reconciliation_ok,
+                **reconciliation_detail,
+            },
+        )
+        if not reconciliation_ok:
+            failures.append(FailureCode.SPOT_SHORT_OR_BORROW_DETECTED.value)
         no_short = all(Decimal(row["signed_qty"]) >= 0 for row in positions)
         no_borrow = all(
             Decimal(row["total"]) >= 0 and Decimal(row["free"]) >= 0
@@ -1288,55 +1858,97 @@ def check_evidence_directory(
                 funding_ok = False
         checks.append(
             {
-                "name": "native_funding_exactly_once",
+                "name": (
+                    "native_funding_exactly_once"
+                    if isinstance(dataset, SyntheticQualificationDatasetRelease)
+                    else "native_funding_output_integrity"
+                ),
                 "pass": funding_ok,
-                "expected_settlements": len(expected_settlements),
+                "expected_settlements": (
+                    len(expected_settlements)
+                    if isinstance(dataset, SyntheticQualificationDatasetRelease)
+                    else "DERIVED_BY_OFFICIAL_EXACT_BINDING"
+                ),
                 "actual_settlements": len(funding_rows),
             },
         )
         if not funding_ok:
             failures.append(FailureCode.FUNDING_DOUBLE_COUNT.value)
-        if is_owner_smoke_sma20 and not isinstance(dataset, SyntheticQualificationDatasetRelease):
+        if not isinstance(dataset, SyntheticQualificationDatasetRelease):
+            source_events: list[dict[str, Any]] = []
+            exact_detail: dict[str, Any] = {}
+            funding_failure_codes = (FailureCode.FUNDING_AMBIGUOUS.value,)
+            exact_funding_ok = False
+            exact_mark_ok = False
             try:
                 funding_source = _read_json(run_dir / "funding_source.json")
-                source_events = funding_source["events"]
+                source_events = [
+                    item
+                    for item in funding_source["events"]
+                    if utc_datetime_to_ns(config.warmup_start)
+                    <= int(item["calc_time_ns"])
+                    < utc_datetime_to_ns(config.scoring_end_exclusive)
+                ]
+                independently_resolved = dataset.resolve_runtime_data(
+                    repository_root / "data",
+                )
+                mark_source_events = [
+                    {
+                        "instrument_id": str(item.instrument_id),
+                        "value": str(item.value),
+                        "ts_event": int(item.ts_event),
+                        "ts_init": int(item.ts_init),
+                    }
+                    for item in independently_resolved.data
+                    if isinstance(item, MarkPriceUpdate)
+                    and utc_datetime_to_ns(config.warmup_start) < int(item.ts_init)
+                    <= utc_datetime_to_ns(config.scoring_end_exclusive)
+                ]
                 checkpoints = result["native_funding_checkpoints"]
                 exact_funding_ok, funding_failure_codes, exact_detail = (
-                    validate_owner_smoke_funding_binding(
+                    validate_official_funding_binding(
                         source_events=source_events,
+                        mark_source_events=mark_source_events,
+                        position_rows=positions,
                         checkpoints=checkpoints,
                         funding_rows=funding_rows,
                         dataset_contract=result["dataset_contract"],
                         instrument_id=config.instrument_id,
                     )
                 )
-                mark_role = next(
-                    item
-                    for item in dataset.completeness_result.role_results
-                    if item.source_role.value == "USDM_PERPETUAL_MARK_1M"
-                )
+                selected_counts = result["execution_data_window"]["selected_counts"]
+                observed_mark_count = observations.get("mark_price_update_count")
+                if type(observed_mark_count) is not int:
+                    observed_mark_count = len(observations.get("mark_price_updates", []))
                 exact_mark_ok = bool(
-                    observations.get("mark_price_update_count") == mark_role.actual_count
-                    and mark_role.actual_count == mark_role.expected_count
+                    observed_mark_count == int(selected_counts["MarkPriceUpdate"])
                     and config.nautilus_engine_config.portfolio.use_mark_prices is True
                     and result.get("mark_fallback_accepted") is False
                 )
             except Exception as exc:
-                exact_funding_ok = False
-                exact_mark_ok = False
-                funding_failure_codes = (FailureCode.FUNDING_AMBIGUOUS.value,)
-                exact_detail = {"detail": str(exc)}
+                exact_detail = {
+                    **exact_detail,
+                    "source_event_count": len(source_events),
+                    "detail": str(exc),
+                }
             checks.append(
                 {
-                    "name": "owner_smoke_all_official_funding_processed",
+                    "name": "official_funding_exact_binding",
                     "pass": exact_funding_ok,
                     **exact_detail,
                 },
             )
             checks.append(
                 {
-                    "name": "owner_smoke_official_mark_valuation",
+                    "name": "official_mark_valuation_binding",
                     "pass": exact_mark_ok,
+                    "expected_mark_callback_count": (
+                        None
+                        if not isinstance(result.get("execution_data_window"), dict)
+                        else result["execution_data_window"].get("selected_counts", {}).get(
+                            "MarkPriceUpdate",
+                        )
+                    ),
                     "mark_fallback_accepted": result.get("mark_fallback_accepted"),
                 },
             )

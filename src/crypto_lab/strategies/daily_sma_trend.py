@@ -76,6 +76,11 @@ def locked_sma20_parameters(profile: MarketProfile) -> dict[str, str]:
         "network_access": "FORBIDDEN",
         "order_quantity": profile_values["order_quantity"],
         "order_type": "MARKET",
+        "spot_cash_affordability_policy": (
+            "QUOTE_NOTIONAL_CAPPED_BY_NATIVE_FREE_QUOTE_AND_INSTRUMENT_MAX_PRICE_ROUNDING_RESERVE"
+            if profile is MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY
+            else "NOT_APPLICABLE_PERPETUAL"
+        ),
         "profitability_claim": "INELIGIBLE",
         "reversal_behavior": profile_values["reversal_behavior"],
         "signal_price": "DAILY_CLOSE_FROM_CANONICAL_1M",
@@ -97,7 +102,7 @@ def locked_sma20_strategy_spec(profile: MarketProfile) -> StrategySpec:
             if is_spot
             else "owner-smoke-001-btcusdt-usdm-perpetual-daily-price-vs-sma20"
         ),
-        strategy_version="1",
+        strategy_version="2",
         market_profile=profile,
         instrument_id=instrument_id,
         signal_bar_types=(
@@ -145,6 +150,7 @@ class BtcusdtDailyPriceVsSma20Trend(GuardedCausalStrategy):
         "network_access",
         "order_quantity",
         "order_type",
+        "spot_cash_affordability_policy",
         "profitability_claim",
         "reversal_behavior",
         "signal_price",
@@ -300,6 +306,7 @@ class BtcusdtDailyPriceVsSma20Trend(GuardedCausalStrategy):
                 self._submit_guarded(
                     OrderIntent("BUY", self._quantity, "MARKET", "SMA20_TARGET_LONG"),
                     signal_bar,
+                    spot_quote_notional=Decimal(self._quantity) * Decimal(str(signal_bar.close)),
                 )
             elif target is TargetState.FLAT and signed > 0:
                 self._submit_guarded(

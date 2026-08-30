@@ -32,6 +32,7 @@ from crypto_lab.research import SampleAdequacy
 from crypto_lab.research import TrialRecord
 from crypto_lab.research import TrialState
 from crypto_lab.research import CompletedTradeSeries
+from crypto_lab.status import FailureCode
 
 
 QUANTUM = Decimal("0.00000001")
@@ -48,7 +49,7 @@ class EquityObservation(StrictModel):
     def __post_init__(self) -> None:
         _require_utc(self.timestamp, "equity.timestamp")
         if not self.equity.is_finite():
-            raise ResearchError("EVIDENCE_INCOMPLETE", "Equity must be finite")
+            raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "Equity must be finite")
 
 
 class DrawdownObservation(StrictModel):
@@ -58,7 +59,7 @@ class DrawdownObservation(StrictModel):
     def __post_init__(self) -> None:
         _require_utc(self.timestamp, "drawdown.timestamp")
         if not self.drawdown.is_finite() or self.drawdown < 0:
-            raise ResearchError("EVIDENCE_INCOMPLETE", "drawdown must be finite and non-negative")
+            raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "drawdown must be finite and non-negative")
 
 
 class DrawdownEpisode(StrictModel):
@@ -72,7 +73,7 @@ class DrawdownEpisode(StrictModel):
         _require_utc(self.start_utc, "drawdown_episode.start")
         _require_utc(self.end_utc, "drawdown_episode.end")
         if self.end_utc < self.start_utc or self.duration_seconds < 0:
-            raise ResearchError("EVIDENCE_INCOMPLETE", "invalid drawdown episode duration")
+            raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "invalid drawdown episode duration")
 
 
 class CalendarYearReturn(StrictModel):
@@ -86,7 +87,7 @@ class CalendarYearReturn(StrictModel):
         _require_utc(self.first_observation_utc, "calendar_year.first")
         _require_utc(self.last_observation_utc, "calendar_year.last")
         if not 1 <= self.year <= 9999:
-            raise ResearchError("EVIDENCE_INCOMPLETE", "invalid calendar year")
+            raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "invalid calendar year")
 
 
 class DiagnosticValue(StrictModel):
@@ -100,14 +101,14 @@ class DiagnosticValue(StrictModel):
 
     def __post_init__(self) -> None:
         if self.status not in {"CALCULATED", "NATIVE", "UNDEFINED", NOT_APPLICABLE}:
-            raise ResearchError("EVIDENCE_INCOMPLETE", "unknown diagnostic value status")
+            raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "unknown diagnostic value status")
         for name in ("value", "unit", "formula", "source", "undefined_reason"):
             _require_nonempty(getattr(self, name), f"diagnostic.{name}")
         if self.status == "UNDEFINED":
             if self.value != "UNDEFINED" or self.undefined_reason == NOT_APPLICABLE:
-                raise ResearchError("EVIDENCE_INCOMPLETE", "undefined diagnostic needs a reason")
+                raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "undefined diagnostic needs a reason")
         elif self.undefined_reason != NOT_APPLICABLE:
-            raise ResearchError("EVIDENCE_INCOMPLETE", "defined diagnostic cannot have undefined reason")
+            raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "defined diagnostic cannot have undefined reason")
 
 
 def _calculated(
@@ -134,9 +135,9 @@ def _native(value: str, *, unit: str, metric: str) -> DiagnosticValue:
     try:
         parsed = Decimal(value)
     except Exception as exc:
-        raise ResearchError("EVIDENCE_INCOMPLETE", f"native {metric} is not Decimal data") from exc
+        raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, f"native {metric} is not Decimal data") from exc
     if not parsed.is_finite():
-        raise ResearchError("EVIDENCE_INCOMPLETE", f"native {metric} must be finite")
+        raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, f"native {metric} must be finite")
     return DiagnosticValue(
         status="NATIVE",
         value=value,
@@ -189,18 +190,18 @@ class PerformanceDiagnostics(StrictModel):
 
     def __post_init__(self) -> None:
         if self.schema_version != 1:
-            raise ResearchError("EVIDENCE_INCOMPLETE", "unknown diagnostics schema")
+            raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "unknown diagnostics schema")
         _require_sha256(self.diagnostics_id, "diagnostics.diagnostics_id")
         _require_nonempty(self.run_id, "diagnostics.run_id")
         _require_nonempty(self.equity_observation_basis, "diagnostics.equity_observation_basis")
         _require_utc(self.scored_start, "diagnostics.scored_start")
         _require_utc(self.scoring_end_exclusive, "diagnostics.scoring_end_exclusive")
         if self.scored_start >= self.scoring_end_exclusive:
-            raise ResearchError("EVIDENCE_INCOMPLETE", "diagnostics scored interval is empty")
+            raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "diagnostics scored interval is empty")
         for identity in self.input_evidence_hashes.values():
             _require_sha256(identity, "diagnostics.input_evidence_hashes")
         if canonical_sha256(self.material_payload()) != self.diagnostics_id:
-            raise ResearchError("EVIDENCE_INCOMPLETE", "diagnostics content identity mismatch")
+            raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "diagnostics content identity mismatch")
         _freeze_field(self, "input_evidence_hashes")
 
     def material_payload(self) -> dict[str, Any]:
@@ -238,7 +239,7 @@ class NativeResearchMetricsReadiness(StrictModel):
 
     def __post_init__(self) -> None:
         if self.schema_version != 1:
-            raise ResearchError("EVIDENCE_INCOMPLETE", "unknown native metrics readiness schema")
+            raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "unknown native metrics readiness schema")
         _require_sha256(self.readiness_id, "native_metrics_readiness.readiness_id")
         _require_sha256(
             self.native_sequence_evidence_sha256,
@@ -261,16 +262,15 @@ class NativeResearchMetricsReadiness(StrictModel):
             "NATIVE_NET_COMPLETED_UNIT_SEQUENCE_READY",
             "MC_LOW_CONFIDENCE",
         }:
-            raise ResearchError("EVIDENCE_INCOMPLETE", "unknown Monte Carlo input readiness")
+            raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "unknown Monte Carlo input readiness")
         if self.historical_run_evidence_mutated:
-            raise ResearchError("EVIDENCE_INCOMPLETE", "historical Run evidence cannot be mutated")
+            raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "historical Run evidence cannot be mutated")
         if not self.terminal_open_position_excluded:
-            raise ResearchError(
-                "EVIDENCE_INCOMPLETE",
+            raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE,
                 "terminal open Position must be excluded from completed native units",
             )
         if canonical_sha256(self.material_payload()) != self.readiness_id:
-            raise ResearchError("EVIDENCE_INCOMPLETE", "native metrics readiness identity mismatch")
+            raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "native metrics readiness identity mismatch")
 
     def material_payload(self) -> dict[str, Any]:
         return {
@@ -486,16 +486,16 @@ def generate_performance_diagnostics(
     input_evidence_hashes: dict[str, str],
 ) -> PerformanceDiagnostics:
     if not initial_capital.is_finite() or initial_capital <= 0:
-        raise ResearchError("EVIDENCE_INCOMPLETE", "initial capital must be finite and positive")
+        raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "initial capital must be finite and positive")
     if not equity_observations:
-        raise ResearchError("EVIDENCE_INCOMPLETE", "persisted Equity observations are required")
+        raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "persisted Equity observations are required")
     if any(left.timestamp >= right.timestamp for left, right in zip(equity_observations, equity_observations[1:])):
-        raise ResearchError("EVIDENCE_INCOMPLETE", "Equity observations must be strictly chronological")
+        raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "Equity observations must be strictly chronological")
     if (
         equity_observations[0].timestamp < scored_start
         or equity_observations[-1].timestamp > scoring_end_exclusive
     ):
-        raise ResearchError("EVIDENCE_INCOMPLETE", "Equity observation lies outside scored interval")
+        raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "Equity observation lies outside scored interval")
     ending = equity_observations[-1].equity
     fallback_total = _rounded(ending / initial_capital - 1)
     total_return = (
@@ -702,31 +702,29 @@ class ReportInput(StrictModel):
 
     def __post_init__(self) -> None:
         if self.schema_version != 1:
-            raise ResearchError("EVIDENCE_INCOMPLETE", "unknown report input schema")
+            raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "unknown report input schema")
         if self.claim_evaluation.protocol_id != self.protocol.protocol_id:
-            raise ResearchError("DOWNSTREAM_CONTRACT_FAILURE", "claim and protocol identities differ")
+            raise ResearchError(FailureCode.DOWNSTREAM_CONTRACT_FAILURE, "claim and protocol identities differ")
         if self.selected_trial_id != NOT_APPLICABLE and self.selected_trial_id not in self.included_trial_ids:
-            raise ResearchError("TRIAL_HISTORY_INCOMPLETE", "selected trial is absent from report input")
+            raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE, "selected trial is absent from report input")
         if self.multiple_testing_treatment != self.protocol.multiple_testing_treatment:
-            raise ResearchError(
-                "DOWNSTREAM_CONTRACT_FAILURE",
+            raise ResearchError(FailureCode.DOWNSTREAM_CONTRACT_FAILURE,
                 "report changed the frozen multiple-testing treatment",
             )
         if len(set(self.included_trial_ids)) != len(self.included_trial_ids):
-            raise ResearchError("TRIAL_HISTORY_INCOMPLETE", "report contains duplicate trial identities")
+            raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE, "report contains duplicate trial identities")
         started = {
             item.trial_id for item in self.trial_records if item.state is TrialState.STARTED
         }
         if not set(self.included_trial_ids).issubset(started):
-            raise ResearchError("TRIAL_HISTORY_INCOMPLETE", "report references an unstarted trial")
+            raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE, "report references an unstarted trial")
         for identity in self.source_evidence_hashes.values():
             _require_sha256(identity, "report.source_evidence_hashes")
         required_source_fields = {"repository", "branch_ref", "git_commit", "git_tree"}
         if set(self.source_revision) != required_source_fields or any(
             not value for value in self.source_revision.values()
         ):
-            raise ResearchError(
-                "EVIDENCE_INCOMPLETE",
+            raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE,
                 "report SourceRevision identity is incomplete",
             )
         _freeze_field(self, "sample_adequacy_by_instrument")
@@ -786,10 +784,10 @@ class ReportOutput(StrictModel):
 
     def __post_init__(self) -> None:
         if self.schema_version != 1:
-            raise ResearchError("EVIDENCE_INCOMPLETE", "unknown report output schema")
+            raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "unknown report output schema")
         _require_sha256(self.report_id, "report.report_id")
         if canonical_sha256(self.material_payload()) != self.report_id:
-            raise ResearchError("EVIDENCE_INCOMPLETE", "report content identity mismatch")
+            raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "report content identity mismatch")
         _freeze_field(self, "json_payload")
         _freeze_field(self, "source_evidence_hashes")
 
@@ -934,8 +932,7 @@ def build_report(value: ReportInput) -> ReportOutput:
     """
 
     if value.report_purpose == "OFFICIAL_RESEARCH_REPORT":
-        raise ResearchError(
-            "EVIDENCE_INCOMPLETE",
+        raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE,
             "Official reports require an OfficialEvidenceLocator",
         )
     return _build_report_from_resolved_evidence(value)
@@ -972,8 +969,7 @@ def write_report(output: ReportOutput, *, json_path: Path, markdown_path: Path) 
     """Persist a non-Official contract fixture without touching Run evidence."""
 
     if output.json_payload.get("report_purpose") == "OFFICIAL_RESEARCH_REPORT":
-        raise ResearchError(
-            "EVIDENCE_INCOMPLETE",
+        raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE,
             "Official report persistence requires OfficialEvidenceResolver",
         )
     _write_resolved_report(output, json_path=json_path, markdown_path=markdown_path)

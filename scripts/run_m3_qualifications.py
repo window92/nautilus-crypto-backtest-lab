@@ -6,6 +6,7 @@ from __future__ import annotations
 import csv
 import json
 import os
+import re
 import shutil
 import subprocess
 import tempfile
@@ -33,7 +34,6 @@ from crypto_lab.m3 import qualification_strategy_inputs
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OUTPUT = ROOT / "evidence/m3/m3-acceptance-001"
-RUNTIME_LOCK_SHA256 = "4032df9f355348c2a0cfa9f79f331f97c9a8d24ecc8490a573d2c7f788bafddd"
 
 
 def _write_json(path: Path, value: Any) -> None:
@@ -163,14 +163,24 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--resume-staging", type=Path)
+    parser.add_argument("--required-remote-ref")
+    parser.add_argument("--run-id-prefix", default="m3")
     args = parser.parse_args()
+    if not re.fullmatch(r"[a-z0-9][a-z0-9-]{0,80}", args.run_id_prefix):
+        raise ValueError("run-id-prefix must be a safe lowercase identity component")
     output = args.output.resolve()
     if output.exists():
         raise FileExistsError(f"refusing to overwrite M3 evidence: {output}")
+    branch = _git("branch", "--show-current")
+    if not branch:
+        raise RuntimeError("accepted M3 qualifications require a symbolic branch")
+    required_remote_ref = args.required_remote_ref or f"origin/{branch}"
     if args.resume_staging is None and _git("status", "--porcelain=v1"):
         raise RuntimeError("accepted M3 qualifications require a clean committed worktree")
-    if _git("rev-parse", "HEAD") != _git("rev-parse", "origin/main"):
-        raise RuntimeError("accepted M3 qualifications require HEAD == origin/main")
+    if _git("rev-parse", "HEAD") != _git("rev-parse", required_remote_ref):
+        raise RuntimeError(
+            f"accepted M3 qualifications require HEAD == {required_remote_ref}",
+        )
 
     if args.resume_staging is None:
         temporary = Path(tempfile.mkdtemp(prefix="nautilus-m3-qualification-", dir="/tmp"))
@@ -183,7 +193,8 @@ def main() -> int:
         frozen_baseline = json.loads((staging / "baseline.json").read_text(encoding="utf-8"))
         if (
             frozen_baseline["head"] != _git("rev-parse", "HEAD")
-            or frozen_baseline["origin_main"] != _git("rev-parse", "origin/main")
+            or frozen_baseline["required_remote_ref"] != required_remote_ref
+            or frozen_baseline["remote_tip"] != _git("rev-parse", required_remote_ref)
             or frozen_baseline["clean_worktree"] is not True
         ):
             raise RuntimeError("resume staging is not bound to the current committed source")
@@ -203,9 +214,10 @@ def main() -> int:
         "schema": "m3-baseline-v1",
         "user": subprocess.run(["whoami"], check=True, capture_output=True, text=True).stdout.strip(),
         "repository": str(ROOT),
-        "branch": _git("branch", "--show-current"),
+        "branch": branch,
         "head": _git("rev-parse", "HEAD"),
-        "origin_main": _git("rev-parse", "origin/main"),
+        "required_remote_ref": required_remote_ref,
+        "remote_tip": _git("rev-parse", required_remote_ref),
         "git_tree": _git("rev-parse", "HEAD^{tree}"),
         "clean_worktree": True,
         "ssot_sha256": sha256_file(ROOT / "SSOT.md"),
@@ -232,16 +244,28 @@ def main() -> int:
     if args.resume_staging is None:
         accepted = {
             "spot_primary": _run_child(
-                staging, label="spot-primary", profile="spot", run_id="m3-spot-primary-001",
+                staging,
+                label="spot-primary",
+                profile="spot",
+                run_id=f"{args.run_id_prefix}-spot-primary",
             ),
             "spot_replay": _run_child(
-                staging, label="spot-replay", profile="spot", run_id="m3-spot-replay-001",
+                staging,
+                label="spot-replay",
+                profile="spot",
+                run_id=f"{args.run_id_prefix}-spot-replay",
             ),
             "perp_primary": _run_child(
-                staging, label="perpetual-primary", profile="perpetual", run_id="m3-perpetual-primary-001",
+                staging,
+                label="perpetual-primary",
+                profile="perpetual",
+                run_id=f"{args.run_id_prefix}-perpetual-primary",
             ),
             "perp_replay": _run_child(
-                staging, label="perpetual-replay", profile="perpetual", run_id="m3-perpetual-replay-001",
+                staging,
+                label="perpetual-replay",
+                profile="perpetual",
+                run_id=f"{args.run_id_prefix}-perpetual-replay",
             ),
         }
     else:
@@ -288,21 +312,21 @@ def main() -> int:
                 staging,
                 label=control.value.lower(),
                 profile=profile,
-                run_id=f"m3-control-{control.value.lower()}-001",
+                run_id=f"{args.run_id_prefix}-control-{control.value.lower()}",
                 extra=("--negative-control", control.value),
             )
         controls["PROHIBITED_MARK_FALLBACK"] = _run_child(
             staging,
             label="prohibited-mark-fallback",
             profile="perpetual",
-            run_id="m3-control-prohibited-mark-fallback-001",
+            run_id=f"{args.run_id_prefix}-control-prohibited-mark-fallback",
             extra=("--invalid-mark-binding",),
         )
         controls["NETWORK_ATTEMPT"] = _run_child(
             staging,
             label="network-attempt",
             profile="spot",
-            run_id="m3-control-network-attempt-001",
+            run_id=f"{args.run_id_prefix}-control-network-attempt",
             extra=("--network-attempt",),
         )
         controls["DUPLICATE_FUNDING_SETTLEMENT"] = _duplicate_funding_control(
@@ -380,7 +404,7 @@ def main() -> int:
         record = QualifiedProfileRecord.create(
             profile_id=profile,
             qualification_state=ProfileQualificationState.QUALIFIED,
-            runtime_lock_sha256=RUNTIME_LOCK_SHA256,
+            runtime_lock_sha256=sha256_file(ROOT / "runtime.lock.json"),
             source_revision=source,
             base_dataset_release_id=base_id,
             dataset_release_id=qualification_dataset_release(profile).dataset_release_id,
@@ -475,6 +499,8 @@ def main() -> int:
             "negative_controls": sorted(controls),
             "registry_content_sha256": registry.registry_content_sha256,
             "run_purpose": "QUALIFICATION",
+            "run_id_prefix": args.run_id_prefix,
+            "required_remote_ref": required_remote_ref,
             "official_run": False,
             "research_run": False,
             "profitability_claim": False,

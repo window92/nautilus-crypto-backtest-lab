@@ -170,16 +170,28 @@ def funding_case(*, signed_qty: str | None = "1", mark_ts: int = BOUNDARY - 3_00
     mark = Decimal("50000.00000000")
     source = [{
         "event_key": "7" * 64,
+        "instrument_id": "BTCUSDT-PERP.BINANCE",
         "calc_time_ns": BOUNDARY,
         "funding_interval_hours": 8,
         "funding_rate": str(rate),
     }]
-    positions = [] if signed_qty is None else [{"signed_qty": signed_qty}]
+    positions = [] if signed_qty is None else [{
+        "instrument_id": "BTCUSDT-PERP.BINANCE",
+        "signed_qty": signed_qty,
+        "ts_last": BOUNDARY - 1,
+    }]
+    position_rows = [] if signed_qty is None else [{
+        "row_type": "PositionOpened",
+        "instrument_id": "BTCUSDT-PERP.BINANCE",
+        "signed_qty": signed_qty,
+        "ts_event": str(BOUNDARY - 1),
+    }]
     expected = None if signed_qty is None else (
         -Decimal(signed_qty) * mark * rate
     ).quantize(Decimal("0.00000001"))
     native = [] if expected is None else [{
         "adjustment_type": "FUNDING",
+        "instrument_id": "BTCUSDT-PERP.BINANCE",
         "ts_event": BOUNDARY,
         "pnl_change": f"{expected} USDT",
         "reason": "funding_settlement:event",
@@ -215,24 +227,49 @@ def funding_case(*, signed_qty: str | None = "1", mark_ts: int = BOUNDARY - 3_00
         "eligible_position_capture": "IMMEDIATELY_BEFORE_FUNDING_BOUNDARY",
         "positions_after_boundary": positions,
         "native_adjustments": native,
-        "account_events_at_boundary": ([{"type": "AccountState"}] if expected is not None else []),
+        "account_events_at_boundary": (
+            [{"type": "AccountState", "ts_event": BOUNDARY}]
+            if expected is not None
+            else []
+        ),
+        "account_balances_before_boundary": [
+            {"currency": "USDT", "total": "1000.00000000 USDT"},
+        ],
+        "account_balances_after_boundary": [
+            {
+                "currency": "USDT",
+                "total": f"{Decimal('1000') + (expected or Decimal(0))} USDT",
+            },
+        ],
     }]
     rows = [] if expected is None else [{
+        "adjustment_type": "FUNDING",
+        "instrument_id": "BTCUSDT-PERP.BINANCE",
         "ts_event": str(BOUNDARY),
         "pnl_change": f"{expected} USDT",
+        "reason": "funding_settlement:event",
     }]
     contract = {
         "funding_native_binding": FUNDING_NATIVE_BINDING_RC2_EXPLICIT_BOUNDARY_PAIR,
         "funding_source_event_count": 1,
         "funding_runtime_update_count": 2,
+        "instrument": {"settlement_currency": "USDT"},
     }
-    return source, checkpoint, rows, contract
+    marks = [{
+        "instrument_id": "BTCUSDT-PERP.BINANCE",
+        "value": str(mark),
+        "ts_event": mark_ts,
+        "ts_init": mark_ts,
+    }]
+    return source, checkpoint, rows, contract, marks, position_rows
 
 
 class FundingCheckerRepairTests(unittest.TestCase):
     def validate(self, case):
         return validate_owner_smoke_funding_binding(
             source_events=case[0],
+            mark_source_events=case[4],
+            position_rows=case[5],
             checkpoints=case[1],
             funding_rows=case[2],
             dataset_contract=case[3],
@@ -281,11 +318,68 @@ class FundingCheckerRepairTests(unittest.TestCase):
 
     def test_position_opened_after_boundary_is_a_no_position_boundary(self) -> None:
         case = funding_case(signed_qty=None)
+        case[5].append({
+            "row_type": "PositionOpened",
+            "instrument_id": "BTCUSDT-PERP.BINANCE",
+            "signed_qty": "1",
+            "ts_event": str(BOUNDARY + 1),
+        })
         case[1][0]["positions_after_boundary"] = [{"signed_qty": "1"}]
         valid, failures, detail = self.validate(case)
         self.assertTrue(valid, failures)
         self.assertEqual(detail["no_position_boundaries"], 1)
         self.assertEqual(detail["native_settlement_count"], 0)
+
+    def test_missing_settlement_and_wrong_rate_fail_closed(self) -> None:
+        missing = funding_case()
+        missing[1][0]["native_adjustments"] = []
+        missing[1][0]["account_events_at_boundary"] = []
+        missing[1][0]["account_balances_after_boundary"] = copy.deepcopy(
+            missing[1][0]["account_balances_before_boundary"],
+        )
+        missing[2].clear()
+        self.assertIn(FailureCode.FUNDING_DOUBLE_COUNT.value, self.validate(missing)[1])
+
+        wrong_rate = funding_case()
+        wrong_rate[1][0]["runtime_updates_at_boundary"][1]["rate"] = "0.0002"
+        self.assertIn(FailureCode.FUNDING_AMBIGUOUS.value, self.validate(wrong_rate)[1])
+
+    def test_wrong_mark_position_and_boundary_fail_closed(self) -> None:
+        wrong_mark = funding_case()
+        wrong_mark[4][0]["value"] = "50000.00000001"
+        self.assertIn(FailureCode.MARK_ROLE_INVALID.value, self.validate(wrong_mark)[1])
+
+        wrong_position = funding_case()
+        wrong_position[1][0]["open_positions"][0]["signed_qty"] = "2"
+        self.assertIn(FailureCode.FUNDING_AMBIGUOUS.value, self.validate(wrong_position)[1])
+
+        wrong_boundary = funding_case()
+        wrong_boundary[1][0]["boundary_ns"] = BOUNDARY + 1
+        self.assertIn(FailureCode.FUNDING_AMBIGUOUS.value, self.validate(wrong_boundary)[1])
+
+    def test_wrong_account_delta_and_no_position_settlement_fail_closed(self) -> None:
+        wrong_delta = funding_case()
+        wrong_delta[1][0]["account_balances_after_boundary"][0]["total"] = (
+            "994.99999999 USDT"
+        )
+        self.assertIn(FailureCode.FUNDING_DOUBLE_COUNT.value, self.validate(wrong_delta)[1])
+
+        no_position = funding_case(signed_qty=None)
+        no_position[1][0]["native_adjustments"] = [{
+            "adjustment_type": "FUNDING",
+            "instrument_id": "BTCUSDT-PERP.BINANCE",
+            "ts_event": BOUNDARY,
+            "pnl_change": "-5.00000000 USDT",
+            "reason": "funding_settlement:ineligible",
+        }]
+        no_position[2].append({
+            "adjustment_type": "FUNDING",
+            "instrument_id": "BTCUSDT-PERP.BINANCE",
+            "ts_event": str(BOUNDARY),
+            "pnl_change": "-5.00000000 USDT",
+            "reason": "funding_settlement:ineligible",
+        })
+        self.assertIn(FailureCode.FUNDING_DOUBLE_COUNT.value, self.validate(no_position)[1])
 
 
 class HistoricalCheckerRegressionTests(unittest.TestCase):

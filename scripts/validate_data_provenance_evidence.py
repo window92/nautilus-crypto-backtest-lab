@@ -12,13 +12,13 @@ from urllib.parse import urlsplit
 
 import duckdb
 
+from crypto_lab.historical_contracts import validate_validator_contract
+
 
 ROOT = Path(__file__).resolve().parents[1]
 EVIDENCE = ROOT / "evidence/repair/data-provenance-duckdb-001"
 DATABASE = ROOT / "data/duckdb/binance-btcusdt-owner-smoke-001.duckdb"
 ADOPTED_SSOT = "f51971ed7a09b172c82ff5965f2899d2a302dd71a2af60eb7c920133567b4354"
-RUNTIME_LOCK = "4032df9f355348c2a0cfa9f79f331f97c9a8d24ecc8490a573d2c7f788bafddd"
-DEPENDENCY_LOCK = "b2765c9e33b10566fc327b48920fd1d3a73618c19622baaceab1fe9dca61df47"
 ALLOWED_HOSTS = {
     "api.binance.com",
     "data.binance.vision",
@@ -40,6 +40,10 @@ def load(name: str) -> Any:
 
 
 def validate(*, pre_final: bool) -> dict[str, Any]:
+    historical_contract = validate_validator_contract(
+        Path(__file__).name,
+        repository_root=ROOT,
+    )
     required = {
         "README.md",
         "owner-adoption.json",
@@ -82,16 +86,10 @@ def validate(*, pre_final: bool) -> dict[str, Any]:
         except (UnicodeDecodeError, json.JSONDecodeError) as exc:
             json_errors.append({"path": str(path.relative_to(ROOT)), "error": str(exc)})
     checks["all_json_valid_utf8"] = not json_errors
-    checks["adopted_ssot_identity"] = digest(ROOT / "SSOT.md") == ADOPTED_SSOT
-    checks["runtime_lock_identity"] = digest(ROOT / "runtime.lock.json") == RUNTIME_LOCK
-    checks["dependency_lock_identity"] = (
-        digest(ROOT / "requirements.lock.txt") == DEPENDENCY_LOCK
-    )
-    checks["candidate_bytes_equal_root"] = (
-        ROOT / "SSOT.md"
-    ).read_bytes() == (
-        EVIDENCE / "ssot-candidate-002/SSOT.data-provenance-candidate.md"
-    ).read_bytes()
+    checks["historical_contract_snapshot"] = historical_contract.acceptable
+    checks["candidate_bytes_equal_historical_snapshot"] = digest(
+        EVIDENCE / "ssot-candidate-002/SSOT.data-provenance-candidate.md",
+    ) == ADOPTED_SSOT
 
     acquisition = load("acquisition-manifest.json")
     checks["all_acquisition_urls_official"] = all(
@@ -236,6 +234,7 @@ def validate(*, pre_final: bool) -> dict[str, Any]:
         "missing_files": missing,
         "json_errors": json_errors,
         "failed_checks": failed,
+        "historical_contract": historical_contract.to_builtins(),
     }
 
 

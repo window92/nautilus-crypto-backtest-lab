@@ -1,0 +1,15 @@
+$ /home/builder/projects/nautilus-crypto-backtest-lab/.venv/bin/python -m unittest -v tests.unit.test_spot_cash_reconciliation
+exit_code=0
+duration_seconds=3.405067
+
+test_adverse_next_bar_gap_unfunded_buy_is_rejected_pre_submission (tests.unit.test_spot_cash_reconciliation.SpotCashReconciliationTests.test_adverse_next_bar_gap_unfunded_buy_is_rejected_pre_submission) ... ok
+test_balance_or_commission_tamper_fails_independent_reconciliation (tests.unit.test_spot_cash_reconciliation.SpotCashReconciliationTests.test_balance_or_commission_tamper_fails_independent_reconciliation) ... ok
+test_nonfinancial_account_snapshot_before_fill_is_allowed_but_bound_exactly (tests.unit.test_spot_cash_reconciliation.SpotCashReconciliationTests.test_nonfinancial_account_snapshot_before_fill_is_allowed_but_bound_exactly) ... ok
+test_partial_fills_fees_and_decimal_rounding_reconcile_exactly (tests.unit.test_spot_cash_reconciliation.SpotCashReconciliationTests.test_partial_fills_fees_and_decimal_rounding_reconcile_exactly) ... ok
+test_quote_denominated_buy_survives_adverse_gap_without_overspend (tests.unit.test_spot_cash_reconciliation.SpotCashReconciliationTests.test_quote_denominated_buy_survives_adverse_gap_without_overspend) ... ok
+test_sell_exceeding_available_base_is_rejected_even_if_native_rows_exist (tests.unit.test_spot_cash_reconciliation.SpotCashReconciliationTests.test_sell_exceeding_available_base_is_rejected_even_if_native_rows_exist) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 2.875s
+
+OK

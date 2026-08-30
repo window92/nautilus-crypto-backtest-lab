@@ -258,6 +258,8 @@ class RuntimeLock(StrictModel):
     nautilus_wheel_filename: str
     nautilus_wheel_sha256: str
     nautilus_wheel_size_bytes: int
+    nautilus_installed_payload_sha256: str
+    nautilus_installed_payload_file_count: int
     nautilus_provenance_status: str
     runtime_implementation: str
     python_implementation: str
@@ -274,13 +276,19 @@ class RuntimeLock(StrictModel):
     locale: str
 
     def __post_init__(self) -> None:
-        if self.schema_version != 2:
-            _fail("runtime_lock.schema_version", "only schema version 2 is supported")
-        for name in ("nautilus_wheel_sha256", "dependency_lock_sha256"):
+        if self.schema_version != 3:
+            _fail("runtime_lock.schema_version", "only schema version 3 is supported")
+        for name in (
+            "nautilus_wheel_sha256",
+            "nautilus_installed_payload_sha256",
+            "dependency_lock_sha256",
+        ):
             _require_sha256(getattr(self, name), f"runtime_lock.{name}")
         _require_git_sha(self.nautilus_source_commit, "runtime_lock.nautilus_source_commit")
         if self.nautilus_wheel_size_bytes <= 0:
             _fail("runtime_lock.nautilus_wheel_size_bytes", "must be positive")
+        if self.nautilus_installed_payload_file_count <= 0:
+            _fail("runtime_lock.nautilus_installed_payload_file_count", "must be positive")
         if not self.dependencies:
             _fail("runtime_lock.dependencies", "complete resolved dependency set is required")
         for name, version in self.dependencies.items():

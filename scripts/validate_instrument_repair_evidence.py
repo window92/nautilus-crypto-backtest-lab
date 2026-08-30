@@ -8,6 +8,8 @@ import json
 from pathlib import Path
 from typing import Any
 
+from crypto_lab.historical_contracts import validate_validator_contract
+
 
 ROOT = Path(__file__).resolve().parents[1]
 EVIDENCE = ROOT / "evidence/repair/instrument-representation-funding-checker-001"
@@ -61,6 +63,10 @@ def main() -> int:
         if path.is_file()
     }
     failures: list[str] = []
+    historical_contract = validate_validator_contract(
+        Path(__file__).name,
+        repository_root=ROOT,
+    )
     missing = sorted(REQUIRED - present)
     if missing:
         failures.append("missing:" + ",".join(missing))
@@ -179,9 +185,8 @@ def main() -> int:
     ):
         failures.append("test_results_invalid")
 
-    observed_locks = {name: sha256_file(ROOT / name) for name in EXPECTED_LOCKS}
-    if observed_locks != EXPECTED_LOCKS:
-        failures.append("locked_identity_changed")
+    if not historical_contract.acceptable:
+        failures.append("historical_contract_snapshot_invalid")
     forbidden_suffixes = {".duckdb", ".parquet", ".zip"}
     if any(path.suffix in forbidden_suffixes for path in EVIDENCE.rglob("*")):
         failures.append("payload_committed_to_evidence")
@@ -214,6 +219,7 @@ def main() -> int:
                 "file_count": len(present),
                 "failed_attempt_count": len(failed_lines),
                 "failures": failures,
+                "historical_contract": historical_contract.to_builtins(),
             },
             sort_keys=True,
         ),

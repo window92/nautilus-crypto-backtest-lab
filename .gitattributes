@@ -5,3 +5,7 @@ evidence/repair/binance-origin-archive-recovery-001/raw/** binary
 evidence/repair/binance-origin-archive-recovery-001/ssot-candidate-003/*.diff binary
 evidence/repair/free-official-binance-data-duckdb-001/ssot-candidate-004/*.diff binary
 evidence/repair/free-official-binance-data-duckdb-001/test-output.txt binary
+
+# Acceptance logs are generated, content-addressed audit transcripts. Preserve
+# their exact bytes and keep authored-source whitespace policy scoped to source.
+evidence/audit/comprehensive-remediation-001/acceptance-*/logs/*.log binary

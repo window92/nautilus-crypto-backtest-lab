@@ -10,6 +10,7 @@ from typing import Any
 
 from crypto_lab.hashing import canonical_sha256
 from crypto_lab.hashing import sha256_file
+from crypto_lab.historical_contracts import validate_validator_contract
 from crypto_lab.m3 import QualificationDownstreamBundle
 from crypto_lab.m3 import QualifiedProfileRegistry
 
@@ -20,6 +21,11 @@ DEFAULT_EVIDENCE = ROOT / "evidence/m3/m3-acceptance-001"
 
 def validate(evidence: Path = DEFAULT_EVIDENCE) -> dict[str, Any]:
     checks: dict[str, bool] = {}
+    historical_contract = validate_validator_contract(
+        Path(__file__).name,
+        repository_root=ROOT,
+    )
+    checks["historical_contract_snapshot"] = historical_contract.acceptable
     summary = json.loads((evidence / "acceptance-summary.json").read_text(encoding="utf-8"))
     checks["both_profiles_qualified"] = summary["profiles"] == {
         "spot": "QUALIFIED",
@@ -98,6 +104,7 @@ def validate(evidence: Path = DEFAULT_EVIDENCE) -> dict[str, Any]:
         "schema": "m3-evidence-validation-v1",
         "status": "PASS" if all(checks.values()) else "FAIL",
         "checks": checks,
+        "historical_contract": historical_contract.to_builtins(),
     }
 
 

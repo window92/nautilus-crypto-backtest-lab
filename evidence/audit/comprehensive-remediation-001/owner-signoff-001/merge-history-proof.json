@@ -1,0 +1,49 @@
+{
+  "base_commit": "890b9d41cc05ff091f41c82409d196c91b86d452",
+  "branch_head": "8db565395e3a010b8f71621b0f18b788eb9a6fd7",
+  "final_holdout_used": false,
+  "normal_merge": {
+    "merge_commit": "01934bdd2dbf10e7722971611e069694e52798e0",
+    "parents": [
+      "890b9d41cc05ff091f41c82409d196c91b86d452",
+      "8db565395e3a010b8f71621b0f18b788eb9a6fd7"
+    ],
+    "report_commit_ancestor_exit_codes": {
+      "19feca4877a8e061f3c236c68fe43e8534365c0d": 0,
+      "2dfd50378801350408405046c2c08d5dac636211": 0,
+      "31467fa24cca6cee3b2f6f9ab2f5d94e5a3e1fb2": 0,
+      "81decd646616dd5a6f1adbf29f82e8e466ed9656": 0,
+      "b4da94a5b8fe9d50f94c37b5764f5a4587660b63": 0,
+      "ddf55fb2a30fcdbbfa2f76db4101dc9852d6dcd4": 0
+    },
+    "tree": "af33eda10b931b4ab40c3a9fc44637cf02676fe5",
+    "tree_matches_branch": true,
+    "validator": {
+      "failure_count": 0,
+      "status": "PASS",
+      "validated_evidence_directory_count": 12,
+      "validated_run_count": 6,
+      "validation_identity": "8ec1ff63ad7b076ebe6830c68d69db352355afebe5c80e97da17ae242eb5550d"
+    }
+  },
+  "profitability_claim_authorized": false,
+  "required_github_method": "Create a merge commit",
+  "schema": "owner-signoff-merge-history-proof-v1",
+  "squash_merge": {
+    "commit": "2bdeca09076d44f04d546faa5918aebf4a8af506",
+    "parent": "890b9d41cc05ff091f41c82409d196c91b86d452",
+    "report_commit_ancestor_exit_codes": {
+      "19feca4877a8e061f3c236c68fe43e8534365c0d": 1,
+      "2dfd50378801350408405046c2c08d5dac636211": 1,
+      "31467fa24cca6cee3b2f6f9ab2f5d94e5a3e1fb2": 1,
+      "81decd646616dd5a6f1adbf29f82e8e466ed9656": 1,
+      "b4da94a5b8fe9d50f94c37b5764f5a4587660b63": 1,
+      "ddf55fb2a30fcdbbfa2f76db4101dc9852d6dcd4": 1
+    },
+    "tree": "af33eda10b931b4ab40c3a9fc44637cf02676fe5",
+    "tree_matches_branch": true,
+    "verdict": "PROHIBITED_HISTORY_LOSS"
+  },
+  "status": "PASS",
+  "verdict": "DO_NOT_SQUASH_OR_REBASE"
+}

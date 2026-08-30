@@ -7,6 +7,8 @@ from pathlib import Path
 from crypto_lab.data import DatasetRelease
 from crypto_lab.data import RawObjectStore
 from crypto_lab.hashing import sha256_file
+from crypto_lab.historical_contracts import HistoricalValidationState
+from crypto_lab.historical_contracts import validate_validator_contract
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -98,15 +100,22 @@ class M2OfficialSampleQualificationTests(unittest.TestCase):
         self.assertTrue(catalog["spot"]["semantic_inventory_equal"])
         self.assertTrue(catalog["perpetual"]["semantic_inventory_equal"])
 
-    def test_locked_ssot_and_runtime_were_not_changed(self) -> None:
-        self.assertEqual(
+    def test_historical_ssot_and_runtime_are_validated_against_their_snapshot(self) -> None:
+        self.assertNotEqual(
             sha256_file(ROOT / "SSOT.md"),
             "b4deb7048242239234de7eaa353b623b3e45247eb42f1021dbc26ffd910edb99",
         )
-        self.assertEqual(
-            sha256_file(ROOT / "runtime.lock.json"),
-            "4032df9f355348c2a0cfa9f79f331f97c9a8d24ecc8490a573d2c7f788bafddd",
+        historical = validate_validator_contract(
+            "validate_m2_evidence.py",
+            repository_root=ROOT,
         )
+        self.assertTrue(historical.acceptable, historical.to_builtins())
+        self.assertEqual(
+            historical.state,
+            HistoricalValidationState.CURRENT_ROOT_DIFFERS_VALIDLY,
+        )
+        self.assertTrue(historical.files["runtime.lock.json"]["historical_snapshot_match"])
+        self.assertFalse(historical.files["runtime.lock.json"]["current_root_match"])
 
 
 if __name__ == "__main__":

@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-import hashlib
 import json
 import subprocess
 import sys
@@ -17,12 +16,10 @@ if str(ROOT) not in sys.path:
 
 from crypto_lab.data import DatasetRelease
 from crypto_lab.hashing import sha256_file
+from crypto_lab.historical_contracts import validate_validator_contract
 
 
 EVIDENCE = ROOT / "evidence/m2/m2-acceptance-001"
-EXPECTED_SSOT = "7bb2fc68d9b73b168a582d890a6f952fd0c4eb20fc0e31857903909f27dfaa8f"
-EXPECTED_RUNTIME = "4032df9f355348c2a0cfa9f79f331f97c9a8d24ecc8490a573d2c7f788bafddd"
-EXPECTED_DEPENDENCIES = "b2765c9e33b10566fc327b48920fd1d3a73618c19622baaceab1fe9dca61df47"
 
 
 def load(name: str) -> Any:
@@ -30,6 +27,10 @@ def load(name: str) -> Any:
 
 
 def validate() -> dict[str, Any]:
+    historical_contract = validate_validator_contract(
+        Path(__file__).name,
+        repository_root=ROOT,
+    )
     required = {
         "baseline-attestation.json",
         "official-source-contract-references.json",
@@ -129,11 +130,7 @@ def validate() -> dict[str, Any]:
             "timestamp-endpoint-probes.json",
         )
     )
-    checks["locked_hashes"] = (
-        sha256_file(ROOT / "SSOT.md") == EXPECTED_SSOT
-        and sha256_file(ROOT / "runtime.lock.json") == EXPECTED_RUNTIME
-        and sha256_file(ROOT / "requirements.lock.txt") == EXPECTED_DEPENDENCIES
-    )
+    checks["historical_contract_snapshot"] = historical_contract.acceptable
     failures = [json.loads(line) for line in (EVIDENCE / "failed-attempts.jsonl").read_text().splitlines()]
     checks["failed_attempts_retained"] = len(failures) >= 3
     changed_old_evidence = subprocess.run(
@@ -151,6 +148,7 @@ def validate() -> dict[str, Any]:
         "checks": checks,
         "missing_files": missing,
         "evidence_directory": str(EVIDENCE.relative_to(ROOT)),
+        "historical_contract": historical_contract.to_builtins(),
     }
 
 

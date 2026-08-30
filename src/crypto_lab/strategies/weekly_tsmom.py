@@ -8,21 +8,19 @@ portfolio valuation, and PnL.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import UTC
-from datetime import datetime
 from decimal import Decimal
 from decimal import InvalidOperation
 from decimal import localcontext
 from enum import StrEnum
 from typing import Any
 
-from nautilus_trader.model import AggregationSource
 from nautilus_trader.model import Bar
 from nautilus_trader.model import BarType
 from nautilus_trader.model import Currency
 
 from crypto_lab.config import MarketProfile
 from crypto_lab.status import FailureCode
+from crypto_lab.timestamps import unix_ns_to_utc_datetime
 from crypto_lab.strategies.base import GuardedCausalStrategy
 from crypto_lab.strategies.base import OrderIntent
 from crypto_lab.strategies.base import StrategySpec
@@ -39,7 +37,6 @@ BUY_AND_HOLD_FAMILY = "BUY_AND_HOLD_1X_V1"
 LOOKBACK_CLOSES = 29
 VOLATILITY_TARGET = Decimal("0.20")
 ANNUALIZATION_DAYS = Decimal(365)
-LOCKED_FEE_RATE = Decimal("0.001")
 
 
 class TsmomCandidateMode(StrEnum):
@@ -115,7 +112,7 @@ def weekly_target(momentum: Decimal, profile: MarketProfile) -> TargetState:
 def is_monday_utc_boundary(timestamp_ns: int) -> bool:
     if timestamp_ns < 0 or timestamp_ns % DAY_NS != 0:
         return False
-    return datetime.fromtimestamp(timestamp_ns / 1_000_000_000, tz=UTC).weekday() == 0
+    return unix_ns_to_utc_datetime(timestamp_ns).weekday() == 0
 
 
 def floor_to_increment(value: Decimal, increment: Decimal) -> Decimal:
@@ -169,7 +166,11 @@ def locked_weekly_tsmom_parameters(
             if profile is MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY
             else "CLOSE_TO_FLAT_CONFIRM_THEN_SEPARATE_REOPEN"
         ),
-        "spot_cash_affordability_price": "SIGNAL_CLOSE_PLUS_ONE_NATIVE_PRICE_INCREMENT",
+        "spot_cash_affordability_policy": (
+            "QUOTE_NOTIONAL_CAPPED_BY_NATIVE_FREE_QUOTE_AND_INSTRUMENT_MAX_PRICE_ROUNDING_RESERVE"
+            if profile is MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY
+            else "NOT_APPLICABLE_PERPETUAL"
+        ),
         "strategy_family": TSMOM_FAMILY,
         "target_fraction_rule": (
             "1.0"
@@ -195,7 +196,7 @@ def locked_weekly_tsmom_strategy_spec(
     mode = parameters["candidate_mode"]
     return StrategySpec(
         strategy_id=f"owner-strategy-research-001-{profile.value.lower()}-{registration_id}",
-        strategy_version="1",
+        strategy_version="2",
         market_profile=profile,
         instrument_id=instrument_id,
         signal_bar_types=(f"{instrument_id}-1-DAY-LAST-INTERNAL@1-MINUTE-EXTERNAL",),
@@ -246,7 +247,11 @@ def locked_buy_and_hold_parameters(profile: MarketProfile, benchmark_id: str) ->
         "order_type": "MARKET",
         "quantity_rounding": "FLOOR_TO_EFFECTIVE_SIZE_INCREMENT",
         "real_profitability_claim": "FALSE",
-        "spot_cash_affordability_price": "SIGNAL_CLOSE_PLUS_ONE_NATIVE_PRICE_INCREMENT",
+        "spot_cash_affordability_policy": (
+            "QUOTE_NOTIONAL_CAPPED_BY_NATIVE_FREE_QUOTE_AND_INSTRUMENT_MAX_PRICE_ROUNDING_RESERVE"
+            if profile is MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY
+            else "NOT_APPLICABLE_PERPETUAL"
+        ),
         "strategy_family": BUY_AND_HOLD_FAMILY,
         "target_gross_exposure": "1.0",
     }
@@ -259,7 +264,7 @@ def locked_buy_and_hold_strategy_spec(
     instrument_id = _instrument_id(profile)
     return StrategySpec(
         strategy_id=f"owner-strategy-research-001-{profile.value.lower()}-buy-and-hold-1x",
-        strategy_version="1",
+        strategy_version="2",
         market_profile=profile,
         instrument_id=instrument_id,
         signal_bar_types=(f"{instrument_id}-1-MINUTE-LAST-EXTERNAL",),
@@ -319,13 +324,6 @@ class _NativeEquityTargetStrategy(GuardedCausalStrategy):
         if fraction == 0:
             return Decimal(0), equity
         denominator = price
-        if self._profile is MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY:
-            assert self._instrument_id is not None
-            instrument = self.cache.instrument(self._instrument_id)
-            if instrument is None:
-                raise RuntimeError("native Instrument unavailable for Spot affordability")
-            denominator += Decimal(str(instrument.price_increment.as_decimal()))
-            denominator *= Decimal(1) + LOCKED_FEE_RATE
         return floor_to_increment(equity * fraction / denominator, self._size_increment), equity
 
     def _eligible_delta(self, quantity: Decimal, reference_price: Decimal, *, reason: str) -> bool:
@@ -555,6 +553,12 @@ class BtcusdtWeeklyTsmom28(_NativeEquityTargetStrategy):
             OrderIntent(side, self._quantity_text(quantity), "MARKET", f"TSMOM28_REBALANCE_TO_{target.value}"),
             signal_bar,
             decision_timestamp_ns=decision_timestamp_ns,
+            spot_quote_notional=(
+                quantity * reference_price
+                if self._profile is MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY
+                and side == "BUY"
+                else None
+            ),
         )
 
     def on_bar(self, bar: Bar) -> None:
@@ -720,6 +724,11 @@ class BtcusdtBuyAndHold1x(_NativeEquityTargetStrategy):
         self._submit_guarded(
             OrderIntent("BUY", self._quantity_text(quantity), "MARKET", "BUY_AND_HOLD_1X_INITIAL_ENTRY"),
             bar,
+            spot_quote_notional=(
+                quantity * close
+                if self._profile is MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY
+                else None
+            ),
         )
 
 

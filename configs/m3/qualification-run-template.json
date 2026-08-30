@@ -1,7 +1,7 @@
 {
   "run_id": "m0-downstream-contract-001",
   "run_purpose": "QUALIFICATION",
-  "runtime_lock_sha256": "4032df9f355348c2a0cfa9f79f331f97c9a8d24ecc8490a573d2c7f788bafddd",
+  "runtime_lock_sha256": "e0c0668fdd6886450d53fc184ef479361eee94a7294e39dba53ad0d96c973621",
   "market_profile": "BINANCE_SPOT_CASH_LONG_ONLY",
   "instrument_id": "BTCUSDT.BINANCE",
   "dataset_release_id": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
