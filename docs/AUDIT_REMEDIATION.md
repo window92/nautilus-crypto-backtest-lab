@@ -218,15 +218,15 @@ repository-relative targets; the random isolated snapshot directory therefore
 cannot change the output digest.
 
 The authority built from Product commit
-`888f4d100a7a9e2d79d9aef1986d1e7a7ad0ad2b` has project-runtime authority
+`e6760b99733a3ed66de85600d311a30aa0594530` has project-runtime authority
 SHA-256
-`f4cf6f61c983ac08f45c2342a42e07b012df10c1f4d3081af32671b255f3b72a`,
+`9c245ff940167450ed29c5aec52e30a046c5d5d7a6a144fea712bc1d4fc968f1`,
 combined data-runtime authority SHA-256
-`82e147bc92a9f1e9731b9721840b5225b8d6cc5ed2f5bd8509ca20234da7e53a`,
+`450b8257c53a214d72f9a3575c278ab68608f995ae72ae9514535d26c7d1d13f`,
 expected-results SHA-256
-`c33eb8ce3e666a01421b177773bc7ae2e42f4aaf67b431be788f2579853eaafb`,
+`74995b74d3f2f7f137292b375cbc5ecf2a32c0484ad4d211e12e956825eca5e2`,
 build-spec SHA-256
-`3387eeee3e7340c9332d264b742318928410029e8714001a4ce64c9ffe4c43a8`,
+`8119cd825beb47a4dca8c1c5ce201589635e7f2310ccb1155aa9c207e8a783d4`,
 and historical manifest SHA-256
 `14af6dbeb28427f1877e2f4945c80d1466fe7f5f056a744c9020fd1aaad2d778`.
 Its canonical acceptance record (SHA-256
