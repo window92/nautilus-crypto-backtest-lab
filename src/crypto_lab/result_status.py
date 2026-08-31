@@ -225,6 +225,55 @@ R2_RUNTIME_SUPERSEDED_RESULTS: dict[str, dict[str, str]] = {
             "spot-benchmark-run-524a71ec1f23"
         ),
     },
+    "retry-005-spot-benchmark": {
+        "market_profile": "BINANCE_SPOT_CASH_LONG_ONLY",
+        "result_class": HistoricalResultClass.BENCHMARK.value,
+        "primary_path": (
+            "runs/adversarial-remediation-002-retry-005-spot-benchmark-run-2c31e21fea1f"
+        ),
+        "replay_path": (
+            "runs/replays/adversarial-remediation-002-retry-005-spot-benchmark-"
+            "buy-and-hold-1x-development/adversarial-remediation-002-retry-005-"
+            "spot-benchmark-run-2c31e21fea1f"
+        ),
+    },
+    "retry-005-spot-candidate-a": {
+        "market_profile": "BINANCE_SPOT_CASH_LONG_ONLY",
+        "result_class": HistoricalResultClass.CANDIDATE.value,
+        "primary_path": (
+            "runs/adversarial-remediation-002-retry-005-spot-candidate-a-run-c14c350c3c6c"
+        ),
+        "replay_path": (
+            "runs/replays/adversarial-remediation-002-retry-005-spot-candidate-a-"
+            "development/adversarial-remediation-002-retry-005-spot-candidate-a-"
+            "run-c14c350c3c6c"
+        ),
+    },
+    "retry-005-spot-candidate-b": {
+        "market_profile": "BINANCE_SPOT_CASH_LONG_ONLY",
+        "result_class": HistoricalResultClass.CANDIDATE.value,
+        "primary_path": (
+            "runs/adversarial-remediation-002-retry-005-spot-candidate-b-run-cdd40a577711"
+        ),
+        "replay_path": (
+            "runs/replays/adversarial-remediation-002-retry-005-spot-candidate-b-"
+            "development/adversarial-remediation-002-retry-005-spot-candidate-b-"
+            "run-cdd40a577711"
+        ),
+    },
+    "retry-005-perpetual-benchmark": {
+        "market_profile": "BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING",
+        "result_class": HistoricalResultClass.BENCHMARK.value,
+        "primary_path": (
+            "runs/adversarial-remediation-002-retry-005-perpetual-benchmark-run-"
+            "2a0ab6ee5579"
+        ),
+        "replay_path": (
+            "runs/replays/adversarial-remediation-002-retry-005-perpetual-benchmark-"
+            "buy-and-hold-1x-development/adversarial-remediation-002-retry-005-"
+            "perpetual-benchmark-run-2a0ab6ee5579"
+        ),
+    },
 }
 
 

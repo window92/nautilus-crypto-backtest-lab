@@ -64,6 +64,14 @@ remains `SSOT.md`; this file does not change normative behavior.
   and uses the midnight subset. Stale Instruments/currencies, unpriced state,
   duplicate or unexpected currencies, and missing grid points fail closed.
   Differently sampled Nautilus statistics are diagnostics only.
+- Closed a same-timestamp event-order defect exposed by retry-005: the pinned
+  Nautilus scheduler's automatic UTC-midnight portfolio snapshot precedes a
+  Funding event at that exact timestamp. Official metric families now capture
+  another native `PortfolioSnapshot` through the public API after the complete
+  Mark/Funding/Bar batch, bind that phase, and component validation reconciles
+  every selected day before sealing. The incomplete retry-005 plan and its
+  original bytes are retained; all of its primary/replay result packages are
+  inactive under additive runtime supersession before a replacement epoch.
 - Added exact negative controls for causal intervals, Spot affordability,
   Perpetual accounting/funding, post-boundary events, full Raw inventory,
   final Evidence inventory, validator identity, runtime startup injection,

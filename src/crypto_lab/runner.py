@@ -77,6 +77,12 @@ from crypto_lab.strategies import resolve_registered_strategy_identity
 
 ROOT = Path(__file__).resolve().parents[2]
 ONE_MINUTE_NS = 60_000_000_000
+DAY_NS = 86_400_000_000_000
+OFFICIAL_DAILY_METRIC_FAMILIES = {
+    "BTCUSDT_DAILY_PRICE_VS_SMA20_TREND",
+    "BTCUSDT_WEEKLY_TSMOM28_V1",
+    "BUY_AND_HOLD_1X_V1",
+}
 
 
 class QualificationControl(StrEnum):
@@ -1207,36 +1213,97 @@ def _native_statistics(
     }
 
 
-def _native_portfolio_snapshots(engine: BacktestEngine, account: Any | None) -> list[dict[str, Any]]:
+def _project_native_portfolio_snapshot(snapshot: Any) -> dict[str, Any]:
+    """Project one public Nautilus ``PortfolioSnapshot`` without recomputation."""
+
+    return {
+        "account_id": str(snapshot.account_id),
+        "account_type": str(snapshot.account_type),
+        "base_currency": (
+            None if snapshot.base_currency is None else str(snapshot.base_currency)
+        ),
+        "base_currency_equity": (
+            None
+            if snapshot.base_currency_equity is None
+            else _money_projection(snapshot.base_currency_equity)
+        ),
+        "total_equity": [_money_projection(item) for item in snapshot.total_equity],
+        "realized_pnls": [_money_projection(item) for item in snapshot.realized_pnls],
+        "unrealized_pnls": [_money_projection(item) for item in snapshot.unrealized_pnls],
+        "is_stale": bool(snapshot.is_stale),
+        "stale_instruments": [str(item) for item in snapshot.stale_instruments],
+        "stale_currencies": [str(item) for item in snapshot.stale_currencies],
+        "unpriced_instruments": [str(item) for item in snapshot.unpriced_instruments],
+        "ts_event": int(snapshot.ts_event),
+        "ts_init": int(snapshot.ts_init),
+    }
+
+
+def _native_portfolio_snapshots(
+    engine: BacktestEngine,
+    account: Any | None,
+    *,
+    explicit_post_event_snapshots: tuple[Any, ...] = (),
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Select one native snapshot per timestamp, preferring post-event captures.
+
+    Nautilus 2.0.0rc2's scheduled midnight snapshot fires before data events
+    carrying that same timestamp.  The runner therefore asks the public
+    ``Portfolio.build_snapshot`` API for another *native* snapshot after the
+    complete same-timestamp data batch.  This function only selects and
+    projects those native objects; it calculates no financial value.
+    """
+
     if account is None:
-        return []
-    rows: list[dict[str, Any]] = []
-    for index, snapshot in enumerate(engine.portfolio.snapshots(account.id)):
-        rows.append(
-            {
-                "snapshot_index": index,
-                "account_id": str(snapshot.account_id),
-                "account_type": str(snapshot.account_type),
-                "base_currency": (
-                    None if snapshot.base_currency is None else str(snapshot.base_currency)
-                ),
-                "base_currency_equity": (
-                    None
-                    if snapshot.base_currency_equity is None
-                    else _money_projection(snapshot.base_currency_equity)
-                ),
-                "total_equity": [_money_projection(item) for item in snapshot.total_equity],
-                "realized_pnls": [_money_projection(item) for item in snapshot.realized_pnls],
-                "unrealized_pnls": [_money_projection(item) for item in snapshot.unrealized_pnls],
-                "is_stale": bool(snapshot.is_stale),
-                "stale_instruments": [str(item) for item in snapshot.stale_instruments],
-                "stale_currencies": [str(item) for item in snapshot.stale_currencies],
-                "unpriced_instruments": [str(item) for item in snapshot.unpriced_instruments],
-                "ts_event": int(snapshot.ts_event),
-                "ts_init": int(snapshot.ts_init),
-            },
-        )
-    return rows
+        return [], {
+            "schema": "native-post-event-portfolio-snapshot-capture-v1",
+            "status": "ACCOUNT_UNAVAILABLE",
+            "financial_state_mutated_by_project": False,
+        }
+
+    automatic = list(engine.portfolio.snapshots(account.id))
+    selected: dict[int, dict[str, Any]] = {}
+    for snapshot in automatic:
+        projection = _project_native_portfolio_snapshot(snapshot)
+        timestamp = int(projection["ts_event"])
+        if int(projection["ts_init"]) != timestamp:
+            raise RuntimeError("native PortfolioSnapshot timestamp mismatch")
+        previous = selected.get(timestamp)
+        if previous is not None and previous != projection:
+            raise RuntimeError("conflicting native PortfolioSnapshots share a timestamp")
+        selected[timestamp] = projection
+
+    explicit_by_timestamp: dict[int, dict[str, Any]] = {}
+    for snapshot in explicit_post_event_snapshots:
+        projection = _project_native_portfolio_snapshot(snapshot)
+        timestamp = int(projection["ts_event"])
+        if int(projection["ts_init"]) != timestamp:
+            raise RuntimeError("post-event PortfolioSnapshot timestamp mismatch")
+        if timestamp in explicit_by_timestamp:
+            raise RuntimeError("duplicate post-event PortfolioSnapshot timestamp")
+        explicit_by_timestamp[timestamp] = projection
+
+    superseded_pre_event = sum(
+        timestamp in selected and selected[timestamp] != projection
+        for timestamp, projection in explicit_by_timestamp.items()
+    )
+    selected.update(explicit_by_timestamp)
+    rows = [
+        {"snapshot_index": index, **projection}
+        for index, (_timestamp, projection) in enumerate(sorted(selected.items()))
+    ]
+    return rows, {
+        "schema": "native-post-event-portfolio-snapshot-capture-v1",
+        "status": "PASS",
+        "public_api": "nautilus_trader.portfolio.Portfolio.build_snapshot",
+        "capture_phase": "AFTER_ALL_SAME_TIMESTAMP_MARK_FUNDING_BAR_EVENTS",
+        "automatic_snapshot_count": len(automatic),
+        "explicit_post_event_snapshot_count": len(explicit_by_timestamp),
+        "canonical_snapshot_count": len(rows),
+        "superseded_pre_event_snapshot_count": superseded_pre_event,
+        "explicit_post_event_timestamps_ns": sorted(explicit_by_timestamp),
+        "financial_state_mutated_by_project": False,
+    }
 
 
 def _capture_engine(
@@ -1247,6 +1314,7 @@ def _capture_engine(
     source_run_id: str,
     settlement_currency: str,
     preserved_funding_events: tuple[dict[str, Any], ...] = (),
+    explicit_post_event_snapshots: tuple[Any, ...] = (),
 ) -> dict[str, Any]:
     orders_native = engine.cache.orders(instrument_id=instrument_id)
     order_rows: list[dict[str, Any]] = []
@@ -1317,7 +1385,11 @@ def _capture_engine(
         expected_closed_cycle_count=expected_closed_cycles,
         closed_event_snapshots=closed_snapshots,
     )
-    portfolio_snapshots = _native_portfolio_snapshots(engine, account)
+    portfolio_snapshots, portfolio_snapshot_capture = _native_portfolio_snapshots(
+        engine,
+        account,
+        explicit_post_event_snapshots=explicit_post_event_snapshots,
+    )
     funding_events: list[dict[str, Any]] = [dict(item) for item in preserved_funding_events]
     for position in positions_native:
         funding_events.extend(
@@ -1371,6 +1443,7 @@ def _capture_engine(
         "account_events": account_events,
         "funding_events": funding_events,
         "portfolio_snapshots": portfolio_snapshots,
+        "portfolio_snapshot_capture": portfolio_snapshot_capture,
         "native_closed_position_snapshots": list(closed_snapshots),
         "native_completed_trades": native_completed.to_builtins(),
         "native_statistics": _native_statistics(
@@ -1403,25 +1476,33 @@ def _capture_engine(
     }
 
 
-def _run_real_data_with_native_funding_checkpoints(
+def _run_real_data_with_native_boundary_checkpoints(
     engine: BacktestEngine,
     *,
     data: tuple[Any, ...],
     instrument_id: Any,
     funding_source_events: tuple[dict[str, Any], ...] = (),
     start_ns: int | None = None,
+    scoring_start_ns: int,
     end_ns: int,
-) -> tuple[tuple[dict[str, Any], ...], tuple[dict[str, Any], ...]]:
-    """Run public streaming batches and preserve native adjustments before NETTING reuse.
+    capture_daily_portfolio: bool = False,
+) -> tuple[
+    tuple[dict[str, Any], ...],
+    tuple[dict[str, Any], ...],
+    tuple[Any, ...],
+]:
+    """Run public streaming batches and capture causal native boundaries.
 
     The pinned runtime reuses a NETTING position identifier after close-to-flat and
     opposite-side reopen.  Its final cache view therefore no longer carries an
     earlier ``PositionAdjusted(FUNDING)``.  Public streaming mode lets the runner
-    take a read-only native checkpoint at each funding boundary, then resume the
-    exact same engine.  No account, position, or financial value is changed here.
+    take a read-only native checkpoint at each funding boundary.  The same public
+    mode also permits a native ``Portfolio.build_snapshot`` call after every
+    complete same-timestamp daily batch; this avoids the pinned runtime's scheduled
+    pre-event midnight snapshot without calculating or changing a financial value.
     """
 
-    boundaries = sorted(
+    funding_boundaries = sorted(
         {
             int(item.next_funding_ns)
             if item.next_funding_ns is not None
@@ -1430,20 +1511,37 @@ def _run_real_data_with_native_funding_checkpoints(
             if isinstance(item, FundingRateUpdate)
         },
     )
-    if not boundaries:
-        engine.add_data(list(data))
-        engine.run(start=start_ns, end=end_ns)
-        return (), ()
-    if boundaries[-1] >= end_ns:
+    if funding_boundaries and funding_boundaries[-1] >= end_ns:
         raise DataContractError(
             FailureCode.DATA_TIMESTAMP_INVALID,
             "funding checkpoint reaches or exceeds scoring_end_exclusive",
         )
+    if capture_daily_portfolio:
+        if (
+            scoring_start_ns > end_ns
+            or (end_ns - scoring_start_ns) % DAY_NS != 0
+        ):
+            raise DataContractError(
+                FailureCode.PERFORMANCE_METRICS_INVALID,
+                "scoring interval does not admit the exact inclusive daily valuation grid",
+            )
+        valuation_boundaries = tuple(range(scoring_start_ns, end_ns + 1, DAY_NS))
+    else:
+        valuation_boundaries = ()
+    processing_boundaries = sorted(
+        {*funding_boundaries, *valuation_boundaries},
+    )
+
+    if not processing_boundaries:
+        engine.add_data(list(data))
+        engine.run(start=start_ns, end=end_ns)
+        return (), (), ()
 
     ordered = list(data)
     cursor = 0
     preserved: list[dict[str, Any]] = []
     checkpoints: list[dict[str, Any]] = []
+    post_event_snapshots: list[Any] = []
     first_batch = True
     source_by_boundary = {
         int(item["calc_time_ns"]): item
@@ -1454,7 +1552,9 @@ def _run_real_data_with_native_funding_checkpoints(
             FailureCode.FUNDING_AMBIGUOUS,
             "duplicate official funding source boundary",
         )
-    for boundary_ns in boundaries:
+    funding_boundary_set = set(funding_boundaries)
+    valuation_boundary_set = set(valuation_boundaries)
+    for boundary_ns in processing_boundaries:
         pre_boundary_start = cursor
         while cursor < len(ordered) and int(ordered[cursor].ts_init) < boundary_ns:
             cursor += 1
@@ -1465,136 +1565,228 @@ def _run_real_data_with_native_funding_checkpoints(
             first_batch = False
             engine.clear_data()
 
-        # This snapshot is the financially eligible position at the instant
-        # immediately before the funding boundary.  Orders which first fill on
-        # a Bar at the boundary are processed after Mark/Funding data and must
-        # not retroactively become eligible for that settlement.
-        eligible_positions = [
-            {
-                "instrument_id": str(position.instrument_id),
-                "position_id": str(position.id),
-                "signed_qty": str(_exact_native_signed_position(position)),
-                "ts_last": int(position.ts_last),
-            }
-            for position in engine.cache.positions_open(instrument_id=instrument_id)
-        ]
-        account_before = engine.cache.account_for_venue(instrument_id.venue)
-        balances_before = (
-            []
-            if account_before is None
-            else [
+        is_funding_boundary = boundary_ns in funding_boundary_set
+        if is_funding_boundary:
+            # This is the financially eligible position immediately before
+            # Funding.  A Fill first created by the Bar at this timestamp is
+            # processed later and cannot become retroactively eligible.
+            eligible_positions = [
                 {
-                    "currency": str(balance.currency),
-                    "total": str(balance.total),
-                    "locked": str(balance.locked),
-                    "free": str(balance.free),
+                    "instrument_id": str(position.instrument_id),
+                    "position_id": str(position.id),
+                    "signed_qty": str(_exact_native_signed_position(position)),
+                    "ts_last": int(position.ts_last),
                 }
-                for balance in account_before.balances().values()
+                for position in engine.cache.positions_open(instrument_id=instrument_id)
             ]
-        )
+            account_before = engine.cache.account_for_venue(instrument_id.venue)
+            balances_before = (
+                []
+                if account_before is None
+                else [
+                    {
+                        "currency": str(balance.currency),
+                        "total": str(balance.total),
+                        "locked": str(balance.locked),
+                        "free": str(balance.free),
+                    }
+                    for balance in account_before.balances().values()
+                ]
+            )
+        else:
+            eligible_positions = []
+            balances_before = []
 
         boundary_start = cursor
         while cursor < len(ordered) and int(ordered[cursor].ts_init) == boundary_ns:
             cursor += 1
         boundary_batch = ordered[boundary_start:cursor]
         if not boundary_batch:
-            continue
+            raise DataContractError(
+                (
+                    FailureCode.FUNDING_MISSING
+                    if is_funding_boundary
+                    else FailureCode.PERFORMANCE_METRICS_INVALID
+                ),
+                f"no native data batch exists at required boundary {boundary_ns}",
+            )
         engine.add_data(boundary_batch)
         engine.run(start=start_ns if first_batch else None, streaming=True)
         first_batch = False
-        positions = engine.cache.positions(instrument_id=instrument_id)
-        native_adjustments = [
-            adjustment.to_dict()
-            for position in positions
-            for adjustment in position.adjustments()
-            if str(adjustment.adjustment_type) == "FUNDING"
-            and int(adjustment.ts_event) == boundary_ns
-        ]
-        preserved.extend(native_adjustments)
-        account = engine.cache.account_for_venue(instrument_id.venue)
-        account_events = [] if account is None else [event.to_dict() for event in account.events]
-        balances_after = (
-            []
-            if account is None
-            else [
-                {
-                    "currency": str(balance.currency),
-                    "total": str(balance.total),
-                    "locked": str(balance.locked),
-                    "free": str(balance.free),
-                }
-                for balance in account.balances().values()
+
+        if is_funding_boundary:
+            positions = engine.cache.positions(instrument_id=instrument_id)
+            native_adjustments = [
+                adjustment.to_dict()
+                for position in positions
+                for adjustment in position.adjustments()
+                if str(adjustment.adjustment_type) == "FUNDING"
+                and int(adjustment.ts_event) == boundary_ns
             ]
-        )
-        native_mark = engine.cache.mark_price(instrument_id)
-        runtime_updates = [
-            item
-            for item in boundary_batch
-            if isinstance(item, FundingRateUpdate)
-            and (
-                int(item.next_funding_ns)
-                if item.next_funding_ns is not None
-                else int(item.ts_init)
+            preserved.extend(native_adjustments)
+            account = engine.cache.account_for_venue(instrument_id.venue)
+            account_events = (
+                [] if account is None else [event.to_dict() for event in account.events]
             )
-            == boundary_ns
-        ]
-        source_event = source_by_boundary.get(boundary_ns)
-        checkpoints.append(
-            {
-                "boundary_ns": boundary_ns,
-                "source_event_key": (
-                    None if source_event is None else source_event.get("event_key")
-                ),
-                "source_funding_rate": (
-                    None if source_event is None else source_event.get("funding_rate")
-                ),
-                "runtime_updates_at_boundary": [
+            balances_after = (
+                []
+                if account is None
+                else [
                     {
-                        "rate": str(item.rate),
-                        "interval": item.interval,
-                        "next_funding_ns": item.next_funding_ns,
-                        "ts_event": int(item.ts_event),
-                        "ts_init": int(item.ts_init),
+                        "currency": str(balance.currency),
+                        "total": str(balance.total),
+                        "locked": str(balance.locked),
+                        "free": str(balance.free),
                     }
-                    for item in runtime_updates
-                ],
-                "native_mark_price": (
-                    None
-                    if native_mark is None
-                    else {
-                        "instrument_id": str(native_mark.instrument_id),
-                        "value": str(native_mark.value),
-                        "ts_event": int(native_mark.ts_event),
-                        "ts_init": int(native_mark.ts_init),
-                    }
+                    for balance in account.balances().values()
+                ]
+            )
+            native_mark = engine.cache.mark_price(instrument_id)
+            runtime_updates = [
+                item
+                for item in boundary_batch
+                if isinstance(item, FundingRateUpdate)
+                and (
+                    int(item.next_funding_ns)
+                    if item.next_funding_ns is not None
+                    else int(item.ts_init)
+                )
+                == boundary_ns
+            ]
+            source_event = source_by_boundary.get(boundary_ns)
+            checkpoints.append(
+                {
+                    "boundary_ns": boundary_ns,
+                    "source_event_key": (
+                        None if source_event is None else source_event.get("event_key")
+                    ),
+                    "source_funding_rate": (
+                        None if source_event is None else source_event.get("funding_rate")
+                    ),
+                    "runtime_updates_at_boundary": [
+                        {
+                            "rate": str(item.rate),
+                            "interval": item.interval,
+                            "next_funding_ns": item.next_funding_ns,
+                            "ts_event": int(item.ts_event),
+                            "ts_init": int(item.ts_init),
+                        }
+                        for item in runtime_updates
+                    ],
+                    "native_mark_price": (
+                        None
+                        if native_mark is None
+                        else {
+                            "instrument_id": str(native_mark.instrument_id),
+                            "value": str(native_mark.value),
+                            "ts_event": int(native_mark.ts_event),
+                            "ts_init": int(native_mark.ts_init),
+                        }
+                    ),
+                    "native_mark_age_ns": (
+                        None
+                        if native_mark is None
+                        else boundary_ns - int(native_mark.ts_event)
+                    ),
+                    "mark_selection": "LATEST_CAUSAL_AT_OR_BEFORE_FUNDING_TIMESTAMP",
+                    "native_adjustments": native_adjustments,
+                    "open_positions": eligible_positions,
+                    "eligible_position_capture": "IMMEDIATELY_BEFORE_FUNDING_BOUNDARY",
+                    "positions_after_boundary": [
+                        {
+                            "instrument_id": str(position.instrument_id),
+                            "position_id": str(position.id),
+                            "signed_qty": str(_exact_native_signed_position(position)),
+                            "ts_last": int(position.ts_last),
+                        }
+                        for position in engine.cache.positions_open(
+                            instrument_id=instrument_id,
+                        )
+                    ],
+                    "account_events_at_boundary": [
+                        event
+                        for event in account_events
+                        if int(event["ts_event"]) == boundary_ns
+                    ],
+                    "account_balances_before_boundary": balances_before,
+                    "account_balances_after_boundary": balances_after,
+                    "capture_api": (
+                        "nautilus_trader.backtest.BacktestEngine.run(streaming=True)"
+                    ),
+                    "financial_state_mutated_by_project": False,
+                },
+            )
+
+        if boundary_ns in valuation_boundary_set:
+            account = engine.cache.account_for_venue(instrument_id.venue)
+            if account is None:
+                raise DataContractError(
+                    FailureCode.PERFORMANCE_METRICS_INVALID,
+                    "native account unavailable at daily valuation boundary",
+                )
+            account_event_count_before = len(account.events)
+            balances_before_snapshot = tuple(
+                sorted(
+                    (
+                        str(balance.currency),
+                        str(balance.total),
+                        str(balance.locked),
+                        str(balance.free),
+                    )
+                    for balance in account.balances().values()
                 ),
-                "native_mark_age_ns": (
-                    None
-                    if native_mark is None
-                    else boundary_ns - int(native_mark.ts_event)
+            )
+            positions_before_snapshot = tuple(
+                sorted(
+                    (
+                        str(position.id),
+                        str(position.side),
+                        str(position.quantity),
+                        str(position.avg_px_open),
+                        str(position.realized_pnl),
+                        int(position.ts_last),
+                    )
+                    for position in engine.cache.positions(instrument_id=instrument_id)
                 ),
-                "mark_selection": "LATEST_CAUSAL_AT_OR_BEFORE_FUNDING_TIMESTAMP",
-                "native_adjustments": native_adjustments,
-                "open_positions": eligible_positions,
-                "eligible_position_capture": "IMMEDIATELY_BEFORE_FUNDING_BOUNDARY",
-                "positions_after_boundary": [
-                    {
-                        "instrument_id": str(position.instrument_id),
-                        "position_id": str(position.id),
-                        "signed_qty": str(_exact_native_signed_position(position)),
-                        "ts_last": int(position.ts_last),
-                    }
-                    for position in engine.cache.positions_open(instrument_id=instrument_id)
-                ],
-                "account_events_at_boundary": [
-                    event for event in account_events if int(event["ts_event"]) == boundary_ns
-                ],
-                "account_balances_before_boundary": balances_before,
-                "account_balances_after_boundary": balances_after,
-                "capture_api": "nautilus_trader.backtest.BacktestEngine.run(streaming=True)",
-                "financial_state_mutated_by_project": False,
-            },
-        )
+            )
+            snapshot = engine.portfolio.build_snapshot(account.id)
+            balances_after_snapshot = tuple(
+                sorted(
+                    (
+                        str(balance.currency),
+                        str(balance.total),
+                        str(balance.locked),
+                        str(balance.free),
+                    )
+                    for balance in account.balances().values()
+                ),
+            )
+            positions_after_snapshot = tuple(
+                sorted(
+                    (
+                        str(position.id),
+                        str(position.side),
+                        str(position.quantity),
+                        str(position.avg_px_open),
+                        str(position.realized_pnl),
+                        int(position.ts_last),
+                    )
+                    for position in engine.cache.positions(instrument_id=instrument_id)
+                ),
+            )
+            if (
+                snapshot is None
+                or int(snapshot.ts_event) != boundary_ns
+                or int(snapshot.ts_init) != boundary_ns
+                or len(account.events) != account_event_count_before
+                or balances_after_snapshot != balances_before_snapshot
+                or positions_after_snapshot != positions_before_snapshot
+            ):
+                raise DataContractError(
+                    FailureCode.PERFORMANCE_METRICS_INVALID,
+                    "post-event native PortfolioSnapshot capture changed financial state",
+                )
+            post_event_snapshots.append(snapshot)
         engine.clear_data()
 
     remaining = ordered[cursor:]
@@ -1612,7 +1804,11 @@ def _run_real_data_with_native_funding_checkpoints(
             streaming=True,
         )
     engine.end()
-    return tuple(preserved), tuple(checkpoints)
+    return (
+        tuple(preserved),
+        tuple(checkpoints),
+        tuple(post_event_snapshots),
+    )
 
 
 def _empty_capture() -> dict[str, Any]:
@@ -1633,6 +1829,11 @@ def _empty_capture() -> dict[str, Any]:
         "account_events": [],
         "funding_events": [],
         "portfolio_snapshots": [],
+        "portfolio_snapshot_capture": {
+            "schema": "native-post-event-portfolio-snapshot-capture-v1",
+            "status": "ENGINE_NOT_COMPLETED",
+            "financial_state_mutated_by_project": False,
+        },
         "native_closed_position_snapshots": [],
         "native_statistics": {
             "schema": "nautilus-native-statistics-v1",
@@ -1680,6 +1881,18 @@ def _run_bound(
         "engine_received_post_boundary_data": None,
         "engine_received_post_boundary_data_derived": False,
     }
+    if isinstance(config.dataset_release, DatasetRelease):
+        metadata_path = (
+            repository_root
+            / "data/releases"
+            / f"{config.dataset_release.instrument_metadata_identity}.metadata.json"
+        )
+        if config.dataset_release.funding_data_identity != "NOT_APPLICABLE":
+            funding_path = (
+                repository_root
+                / "data/releases"
+                / f"{config.dataset_release.funding_data_identity}.funding.json"
+            )
     if not preflight and isinstance(config.dataset_release, DatasetRelease):
         try:
             resolved_release = config.dataset_release.resolve_runtime_data(repository_root / "data")
@@ -1690,17 +1903,6 @@ def _run_bound(
         else:
             instrument = resolved_release.instrument
             data = resolved_release.data
-            metadata_path = (
-                repository_root
-                / "data/releases"
-                / f"{config.dataset_release.instrument_metadata_identity}.metadata.json"
-            )
-            if config.dataset_release.funding_data_identity != "NOT_APPLICABLE":
-                funding_path = (
-                    repository_root
-                    / "data/releases"
-                    / f"{config.dataset_release.funding_data_identity}.funding.json"
-                )
     if not preflight:
         preflight.extend(
             _preflight_data(
@@ -1793,6 +1995,7 @@ def _run_bound(
     engine_completed = False
     funding_checkpoints: tuple[dict[str, Any], ...] = ()
     preserved_funding: tuple[dict[str, Any], ...] = ()
+    post_event_portfolio_snapshots: tuple[Any, ...] = ()
     network_guard_evidence: dict[str, Any] = {
         "required": config.strategy_spec.parameters.get("network_access") == "FORBIDDEN",
         "enforced": False,
@@ -1879,12 +2082,25 @@ def _run_bound(
                     import socket
 
                     socket.create_connection(("example.invalid", 443))
+                capture_daily_portfolio = (
+                    isinstance(config, OfficialLabRunRequest)
+                    and run.run_purpose in {RunPurpose.RESEARCH, RunPurpose.OFFICIAL}
+                    and config.strategy_spec.parameters.get("strategy_family")
+                    in OFFICIAL_DAILY_METRIC_FAMILIES
+                )
+                requires_funding_checkpoints = any(
+                    isinstance(item, FundingRateUpdate) for item in data
+                )
                 if (
                     isinstance(config.dataset_release, DatasetRelease)
-                    and any(isinstance(item, FundingRateUpdate) for item in data)
+                    and (capture_daily_portfolio or requires_funding_checkpoints)
                 ):
-                    preserved_funding, funding_checkpoints = (
-                        _run_real_data_with_native_funding_checkpoints(
+                    (
+                        preserved_funding,
+                        funding_checkpoints,
+                        post_event_portfolio_snapshots,
+                    ) = (
+                        _run_real_data_with_native_boundary_checkpoints(
                             engine,
                             data=data,
                             instrument_id=instrument.id,
@@ -1900,11 +2116,14 @@ def _run_bound(
                                 )
                             ),
                             start_ns=explicit_time_origin_ns,
+                            scoring_start_ns=_timestamp_ns(run.scoring_start),
                             end_ns=_timestamp_ns(run.scoring_end_exclusive),
+                            capture_daily_portfolio=capture_daily_portfolio,
                         )
                     )
                 else:
                     preserved_funding = ()
+                    post_event_portfolio_snapshots = ()
                     engine.add_data(list(data))
                     engine.run(
                         start=explicit_time_origin_ns,
@@ -1921,6 +2140,7 @@ def _run_bound(
                 source_run_id=run.run_id,
                 settlement_currency=run.initial_capital.currency,
                 preserved_funding_events=preserved_funding,
+                explicit_post_event_snapshots=post_event_portfolio_snapshots,
             )
         except NetworkAttemptBlocked as exc:
             network_guard_evidence["attempts"] = list(network_evidence.attempts)
@@ -1929,6 +2149,26 @@ def _run_bound(
         except OfflineBoundaryUnavailable as exc:
             engine_error = f"{type(exc).__name__}: {exc}"
             preflight.append(FailureCode.NETWORK_DURING_OFFICIAL_RUN.value)
+        except DataContractError as exc:
+            engine_error = f"{type(exc).__name__}: {exc}"
+            preflight.append(exc.code)
+            if engine is not None and strategy is not None:
+                try:
+                    observations = json.loads(json.dumps(strategy.observations))
+                    assert instrument is not None
+                    capture = _capture_engine(
+                        engine,
+                        strategy,
+                        instrument.id,
+                        source_run_id=run.run_id,
+                        settlement_currency=run.initial_capital.currency,
+                        preserved_funding_events=preserved_funding,
+                        explicit_post_event_snapshots=post_event_portfolio_snapshots,
+                    )
+                except Exception as capture_exc:
+                    engine_error += (
+                        f"; evidence_capture={type(capture_exc).__name__}: {capture_exc}"
+                    )
         except Exception as exc:
             engine_error = f"{type(exc).__name__}: {exc}"
             preflight.append(FailureCode.UNSUPPORTED_RUNTIME.value)
@@ -1942,6 +2182,8 @@ def _run_bound(
                         instrument.id,
                         source_run_id=run.run_id,
                         settlement_currency=run.initial_capital.currency,
+                        preserved_funding_events=preserved_funding,
+                        explicit_post_event_snapshots=post_event_portfolio_snapshots,
                     )
                 except Exception as capture_exc:
                     engine_error += (
@@ -2157,6 +2399,9 @@ def _run_bound(
         "mark_price_count": capture["mark_price_count"],
         "funding_rate_count": capture["funding_rate_count"],
         "native_funding_checkpoints": list(funding_checkpoints),
+        "native_daily_portfolio_snapshot_capture": capture[
+            "portfolio_snapshot_capture"
+        ],
         "terminal_portfolio": capture["terminal_portfolio"],
         "mark_fallback_accepted": False,
         "fee_model": "nautilus_trader.execution:MakerTakerFeeModel",

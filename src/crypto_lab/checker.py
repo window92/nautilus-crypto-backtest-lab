@@ -40,6 +40,7 @@ from crypto_lab.git_identity import verify_source_revision
 from crypto_lab.profile_authority import validate_persisted_profile_authority
 from crypto_lab.perpetual_reconciliation import validate_perpetual_native_account_projection
 from crypto_lab.perpetual_reconciliation import validate_perpetual_reconciliation
+from crypto_lab.perpetual_reconciliation import replay_perpetual_valuation_states
 from crypto_lab.runtime import validate_persisted_runtime_identity
 from crypto_lab.status import FailureCode
 from crypto_lab.status import canonicalize_evidence_failure_codes
@@ -139,6 +140,336 @@ def _read_csv(path: Path) -> list[dict[str, str]]:
 def _commission_amount(value: str) -> Decimal:
     amount, _currency = value.split(" ", maxsplit=1)
     return Decimal(amount)
+
+
+_NATIVE_PORTFOLIO_SNAPSHOT_FIELDS = {
+    "snapshot_index",
+    "account_id",
+    "account_type",
+    "base_currency",
+    "base_currency_equity",
+    "total_equity",
+    "realized_pnls",
+    "unrealized_pnls",
+    "is_stale",
+    "stale_instruments",
+    "stale_currencies",
+    "unpriced_instruments",
+    "ts_event",
+    "ts_init",
+}
+
+
+def _snapshot_money_map(items: Any) -> dict[str, Decimal]:
+    if not isinstance(items, list):
+        raise ValueError("native PortfolioSnapshot Money list is invalid")
+    result: dict[str, Decimal] = {}
+    for item in items:
+        if not isinstance(item, dict) or set(item) != {"amount", "currency"}:
+            raise ValueError("native PortfolioSnapshot Money field set is invalid")
+        currency = str(item["currency"])
+        amount = Decimal(str(item["amount"]))
+        if not currency or currency in result or not amount.is_finite():
+            raise ValueError("native PortfolioSnapshot Money value is invalid")
+        result[currency] = amount
+    return result
+
+
+def _snapshot_pnl(items: Any, settlement_currency: str) -> Decimal:
+    values = _snapshot_money_map(items)
+    if set(values) - {settlement_currency}:
+        raise ValueError("native PortfolioSnapshot PnL currency is invalid")
+    return values.get(settlement_currency, Decimal(0))
+
+
+def _validate_official_daily_portfolio_snapshots(
+    *,
+    run_dir: Path,
+    config: LabRunConfig,
+    result: dict[str, Any],
+    observations: dict[str, Any],
+    fills: list[dict[str, str]],
+    funding_rows: list[dict[str, str]],
+    base_currency: str | None,
+) -> tuple[bool, dict[str, Any]]:
+    """Independently reconcile every scoring-day native portfolio snapshot."""
+
+    detail: dict[str, Any] = {
+        "native_financial_state_mutated_by_validator": False,
+    }
+    try:
+        snapshot_path = run_dir / "native_portfolio_snapshots.jsonl"
+        raw_lines = snapshot_path.read_text(encoding="utf-8").splitlines()
+        if not raw_lines or any(not line.strip() for line in raw_lines):
+            raise ValueError("native PortfolioSnapshot JSONL is empty or sparse")
+        rows = [json.loads(line) for line in raw_lines]
+        scoring_start_ns = utc_datetime_to_ns(config.scoring_start)
+        scoring_end_ns = utc_datetime_to_ns(config.scoring_end_exclusive)
+        expected_timestamps = tuple(
+            range(scoring_start_ns, scoring_end_ns + 1, DAY_NS),
+        )
+        if (
+            not expected_timestamps
+            or expected_timestamps[-1] != scoring_end_ns
+        ):
+            raise ValueError("scoring interval has no exact inclusive daily grid")
+
+        capture = result.get("native_daily_portfolio_snapshot_capture")
+        capture_fields = {
+            "schema",
+            "status",
+            "public_api",
+            "capture_phase",
+            "automatic_snapshot_count",
+            "explicit_post_event_snapshot_count",
+            "canonical_snapshot_count",
+            "superseded_pre_event_snapshot_count",
+            "explicit_post_event_timestamps_ns",
+            "financial_state_mutated_by_project",
+        }
+        if not (
+            isinstance(capture, dict)
+            and set(capture) == capture_fields
+            and capture.get("schema")
+            == "native-post-event-portfolio-snapshot-capture-v1"
+            and capture.get("status") == "PASS"
+            and capture.get("public_api")
+            == "nautilus_trader.portfolio.Portfolio.build_snapshot"
+            and capture.get("capture_phase")
+            == "AFTER_ALL_SAME_TIMESTAMP_MARK_FUNDING_BAR_EVENTS"
+            and capture.get("financial_state_mutated_by_project") is False
+            and capture.get("explicit_post_event_timestamps_ns")
+            == list(expected_timestamps)
+            and all(
+                type(capture.get(name)) is int
+                and int(capture[name]) >= 0
+                for name in (
+                    "automatic_snapshot_count",
+                    "explicit_post_event_snapshot_count",
+                    "canonical_snapshot_count",
+                    "superseded_pre_event_snapshot_count",
+                )
+            )
+            and int(capture.get("explicit_post_event_snapshot_count", -1))
+            == len(expected_timestamps)
+            and int(capture.get("canonical_snapshot_count", -1)) == len(rows)
+            and int(capture.get("superseded_pre_event_snapshot_count", -1))
+            <= len(expected_timestamps)
+        ):
+            raise ValueError("post-event native PortfolioSnapshot capture is unbound")
+
+        settlement_currency = config.initial_capital.currency
+        scored: dict[int, dict[str, Any]] = {}
+        all_timestamps: set[int] = set()
+        for index, row in enumerate(rows):
+            if not isinstance(row, dict) or set(row) != _NATIVE_PORTFOLIO_SNAPSHOT_FIELDS:
+                raise ValueError("native PortfolioSnapshot field set is invalid")
+            timestamp = int(row["ts_event"])
+            if (
+                int(row["snapshot_index"]) != index
+                or int(row["ts_init"]) != timestamp
+                or timestamp in all_timestamps
+                or row.get("account_id") in {None, ""}
+                or row.get("account_type")
+                != config.nautilus_venue_config.account_type
+                or row.get("base_currency") is not None
+                or row.get("base_currency_equity") is not None
+                or row.get("is_stale") is not False
+                or row.get("stale_instruments")
+                or row.get("stale_currencies")
+                or row.get("unpriced_instruments")
+            ):
+                raise ValueError("native PortfolioSnapshot identity/state is invalid")
+            all_timestamps.add(timestamp)
+            if scoring_start_ns <= timestamp <= scoring_end_ns:
+                totals = _snapshot_money_map(row["total_equity"])
+                if not totals:
+                    raise ValueError("native PortfolioSnapshot total Equity is empty")
+                realized = _snapshot_pnl(
+                    row["realized_pnls"],
+                    settlement_currency,
+                )
+                unrealized = _snapshot_pnl(
+                    row["unrealized_pnls"],
+                    settlement_currency,
+                )
+                scored[timestamp] = {
+                    "totals": totals,
+                    "realized": realized,
+                    "unrealized": unrealized,
+                    "equity": config.initial_capital.amount + realized + unrealized,
+                }
+        if tuple(sorted(scored)) != expected_timestamps:
+            raise ValueError("native PortfolioSnapshots do not form the scoring grid")
+
+        if (
+            config.market_profile
+            is MarketProfile.BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING
+        ):
+            instrument_contract = result.get("dataset_contract", {}).get("instrument")
+            if not isinstance(instrument_contract, dict):
+                raise ValueError("Perpetual Instrument contract is missing")
+            settlement_precision = int(
+                instrument_contract["settlement_currency_precision"],
+            )
+            if (
+                instrument_contract.get("instrument_id") != config.instrument_id
+                or instrument_contract.get("settlement_currency")
+                != settlement_currency
+                or not 0 <= settlement_precision <= 18
+            ):
+                raise ValueError("Perpetual Instrument/currency identity is invalid")
+            daily_marks = [
+                item
+                for item in observations.get("mark_price_updates", [])
+                if isinstance(item, dict)
+                and int(item.get("ts_init", -1)) in expected_timestamps
+            ]
+            if tuple(int(item["ts_init"]) for item in daily_marks) != expected_timestamps:
+                raise ValueError("causal Perpetual daily Mark grid is invalid")
+            states = replay_perpetual_valuation_states(
+                fills=fills,
+                funding_rows=funding_rows,
+                valuation_marks=daily_marks,
+                instrument_id=config.instrument_id,
+                settlement_currency=settlement_currency,
+                initial_balance=config.initial_capital.amount,
+                taker_fee=config.fee_assumption.taker_fee,
+                quantity_increment=Decimal(str(instrument_contract["size_increment"])),
+                money_quantum=Decimal(1).scaleb(-settlement_precision),
+            )
+            for state in states:
+                observed = scored[state.timestamp_ns]
+                if (
+                    observed["totals"] != {settlement_currency: state.equity}
+                    or observed["realized"] != state.realized_pnl
+                    or observed["unrealized"] != state.unrealized_pnl
+                    or observed["equity"] != state.equity
+                ):
+                    raise ValueError(
+                        "Perpetual daily snapshot mismatch at "
+                        f"{state.timestamp_ns}: observed={observed}, "
+                        f"expected_equity={state.equity}, "
+                        f"expected_realized={state.realized_pnl}, "
+                        f"expected_unrealized={state.unrealized_pnl}",
+                    )
+        else:
+            if not base_currency or base_currency == settlement_currency:
+                raise ValueError("Spot base/quote currency identity is invalid")
+            prices: dict[int, Decimal] = {}
+            for row in observations.get("valuation_bars", []):
+                timestamp = int(row.get("ts_init", -1))
+                if timestamp not in expected_timestamps:
+                    continue
+                price = Decimal(str(row["close"]))
+                if (
+                    int(row.get("ts_event", -1)) != timestamp
+                    or int(row.get("callback_clock_ns", -1)) != timestamp
+                    or not str(row.get("bar_type", "")).startswith(
+                        f"{config.instrument_id}-",
+                    )
+                    or timestamp in prices
+                    or not price.is_finite()
+                    or price <= 0
+                ):
+                    raise ValueError("Spot daily valuation Bar is invalid")
+                prices[timestamp] = price
+            if set(prices) != set(expected_timestamps):
+                raise ValueError("Spot daily valuation Bar grid is incomplete")
+
+            ordered_fills: list[tuple[int, Decimal, Decimal, Decimal, str]] = []
+            seen_fill_ids: set[str] = set()
+            previous_fill_timestamp = -1
+            for index, row in enumerate(fills):
+                timestamp = int(row["ts_event"])
+                quantity = Decimal(row["last_qty"])
+                price = Decimal(row["last_px"])
+                commission_text = str(row["commission"]).split(" ", maxsplit=1)
+                if len(commission_text) != 2:
+                    raise ValueError("Spot commission Money is invalid")
+                commission = Decimal(commission_text[0])
+                event_id = row["event_id"]
+                side = row["order_side"]
+                if (
+                    int(row["fill_index"]) != index
+                    or int(row["ts_init"]) != timestamp
+                    or timestamp < previous_fill_timestamp
+                    or not event_id
+                    or event_id in seen_fill_ids
+                    or row["instrument_id"] != config.instrument_id
+                    or row["currency"] != settlement_currency
+                    or commission_text[1] != settlement_currency
+                    or row["order_type"] != "MARKET"
+                    or side not in {"BUY", "SELL"}
+                    or quantity <= 0
+                    or price <= 0
+                    or commission < 0
+                    or not all(
+                        value.is_finite()
+                        for value in (quantity, price, commission)
+                    )
+                ):
+                    raise ValueError("Spot Fill is invalid for daily replay")
+                seen_fill_ids.add(event_id)
+                previous_fill_timestamp = timestamp
+                ordered_fills.append(
+                    (timestamp, quantity, price, commission, side),
+                )
+
+            base_balance = Decimal(0)
+            quote_balance = config.initial_capital.amount
+            fill_cursor = 0
+            for timestamp in expected_timestamps:
+                while (
+                    fill_cursor < len(ordered_fills)
+                    and ordered_fills[fill_cursor][0] <= timestamp
+                ):
+                    _, quantity, price, commission, side = ordered_fills[fill_cursor]
+                    notional = quantity * price
+                    if side == "BUY":
+                        quote_balance -= notional + commission
+                        base_balance += quantity
+                    else:
+                        base_balance -= quantity
+                        quote_balance += notional - commission
+                    if base_balance < 0 or quote_balance < 0:
+                        raise ValueError("Spot daily replay requires borrowing")
+                    fill_cursor += 1
+                expected_totals = {
+                    base_currency: base_balance,
+                    settlement_currency: quote_balance,
+                }
+                expected_equity = quote_balance + base_balance * prices[timestamp]
+                observed = scored[timestamp]
+                if (
+                    set(observed["totals"]) - set(expected_totals)
+                    or any(
+                        observed["totals"].get(currency, Decimal(0)) != amount
+                        for currency, amount in expected_totals.items()
+                    )
+                    or observed["equity"] != expected_equity
+                ):
+                    raise ValueError(
+                        "Spot daily snapshot mismatch at "
+                        f"{timestamp}: observed={observed}, "
+                        f"expected_totals={expected_totals}, "
+                        f"expected_equity={expected_equity}",
+                    )
+
+        detail.update(
+            {
+                "snapshot_count": len(rows),
+                "scoring_snapshot_count": len(scored),
+                "first_scoring_snapshot_ns": expected_timestamps[0],
+                "last_scoring_snapshot_ns": expected_timestamps[-1],
+                "post_event_native_snapshot_count": len(expected_timestamps),
+                "profile": config.market_profile.value,
+            },
+        )
+        return True, detail
+    except Exception as exc:
+        detail["errors"] = [f"{type(exc).__name__}: {exc}"]
+        return False, detail
 
 
 def _validate_material_valuation_grid(
@@ -3018,6 +3349,35 @@ def check_evidence_directory(
             )
             if not lifecycle_ok:
                 failures.append(FailureCode.PERP_PROFILE_INVALID.value)
+
+    if official and strategy_family in NATIVE_RESEARCH_FAMILIES:
+        if native_evidence_ok:
+            daily_snapshot_ok, daily_snapshot_detail = (
+                _validate_official_daily_portfolio_snapshots(
+                    run_dir=run_dir,
+                    config=config,
+                    result=result,
+                    observations=observations,
+                    fills=fills,
+                    funding_rows=(funding_rows if perpetual else []),
+                    base_currency=(None if perpetual else base_currency),
+                )
+            )
+        else:
+            daily_snapshot_ok = False
+            daily_snapshot_detail = {
+                "errors": ["native financial evidence is incomplete"],
+                "native_financial_state_mutated_by_validator": False,
+            }
+        checks.append(
+            {
+                "name": "official_daily_portfolio_financial_reconciliation",
+                "pass": daily_snapshot_ok,
+                **daily_snapshot_detail,
+            },
+        )
+        if not daily_snapshot_ok and native_evidence_ok:
+            failures.append(FailureCode.PERFORMANCE_METRICS_INVALID.value)
 
     boundary = observations.get("scoring_boundary")
     boundary_ok = boundary is not None and (

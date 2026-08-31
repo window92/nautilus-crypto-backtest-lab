@@ -107,6 +107,20 @@ do not override the v2 result status:
   `RuntimeWarning`; the bytes remain preserved, but they are not final audit
   authority.
 
+Retry-005 is likewise retained as a failed qualification epoch. Its three Spot
+workflows reached reports, but the first Perpetual workflow exposed a distinct
+same-timestamp defect: NautilusTrader `2.0.0rc2` produced its scheduled
+UTC-midnight `PortfolioSnapshot` before processing Funding at that timestamp.
+The terminal ledger reconciled, while the intermediate daily snapshot omitted
+the exact Funding debit and therefore could not support Official daily
+performance metrics. The plan, four Owner result summaries, mismatch values,
+and immutable evidence hashes are bound under
+`evidence/audit/adversarial-remediation-002/failed-plans/c8fc32a-*`. No report
+was published for the failed Perpetual trial, its two Perpetual Candidate
+workflows were never started, and the retry-005 result packages are made
+inactive additively before any replacement epoch; their Run/Replay bytes are
+not edited.
+
 ## Earlier remediation contracts retained
 
 | Finding | Enforced contract |
@@ -158,6 +172,10 @@ are not inferred from a passing Manifest hash:
   UTC-midnight subset;
 - every Spot and Perpetual daily native portfolio snapshot is non-stale,
   complete, currency-exact, and independently reconciled at that timestamp;
+- an Official metric snapshot at a timestamp shared with Mark, Funding, and a
+  Bar is captured only after the complete same-timestamp batch through
+  Nautilus's public `Portfolio.build_snapshot` API; the project neither
+  computes that native state nor posts a financial event;
 - the Official verifier's public signature has no component-validator or PASS
   callback parameter, and all Official resolution paths use that verifier;
 - all legacy qualification registries and all twelve old 003 primary/replay

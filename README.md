@@ -341,6 +341,15 @@ causal component validation, deterministic fresh-process replay, and
 `NO_PROFITABILITY_AUTHORIZATION`. Final Holdout is not used and the Holdout
 lock remains empty.
 
+The retained retry-005 epoch is not replacement authority. Its first
+Perpetual workflow demonstrated that the pinned runtime's scheduled midnight
+portfolio snapshot occurs before Funding with the same timestamp; the
+independent daily reconciliation rejected that intermediate state even though
+terminal finance reconciled. The replacement runner captures a second native
+snapshot after the complete timestamp batch, and the component checker must
+reconcile it before sealing. All retry-005 primary/replay packages are inactive
+through the additive status authority; none of their bytes were rewritten.
+
 - Trial JSON/Markdown reports: `research/reports/`.
 - Immutable run evidence: `runs/` and `runs/replays/`.
 - Historical Owner research report:
