@@ -5,6 +5,78 @@ remains `SSOT.md`; this file does not change normative behavior.
 
 ## [Unreleased] - 1.0.1.dev0
 
+### Adversarial audit remediation R2
+
+- Enforced the unchanged full signal-interval scoring rule at execution,
+  daily/weekly aggregation, low-level strategy, checker, diagnostic, and replay
+  boundaries; `decision_timestamp` no longer makes a warmup interval eligible.
+- Added an additive v2 historical-result status contract: the four affected
+  Spot/Perpetual Candidate A/B primaries and four replays are `REVOKED` /
+  `INVALIDATED` for `WARMUP_SCORING_ELIGIBILITY_VIOLATION`; historical bytes
+  remain immutable. Old Benchmarks are `SUPERSEDED` under the incompatible v2
+  result contract, not financially invalidated by that finding alone. Legacy
+  Qualified Profile registries are parse-only and cannot authorize new Runs.
+- Bound every submitted intent to the exact native Nautilus client-order
+  lifecycle, order projection, native Fill events, and Fill projections,
+  including identity-set equality, terminal state, leaves/filled quantities,
+  immutable semantic sequence, and rehashed missing/duplicate-link controls.
+- Added independent read-only Decimal reconciliation of Perpetual native
+  Fills, NETTING position/average-entry transitions, commissions and currency,
+  realized/unrealized PnL, funding/account deltas, causal terminal mark, and
+  ending Equity. Completed units bind detached native `PositionClosed`
+  callback payloads so later NETTING reopen cannot mutate historical close
+  evidence. Nautilus remains the sole execution and financial engine.
+- Expanded Dataset Release v2 provenance to the complete typed Raw-object
+  inventory and require exact bidirectional equality with DuckDB's actually
+  used Raw inventory, including roles, locators, identities, sizes, checksums,
+  Instrument, profile, and window. Every Official research Run now seals and
+  semantically revalidates the committed independent four-way rebuild proof;
+  the direct M3 qualification exception is forbidden for research workflows.
+- Split component validation from Official publication. New Evidence follows
+  the acyclic native-Evidence → component-validation → leaf-manifest → status
+  → root-attestation path; only a final revalidating verifier emits
+  `OFFICIAL_SEAL_PASS`. The public verifier accepts no injected validator,
+  callback, result object, or PASS oracle. Manifest, status, and seal schemas
+  reject undeclared fields even when all dependent hashes are recomputed.
+- Replaced legacy input-only historical snapshots as executable authority with
+  validator v2 bindings over source commit/tree, entrypoint, wrapper, schemas,
+  executable closure, arguments, and external file dependencies. Historical
+  validators execute from isolated immutable snapshots; normal merge ancestry
+  is required.
+- Added a standard-library isolated startup authority before Product Code or
+  site-package import. The Official child uses safe isolated flags, an exact
+  environment and `sys.path`, and content-addressed Python, Product,
+  wheel/`RECORD`, native-extension, dependency, and import-origin identities.
+  This authority remains separate from `runtime.lock.json`.
+- Unified Official performance comparisons on scoring-only UTC daily marked
+  total portfolio Equity for Spot and Perpetual, with `365.2425` annualization,
+  causal open-position valuation, minimum 30 daily-return samples for risk
+  ratios, and explicit undefined/zero-variance behavior. Every daily native
+  snapshot is reconciled to an independent Fill/fee/funding ledger and causal
+  valuation, not only at the terminal boundary. Spot uses exact daily
+  execution-Bar closes; Perpetual preserves every UTC eight-hour material Mark
+  and uses the midnight subset. Stale Instruments/currencies, unpriced state,
+  duplicate or unexpected currencies, and missing grid points fail closed.
+  Differently sampled Nautilus statistics are diagnostics only.
+- Added exact negative controls for causal intervals, Spot affordability,
+  Perpetual accounting/funding, post-boundary events, full Raw inventory,
+  final Evidence inventory, validator identity, runtime startup injection,
+  missing/duplicate Fills, and altered Instrument identity.
+- Extended the closed `FailureCode` vocabulary with
+  `RUNTIME_STARTUP_MISMATCH`, `DATASET_RAW_INVENTORY_MISMATCH`,
+  `WARMUP_SCORING_ELIGIBILITY_VIOLATION`,
+  `PERPETUAL_RECONCILIATION_FAILURE`, `OFFICIAL_SEAL_FAILURE`,
+  `HISTORICAL_VALIDATOR_IDENTITY_MISMATCH`,
+  `PERFORMANCE_METRICS_INVALID`, and `JOURNAL_DURABILITY_FAILURE`.
+- Required machine-readable scientific limitations for bar execution,
+  unavailable historical fee/filter proof, absent liquidation modeling,
+  leverage 1, marked-not-closed terminal positions, daily-not-intraday
+  drawdown, single-Instrument scope, Development-only data, unused Final
+  Holdout, no profitability authorization, and no live-trading validation.
+- NautilusTrader and dependency versions are unchanged. This work authorizes
+  neither Final Holdout use, live trading, a profitability claim, a tag,
+  release, automatic merge, squash, nor rebase.
+
 ### Audit remediation
 
 - Added exact independent Spot CASH reconciliation across native Fill,

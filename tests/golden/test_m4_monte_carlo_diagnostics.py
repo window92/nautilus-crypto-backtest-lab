@@ -155,6 +155,7 @@ class PerformanceDiagnosticsKnownResultTests(unittest.TestCase):
             EquityObservation(timestamp=start + timedelta(days=1), equity=Decimal("120")),
             EquityObservation(timestamp=start + timedelta(days=2), equity=Decimal("90")),
             EquityObservation(timestamp=start + timedelta(days=3), equity=Decimal("100")),
+            EquityObservation(timestamp=start + timedelta(days=4), equity=Decimal("100")),
         )
         result = generate_performance_diagnostics(
             run_id="synthetic-diagnostics",
@@ -162,9 +163,7 @@ class PerformanceDiagnosticsKnownResultTests(unittest.TestCase):
             scoring_end_exclusive=start + timedelta(days=4),
             initial_capital=Decimal("100"),
             settlement_currency="USDT",
-            equity_observation_basis="NAUTILUS_PERSISTED_ACCOUNT_STATES_FINEST_AVAILABLE",
             equity_observations=observations,
-            native_metrics={},
             completed_trades=native_trades(),
             benchmark_return=Decimal("0.05"),
             sample_adequacy=SampleAdequacy.ADEQUATE,
@@ -190,12 +189,10 @@ class PerformanceDiagnosticsKnownResultTests(unittest.TestCase):
             scoring_end_exclusive=start + timedelta(days=1),
             initial_capital=Decimal("100"),
             settlement_currency="USDT",
-            equity_observation_basis="NAUTILUS_PERSISTED_ACCOUNT_STATES_FINEST_AVAILABLE",
             equity_observations=(
                 EquityObservation(timestamp=start, equity=Decimal("100")),
                 EquityObservation(timestamp=start + timedelta(days=1), equity=Decimal("101")),
             ),
-            native_metrics={},
             completed_trades=ambiguous,
             benchmark_return=None,
             sample_adequacy=SampleAdequacy.LOW_CONFIDENCE,
@@ -227,12 +224,10 @@ class PerformanceDiagnosticsKnownResultTests(unittest.TestCase):
             scoring_end_exclusive=start + timedelta(days=1),
             initial_capital=Decimal("100"),
             settlement_currency="USDT",
-            equity_observation_basis="NAUTILUS_PERSISTED_ACCOUNT_STATES_FINEST_AVAILABLE",
             equity_observations=(
                 EquityObservation(timestamp=start, equity=Decimal("100")),
                 EquityObservation(timestamp=start + timedelta(days=1), equity=Decimal("100")),
             ),
-            native_metrics={},
             completed_trades=empty,
             benchmark_return=Decimal("0"),
             sample_adequacy=SampleAdequacy.LOW_CONFIDENCE,
@@ -244,16 +239,15 @@ class PerformanceDiagnosticsKnownResultTests(unittest.TestCase):
         self.assertEqual(result.win_rate.status, "UNDEFINED")
         self.assertEqual(result.win_rate.value, "UNDEFINED")
 
-    def test_nonfinite_native_metric_is_rejected_not_reported_as_favorable(self) -> None:
+    def test_native_metric_override_is_not_an_official_metrics_api(self) -> None:
         start = instant("2024-01-01T00:00:00Z")
-        with self.assertRaisesRegex(Exception, "EVIDENCE_INCOMPLETE"):
+        with self.assertRaises(TypeError):
             generate_performance_diagnostics(
                 run_id="invalid-native-metric",
                 scored_start=start,
                 scoring_end_exclusive=start + timedelta(days=1),
                 initial_capital=Decimal("100"),
                 settlement_currency="USDT",
-                equity_observation_basis="NAUTILUS_PERSISTED_ACCOUNT_STATES_FINEST_AVAILABLE",
                 equity_observations=(
                     EquityObservation(timestamp=start, equity=Decimal("100")),
                     EquityObservation(timestamp=start + timedelta(days=1), equity=Decimal("101")),

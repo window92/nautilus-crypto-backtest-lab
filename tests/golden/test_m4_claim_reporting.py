@@ -31,7 +31,8 @@ def claim_input(**changes: object) -> ClaimEvaluationInput:
     base = ClaimEvaluationInput(
         protocol=protocol,
         mechanical_integrity=MechanicalIntegrity.PASS,
-        checker_result="CHECK_PASS",
+        checker_result="COMPONENT_CHECK_PASS",
+        official_seal_result="OFFICIAL_SEAL_PASS",
         underlying_official_runs_valid=True,
         qualification_only=False,
         protocol_frozen_before_results=True,

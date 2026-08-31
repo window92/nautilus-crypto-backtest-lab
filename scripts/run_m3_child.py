@@ -4,30 +4,44 @@
 from __future__ import annotations
 
 import argparse
+import json
+import sys
+from collections.abc import Mapping
 from dataclasses import replace
 from pathlib import Path
 
-from crypto_lab.config import MarketProfile
-from crypto_lab.hashing import canonical_json_bytes
-from crypto_lab.m3 import M3NegativeControl
-from crypto_lab.m3 import build_m3_request
-from crypto_lab.m3 import negative_qualification_inputs
-from crypto_lab.m3 import qualification_dataset_release
-from crypto_lab.m3 import qualification_strategy_inputs
-from crypto_lab.runner import LabRunRequest
-from crypto_lab.runner import QualificationControl
-from crypto_lab.runner import capture_source_revision
-from crypto_lab.runner import run_lab
-
-
-def _profile(value: str) -> MarketProfile:
-    return {
-        "spot": MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY,
-        "perpetual": MarketProfile.BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING,
-    }[value]
-
 
 def main() -> int:
+    state = sys.modules.get("_crypto_lab_verified_bootstrap")
+    attestation = getattr(state, "ATTESTATION", None)
+    if (
+        not isinstance(attestation, Mapping)
+        or attestation.get("target") != "scripts/run_m3_child.py"
+    ):
+        raise RuntimeError(
+            "RUNTIME_STARTUP_MISMATCH: M3 child requires isolated bootstrap",
+        )
+
+    # Product and Nautilus imports are deliberately after the stdlib-only
+    # bootstrap state check.
+    from crypto_lab.config import MarketProfile
+    from crypto_lab.hashing import canonical_json_bytes
+    from crypto_lab.m3 import M3NegativeControl
+    from crypto_lab.m3 import build_m3_request
+    from crypto_lab.m3 import negative_qualification_inputs
+    from crypto_lab.m3 import qualification_dataset_release
+    from crypto_lab.m3 import qualification_strategy_inputs
+    from crypto_lab.runner import LabRunRequest
+    from crypto_lab.runner import QualificationControl
+    from crypto_lab.runner import capture_source_revision
+    from crypto_lab.runner import run_lab
+
+    def profile_for(value: str) -> MarketProfile:
+        return {
+            "spot": MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY,
+            "perpetual": MarketProfile.BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING,
+        }[value]
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--profile", choices=("spot", "perpetual"), required=True)
     parser.add_argument("--run-id", required=True)
@@ -38,7 +52,7 @@ def main() -> int:
     parser.add_argument("--invalid-mark-binding", action="store_true")
     args = parser.parse_args()
 
-    profile = _profile(args.profile)
+    profile = profile_for(args.profile)
     release = qualification_dataset_release(profile)
     inputs = (
         negative_qualification_inputs(M3NegativeControl(args.negative_control))
@@ -72,6 +86,10 @@ def main() -> int:
             qualification_control=request.qualification_control,
         )
     result = run_lab(request)
+    runtime_identity = json.loads(
+        (result.evidence_dir / "runtime_identity.json").read_text(encoding="utf-8"),
+    )
+    startup_attestation = runtime_identity.get("startup_attestation")
     summary = {
         **result.to_builtins(),
         "orders_count": len(result.orders),
@@ -85,6 +103,20 @@ def main() -> int:
         ],
         "funding_events": list(result.funding_events),
         "strategy_observations": result.strategy_observations,
+        "runtime_startup_verified": bool(
+            runtime_identity.get("startup_verified_before_product_import") is True
+            and runtime_identity.get("startup_qualification_only") is True
+            and isinstance(startup_attestation, dict)
+            and startup_attestation.get("target") == "scripts/run_m3_child.py"
+        ),
+        "runtime_startup_target": (
+            None
+            if not isinstance(startup_attestation, dict)
+            else startup_attestation.get("target")
+        ),
+        "runtime_startup_attestation_sha256": runtime_identity.get(
+            "startup_attestation_sha256",
+        ),
     }
     args.summary.parent.mkdir(parents=True, exist_ok=True)
     args.summary.write_bytes(canonical_json_bytes(summary) + b"\n")

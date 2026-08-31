@@ -12,6 +12,7 @@ from crypto_lab.m3 import PERPETUAL_BASE_RELEASE_ID
 from crypto_lab.m3 import SPOT_BASE_RELEASE_ID
 from crypto_lab.m3 import build_m3_request
 from crypto_lab.m3 import qualification_dataset_release
+from crypto_lab.m3 import validate_m3_dataset_release
 
 
 def source_revision() -> SourceRevision:
@@ -26,6 +27,16 @@ def source_revision() -> SourceRevision:
 
 
 class M3DatasetInterfaceTests(unittest.TestCase):
+    def test_legacy_schema_v1_qualification_release_is_rejected(self) -> None:
+        legacy = DatasetRelease.from_json_bytes(
+            (
+                Path("data/releases")
+                / "cdb414f45064f46e13c936f87ae3629320a1f9a27bb15ef7822873a57e159a85.json"
+            ).read_bytes(),
+        )
+        with self.assertRaisesRegex(ValueError, "schema-v2.*full Raw inventory"):
+            validate_m3_dataset_release(legacy)
+
     def test_public_run_request_receives_strict_dataset_release_without_conversion(self) -> None:
         for profile, base_id in (
             (MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY, SPOT_BASE_RELEASE_ID),

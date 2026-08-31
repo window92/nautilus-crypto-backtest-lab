@@ -26,9 +26,11 @@ from crypto_lab.config import _require_equal
 from crypto_lab.config import _require_sha256
 from crypto_lab.hashing import canonical_sha256
 from crypto_lab.data import DatasetRelease
+from crypto_lab.data import M3_QUALIFICATION_FULL_RAW_INVENTORY_NORMALIZER_VERSION
 from crypto_lab.runner import LabRunRequest
 from crypto_lab.runner import QualificationControl
 from crypto_lab.runner import RunResult
+from crypto_lab.status import validated_failure_codes
 from crypto_lab.strategies import OrderIntent
 from crypto_lab.strategies import StrategyPlan
 from crypto_lab.strategies import StrategySpec
@@ -36,10 +38,12 @@ from crypto_lab.strategies import StrategySpec
 
 SPOT_BASE_RELEASE_ID = "2e0bdefe2b664821c559e95d35a3462c8354606076e1ec81d0ce6272f89b9a44"
 PERPETUAL_BASE_RELEASE_ID = "749e654402021fafafe4a3269005c5ef1253c3743f04c35622726bca957a356b"
-SPOT_QUALIFICATION_RELEASE_ID = "cdb414f45064f46e13c936f87ae3629320a1f9a27bb15ef7822873a57e159a85"
-PERPETUAL_QUALIFICATION_RELEASE_ID = "f7548369a20caf52a98d8a63d6e8a2bfaebe66aa8ffe1081135fa7b047de789d"
+SPOT_QUALIFICATION_RELEASE_ID = "702ff072654e9fb8d25b54e372a76e6545f2ddccddde8ef44795ec7e8cef97d7"
+PERPETUAL_QUALIFICATION_RELEASE_ID = "e8ab1bc815aa22a179ecdd1daa48d2a966a45aa213d4c9031e8246b054e5b6db"
 EXPOSED_QUALIFICATION_LIMITATION = "QUALIFICATION_INTERVAL_EXPOSED_NOT_FRESH_HOLDOUT"
 M3_FEE_RATE = Decimal("0.001")
+COMPONENT_CHECK_PASS = "COMPONENT_CHECK_PASS"
+LEGACY_CHECK_PASS = "CHECK_PASS"
 ROOT = Path(__file__).resolve().parents[2]
 QUALIFICATION_TEMPLATE = ROOT / "configs/m3/qualification-run-template.json"
 
@@ -72,13 +76,26 @@ class MechanicalIntegrityResult(StrictModel):
     failure_codes: tuple[str, ...]
 
     def __post_init__(self) -> None:
+        codes = validated_failure_codes(
+            self.failure_codes,
+            field="mechanical_integrity.failure_codes",
+        )
+        object.__setattr__(self, "failure_codes", codes)
         if not self.run_ids:
             raise ValueError("mechanical_integrity.run_ids: must not be empty")
         if self.state is MechanicalIntegrity.PASS:
-            _require_equal(self.checker_result, "CHECK_PASS", "mechanical_integrity.checker")
+            _require_equal(
+                self.checker_result,
+                COMPONENT_CHECK_PASS,
+                "mechanical_integrity.component_validation",
+            )
             _require_equal(self.replay_result, "PASS", "mechanical_integrity.replay")
-            if self.failure_codes:
+            if codes:
                 raise ValueError("mechanical_integrity.failure_codes: PASS cannot have failures")
+        elif not codes:
+            raise ValueError(
+                "mechanical_integrity.failure_codes: non-PASS requires a canonical code",
+            )
 
 
 class QualifiedProfileRecord(StrictModel):
@@ -98,8 +115,8 @@ class QualifiedProfileRecord(StrictModel):
     qualification_limitations: tuple[str, ...]
 
     def __post_init__(self) -> None:
-        if self.schema_version != 1:
-            raise ValueError("qualified_profile.schema_version: only version 1 is supported")
+        if self.schema_version not in {1, 2}:
+            raise ValueError("qualified_profile.schema_version: only versions 1 and 2 are supported")
         for field in (
             "qualified_profile_record_id",
             "runtime_lock_sha256",
@@ -117,7 +134,14 @@ class QualifiedProfileRecord(StrictModel):
         if self.qualification_state is ProfileQualificationState.QUALIFIED:
             if len(self.accepted_run_ids) != 2:
                 raise ValueError("qualified_profile: primary and fresh-process replay are required")
-            _require_equal(self.checker_result, "CHECK_PASS", "qualified_profile.checker_result")
+            expected_component = (
+                LEGACY_CHECK_PASS if self.schema_version == 1 else COMPONENT_CHECK_PASS
+            )
+            _require_equal(
+                self.checker_result,
+                expected_component,
+                "qualified_profile.component_validation_result",
+            )
             _require_equal(self.replay_result, "PASS", "qualified_profile.replay_result")
         if canonical_sha256(self.material_payload()) != self.qualified_profile_record_id:
             raise ValueError("qualified_profile_record_id does not match material payload")
@@ -130,13 +154,13 @@ class QualifiedProfileRecord(StrictModel):
 
     @classmethod
     def create(cls, **values: Any) -> QualifiedProfileRecord:
-        material = {"schema_version": 1, **values}
+        material = {"schema_version": 2, **values}
         identity_material = dict(material)
         source = values["source_revision"].to_builtins()
         source.pop("captured_at_utc", None)
         identity_material["source_revision"] = source
         return cls(
-            schema_version=1,
+            schema_version=2,
             qualified_profile_record_id=canonical_sha256(identity_material),
             **values,
         )
@@ -148,8 +172,10 @@ class QualifiedProfileRegistry(StrictModel):
     registry_content_sha256: str
 
     def __post_init__(self) -> None:
-        if self.schema_version != 1:
-            raise ValueError("qualified_profile_registry.schema_version: only version 1 is supported")
+        if self.schema_version not in {1, 2}:
+            raise ValueError(
+                "qualified_profile_registry.schema_version: only versions 1 and 2 are supported",
+            )
         _require_sha256(
             self.registry_content_sha256,
             "qualified_profile_registry.registry_content_sha256",
@@ -165,6 +191,8 @@ class QualifiedProfileRegistry(StrictModel):
             for record in self.records
         ):
             raise ValueError("qualified_profile_registry: every published record must be QUALIFIED")
+        if any(record.schema_version != self.schema_version for record in self.records):
+            raise ValueError("qualified_profile_registry: record schema must match registry schema")
         if canonical_sha256(self.material_payload()) != self.registry_content_sha256:
             raise ValueError("qualified_profile_registry content identity mismatch")
 
@@ -181,11 +209,11 @@ class QualifiedProfileRegistry(StrictModel):
         records: tuple[QualifiedProfileRecord, ...],
     ) -> QualifiedProfileRegistry:
         material = {
-            "schema_version": 1,
+            "schema_version": 2,
             "records": [record.to_builtins() for record in records],
         }
         return cls(
-            schema_version=1,
+            schema_version=2,
             records=records,
             registry_content_sha256=canonical_sha256(material),
         )
@@ -202,16 +230,22 @@ class QualificationDownstreamBundle(StrictModel):
     qualification_limitations: tuple[str, ...]
 
     def __post_init__(self) -> None:
-        if self.schema_version != 1:
-            raise ValueError("qualification_bundle.schema_version: only version 1 is supported")
+        if self.schema_version not in {1, 2}:
+            raise ValueError("qualification_bundle.schema_version: only versions 1 and 2 are supported")
         if self.profile_record.qualification_state is not ProfileQualificationState.QUALIFIED:
             raise ValueError("qualification_bundle: profile must be QUALIFIED")
         if self.mechanical_integrity.state is not MechanicalIntegrity.PASS:
             raise ValueError("qualification_bundle: MechanicalIntegrity must PASS")
         if self.run_result.get("state") != "COMPLETED":
             raise ValueError("qualification_bundle: RunResult must be COMPLETED")
-        if self.run_result.get("checker_outcome") != "CHECK_PASS":
-            raise ValueError("qualification_bundle: RunResult checker must pass")
+        expected_component = (
+            LEGACY_CHECK_PASS if self.schema_version == 1 else COMPONENT_CHECK_PASS
+        )
+        actual_component = self.run_result.get(
+            "checker_outcome" if self.schema_version == 1 else "component_validation_outcome",
+        )
+        if actual_component != expected_component:
+            raise ValueError("qualification_bundle: component validation must pass")
         if self.run_result.get("run_id") not in self.profile_record.accepted_run_ids:
             raise ValueError("qualification_bundle: RunResult is not an accepted Run")
         if tuple(self.qualification_limitations) != tuple(
@@ -240,8 +274,8 @@ def compare_deterministic_replay(primary: RunResult, replay: RunResult) -> dict[
     accepted = (
         primary.state.value == "COMPLETED"
         and replay.state.value == "COMPLETED"
-        and primary.checker_outcome.value == "CHECK_PASS"
-        and replay.checker_outcome.value == "CHECK_PASS"
+        and primary.checker_outcome.value == COMPONENT_CHECK_PASS
+        and replay.checker_outcome.value == COMPONENT_CHECK_PASS
         and not primary.failure_codes
         and not replay.failure_codes
         and primary.semantic_digest == replay.semantic_digest
@@ -472,8 +506,16 @@ def qualification_dataset_release(profile: MarketProfile) -> DatasetRelease:
 def validate_m3_dataset_release(release: DatasetRelease) -> None:
     """Require the repaired M2 provenance while permitting an additive fee binding."""
 
-    if not isinstance(release, DatasetRelease) or not release.is_current_contract:
-        raise ValueError("M3 requires a current strict M2 DatasetRelease object")
+    if (
+        not isinstance(release, DatasetRelease)
+        or release.schema_version != 2
+        or release.normalizer_version
+        != M3_QUALIFICATION_FULL_RAW_INVENTORY_NORMALIZER_VERSION
+        or not release.has_full_raw_inventory
+    ):
+        raise ValueError(
+            "M3 requires a schema-v2 qualification DatasetRelease with full Raw inventory",
+        )
     base = _base_release(release.market_profile)
     immutable_equal = (
         release.market_profile is base.market_profile

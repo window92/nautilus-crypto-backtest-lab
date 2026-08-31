@@ -44,65 +44,42 @@ class AuditRegressionTests(unittest.TestCase):
             self.assertTrue(payload.endswith(b"\n"))
             self.assertFalse(payload.endswith(b"\n\n"))
 
-    def test_owner_child_uses_single_cli_module_identity(self) -> None:
+    def test_owner_child_enters_only_through_isolated_bootstrap(self) -> None:
         workflow = ROOT / "research/workflows/owner-smoke-002-spot-sma20-development.json"
         command = _official_child_command(ROOT, workflow)
-        self.assertEqual(command[1], str(ROOT / "scripts/run_owner_workflow.py"))
-        self.assertNotIn("-m", command)
-        self.assertNotIn("crypto_lab.owner", command)
+        self.assertEqual(
+            command,
+            [
+                sys.executable,
+                "-I",
+                "-P",
+                "-S",
+                "-B",
+                "-X",
+                "pycache_prefix=/dev/null",
+                str(ROOT / "scripts/isolated_runtime_bootstrap.py"),
+                "--authority",
+                str(ROOT / "runtime-bootstrap-authority.json"),
+                "--repository",
+                str(ROOT),
+                "--entrypoint",
+                "crypto_lab.owner:main",
+                "--",
+                "--child",
+                "--input",
+                str(workflow),
+                "--repository",
+                str(ROOT),
+            ],
+        )
 
     def test_f009_failure_code_vocabulary_exactly_matches_ssot_section_15(self) -> None:
-        expected = {
-            "RUNTIME_LOCK_MISMATCH",
-            "RUNTIME_WHEEL_HASH_MISMATCH",
-            "UNSUPPORTED_RUNTIME",
-            "UNSUPPORTED_MARKET_PROFILE",
-            "UNSUPPORTED_V1_ORDER_TYPE",
-            "CONFIG_INVALID",
-            "CONFIG_HASH_MISMATCH",
-            "NETWORK_DURING_OFFICIAL_RUN",
-            "DATA_SOURCE_INVALID",
-            "DATA_HASH_MISMATCH",
-            "DATA_TIMESTAMP_INVALID",
-            "DATA_GAP",
-            "DATA_DUPLICATE_CONFLICT",
-            "DATA_ROLE_MISMATCH",
-            "DATASET_RELEASE_STALE",
-            "IRRECOVERABLE_OFFICIAL_MARK_DELIVERY_GAP",
-            "DATA_WINDOW_QUALITY_EXHAUSTED",
-            "INSTRUMENT_METADATA_INVALID",
-            "TIMEFRAME_AGGREGATION_UNRESOLVED",
-            "CAUSAL_EXECUTION_UNRESOLVED",
-            "LOOKAHEAD_DETECTED",
-            "SAME_BAR_EXECUTION_DETECTED",
-            "FILL_MUTATION_DETECTED",
-            "SPOT_SHORT_OR_BORROW_DETECTED",
-            "PERP_PROFILE_INVALID",
-            "CROSS_ZERO_ORDER_REJECTED",
-            "CONCURRENT_STRATEGY_ORDER_REJECTED",
-            "FEE_MISSING",
-            "FEE_DOUBLE_COUNT",
-            "FUNDING_MISSING",
-            "FUNDING_AMBIGUOUS",
-            "FUNDING_DOUBLE_COUNT",
-            "MARK_ROLE_INVALID",
-            "DETERMINISM_FAILURE",
-            "DETERMINISTIC_REBUILD_MISMATCH",
-            "CHECKER_FAILURE",
-            "CHECKER_BLOCKED",
-            "TRIAL_HISTORY_INCOMPLETE",
-            "RESEARCH_PROTOCOL_INVALID",
-            "PARTITION_LEAKAGE",
-            "HOLDOUT_ALREADY_CONSUMED",
-            "HOLDOUT_HISTORY_VIOLATION",
-            "MULTIPLE_TESTING_UNDECLARED",
-            "CLAIM_INELIGIBLE",
-            "DOWNSTREAM_CONTRACT_FAILURE",
-            "DEFECT_ROOT_UNRESOLVED",
-            "RETRY_LIMIT_REACHED",
-            "EVIDENCE_INCOMPLETE",
-        }
-        self.assertEqual({item.value for item in FailureCode}, expected)
+        ssot = (ROOT / "SSOT.md").read_text(encoding="utf-8")
+        section = ssot.split("## 15. Required failure codes", maxsplit=1)[1]
+        block = section.split("``` text", maxsplit=1)[1].split("```", maxsplit=1)[0]
+        declared = [line.strip() for line in block.splitlines() if line.strip()]
+        self.assertEqual(len(declared), len(set(declared)), "duplicate SSOT failure code")
+        self.assertEqual({item.value for item in FailureCode}, set(declared))
 
     def test_f007_utc_conversion_uses_exact_integer_arithmetic(self) -> None:
         value = datetime(2021, 8, 24, 12, 34, 56, 1, tzinfo=UTC)

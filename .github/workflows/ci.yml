@@ -56,18 +56,20 @@ jobs:
           assert wheel.stat().st_size == lock["nautilus_wheel_size_bytes"]
           assert hashlib.sha256(wheel.read_bytes()).hexdigest() == lock["nautilus_wheel_sha256"]
           PY
+      - name: Create isolated project environment
+        run: python -m venv --copies .venv
       - name: Install exact local wheel without network fallback
         run: >-
-          python -m pip install
+          .venv/bin/python -m pip install
           --no-index
           --find-links /tmp/nautilus-locked-wheel
           --require-hashes
           -r requirements.lock.txt
       - name: Verify dependency graph
-        run: python -m pip check
+        run: .venv/bin/python -m pip check
       - name: Verify installed RECORD and payload identity
         run: |
-          python - <<'PY'
+          .venv/bin/python - <<'PY'
           from pathlib import Path
 
           from crypto_lab.config import RuntimeLock
@@ -85,12 +87,12 @@ jobs:
           assert observed["installed_files_verified"] is True
           PY
       - name: Compile tracked Python sources
-        run: python -m compileall -q src scripts tests
+        run: .venv/bin/python -m compileall -q src scripts tests
       - name: Check authored-source whitespace
         run: git diff --check ${{ github.event.pull_request.base.sha || github.event.before }} HEAD
       - name: Run portable audit regressions
         run: >-
-          python -m unittest -v
+          .venv/bin/python -m unittest -v
           tests.unit.test_comprehensive_audit_regressions.AuditRegressionTests.test_acceptance_empty_output_log_has_no_blank_line_at_eof
           tests.unit.test_comprehensive_audit_regressions.AuditRegressionTests.test_owner_child_uses_single_cli_module_identity
           tests.unit.test_comprehensive_audit_regressions.AuditRegressionTests.test_f009_failure_code_vocabulary_exactly_matches_ssot_section_15
@@ -110,11 +112,33 @@ jobs:
           tests.unit.test_runtime_installed_files
           tests.unit.test_spot_cash_reconciliation.SpotCashReconciliationTests.test_nonfinancial_account_snapshot_before_fill_is_allowed_but_bound_exactly
           tests.unit.test_timestamps
+      - name: Run portable R2 causal financial provenance and runtime controls
+        run: >-
+          .venv/bin/python -m unittest -v
+          tests.adversarial.test_r2_causality_boundaries
+          tests.adversarial.test_r2_execution_chain
+          tests.adversarial.test_r2_full_raw_inventory
+          tests.adversarial.test_r2_historical_authority_builder
+          tests.adversarial.test_r2_historical_result_status
+          tests.adversarial.test_r2_historical_result_status_builder
+          tests.adversarial.test_r2_historical_validator_identity
+          tests.adversarial.test_r2_locking_durability
+          tests.adversarial.test_r2_material_valuation_grid
+          tests.adversarial.test_r2_native_position_snapshots
+          tests.adversarial.test_r2_official_active_resolution
+          tests.adversarial.test_r2_official_metrics
+          tests.adversarial.test_r2_official_sealing
+          tests.adversarial.test_r2_perpetual_reconciliation
+          tests.adversarial.test_r2_runtime_bootstrap
+          tests.adversarial.test_r2_spot_affordability_mutation
+          tests.unit.test_r2_acceptance_validator
+          tests.unit.test_r2_failure_code_vocabulary
+          tests.unit.test_r2_official_rebuild_plan
 
 # This workflow is intentionally not the Official acceptance runner. It proves
 # the locked wheel and installed payload, then runs only host-portable tests.
-# The seven synthetic engine tests which require the exact host-specific
-# Runtime Lock, and evidence checks which reopen the preserved untracked raw-data
-# corpus, remain mandatory in scripts/run_audit_remediation_acceptance.py. CI
+# Engine tests which require the exact host-specific Runtime Lock, and evidence
+# checks which reopen the preserved untracked raw-data corpus, remain mandatory
+# in scripts/run_adversarial_remediation_002_acceptance.py. CI
 # must not bypass/rewrite that lock or silently omit source objects to look
 # Official.

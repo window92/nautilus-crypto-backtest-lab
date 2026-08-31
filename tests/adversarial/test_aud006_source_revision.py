@@ -250,7 +250,7 @@ Path(sys.argv[4]).write_text(json.dumps({
                 self.assertEqual(process.returncode, 0, process.stderr + process.stdout)
                 result = json.loads(output_path.read_text(encoding="utf-8"))
                 self.assertEqual(result["state"], "BLOCKED")
-                self.assertEqual(result["checker"], "CHECK_BLOCKED")
+                self.assertEqual(result["checker"], "COMPONENT_CHECK_BLOCKED")
                 self.assertIn("EVIDENCE_INCOMPLETE", result["failure_codes"])
                 self.assertFalse(result["engine_executed"])
                 self.assertFalse(result["engine_completed"])

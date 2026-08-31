@@ -17,11 +17,18 @@ class AuditQualificationValidatorTests(unittest.TestCase):
             / "evidence/audit/comprehensive-remediation-001/qualification-runtime-proof"
         )
 
-    def test_current_runtime_proof_qualification_passes(self) -> None:
+    def test_legacy_runtime_proof_is_preserved_but_warmup_affected_qualification_fails(self) -> None:
         result = validate(self.evidence)
-        self.assertEqual(result["status"], "PASS")
+        self.assertEqual(result["status"], "FAIL")
+        self.assertFalse(result["checks"]["current_checker_revalidation"])
         self.assertTrue(result["checks"]["persisted_runtime_payload_proof"])
         self.assertEqual(len(result["runtime_proof_revalidations"]), 4)
+        failure_codes = {
+            code
+            for item in result["checker_revalidations"].values()
+            for code in item["failure_codes"]
+        }
+        self.assertIn("LOOKAHEAD_DETECTED", failure_codes)
 
     def test_runtime_proof_and_manifest_tamper_fail_closed(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

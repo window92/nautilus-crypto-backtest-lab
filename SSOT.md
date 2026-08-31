@@ -9,6 +9,14 @@ header correction is documentary only.
 Adopted runtime: official Rust/PyO3 `nautilus_trader==2.0.0rc2`; all required
 qualifications remain mandatory before any Official Run.
 
+Adversarial-audit remediation adds fail-closed verification, provenance,
+sealing, runtime-startup, historical-validator, and reporting contracts to V1.
+It does not change the pinned Nautilus runtime, the Market Profiles, the
+warmup/scoring rule, or Nautilus ownership of execution and financial truth.
+The previously adopted SSOT bytes remain immutable historical authority for
+the evidence created under them; new evidence MUST bind the identity of these
+remediated SSOT bytes through its Source Revision and final Official seal.
+
 This document defines one strict, offline crypto backtesting laboratory built on NautilusTrader. It is the complete engineering specification for V1.
 
 The Owner has adopted the engineering contract. Implementation authority
@@ -247,6 +255,14 @@ The project MUST NOT recompute a second Official cash balance, position book, re
 
 The project MAY compute independent expected values in tests and invariant checks. Those values are verification evidence only.
 
+For Perpetual as well as Spot, a read-only reconciliation MAY replay the exact
+arithmetic implied by persisted native events in order to prove that those
+events are mutually consistent. Such a reconciliation is a validator, not an
+execution ledger: it MUST NOT participate in the backtest event loop, alter or
+synthesize a Fill, supply account or position state to a strategy, replace a
+Nautilus value, or choose between two financial outcomes. Its only material
+effect is to reject or block evidence that cannot be reconciled.
+
 If a checker and Nautilus disagree on a material invariant, the Run is `BLOCKED`. The project MUST NOT replace Nautilus output with the checker output.
 
 ### 2.4 One owner per financial effect
@@ -297,6 +313,39 @@ Runtime Lock identity covers the locked execution runtime, platform, dependency 
 Project source identity is recorded separately as immutable Source Revision evidence for each Run. That evidence contains `repository`, `branch_ref`, the full `git_commit` returned by `git rev-parse HEAD`, the full `git_tree` returned by `git rev-parse HEAD^{tree}`, `clean_worktree`, and `captured_at_utc`. The capture timestamp is evidence metadata; Git commit and tree object IDs are the source identities. Section 10.5 defines the persisted Run evidence shape.
 
 A missing or mismatched Runtime Lock field makes an Official Run `BLOCKED` before data loading. Missing, dirty, changed-after-freeze, or otherwise invalid Source Revision evidence also blocks an Official Run before data loading, but it does not change Runtime Lock identity.
+
+#### 3.1.1 Isolated startup authority
+
+An Official child process MUST pass a standard-library-only bootstrap before
+it imports project code, NautilusTrader, or another site package. The child
+MUST run with the locked isolated and safe-path flags, with site processing and
+bytecode writes disabled, and with an exact allowlisted environment. Inherited
+`PYTHONPATH`, `PYTHONHOME`, user-site activation, `.pth` execution,
+`sitecustomize`, `usercustomize`, shadow imports, an unapproved executable, or
+an inherited descriptor capable of bypassing the Offline boundary MUST fail
+before Product Code executes.
+
+The bootstrap authority MUST bind at least:
+
+``` text
+bootstrap bytes
+Python executable, real path, pyvenv.cfg, and startup flags
+initial standard-library sys.path
+allowed child environment
+project repository identity, source commit/tree, and executable source closure
+allowed entrypoint or script
+installed distributions, RECORD files, payload hashes and sizes
+native-extension bytes
+resolved import origins
+```
+
+The authority is a separate immutable Source/Run authority. Its identity and
+the resulting startup attestation MUST be bound by Source Revision evidence
+and the Official root attestation. It MUST NOT be inserted into or treated as
+part of `runtime.lock.json`; Section 3.1 continues to define Runtime Lock
+identity. A source commit bound by the bootstrap authority MUST remain an
+ancestor of the Run Source Revision, and the bytes that execute MUST match the
+bound closure. `-I` or another flag alone is not proof of this contract.
 
 ### 3.2 Explicit Nautilus configuration
 
@@ -540,6 +589,66 @@ created_at_utc
 The release ID MUST be a SHA-256 over canonical JSON for the material fields. `created_at_utc` and physical storage paths are evidence metadata and are excluded from the content identity. JSON keys are sorted. Decimal values are strings. NaN and Infinity are forbidden.
 
 Changing any raw object, parser rule, timestamp rule, source-reconciliation rule, minute-coverage disposition, data window or partition binding, data-quality exposure record, instrument metadata, derived-validation identity, Data Tool Lock used for material normalization, or derived catalog creates a new Dataset Release.
+
+Every remediated Dataset Release MUST additionally contain, or content-address
+one canonical companion containing, the complete Raw-object inventory used
+directly or indirectly for reconciliation, no-trade proof, REST observations,
+daily and monthly observations, klines, raw trades, `aggTrades`, marks,
+funding, metadata, catalog construction, and derived bars. The inventory MUST
+be deterministic, sorted, and duplicate-free. Each member MUST bind its
+semantic role, locator, byte size, SHA-256, Instrument, Market Profile, data
+window, and publisher-checksum relationship when one applies. The inventory
+identity is a material field of the Dataset Release.
+
+The release builder and independent validator MUST enforce the bidirectional
+invariant:
+
+``` text
+DatasetRelease full Raw inventory == DuckDB actually-used Raw inventory
+```
+
+The comparison is over the complete typed member identity, not only the
+SHA-256 set. A missing or extra member, wrong hash or size, wrong role or
+locator, mismatched Instrument, Market Profile, or window, a DuckDB source not
+attested by the release, or an attested source not used by the build blocks
+with `DATASET_RAW_INVENTORY_MISMATCH` (or a more specific Raw hash/source code
+when the bytes themselves fail). The portable Evidence MUST contain every
+identity and binding required to repeat that proof without implicit builder
+knowledge; the large immutable Raw bytes may remain in their separately
+managed content-addressed corpus.
+
+Every new Official research Run using the research normalizer
+`binance-public-data-v1-m2.5` MUST additionally bind the canonical, committed
+independent rebuild-validation payload which proves both deterministic builds,
+both read-only DuckDB gates, the complete four-way Raw inventory equality, the
+materialized DatasetRelease, and the resolved Nautilus catalog. The exact
+payload is a mandatory manifest leaf named
+`dataset_rebuild_validation.json`; its bytes MUST match the proof frozen by
+the Run Source Revision and its selected profile record MUST match the Run's
+DatasetRelease, catalog, Raw-inventory identity, and object count. Missing,
+extra, stale, malformed, or rehashed-but-inconsistent proof fails with
+`DATASET_RAW_INVENTORY_MISMATCH` before engine execution and cannot receive an
+Official seal. The M3 direct qualification normalizer explicitly forbids this
+DuckDB proof leaf because it does not use DuckDB; that exception is available
+only to a registered qualification-only Strategy identity and cannot authorize
+a research or profitability workflow.
+
+The exposed M3 mechanical-qualification datasets use the distinct active
+normalizer identity `binance-public-data-v1-m2.5-qualification`. They MUST use
+schema v2 and the same typed complete-Raw-inventory closure as a remediated
+research release. Their inventory consists exactly of the Raw objects parsed
+by the direct Raw-to-catalog qualification builder plus the preserved
+publisher-checksum response bytes which bind each participating archive. A
+legacy schema-v1 M3 release is parse-only history and MUST NOT authorize a
+current qualification. Because this small exposed qualification path does not
+create or consult DuckDB, its independent participation projection is the
+direct builder-use ledger; it MUST equal the release inventory exactly, and it
+MUST NOT fabricate a DuckDB-use claim. This special normalizer does not waive
+or replace the stricter `binance-public-data-v1-m2.5` research-release
+requirements, including the separately bound historical order-grid evidence
+and executable market-state qualification. Current exchange filters in the M3
+fixture remain development-only assumptions and MUST retain the corresponding
+historical-limit disclosure.
 
 ### 4.4 Time semantics
 
@@ -890,6 +999,16 @@ for each material signal_bar:
 
 A warmup bar whose interval is `[scoring_start - bar_interval, scoring_start)` is still a warmup bar even though its `available_at` equals `scoring_start`; it MUST NOT trigger an order. Warmup data MAY influence indicator state used by a later eligible signal bar.
 
+This unchanged full-interval rule applies uniformly to execution bars,
+internally aggregated daily bars, weekly TSMOM bars, every strategy entrypoint
+including low-level APIs, persisted diagnostics, the checker, and replay.
+`decision_timestamp`, submission time, or `available_at` records when a
+decision can occur; none of them can replace the signal bar's
+`interval_start` and `interval_end_exclusive` when determining scoring
+eligibility. Those interval bounds are material Evidence. A missing, altered,
+or pre-scoring interval used by an order fails with
+`WARMUP_SCORING_ELIGIBILITY_VIOLATION`.
+
 At `scoring_start`, the Official Run MUST have the frozen Initial Capital, a `FLAT` position, and zero submitted, in-flight, or otherwise non-terminal strategy orders. The runner MUST assert this boundary before the first scored order is allowed.
 
 If the strategy needs position carry from a prior period, that is a different research contract and is outside V1.
@@ -928,6 +1047,37 @@ The project MUST NOT change a Fill price, quantity, side, time, or identity afte
 The project MUST NOT replace an inconvenient Fill with `NO_FILL`.
 
 If Nautilus emits partial Fills, preserve them exactly. Strategy and research logic MUST use the resulting Nautilus position state; project code MUST NOT silently resize a partial Fill into a full Fill or cancel the observed portion after the fact.
+
+For every submitted strategy intent, Evidence MUST preserve one complete,
+identity-bound chain:
+
+``` text
+submitted intent
+-> Nautilus client order identity
+-> exact native order-event lifecycle
+-> human-readable order projection
+-> zero or more exact native Fill events
+-> human-readable Fill projections
+```
+
+The submitted-intent, projected-order, and native-order identity sets MUST be
+equal. A Fill MUST belong to one of those submitted identities. Within each
+identity, the initialized Instrument, side, type, time-in-force, quantity, and
+time MUST match the submitted intent; native lifecycle timestamps MUST be
+monotonic; the final native event MUST agree with the projected terminal
+state; and:
+
+``` text
+order quantity = exact sum(native Fill quantities) + terminal leaves quantity
+```
+
+Every projected Fill MUST match its native event on the complete preserved
+identity, Instrument, side/type, quantity, price, commission/currency, and
+event-time fields. The deterministic semantic order sequence MUST be derived
+from those same native events and content-bound. A missing, duplicated,
+orphaned, reordered, or altered intent, order event, order row, or Fill fails
+the component checker; a manifest/hash recomputation cannot repair the broken
+lifecycle.
 
 ### 6.2 No same-bar economic execution
 
@@ -1124,9 +1274,14 @@ Changing a material field creates a new Run identity.
 
 Before creating the Nautilus backtest node or engine, preflight MUST verify:
 
-1.  Runtime Lock matches the current execution process and locked dependencies. Runtime Lock matching does not compare a field inside `runtime.lock.json` with Git `HEAD`.
+1.  The isolated bootstrap from Section 3.1.1 has verified the startup
+    environment, import closure, executable, Product Code, and installed
+    runtime before Product Code import; Runtime Lock then matches the current
+    execution process and locked dependencies. Runtime Lock matching does not
+    compare a field inside `runtime.lock.json` with Git `HEAD`.
 2.  An Official Run has a clean Git worktree, then captures and freezes the Source Revision fields from Section 10.5, including `HEAD` and `HEAD^{tree}`. If either identity changes after freeze, preflight blocks the Run.
-3.  Dataset Release resolves and passes completeness checks.
+3.  Dataset Release resolves, passes completeness checks, and its full Raw
+    inventory equals the DuckDB used-Raw inventory in both directions.
 4.  Market Profile and Instrument agree.
 5.  StrategySpec agrees with the Instrument and Market Profile.
 6.  Initial Capital is finite, positive, and in the required currency.
@@ -1173,14 +1328,25 @@ Do not choose the best attempt and delete the rest.
 
 ## 8. Verification contract
 
-### 8.1 Verification has two layers
+### 8.1 Engine truth, component validation, and Official sealing
 
-V1 uses only:
+The three distinct meanings are:
 
-1.  golden tests with independently written expected results;
-2.  a read-only invariant checker over Nautilus output and Run evidence.
+1. `ENGINE_TRUTH`: Nautilus emits native orders, Fills, positions, accounts,
+   fees, funding, PnL, and portfolio state. No project validator may replace
+   these values.
+2. `COMPONENT_VALIDATION`: golden tests and read-only causal, financial,
+   provenance, runtime, and evidence validators examine persisted native
+   output. A component success proves only the checked component and is not an
+   Official Result.
+3. `OFFICIAL_SEAL`: after all native Evidence and component results exist, the
+   final verifier checks the complete closed inventory and all root bindings.
+   Only `OFFICIAL_SEAL_PASS` makes a mechanically completed Run eligible for
+   Official resolution.
 
-Do not build a second backtest engine or a second Official ledger for verification.
+Do not build a second backtest engine or production ledger for verification.
+Deterministic replay is required corroboration, but repeating the same mistake
+does not replace independent component validation or the Official seal.
 
 ### 8.2 Golden tests come first
 
@@ -1219,6 +1385,17 @@ The build MUST include at least these tests:
 | `G23` | A partial event-bearing Spot minute is accepted only when complete raw trades and `aggTrades` agree exactly; a missing or duplicate trade ID blocks, and no synthetic remainder is added. |
 | `G24` | A missing redundant Mark delivery role is non-blocking only with two complete exactly agreeing official representations; a Mark minute absent from all allowed roles blocks without reconstruction. |
 | `G25` | Data-window candidates shift all frozen boundaries by increasing whole months and select the first both-profile data-quality PASS without loading a strategy or inspecting performance. |
+| `G26` | Full signal-interval eligibility rejects `[T0-period,T0)` even when `decision_timestamp=T0`, accepts `[T0,T0+period)`, and applies identically to Spot, Perpetual, aggregation, primary, and replay. |
+| `G27` | Independent Perpetual reconciliation rejects altered account, final position, commission amount/currency, realized/unrealized PnL, terminal mark, Fill, funding, or account delta. |
+| `G28` | Dataset Release and DuckDB used-Raw inventories are equal in both directions; missing, extra, or mistyped members fail with the intended code. |
+| `G29` | A final Evidence package with a missing, extra, altered, empty-invalid, symlinked, escaped, or cross-Run file cannot obtain `OFFICIAL_SEAL_PASS`. |
+| `G30` | Historical validation fails when validator, wrapper, schema/closure, source commit/tree, or executable authority differs; a normal merge preserves ancestry while squash/rebase does not. |
+| `G31` | Official startup rejects `.pth`, `sitecustomize`, `usercustomize`, shadowed project/dependency imports, unapproved environment, executable, or payload before Product Code imports. |
+| `G32` | Official performance metrics use only scoring-window daily marked portfolio Equity; warmup, cash-only Spot PnL, and closed-trade Sharpe are negative controls. |
+| `G33` | Submitted-intent, native order-event, projected-order, native-Fill, and projected-Fill identity/cardinality/value chains agree; deleting, duplicating, or altering any link fails after rehashing. |
+| `G34` | Every Spot and Perpetual daily native portfolio snapshot reconciles to an independent event replay and causal valuation; missing daily/8-hour points, stale currencies/instruments, or a forged intermediate snapshot fail even when terminal Equity is unchanged. |
+| `G35` | The public Official-seal verifier rejects an injected component validator or PASS oracle and resolves only the Product-bound authoritative checker. |
+| `G36` | Completed-position units bind detached native `PositionClosed` callback payloads; a cache object mutated by later NETTING reopen cannot rewrite an earlier completed cycle. |
 
 ### 8.4 Invariant checker
 
@@ -1234,6 +1411,9 @@ The checker MUST verify at least:
 - every Fill belongs to the configured Instrument;
 - every Fill time is causally valid relative to the signal that created its order;
 - every submitted strategy order was triggered by a signal bar eligible under Section 5.4;
+- every persisted signal interval is authentic and its full interval is
+  eligible under Section 5.4; decision/submission timestamps are not accepted
+  as an interval substitute;
 - scoring began with frozen Initial Capital, a `FLAT` position, and zero non-terminal strategy orders;
 - no two strategy-created orders were simultaneously non-terminal for the Run Instrument;
 - Spot never ends or passes through unauthorized short inventory or borrowing;
@@ -1244,22 +1424,107 @@ The checker MUST verify at least:
 - no project code changed a Nautilus Fill;
 - required mark data were present for the configured valuation path and no prohibited valuation fallback was accepted;
 - terminal policy was followed and no Fill has `ts_event >= scoring_end_exclusive`;
+- whether the engine received any post-boundary event is derived from the
+  events actually offered to the engine, not a constant diagnostic;
+- the Dataset Release full Raw inventory equals the DuckDB used-Raw inventory
+  in both directions;
+- every submitted intent, native order lifecycle, projected order, native
+  Fill, and projected Fill satisfies the complete identity/cardinality/value
+  chain in Section 6.1;
 - the Run evidence inventory is complete;
 - the trial journal contains the attempt.
 
-The checker MAY independently calculate small known-value invariants. It MUST NOT become a second Official accounting engine.
+Every native `PositionClosed` cycle used for completed-trade Evidence MUST be
+captured as a detached deep copy of the public native `Position.to_dict()`
+payload at the close callback, before any later NETTING reopen can mutate the
+cache object or its snapshot view. The callback copy, its native payload hash,
+opening/closing order identities, timestamps, prices, quantity, commissions,
+funding-adjustment count, realized PnL, and settlement currency MUST bind the
+typed completed-position unit. A terminal close for which no later strategy
+callback is delivered MAY be captured at finalization only if the same native
+position remains closed and no later reopen occurred. Cache state observed
+after a reopen MUST NOT be used to reconstruct an earlier close. Missing,
+duplicated, mutable-later, or inconsistent closed-position evidence blocks the
+completed-trade sequence and cannot support Official Perpetual reconciliation
+or trade-based diagnostics.
 
-### 8.5 Checker outcome
+For Perpetual, the read-only validator MUST use Decimal arithmetic and the
+frozen Instrument/currency precision to replay, in native event order:
 
 ``` text
-CHECK_PASS
-CHECK_FAIL
-CHECK_BLOCKED
+native Fills
+-> signed NETTING position and average entry
+-> realized price PnL
+-> commission amount and currency
+-> exact funding settlements and account deltas
+-> unrealized PnL at the latest causal eligible terminal mark
+-> total PnL and ending Equity
 ```
 
-An Official Result requires `CHECK_PASS`.
+The persisted native sequence MUST expose enough snapshots to verify opens,
+reductions, exact closes, legal two-order reversals, final position, fee and
+funding effects, and terminal valuation. Missing or duplicated Fills/funding,
+wrong funding sign/rate/mark/pre-boundary position, altered commission,
+account, position, PnL, or future terminal mark fails with
+`PERPETUAL_RECONCILIATION_FAILURE` or a more specific applicable code. This is
+verification of Nautilus output only; it MUST NOT feed state back to the
+engine or substitute a recomputed outcome.
 
-`CHECK_FAIL` or `CHECK_BLOCKED` cannot be overridden by profitability.
+### 8.5 Component outcome and Official seal
+
+Current component validation uses the closed outcome vocabulary:
+
+``` text
+COMPONENT_CHECK_PASS
+COMPONENT_CHECK_FAIL
+COMPONENT_CHECK_BLOCKED
+```
+
+Historical `CHECK_*` bytes retain only the meaning assigned by their pinned
+historical validator. A new component result MUST NOT persist or present itself
+as an Official PASS.
+
+Final Run construction is acyclic and ordered:
+
+1. Nautilus writes native Evidence.
+2. Read-only component validators write `component_validation.json`.
+3. The builder creates the exact leaf inventory and
+   `evidence_manifest.json`.
+4. `status.json` binds the component and manifest identities.
+5. `official_seal.json` binds the manifest, status, component, configuration,
+   Dataset Release, runtime/startup authority, and Source Revision roots.
+6. The final verifier re-runs component validation over the final bytes and
+   emits `OFFICIAL_SEAL_PASS`, `OFFICIAL_SEAL_FAIL`, or
+   `OFFICIAL_SEAL_BLOCKED`. The verifier outcome is not pre-persisted inside
+   the attestation it verifies.
+
+The public Official-seal verifier MUST NOT accept a caller-supplied component
+validator, callback, result object, PASS oracle, or other injectable decision
+function. It MUST resolve and invoke the authoritative component checker from
+the Product Code closure bound by the Run's Source Revision and isolated
+startup authority. Every Owner workflow, Official resolver, report gate, and
+read-only re-verification path MUST call that same closed verifier. A test MAY
+replace an internal symbol only inside a synthetic unit-test boundary; that is
+not an Official API and cannot authorize a persisted result.
+
+The leaf manifest excludes only its own `evidence_manifest.json` bytes and the
+two later root files, `status.json` and `official_seal.json`; those exclusions
+MUST be explicit and the root attestation MUST bind them. No other manifest
+exclusion is allowed. The final verifier MUST reject an undeclared missing or
+extra file, altered hash/size/schema, an invalid empty file, symlink, path
+escape, or a Run/config/source identity mismatch. `funding.csv` and its source
+binding are mandatory for Perpetual even when a canonical empty representation
+is applicable; they are explicitly forbidden/`NOT_APPLICABLE` for Spot.
+Absence produces a structured `FailureCode`, never an uncaught file error.
+For research-normalizer Runs, `dataset_rebuild_validation.json` is likewise a
+mandatory leaf and is revalidated semantically rather than trusted by hash;
+for direct M3 qualification Runs it is forbidden and explicitly
+`NOT_APPLICABLE`. Manifest, status, and root-attestation objects use closed
+field sets, so adding an undeclared JSON field and recomputing downstream
+hashes still fails the schema boundary.
+
+An Official Result requires both `COMPONENT_CHECK_PASS` and
+`OFFICIAL_SEAL_PASS`. No failure or block can be overridden by profitability.
 
 ### 8.6 Deterministic replay
 
@@ -1434,6 +1699,11 @@ A descendant strategy or renamed protocol inherits the consumed Holdout state.
 
 Rename, retry, new seed, new Git branch, new Research Family, new Hypothesis ID, new Dataset Release version over the same exposed market interval, or new protocol version MUST NOT restore an already consumed Holdout.
 
+The adversarial-audit remediation and every replacement Run authorized by it
+use exposed Development data only. They MUST NOT read, execute, consume,
+authorize, or make a claim from a Final Holdout. Mechanical repair and
+`OFFICIAL_SEAL_PASS` do not grant profitability authorization.
+
 ### 9.8 Multiple testing
 
 If the research compares more than one candidate and makes a confirmatory statistical claim, the ResearchProtocol MUST predeclare the multiple-testing treatment.
@@ -1572,7 +1842,7 @@ Use Nautilus native reports and statistics when the pinned runtime provides the 
 
 Do not reimplement a Nautilus metric only to obtain the same value under another name.
 
-A project metric MAY be added only when Nautilus does not provide the required research measure.
+A project metric MAY be added only when Nautilus does not provide the required research measure with the exact adopted input and sampling semantics.
 
 Every added metric MUST define:
 
@@ -1587,6 +1857,73 @@ Undefined is not zero.
 
 A report MUST NOT replace an undefined, missing, or invalid metric with `0`, `NaN`, infinity, or a favorable fallback.
 
+The single Official performance basis for both profiles is a complete UTC
+daily grid of marked total portfolio Equity inside the half-open Scoring
+window. It MUST:
+
+- begin at `scoring_start` with frozen Initial Capital and no warmup financial
+  state;
+- include open positions at every valuation using causal eligible prices or
+  marks and end at `scoring_end_exclusive`;
+- exclude every warmup return and every observation after the scoring boundary;
+- use `365.2425` days for 24/7 annualization;
+- derive total return, CAGR, daily returns, Sharpe, Sortino, and daily maximum
+  drawdown from that same marked portfolio Equity basis;
+- report fees, funding, realized PnL, unrealized PnL, total PnL, sample count,
+  and valuation timestamps with their exact source/basis.
+
+Sharpe and Sortino require at least 30 valid daily-return observations and a
+valid non-zero denominator; otherwise they are `UNDEFINED` / `INELIGIBLE` with
+the reason. NaN, infinity, a zero-variance favorable fallback, three
+closed-trade returns, or cash-only Spot PnL MUST NOT be reported as Official
+portfolio performance. Nautilus native statistics with different semantics
+MAY be retained only as clearly labeled diagnostics. Daily maximum drawdown
+MUST disclose that it does not measure unobserved intraday drawdown.
+
+The Official valuation timestamp set is exact and inclusive at its valuation
+boundaries:
+
+``` text
+scoring_start,
+scoring_start + 1 UTC day,
+...,
+scoring_end_exclusive
+```
+
+It MUST contain exactly one non-stale native portfolio snapshot at every such
+timestamp and no substituted nearest, later, warmup-return, or post-boundary
+observation. `ts_event` and `ts_init` MUST equal the valuation timestamp.
+`is_stale=true`, any non-empty `stale_instruments`, `stale_currencies`, or
+`unpriced_instruments`, a duplicate timestamp/currency, an unexpected
+currency, or a missing boundary makes the Official metric
+`PERFORMANCE_METRICS_INVALID` or `EVIDENCE_INCOMPLETE`; it cannot be converted
+to zero or ignored.
+
+For Spot, the read-only metric validator MUST independently replay the exact
+native Fills in order from frozen Initial Capital, debit/credit BTC and USDT
+with the exact quote-denominated commission, reject borrowing or overselling,
+and mark BTC with the causal accepted execution-Bar close at each exact daily
+timestamp. At every timestamp, both reconstructed currency balances and
+portfolio Equity MUST equal the corresponding native snapshot
+`total_equity`, realized/unrealized basis, and marked Equity. A terminal-only
+match is insufficient.
+
+For Perpetual, registered production strategies MUST preserve exactly one
+causal native Mark callback for the configured Instrument at every UTC
+eight-hour boundary in the inclusive Scoring valuation range. This bounded
+material grid does not replace the complete one-minute Mark source bound by
+the Dataset Release. The UTC-midnight daily grid is the exact subset used for
+Official metrics; funding boundaries are also members of the eight-hour grid.
+The read-only metric validator MUST replay all exact native Fills,
+commissions, and funding effects through each daily boundary, derive signed
+NETTING position, average entry, realized and unrealized PnL from that
+boundary's causal Mark, and require realized PnL, unrealized PnL, total PnL,
+and Equity to equal the native portfolio snapshot at every daily point. A
+missing, duplicate, wrong-Instrument, stale, non-boundary, future, or
+substituted Mark fails with `MARK_ROLE_INVALID`; any daily financial mismatch
+fails with `PERFORMANCE_METRICS_INVALID`. Passing the terminal reconciliation
+alone is not sufficient for Official daily performance.
+
 ### 10.2 Mechanical Integrity
 
 `MechanicalIntegrity=PASS` requires all of these:
@@ -1599,7 +1936,8 @@ A report MUST NOT replace an undefined, missing, or invalid metric with `0`, `Na
 - valid Market Profile;
 - valid StrategySpec and LabRunConfig;
 - required golden and profile tests passed for the current runtime and code;
-- invariant checker `CHECK_PASS`;
+- component validation `COMPONENT_CHECK_PASS`;
+- final verifier `OFFICIAL_SEAL_PASS`;
 - deterministic replay requirement passed for the qualified path;
 - complete Run evidence;
 - no unresolved material ambiguity.
@@ -1642,7 +1980,8 @@ A profitability claim is eligible only when:
 
 ``` text
 MechanicalIntegrity = PASS
-and checker = CHECK_PASS
+and component checker = COMPONENT_CHECK_PASS
+and final verifier = OFFICIAL_SEAL_PASS
 and required Dataset Release evidence is complete
 and trial history is complete
 and ResearchEligibility = ELIGIBLE
@@ -1668,15 +2007,27 @@ runs/<run_id>/
   runtime.lock.json
   source_revision.json
   dataset_release.json
+  instrument_metadata.json
+  qualification_authority.json
   strategy_spec.json
+  strategy_identity.json
+  strategy_identity.sha256
   orders.csv
   fills.csv
   positions.csv
   account.csv
   funding.csv              # Perpetual only
+  funding_source.json      # Perpetual only
   nautilus_result.json
-  checker.json
+  runtime_identity.json
+  native_fills.jsonl
+  native_portfolio_snapshots.jsonl
+  native_completed_trades.json
+  native_statistics.json
+  component_validation.json
+  evidence_manifest.json
   status.json
+  official_seal.json
 ```
 
 `source_revision.json` MUST contain exactly the required Source Revision evidence fields:
@@ -1693,6 +2044,11 @@ captured_at_utc
 `git_commit` and `git_tree` are the full Git object IDs captured from `git rev-parse HEAD` and `git rev-parse HEAD^{tree}`. `clean_worktree` MUST be `true` at the Official Run preflight boundary. The exact `source_revision.json` bytes MUST be frozen with and bound to the Run evidence inventory. If the captured Git commit or tree changes after freeze, the Run is `BLOCKED`; do not update the frozen evidence in place. The final Run report MUST identify the frozen repository, branch/ref, Git commit, and Git tree. Do not substitute a custom project source-tree SHA-256.
 
 If the pinned Nautilus runtime exposes a more faithful native event export than one of the CSV files, preserve that native export too. Do not remove the required human-readable projection.
+
+For Spot, Perpetual-only files are explicitly forbidden/`NOT_APPLICABLE`. For
+Perpetual, `funding.csv` and the source binding are mandatory leaves, including
+the canonical empty-set representation when no settlement applies. A missing
+required leaf MUST produce a structured failure result.
 
 Evidence files MUST be written from the exact Run state. A report MAY read them. A report MUST NOT mutate them.
 
@@ -1724,12 +2080,20 @@ The terminal status records the failure or block reason.
 
 `research/diagnostics/<run_id>.json` is a read-only analysis artifact derived from immutable completed Run evidence. It is not part of the Official Run's execution evidence and MUST NOT feed values back into Nautilus or alter the Run directory.
 
-Use Nautilus native reports and statistics first. If a required diagnostic is absent from the pinned runtime, implement only that diagnostic from persisted evidence under Section 10.1; do not create a second accounting engine.
+Use the Section 10.1 daily marked portfolio Equity basis for Official
+performance comparisons. Nautilus native reports and statistics remain
+preserved as diagnostics; a native metric with another sampling or return
+definition MUST NOT override the adopted Official value. Project calculations
+remain read-only and MUST NOT create execution or account state.
 
 Every completed research Run MUST report, when mathematically applicable:
 
 ``` text
 total_return
+ending_equity
+daily_returns
+Sharpe or UNDEFINED / INELIGIBLE
+Sortino or UNDEFINED / INELIGIBLE
 CAGR
 calendar_year_returns
 max_drawdown
@@ -1747,9 +2111,12 @@ Monte Carlo section or NOT_APPLICABLE / MC_LOW_CONFIDENCE
 claim_scope
 ```
 
-Required fallback semantics, only when Nautilus does not provide the measure:
+Required Official semantics:
 
-- Fallback Equity-path diagnostics MUST use the finest persisted Nautilus Equity series available for the scored interval. The artifact MUST record that observation basis. Do not resample to a smoother frequency to improve the result.
+- Equity-path performance diagnostics MUST use the complete daily UTC marked
+  total-portfolio Equity grid from Section 10.1. A finer native series MAY be
+  retained separately to disclose intraday behavior, but it MUST NOT be mixed
+  with or selectively substituted into the Official daily comparison.
 - `total_return = ending_equity / starting_equity - 1` when `starting_equity > 0`; otherwise record it as undefined with the reason.
 - `CAGR = (ending_equity / starting_equity)^(365.2425 / scored_days) - 1` when `starting_equity > 0`, `ending_equity > 0`, and `scored_days > 0`; otherwise record it as undefined with the reason.
 - A drawdown starts when Equity falls below its previous high-water mark and ends at the first later observation with Equity greater than or equal to that high-water mark. An open terminal drawdown runs through `scoring_end_exclusive`. `max_drawdown_duration` is the longest episode; `average_drawdown_duration` is the arithmetic mean duration across all episodes, including an open terminal episode.
@@ -1761,6 +2128,103 @@ Required fallback semantics, only when Nautilus does not provide the measure:
 These diagnostics are not universal performance thresholds. A large drawdown, low win rate, low Sharpe ratio, or weak calendar year does not automatically change `MechanicalIntegrity`. Any numeric research acceptance threshold must be frozen in the ResearchProtocol before result exposure.
 
 The report MUST make performance concentration visible through `calendar_year_returns` and the Equity/drawdown curves. It MUST NOT hide a year, drawdown episode, losing streak, or failed trial because it makes the strategy look worse.
+
+### 10.9 Historical executable-validator authority
+
+A historical result MUST be interpreted by the validator semantics that were
+actually authoritative for that result. A current `HEAD` validator MUST NOT
+reinterpret old Evidence merely because the old data bytes or a partial input
+snapshot still match.
+
+Every executable historical-validator v2 authority MUST bind:
+
+``` text
+source commit and tree
+entrypoint and wrapper bytes
+complete project executable closure used by the decision
+schemas and required dependency/file bindings
+arguments and isolated interpreter profile
+expected exit code and validator status
+```
+
+The source commit MUST remain an ancestor, its tree and closure MUST match Git
+bytes exactly, and execution MUST occur from an independent immutable snapshot
+through the Section 3.1.1 bootstrap. A changed PASS condition, changed wrapper,
+missing validator, authority from a different commit, closure mismatch, or
+lost ancestry fails with `HISTORICAL_VALIDATOR_IDENTITY_MISMATCH`. A normal
+merge preserves the required ancestry. Squash or rebase can remove or replace
+it and therefore fails closed. Legacy v1 snapshots may prove preserved input
+bytes only; `CURRENT_ROOT_DIFFERS_VALIDLY` is not executable-validator proof
+and cannot make a result current or Official.
+
+### 10.10 Mandatory scientific limitations
+
+Every new Development report and machine-readable claim schema MUST preserve
+and enforce these limitations, not merely mention them in prose:
+
+``` text
+BAR_BASED_EXECUTION_NO_ORDER_BOOK_SPREAD_DEPTH_OR_QUEUE
+HISTORICAL_ACCOUNT_FEE_TIER_NOT_PROVEN
+HISTORICAL_EXCHANGE_FILTERS_NOT_FULLY_PROVEN
+LIQUIDATION_SIMULATION_NOT_AVAILABLE
+PERPETUAL_LEVERAGE_FIXED_AT_ONE_IN_V1
+TERMINAL_OPEN_POSITION_IS_MARKED_NOT_ACTUALLY_CLOSED
+DAILY_DRAWDOWN_DOES_NOT_CAPTURE_INTRADAY_DRAWDOWN
+SINGLE_INSTRUMENT_BTCUSDT_ONLY
+DEVELOPMENT_ONLY_DATA
+FINAL_HOLDOUT_NOT_USED
+NO_PROFITABILITY_AUTHORIZATION
+NOT_VALIDATED_FOR_LIVE_TRADING
+```
+
+Consequently, a mechanically valid Run does not prove exact historical Fill
+quality, spread, queue, market impact, historical account fee tier, historical
+exchange filters, liquidation risk, actual terminal liquidation, intraday
+maximum drawdown, cross-Instrument generalization, future profitability, or
+live-trading fitness. A report or schema that omits or contradicts an
+applicable limitation is `INELIGIBLE` and cannot be published as an Official
+research claim.
+
+### 10.11 Additive historical result status
+
+Historical Evidence, journals, reports, and failed attempts MUST remain
+byte-for-byte unchanged. A later defect is represented by a content-addressed,
+additive status registry whose closed states distinguish Run status from
+financial-result status.
+
+The four pre-remediation Candidate A/B primaries and their four replays for
+Spot and Perpetual are:
+
+``` text
+historical_run_status = REVOKED
+financial_result_status = INVALIDATED
+reason = WARMUP_SCORING_ELIGIBILITY_VIOLATION
+```
+
+Every Official resolver, registry, comparison, and report MUST exclude a
+result whose effective additive status is not active, even when its historical
+validator returned a PASS under the old contract. The old Benchmarks are not
+declared financially invalid solely by this warmup finding; the adopted v2
+Dataset/checker/metric/startup/sealing contract makes them incompatible with
+current resolution, so the additive v2 registry records them as
+`SUPERSEDED`. Supersession does not rewrite or delete the old bytes and does
+not authorize their reuse under a new Dataset, checker, metric, or sealing
+schema.
+
+Every pre-remediation Qualified Profile or qualification registry using the
+legacy schema or historical `CHECK_*` outcome is parse-only historical
+evidence. It cannot authorize a new Official Run and cannot be upgraded by
+re-validating it with current `HEAD`. Current authorization requires a fresh
+schema-v2 qualification created from the remediated Product Code and data
+contract, with `COMPONENT_CHECK_PASS`, current runtime/startup authority,
+independent financial and causal validation, and its own final identity. Until
+that authority exists, both profiles are unavailable for a new Official Run.
+
+Consequently, every pre-remediation primary/replay Run is inactive for current
+Official resolution: the affected Candidates are `REVOKED` / `INVALIDATED`,
+and the Benchmarks are `SUPERSEDED` without an unsupported claim of financial
+invalidity. Historical bytes and their old labels remain facts about the old
+contract only.
 
 ------------------------------------------------------------------------
 
@@ -1774,10 +2238,18 @@ The intended direction is:
 
 ``` text
 config ─┐
-        ├─> data ─> nautilus_runner ─> evidence ─> reporting
-strategy┘                 │
-                          └─> checker
-research ─────────────────────^ and reads completed evidence only
+        ├─> data ─> isolated bootstrap ─> nautilus_runner ─> native evidence
+strategy┘                                                   │
+                                      read-only validators ─┤
+                                                            ▼
+                                         manifest/status/root attestation
+                                                            │
+                                                            ▼
+                                                  Official seal verifier
+                                                            │
+                                              completed sealed evidence only
+                                                            ▼
+                                              research and reporting
 ```
 
 Rules:
@@ -1785,6 +2257,8 @@ Rules:
 - `data` does not import strategy code.
 - strategy code does not import research or reporting code.
 - `checker` does not mutate Nautilus state.
+- `sealing` runs after component validation and is the only current path that
+  can emit `OFFICIAL_SEAL_PASS`.
 - `reporting` reads completed evidence only.
 - `research` schedules and records Runs. It does not change a Run after freeze.
 - no project module implements a second matching, position, account, margin, fee, funding, or portfolio engine.
@@ -2204,6 +2678,7 @@ Use these codes for material stop conditions. Add a new code only when no existi
 ``` text
 RUNTIME_LOCK_MISMATCH
 RUNTIME_WHEEL_HASH_MISMATCH
+RUNTIME_STARTUP_MISMATCH
 UNSUPPORTED_RUNTIME
 UNSUPPORTED_MARKET_PROFILE
 UNSUPPORTED_V1_ORDER_TYPE
@@ -2217,16 +2692,19 @@ DATA_GAP
 DATA_DUPLICATE_CONFLICT
 DATA_ROLE_MISMATCH
 DATASET_RELEASE_STALE
+DATASET_RAW_INVENTORY_MISMATCH
 IRRECOVERABLE_OFFICIAL_MARK_DELIVERY_GAP
 DATA_WINDOW_QUALITY_EXHAUSTED
 INSTRUMENT_METADATA_INVALID
 TIMEFRAME_AGGREGATION_UNRESOLVED
 CAUSAL_EXECUTION_UNRESOLVED
 LOOKAHEAD_DETECTED
+WARMUP_SCORING_ELIGIBILITY_VIOLATION
 SAME_BAR_EXECUTION_DETECTED
 FILL_MUTATION_DETECTED
 SPOT_SHORT_OR_BORROW_DETECTED
 PERP_PROFILE_INVALID
+PERPETUAL_RECONCILIATION_FAILURE
 CROSS_ZERO_ORDER_REJECTED
 CONCURRENT_STRATEGY_ORDER_REJECTED
 FEE_MISSING
@@ -2239,6 +2717,10 @@ DETERMINISM_FAILURE
 DETERMINISTIC_REBUILD_MISMATCH
 CHECKER_FAILURE
 CHECKER_BLOCKED
+OFFICIAL_SEAL_FAILURE
+HISTORICAL_VALIDATOR_IDENTITY_MISMATCH
+PERFORMANCE_METRICS_INVALID
+JOURNAL_DURABILITY_FAILURE
 TRIAL_HISTORY_INCOMPLETE
 RESEARCH_PROTOCOL_INVALID
 PARTITION_LEAKAGE
@@ -2274,22 +2756,28 @@ A phase is done only when:
 An Official Run is valid only when:
 
 - the runtime matches `runtime.lock.json`;
+- the isolated startup authority and attestation prove the bytes and import
+  closure that executed before any Product Code or Nautilus import;
 - a frozen Source Revision is present in Run evidence and binds the Run to its repository, branch/ref, Git commit, and Git tree;
 - the Git worktree was clean at the Source Revision preflight boundary;
-- the Dataset Release is immutable and complete for the Run;
+- the Dataset Release is immutable and complete for the Run, including exact
+  bidirectional full-Raw-inventory equality with the DuckDB build;
 - the Run Configuration is frozen and hashed;
 - the strategy uses only causal inputs;
 - every scored order originates from a scoring-eligible signal bar and warmup submitted no order;
 - the Nautilus execution path satisfies the no-same-bar invariant;
 - the selected Market Profile is valid;
 - required fee, funding, and mark inputs are present exactly once where applicable;
+- Perpetual native financial state passes the independent read-only
+  reconciliation required by Section 8.4;
 - no two strategy-created orders were simultaneously non-terminal for the Run Instrument;
 - no prohibited cross-zero Perpetual order was submitted;
 - no Fill occurred at or after `scoring_end_exclusive`;
 - Nautilus completes the Run;
-- the invariant checker returns `CHECK_PASS`;
+- component validation returns `COMPONENT_CHECK_PASS`;
 - required replay evidence passes;
-- the Run evidence is complete;
+- the Run evidence is complete and the final verifier returns
+  `OFFICIAL_SEAL_PASS`;
 - the trial journal contains the attempt.
 
 ### 16.3 A research claim is valid when
@@ -2322,6 +2810,10 @@ The laboratory is complete when all M0-M4 acceptance criteria pass and these end
 5.  one research lifecycle that contains a failed trial, a completed trial, a Holdout exposure, and an eligible or explicitly ineligible claim.
 
 The final acceptance run MUST use the pinned Runtime Lock and MUST execute without network access.
+
+Completion of these mechanical gates on the remediation Development window is
+not a Final Holdout result, profitability authorization, investment claim, or
+live-trading qualification.
 
 ------------------------------------------------------------------------
 

@@ -57,13 +57,14 @@ class M1EvidenceContractTests(unittest.TestCase):
                 "native_fills.jsonl",
                 "nautilus_result.json",
                 "checker.json",
+                "component_validation.json",
                 "status.json",
             }
             self.assertEqual({path.name for path in result.evidence_dir.iterdir()}, required)
             status = json.loads((result.evidence_dir / "status.json").read_text())
             checker = json.loads((result.evidence_dir / "checker.json").read_text())
             self.assertEqual(status["state"], "COMPLETED")
-            self.assertEqual(checker["outcome"], "CHECK_PASS")
+            self.assertEqual(checker["outcome"], "COMPONENT_CHECK_PASS")
             self.assertEqual(result.to_builtins()["config_sha256"], result.config_sha256)
 
             before = {

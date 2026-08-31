@@ -33,6 +33,8 @@ from crypto_lab.reporting import ReportOutput
 from crypto_lab.reporting import PerformanceDiagnostics
 from crypto_lab.reporting import _build_report_from_resolved_evidence
 from crypto_lab.reporting import _write_resolved_report
+from crypto_lab.result_status import ResultNotActiveError
+from crypto_lab.result_status import require_active_result
 from crypto_lab.research import ClaimEvaluation
 from crypto_lab.research import ClaimEvaluationInput
 from crypto_lab.research import ClaimScope
@@ -47,6 +49,8 @@ from crypto_lab.research import TrialState
 from crypto_lab.status import FailureCode
 from crypto_lab.research import _evaluate_claim_from_resolved_evidence
 from crypto_lab.research import benchmark_trial_candidate_id
+from crypto_lab.sealing import OfficialSealOutcome
+from crypto_lab.sealing import verify_official_seal
 from crypto_lab.strategies import RegisteredStrategyIdentity
 from crypto_lab.strategies import StrategySpec
 from crypto_lab.strategies import registered_strategy_identity_matches_frozen_source
@@ -109,7 +113,7 @@ def _historical_failed_checker_is_retained(
         state in {TrialState.FAILED, TrialState.BLOCKED, TrialState.ABORTED}
         and run_state_matches_journal
         and status.get("checker_outcome")
-        in {CheckerOutcome.CHECK_FAIL.value, CheckerOutcome.CHECK_BLOCKED.value}
+        in {"CHECK_FAIL", "CHECK_BLOCKED"}
         and persisted_checker.get("outcome") == status.get("checker_outcome")
         and persisted_checker.get("mutated_run_evidence") is False
         and failures_match
@@ -178,7 +182,28 @@ class OfficialEvidenceResolver:
 
     def _run_dir(self, record: TrialRecord) -> Path:
         located = self._contained(self.repository_root / record.result_ref)
-        return located if located.is_dir() else located.parent
+        run_dir = located if located.is_dir() else located.parent
+        self._require_active_run(run_dir, role="primary")
+        return run_dir
+
+    def _require_active_run(self, run_dir: Path, *, role: str) -> None:
+        """Reject revoked/superseded bytes before Official financial use."""
+
+        try:
+            require_active_result(
+                run_dir,
+                repository_root=self.repository_root,
+            )
+        except ResultNotActiveError as exc:
+            raise ResearchError(
+                FailureCode.CLAIM_INELIGIBLE,
+                f"{role} Result is not ACTIVE: {exc.resolution.relative_path}",
+            ) from exc
+        except (OSError, ValueError) as exc:
+            raise ResearchError(
+                FailureCode.EVIDENCE_INCOMPLETE,
+                f"{role} Result status authority is invalid",
+            ) from exc
 
     def _protocol(self, protocol_id: str) -> tuple[ResearchProtocol, Path]:
         path = self._contained(
@@ -205,11 +230,39 @@ class OfficialEvidenceResolver:
             raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, f"{path.name} must be an object")
         return value
 
-    def _verify_manifest(self, run_dir: Path, run_id: str) -> str:
+    def _verify_manifest(
+        self,
+        run_dir: Path,
+        run_id: str,
+        *,
+        allow_legacy_v1: bool = False,
+    ) -> str:
         manifest_path = run_dir / "evidence_manifest.json"
         if manifest_path.is_symlink() or manifest_path.resolve(strict=True).parent != run_dir:
             raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "Run manifest escapes its evidence directory")
         manifest = self._json(manifest_path)
+        if manifest.get("schema") == "run-evidence-manifest-v2":
+            seal = verify_official_seal(
+                run_dir,
+                repository_root=self.repository_root,
+                source_revision_current_head_required=False,
+            )
+            if seal.outcome is not OfficialSealOutcome.OFFICIAL_SEAL_PASS:
+                raise ResearchError(
+                    FailureCode.OFFICIAL_SEAL_FAILURE,
+                    "Official root seal failed: " + ",".join(seal.failure_codes),
+                )
+            if manifest.get("run_id") != run_id:
+                raise ResearchError(
+                    FailureCode.OFFICIAL_SEAL_FAILURE,
+                    "Official root seal Run identity mismatch",
+                )
+            return sha256_file(manifest_path)
+        if not allow_legacy_v1:
+            raise ResearchError(
+                FailureCode.OFFICIAL_SEAL_FAILURE,
+                "legacy manifest has no Official root seal",
+            )
         entries = manifest.get("entries")
         if (
             manifest.get("schema") != "run-evidence-manifest-v1"
@@ -264,7 +317,6 @@ class OfficialEvidenceResolver:
     ) -> tuple[Path, LabRunConfig, SourceRevision, RegisteredStrategyIdentity, str]:
         run_dir = self._run_dir(record)
         required = {
-            "checker.json",
             "dataset_release.json",
             "evidence_manifest.json",
             "lab_run_config.json",
@@ -276,6 +328,13 @@ class OfficialEvidenceResolver:
             "strategy_identity.json",
             "strategy_spec.json",
         }
+        required.add(
+            "component_validation.json"
+            if revalidate_current_checker
+            else "checker.json",
+        )
+        if revalidate_current_checker:
+            required.add("official_seal.json")
         missing = sorted(name for name in required if not (run_dir / name).is_file())
         if missing:
             raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "selected Run missing: " + ",".join(missing))
@@ -287,8 +346,17 @@ class OfficialEvidenceResolver:
             (run_dir / "strategy_identity.json").read_bytes(),
         )
         status = self._json(run_dir / "status.json")
-        persisted_checker = self._json(run_dir / "checker.json")
-        manifest_sha = self._verify_manifest(run_dir, record.run_id)
+        component_path = run_dir / (
+            "component_validation.json"
+            if revalidate_current_checker
+            else "checker.json"
+        )
+        persisted_checker = self._json(component_path)
+        manifest_sha = self._verify_manifest(
+            run_dir,
+            record.run_id,
+            allow_legacy_v1=not revalidate_current_checker,
+        )
         historical_failed_retained = bool(
             not revalidate_current_checker
             and _historical_failed_checker_is_retained(
@@ -308,7 +376,12 @@ class OfficialEvidenceResolver:
                 status.get("state") != record.state.value
                 and not historical_failed_retained
             )
-            or status.get("checker_outcome") != persisted_checker.get("outcome")
+            or status.get(
+                "component_validation_outcome"
+                if revalidate_current_checker
+                else "checker_outcome",
+            )
+            != persisted_checker.get("outcome")
         ):
             raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "selected trial and Run evidence mismatch")
         verify_source_revision(
@@ -352,21 +425,28 @@ class OfficialEvidenceResolver:
         declared = payload.pop("replay_identity", None)
         if (
             declared != canonical_sha256(payload)
-            or payload.get("schema") != "owner-deterministic-replay-v1"
+            or payload.get("schema") != "owner-deterministic-replay-v2"
             or payload.get("trial_id") != record.trial_id
             or payload.get("primary_run_ref") != record.result_ref
             or payload.get("result") != "PASS"
             or payload.get("fresh_processes") is not True
             or payload.get("read_only_checker_revalidated") is not True
+            or payload.get("primary_component_validation")
+            != CheckerOutcome.COMPONENT_CHECK_PASS.value
+            or payload.get("replay_component_validation")
+            != CheckerOutcome.COMPONENT_CHECK_PASS.value
+            or payload.get("primary_official_seal") != "OFFICIAL_SEAL_PASS"
+            or payload.get("replay_official_seal") != "OFFICIAL_SEAL_PASS"
         ):
             raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "deterministic replay evidence is invalid")
         replay_dir = self._contained(self.repository_root / str(payload["replay_run_ref"]))
         if not replay_dir.is_dir():
             raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "deterministic replay Run is absent")
+        self._require_active_run(replay_dir, role="replay")
         primary_result = self._json(primary_run_dir / "nautilus_result.json")
         replay_result = self._json(replay_dir / "nautilus_result.json")
         replay_status = self._json(replay_dir / "status.json")
-        persisted_checker = self._json(replay_dir / "checker.json")
+        persisted_checker = self._json(replay_dir / "component_validation.json")
         regenerated = check_evidence_directory(
             replay_dir,
             repository_root=self.repository_root,
@@ -377,7 +457,14 @@ class OfficialEvidenceResolver:
         if (
             regenerated.to_builtins() != persisted_checker
             or replay_status.get("state") != "COMPLETED"
-            or replay_status.get("checker_outcome") != "CHECK_PASS"
+            or replay_status.get("component_validation_outcome")
+            != CheckerOutcome.COMPONENT_CHECK_PASS.value
+            or verify_official_seal(
+                replay_dir,
+                repository_root=self.repository_root,
+                source_revision_current_head_required=False,
+            ).outcome
+            is not OfficialSealOutcome.OFFICIAL_SEAL_PASS
             or replay_result.get("config_sha256") != primary_result.get("config_sha256")
             or replay_result.get("semantic_digest") != primary_result.get("semantic_digest")
             or payload.get("primary_config_sha256") != primary_result.get("config_sha256")
@@ -460,8 +547,9 @@ class OfficialEvidenceResolver:
         )
         if (
             qualified is None
+            or qualified.schema_version != 2
             or qualified.profile_id is not config.market_profile
-            or qualified.checker_result != "CHECK_PASS"
+            or qualified.checker_result != "COMPONENT_CHECK_PASS"
             or qualified.replay_result != "PASS"
         ):
             raise ResearchError(FailureCode.DOWNSTREAM_CONTRACT_FAILURE, "Market Profile is not qualified")
@@ -531,7 +619,7 @@ class OfficialEvidenceResolver:
                 holdout_valid = False
             else:
                 holdout_valid = True
-        persisted_checker = self._json(run_dir / "checker.json")
+        persisted_checker = self._json(run_dir / "component_validation.json")
         status = self._json(run_dir / "status.json")
         mechanical = (
             MechanicalIntegrity.PASS
@@ -597,7 +685,9 @@ class OfficialEvidenceResolver:
         underlying_runs_valid = bool(exact_protocol_trials) and all(
             record.state is TrialState.COMPLETED
             and record.trial_id in resolved_runs
-            and self._json(resolved_runs[record.trial_id][0] / "checker.json").get("outcome")
+            and self._json(
+                resolved_runs[record.trial_id][0] / "component_validation.json",
+            ).get("outcome")
             == CheckerOutcome.CHECK_PASS.value
             for record in exact_protocol_trials
         )
@@ -639,6 +729,7 @@ class OfficialEvidenceResolver:
                 protocol=protocol,
                 mechanical_integrity=mechanical,
                 checker_result=str(persisted_checker.get("outcome")),
+                official_seal_result="OFFICIAL_SEAL_PASS",
                 underlying_official_runs_valid=(
                     underlying_runs_valid
                     and mechanical is MechanicalIntegrity.PASS

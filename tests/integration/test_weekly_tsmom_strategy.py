@@ -201,15 +201,31 @@ class WeeklyTsmomStrategyIntegrationTests(unittest.TestCase):
             engine.dispose()
         return observations, orders, fills, signed
 
-    def test_weekly_full_candidate_is_causal_long_flat_or_separate_reverse(self) -> None:
+    def test_weekly_full_candidate_ignores_warmup_decision_and_uses_first_scored_target(
+        self,
+    ) -> None:
         for profile in (
             MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY,
             MarketProfile.BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING,
         ):
             observations, orders, fills, signed = self._run(profile, TSMOM_FULL_REGISTRATION_ID)
-            self.assertEqual(len(observations["signals"]), 2)
-            self.assertEqual([item["target"] for item in observations["signals"]], ["LONG", "FLAT" if profile is MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY else "SHORT"])
-            self.assertEqual(len(orders), 2 if profile is MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY else 3)
+            self.assertEqual(len(observations["signals"]), 1)
+            signal = observations["signals"][0]
+            self.assertEqual(signal["signal_bar_interval_start_ns"], 38 * DAY_NS)
+            self.assertEqual(signal["signal_bar_interval_end_exclusive_ns"], 39 * DAY_NS)
+            self.assertGreaterEqual(signal["signal_bar_interval_start_ns"], 32 * DAY_NS)
+            self.assertEqual(
+                signal["target"],
+                "FLAT"
+                if profile is MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY
+                else "SHORT",
+            )
+            self.assertEqual(
+                len(orders),
+                0
+                if profile is MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY
+                else 1,
+            )
             self.assertEqual(len(fills), len(orders))
             self.assertEqual(observations["guard_failures"], [])
             self.assertEqual(observations["daily_signal_bars"][0]["completed_close_count"], 1)
@@ -221,11 +237,7 @@ class WeeklyTsmomStrategyIntegrationTests(unittest.TestCase):
                     if item["client_order_id"] == str(fill.client_order_id)
                 )
                 self.assertGreaterEqual(int(fill.ts_event), int(intent["effective_insert_at_ns"]))
-            if profile is MarketProfile.BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING:
-                self.assertEqual(
-                    [item["event"] for item in observations["reversal_sequence"]],
-                    ["CLOSE_TO_FLAT_SUBMITTED", "NATIVE_FLAT_CONFIRMED", "SEPARATE_REOPEN_SUBMITTED"],
-                )
+            self.assertEqual(observations["reversal_sequence"], [])
 
     def test_registered_benchmark_enters_once_and_holds(self) -> None:
         observations, orders, fills, signed = self._run(
@@ -237,6 +249,10 @@ class WeeklyTsmomStrategyIntegrationTests(unittest.TestCase):
         self.assertEqual(len(fills), 1)
         self.assertGreater(signed, 0)
         self.assertEqual(observations["submitted_intents"][0]["reason"], "BUY_AND_HOLD_1X_INITIAL_ENTRY")
+        self.assertEqual(
+            [item["ts_init"] for item in observations["valuation_bars"]],
+            [32 * DAY_NS, 33 * DAY_NS, 34 * DAY_NS],
+        )
 
     def test_weekly_vol20_candidate_uses_locked_fraction_without_leverage(self) -> None:
         observations, orders, fills, _ = self._run(

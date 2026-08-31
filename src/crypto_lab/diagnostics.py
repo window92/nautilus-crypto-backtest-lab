@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import csv
 import os
 import tempfile
 import json
@@ -12,13 +13,16 @@ from pathlib import Path
 from typing import Any
 
 from crypto_lab.config import LabRunConfig
+from crypto_lab.config import MarketProfile
 from crypto_lab.config import StrictModel
 from crypto_lab.config import _require_sha256
 from crypto_lab.hashing import canonical_sha256
 from crypto_lab.hashing import sha256_file
 from crypto_lab.native_positions import NativeCompletedPositionSequence
+from crypto_lab.perpetual_reconciliation import replay_perpetual_valuation_states
 from crypto_lab.reporting import EquityObservation
 from crypto_lab.reporting import PerformanceDiagnostics
+from crypto_lab.reporting import REQUIRED_SCIENTIFIC_LIMITATIONS
 from crypto_lab.reporting import generate_performance_diagnostics
 from crypto_lab.research import CompletedTradeSeries
 from crypto_lab.research import MonteCarloStatus
@@ -143,7 +147,7 @@ class DiagnosticResolution(StrictModel):
         return cls(diagnostic_resolution_id=canonical_sha256(material), **material)
 
 
-_RUN_DIAGNOSTIC_INPUTS = (
+_RUN_DIAGNOSTIC_INPUTS_V1 = (
     "account.csv",
     "checker.json",
     "dataset_release.json",
@@ -152,6 +156,24 @@ _RUN_DIAGNOSTIC_INPUTS = (
     "native_completed_trades.json",
     "nautilus_result.json",
     "positions.csv",
+    "source_revision.json",
+    "status.json",
+    "strategy_identity.json",
+    "strategy_spec.json",
+)
+
+_RUN_DIAGNOSTIC_INPUTS_V2 = (
+    "account.csv",
+    "component_validation.json",
+    "dataset_release.json",
+    "evidence_manifest.json",
+    "fills.csv",
+    "lab_run_config.json",
+    "native_completed_trades.json",
+    "nautilus_result.json",
+    "official_seal.json",
+    "positions.csv",
+    "runtime_identity.json",
     "source_revision.json",
     "status.json",
     "strategy_identity.json",
@@ -210,15 +232,198 @@ def _money_total(items: Any, currency: str) -> Decimal:
     if not isinstance(items, list):
         raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "native snapshot money list is invalid")
     total = Decimal(0)
+    seen: set[str] = set()
     for item in items:
         if not isinstance(item, dict) or set(item) != {"amount", "currency"}:
             raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "native snapshot money value is invalid")
         amount = Decimal(str(item["amount"]))
         if not amount.is_finite():
             raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "native snapshot money is non-finite")
-        if item["currency"] == currency:
-            total += amount
+        observed_currency = str(item["currency"])
+        if observed_currency != currency or observed_currency in seen:
+            raise ResearchError(
+                FailureCode.EVIDENCE_INCOMPLETE,
+                "native snapshot PnL currency set is invalid",
+            )
+        seen.add(observed_currency)
+        total += amount
     return total
+
+
+def _snapshot_money_map(items: Any) -> dict[str, Decimal]:
+    if not isinstance(items, list):
+        raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "native snapshot total Equity is invalid")
+    result: dict[str, Decimal] = {}
+    for item in items:
+        if not isinstance(item, dict) or set(item) != {"amount", "currency"}:
+            raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "native snapshot Money value is invalid")
+        currency = str(item["currency"])
+        amount = Decimal(str(item["amount"]))
+        if not currency or currency in result or not amount.is_finite():
+            raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "native snapshot Money set is invalid")
+        result[currency] = amount
+    return result
+
+
+def _spot_daily_ledger_equity(
+    *,
+    fills: list[dict[str, str]],
+    bars: list[dict[str, Any]],
+    valuation_timestamps: tuple[int, ...],
+    instrument_id: str,
+    base_currency: str,
+    quote_currency: str,
+    initial_quote_balance: Decimal,
+) -> tuple[dict[int, Decimal], dict[int, dict[str, Decimal]]]:
+    """Independently replay Spot cash and mark it on the exact daily grid."""
+
+    if not valuation_timestamps or tuple(sorted(set(valuation_timestamps))) != valuation_timestamps:
+        raise ResearchError(FailureCode.PERFORMANCE_METRICS_INVALID, "invalid valuation timestamp grid")
+    prices: dict[int, Decimal] = {}
+    for row in bars:
+        try:
+            timestamp = int(row["ts_init"])
+            if timestamp not in valuation_timestamps:
+                continue
+            price = Decimal(str(row["close"]))
+            if (
+                int(row["ts_event"]) != timestamp
+                or int(row["callback_clock_ns"]) != timestamp
+                or not str(row["bar_type"]).startswith(f"{instrument_id}-")
+                or price <= 0
+                or not price.is_finite()
+                or timestamp in prices
+            ):
+                raise ValueError("invalid or duplicate daily Bar")
+            prices[timestamp] = price
+        except Exception as exc:
+            raise ResearchError(
+                FailureCode.PERFORMANCE_METRICS_INVALID,
+                "invalid native daily Spot valuation Bar",
+            ) from exc
+    if set(prices) != set(valuation_timestamps):
+        raise ResearchError(
+            FailureCode.PERFORMANCE_METRICS_INVALID,
+            "native daily Spot valuation Bars do not cover the scoring grid",
+        )
+
+    ordered_fills: list[tuple[int, Decimal, Decimal, Decimal, str]] = []
+    seen_ids: set[str] = set()
+    previous_timestamp = -1
+    for index, row in enumerate(fills):
+        try:
+            timestamp = int(row["ts_event"])
+            quantity = Decimal(row["last_qty"])
+            price = Decimal(row["last_px"])
+            commission = _money_text(row["commission"], quote_currency)
+            event_id = row["event_id"]
+            side = row["order_side"]
+            if (
+                int(row["fill_index"]) != index
+                or int(row["ts_init"]) != timestamp
+                or timestamp < previous_timestamp
+                or not event_id
+                or event_id in seen_ids
+                or row["instrument_id"] != instrument_id
+                or row["currency"] != quote_currency
+                or row["order_type"] != "MARKET"
+                or side not in {"BUY", "SELL"}
+                or quantity <= 0
+                or price <= 0
+                or commission < 0
+                or not all(value.is_finite() for value in (quantity, price, commission))
+            ):
+                raise ValueError("invalid Spot Fill")
+        except Exception as exc:
+            raise ResearchError(
+                FailureCode.PERFORMANCE_METRICS_INVALID,
+                "invalid native Spot Fill in daily ledger replay",
+            ) from exc
+        seen_ids.add(event_id)
+        previous_timestamp = timestamp
+        ordered_fills.append((timestamp, quantity, price, commission, side))
+
+    base = Decimal(0)
+    quote = initial_quote_balance
+    cursor = 0
+    equities: dict[int, Decimal] = {}
+    balances: dict[int, dict[str, Decimal]] = {}
+    for timestamp in valuation_timestamps:
+        while cursor < len(ordered_fills) and ordered_fills[cursor][0] <= timestamp:
+            _fill_timestamp, quantity, price, commission, side = ordered_fills[cursor]
+            notional = quantity * price
+            if side == "BUY":
+                quote -= notional + commission
+                base += quantity
+            else:
+                base -= quantity
+                quote += notional - commission
+            if base < 0 or quote < 0:
+                raise ResearchError(
+                    FailureCode.PERFORMANCE_METRICS_INVALID,
+                    "Spot daily ledger requires borrowing or overselling",
+                )
+            cursor += 1
+        balances[timestamp] = {base_currency: base, quote_currency: quote}
+        equities[timestamp] = quote + base * prices[timestamp]
+    return equities, balances
+
+
+def _money_text(value: Any, currency: str) -> Decimal:
+    parts = str(value).split(" ", maxsplit=1)
+    if len(parts) != 2 or parts[1] != currency:
+        raise ResearchError(
+            FailureCode.EVIDENCE_INCOMPLETE,
+            "native Money currency does not match settlement currency",
+        )
+    amount = Decimal(parts[0])
+    if not amount.is_finite():
+        raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "native Money is non-finite")
+    return amount
+
+
+def _official_financial_components(
+    run_dir: Path,
+    *,
+    currency: str,
+) -> dict[str, Decimal]:
+    fills_path = run_dir / "fills.csv"
+    result_path = run_dir / "nautilus_result.json"
+    if not fills_path.is_file() or not result_path.is_file():
+        raise ResearchError(
+            FailureCode.EVIDENCE_INCOMPLETE,
+            "Official financial evidence is incomplete",
+        )
+    with fills_path.open("r", encoding="utf-8", newline="") as stream:
+        fills = list(csv.DictReader(stream))
+    fees = sum(
+        (_money_text(row["commission"], currency) for row in fills),
+        Decimal(0),
+    )
+    funding_path = run_dir / "funding.csv"
+    if funding_path.is_file():
+        with funding_path.open("r", encoding="utf-8", newline="") as stream:
+            funding_rows = list(csv.DictReader(stream))
+        funding = sum(
+            (_money_text(row["pnl_change"], currency) for row in funding_rows),
+            Decimal(0),
+        )
+    else:
+        funding = Decimal(0)
+    result = json.loads(result_path.read_text(encoding="utf-8"))
+    terminal = result.get("terminal_portfolio")
+    if not isinstance(terminal, dict):
+        raise ResearchError(
+            FailureCode.EVIDENCE_INCOMPLETE,
+            "native terminal portfolio is missing",
+        )
+    return {
+        "fees": fees,
+        "funding": funding,
+        "realized_pnl": _money_text(terminal.get("realized_pnl"), currency),
+        "unrealized_pnl": _money_text(terminal.get("unrealized_pnl"), currency),
+        "total_pnl": _money_text(terminal.get("total_pnl"), currency),
+    }
 
 
 def _load_benchmark_evidence(
@@ -328,7 +533,7 @@ def derive_performance_diagnostics(
     benchmark_directory: Path | None = None,
     resolve_benchmark: bool = True,
 ) -> PerformanceDiagnostics:
-    """Derive SSOT diagnostics from the finest persisted Nautilus Equity snapshots."""
+    """Derive Official metrics from scoring-only daily marked native Equity."""
 
     run_dir = Path(run_dir)
     config = LabRunConfig.from_json_bytes((run_dir / "lab_run_config.json").read_bytes())
@@ -352,6 +557,9 @@ def derive_performance_diagnostics(
         if line.strip()
     ]
     by_timestamp: dict[int, Decimal] = {}
+    totals_by_timestamp: dict[int, dict[str, Decimal]] = {}
+    realized_by_timestamp: dict[int, Decimal] = {}
+    unrealized_by_timestamp: dict[int, Decimal] = {}
     currency = config.initial_capital.currency
     scored_start_ns = utc_datetime_to_ns(config.scoring_start)
     scoring_end_ns = utc_datetime_to_ns(config.scoring_end_exclusive)
@@ -361,19 +569,56 @@ def derive_performance_diagnostics(
             or int(row.get("ts_event", -1)) != int(row.get("ts_init", -2))
             or row.get("is_stale") is not False
             or row.get("stale_instruments")
+            or row.get("stale_currencies")
             or row.get("unpriced_instruments")
         ):
             raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "native portfolio snapshot is stale or malformed")
         timestamp = int(row["ts_event"])
         if scored_start_ns <= timestamp <= scoring_end_ns:
-            # SSOT fallback Equity path: the frozen Initial Capital plus the
-            # native realized and native unrealized PnL values.  This is a
-            # read-only diagnostic; Nautilus remains the PnL owner.
-            by_timestamp[timestamp] = (
+            # Read-only marked total portfolio Equity. Nautilus remains the
+            # financial owner; native statistics are separately retained and
+            # content-bound but never override this official daily series.
+            snapshot_realized = _money_total(row.get("realized_pnls"), currency)
+            snapshot_unrealized = _money_total(row.get("unrealized_pnls"), currency)
+            snapshot_equity = (
                 config.initial_capital.amount
-                + _money_total(row.get("realized_pnls"), currency)
-                + _money_total(row.get("unrealized_pnls"), currency)
+                + snapshot_realized
+                + snapshot_unrealized
             )
+            if (
+                timestamp in by_timestamp
+                and by_timestamp[timestamp] != snapshot_equity
+            ):
+                raise ResearchError(
+                    FailureCode.EVIDENCE_INCOMPLETE,
+                    "conflicting native portfolio snapshots share a timestamp",
+                )
+            by_timestamp[timestamp] = snapshot_equity
+            if (
+                timestamp in realized_by_timestamp
+                and realized_by_timestamp[timestamp] != snapshot_realized
+            ):
+                raise ResearchError(
+                    FailureCode.EVIDENCE_INCOMPLETE,
+                    "conflicting native realized-PnL snapshots share a timestamp",
+                )
+            if (
+                timestamp in unrealized_by_timestamp
+                and unrealized_by_timestamp[timestamp] != snapshot_unrealized
+            ):
+                raise ResearchError(
+                    FailureCode.EVIDENCE_INCOMPLETE,
+                    "conflicting native unrealized-PnL snapshots share a timestamp",
+                )
+            realized_by_timestamp[timestamp] = snapshot_realized
+            unrealized_by_timestamp[timestamp] = snapshot_unrealized
+            snapshot_totals = _snapshot_money_map(row.get("total_equity"))
+            if timestamp in totals_by_timestamp and totals_by_timestamp[timestamp] != snapshot_totals:
+                raise ResearchError(
+                    FailureCode.EVIDENCE_INCOMPLETE,
+                    "conflicting native portfolio total Equity snapshots share a timestamp",
+                )
+            totals_by_timestamp[timestamp] = snapshot_totals
     if (
         not by_timestamp
         or min(by_timestamp) != scored_start_ns
@@ -381,6 +626,154 @@ def derive_performance_diagnostics(
     ):
         raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE,
             "native Equity snapshots do not cover both scoring boundaries",
+        )
+    expected_timestamps = tuple(
+        range(scored_start_ns, scoring_end_ns + 1, 86_400_000_000_000),
+    )
+    if tuple(sorted(by_timestamp)) != expected_timestamps:
+        raise ResearchError(
+            FailureCode.EVIDENCE_INCOMPLETE,
+            "native Equity snapshots do not form the exact UTC-daily scoring grid",
+        )
+    if config.market_profile is MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY:
+        metadata = json.loads(
+            (run_dir / "instrument_metadata.json").read_text(encoding="utf-8"),
+        )
+        base_currency = str(metadata.get("base_currency", ""))
+        if (
+            metadata.get("instrument_id") != config.instrument_id
+            or metadata.get("quote_currency") != currency
+            or not base_currency
+            or base_currency == currency
+        ):
+            raise ResearchError(
+                FailureCode.PERFORMANCE_METRICS_INVALID,
+                "Spot metric instrument/currency identity is invalid",
+            )
+        with (run_dir / "fills.csv").open("r", encoding="utf-8", newline="") as stream:
+            fills = list(csv.DictReader(stream))
+        result = json.loads((run_dir / "nautilus_result.json").read_text(encoding="utf-8"))
+        observations_payload = result.get("strategy_observations")
+        if not isinstance(observations_payload, dict) or not isinstance(
+            observations_payload.get("valuation_bars"),
+            list,
+        ):
+            raise ResearchError(
+                FailureCode.PERFORMANCE_METRICS_INVALID,
+                "Spot native Bar observations are missing",
+            )
+        ledger_equities, ledger_balances = _spot_daily_ledger_equity(
+            fills=fills,
+            bars=observations_payload["valuation_bars"],
+            valuation_timestamps=expected_timestamps,
+            instrument_id=config.instrument_id,
+            base_currency=base_currency,
+            quote_currency=currency,
+            initial_quote_balance=config.initial_capital.amount,
+        )
+        for timestamp in expected_timestamps:
+            observed_totals = totals_by_timestamp[timestamp]
+            expected_balances = ledger_balances[timestamp]
+            unexpected = set(observed_totals) - {base_currency, currency}
+            if (
+                unexpected
+                or observed_totals.get(base_currency, Decimal(0))
+                != expected_balances[base_currency]
+                or observed_totals.get(currency, Decimal(0))
+                != expected_balances[currency]
+                or by_timestamp[timestamp] != ledger_equities[timestamp]
+            ):
+                raise ResearchError(
+                    FailureCode.PERFORMANCE_METRICS_INVALID,
+                    "native Spot daily portfolio snapshot does not reconcile to Fills and causal Bar",
+                )
+    elif (
+        config.market_profile
+        is MarketProfile.BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING
+    ):
+        result = json.loads((run_dir / "nautilus_result.json").read_text(encoding="utf-8"))
+        observations_payload = result.get("strategy_observations")
+        instrument_contract = result.get("dataset_contract", {}).get("instrument")
+        if (
+            not isinstance(observations_payload, dict)
+            or not isinstance(observations_payload.get("mark_price_updates"), list)
+            or not isinstance(instrument_contract, dict)
+        ):
+            raise ResearchError(
+                FailureCode.PERFORMANCE_METRICS_INVALID,
+                "Perpetual native Mark observations or Instrument contract are missing",
+            )
+        try:
+            if (
+                instrument_contract.get("instrument_id") != config.instrument_id
+                or instrument_contract.get("settlement_currency") != currency
+                or Decimal(str(instrument_contract["taker_fee"]))
+                != config.fee_assumption.taker_fee
+            ):
+                raise ValueError("Perpetual Instrument/fee identity mismatch")
+            settlement_precision = int(
+                instrument_contract["settlement_currency_precision"],
+            )
+            if not 0 <= settlement_precision <= 18:
+                raise ValueError("invalid settlement precision")
+            daily_marks = [
+                item
+                for item in observations_payload["mark_price_updates"]
+                if isinstance(item, dict)
+                and int(item.get("ts_init", -1)) in expected_timestamps
+            ]
+            if tuple(int(item["ts_init"]) for item in daily_marks) != expected_timestamps:
+                raise ValueError("causal daily Mark grid is incomplete or duplicated")
+            with (run_dir / "fills.csv").open(
+                "r",
+                encoding="utf-8",
+                newline="",
+            ) as stream:
+                fills = list(csv.DictReader(stream))
+            with (run_dir / "funding.csv").open(
+                "r",
+                encoding="utf-8",
+                newline="",
+            ) as stream:
+                funding_rows = list(csv.DictReader(stream))
+            states = replay_perpetual_valuation_states(
+                fills=fills,
+                funding_rows=funding_rows,
+                valuation_marks=daily_marks,
+                instrument_id=config.instrument_id,
+                settlement_currency=currency,
+                initial_balance=config.initial_capital.amount,
+                taker_fee=config.fee_assumption.taker_fee,
+                quantity_increment=Decimal(str(instrument_contract["size_increment"])),
+                money_quantum=Decimal(1).scaleb(-settlement_precision),
+            )
+        except (KeyError, OSError, TypeError, ValueError) as exc:
+            raise ResearchError(
+                FailureCode.PERFORMANCE_METRICS_INVALID,
+                f"independent Perpetual daily ledger replay failed: {exc}",
+            ) from exc
+        if tuple(item.timestamp_ns for item in states) != expected_timestamps:
+            raise ResearchError(
+                FailureCode.PERFORMANCE_METRICS_INVALID,
+                "independent Perpetual daily valuation grid mismatch",
+            )
+        for state in states:
+            observed_totals = totals_by_timestamp[state.timestamp_ns]
+            if (
+                set(observed_totals) != {currency}
+                or observed_totals[currency] != state.equity
+                or realized_by_timestamp[state.timestamp_ns] != state.realized_pnl
+                or unrealized_by_timestamp[state.timestamp_ns] != state.unrealized_pnl
+                or by_timestamp[state.timestamp_ns] != state.equity
+            ):
+                raise ResearchError(
+                    FailureCode.PERFORMANCE_METRICS_INVALID,
+                    "native Perpetual daily portfolio snapshot does not reconcile to Fills, Funding and causal Mark",
+                )
+    else:
+        raise ResearchError(
+            FailureCode.PERFORMANCE_METRICS_INVALID,
+            "unsupported market profile for Official performance metrics",
         )
     observations = tuple(
         EquityObservation(
@@ -417,21 +810,29 @@ def derive_performance_diagnostics(
         scoring_end_exclusive=config.scoring_end_exclusive,
         initial_capital=config.initial_capital.amount,
         settlement_currency=currency,
-        equity_observation_basis=(
-            "FINEST_PERSISTED_NAUTILUS_PORTFOLIO_SNAPSHOTS; "
-            "equity = frozen_initial_capital + native_realized_pnl + native_unrealized_pnl"
-        ),
         equity_observations=observations,
-        native_metrics={},
         completed_trades=completed,
         benchmark_return=benchmark_return,
         sample_adequacy=sample,
         monte_carlo_status=monte_carlo,
         claim_scope=protocol.intended_claim_scope.value,
+        financial_components=_official_financial_components(
+            run_dir,
+            currency=currency,
+        ),
         input_evidence_hashes={
             snapshot_path.name: sha256_file(snapshot_path),
             statistics_path.name: sha256_file(statistics_path),
             completed_path.name: sha256_file(completed_path),
+            "fills.csv": sha256_file(run_dir / "fills.csv"),
+            "account.csv": sha256_file(run_dir / "account.csv"),
+            "positions.csv": sha256_file(run_dir / "positions.csv"),
+            "nautilus_result.json": sha256_file(run_dir / "nautilus_result.json"),
+            **(
+                {"funding.csv": sha256_file(run_dir / "funding.csv")}
+                if (run_dir / "funding.csv").is_file()
+                else {}
+            ),
             **benchmark_hashes,
         },
     )
@@ -463,7 +864,12 @@ def derive_diagnostic_resolution(
     """Derive all status facts; no metric/trade assertion is accepted from a caller."""
 
     run_dir = Path(run_dir)
-    missing = [name for name in _RUN_DIAGNOSTIC_INPUTS if not (run_dir / name).is_file()]
+    run_inputs = (
+        _RUN_DIAGNOSTIC_INPUTS_V2
+        if (run_dir / "component_validation.json").is_file()
+        else _RUN_DIAGNOSTIC_INPUTS_V1
+    )
+    missing = [name for name in run_inputs if not (run_dir / name).is_file()]
     if missing:
         raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE,
             "diagnostic Run inputs are incomplete: " + ",".join(missing),
@@ -513,11 +919,8 @@ def derive_diagnostic_resolution(
             "native_statistics.json",
         )
         limitations = (
+            *REQUIRED_SCIENTIFIC_LIMITATIONS,
             *(("NATIVE_COMPLETED_TRADE_SEQUENCE_UNAVAILABLE",) if not available else ()),
-            "CURRENT_METADATA_NOT_EXACT_2020_2021_POINT_IN_TIME_METADATA",
-            "ACCOUNT_SPECIFIC_HISTORICAL_FEE_TIER_UNAVAILABLE_ESTIMATED_FEE_USED",
-            "DEVELOPMENT_EXPOSED_NOT_FINAL_HOLDOUT",
-            "EXPLORATORY_NO_REAL_PROFITABILITY_CLAIM",
         )
     else:
         # The qualification fixture deliberately has no qualified Equity
@@ -525,20 +928,18 @@ def derive_diagnostic_resolution(
         performance_status = "INCOMPLETE"
         extra_inputs = ()
         limitations = (
+            *REQUIRED_SCIENTIFIC_LIMITATIONS,
             *(("NATIVE_COMPLETED_TRADE_SEQUENCE_UNAVAILABLE",) if not available else ()),
             "FULL_NATIVE_EQUITY_CURVE_UNAVAILABLE",
             "QUALIFICATION_FIXTURE_NOT_PROFITABILITY_EVIDENCE",
         )
-    complete = bool(
-        available
-        and performance_status == "COMPLETE"
-        and sample is SampleAdequacy.ADEQUATE
-        and monte_carlo is MonteCarloStatus.COMPLETED
-        and benchmark_status == "COMPLETE"
-    )
+    # The required R2 limitations include DEVELOPMENT_ONLY_DATA and
+    # NO_PROFITABILITY_AUTHORIZATION, so this remediation can never promote a
+    # diagnostic resolution into a confirmatory profitability claim.
+    complete = False
     evidence_hashes = {
         name: sha256_file(run_dir / name)
-        for name in (*_RUN_DIAGNOSTIC_INPUTS, *extra_inputs)
+        for name in (*run_inputs, *extra_inputs)
     }
     if benchmark_hash is not None:
         evidence_hashes[f"benchmark:{protocol.required_benchmark.benchmark_id}"] = benchmark_hash

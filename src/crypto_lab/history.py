@@ -5,16 +5,20 @@ from __future__ import annotations
 import hashlib
 import os
 import subprocess
+from contextlib import contextmanager
 from dataclasses import fields
 from datetime import datetime
 from pathlib import Path
 from typing import Any
+from typing import Iterator
 
 from crypto_lab.config import StrictModel
 from crypto_lab.config import _require_sha256
 from crypto_lab.config import _require_utc
 from crypto_lab.hashing import canonical_sha256
 from crypto_lab.locking import interprocess_file_lock
+from crypto_lab.locking import safe_append_bytes
+from crypto_lab.locking import safe_read_bytes
 from crypto_lab.research import HoldoutEntry
 from crypto_lab.research import HoldoutLockStore
 from crypto_lab.research import ResearchError
@@ -24,6 +28,18 @@ from crypto_lab.research import TrialJournal
 from crypto_lab.research import TrialRecord
 from crypto_lab.research import TrialState
 from crypto_lab.status import FailureCode
+
+
+@contextmanager
+def _history_file_lock(path: Path, *, shared: bool = False) -> Iterator[None]:
+    try:
+        with interprocess_file_lock(path, shared=shared):
+            yield
+    except OSError as exc:
+        raise ResearchError(
+            FailureCode.JOURNAL_DURABILITY_FAILURE,
+            f"unsafe authoritative-history lock path: {exc}",
+        ) from exc
 
 
 class HistoryAnchor(StrictModel):
@@ -98,7 +114,10 @@ class HistoryAnchorStore:
         self.require_remote_tip = require_remote_tip
 
     def _contained(self, path: Path) -> Path:
-        resolved = Path(path).resolve(strict=False)
+        candidate = Path(path)
+        if not candidate.is_absolute():
+            candidate = self.repository_root / candidate
+        resolved = Path(os.path.abspath(candidate))
         try:
             resolved.relative_to(self.repository_root)
         except ValueError as exc:
@@ -125,8 +144,26 @@ class HistoryAnchorStore:
 
     @staticmethod
     def _sha(path: Path) -> str:
-        payload = path.read_bytes() if path.exists() else b""
+        try:
+            payload = safe_read_bytes(path, missing_ok=True)
+        except OSError as exc:
+            raise ResearchError(
+                FailureCode.JOURNAL_DURABILITY_FAILURE,
+                f"unsafe authoritative-history path: {exc}",
+            ) from exc
+        if payload is None:
+            payload = b""
         return hashlib.sha256(payload).hexdigest()
+
+    @staticmethod
+    def _read_safe(path: Path, *, missing_ok: bool = False) -> bytes | None:
+        try:
+            return safe_read_bytes(path, missing_ok=missing_ok)
+        except OSError as exc:
+            raise ResearchError(
+                FailureCode.JOURNAL_DURABILITY_FAILURE,
+                f"unsafe authoritative-history path: {exc}",
+            ) from exc
 
     def _records_from_bytes(self, payload: bytes) -> tuple[HistoryAnchor, ...]:
         if payload and not payload.endswith(b"\n"):
@@ -174,7 +211,7 @@ class HistoryAnchorStore:
         return tuple(records)
 
     def read_anchors(self) -> tuple[HistoryAnchor, ...]:
-        payload = self.anchor_path.read_bytes() if self.anchor_path.exists() else b""
+        payload = self._read_safe(self.anchor_path, missing_ok=True) or b""
         return self._records_from_bytes(payload)
 
     def committed_anchors(self) -> tuple[HistoryAnchor, ...]:
@@ -352,7 +389,8 @@ class HistoryAnchorStore:
                 check=False,
                 capture_output=True,
             )
-            if committed.returncode != 0 or committed.stdout != path.read_bytes():
+            current = self._read_safe(path)
+            if committed.returncode != 0 or committed.stdout != current:
                 raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE,
                     f"genesis authority requires committed current bytes for {relative}",
                 )
@@ -375,27 +413,189 @@ class HistoryAnchorStore:
             created_at_utc=at_utc,
             **self._current_state(),
         )
-        self.anchor_path.parent.mkdir(parents=True, exist_ok=True)
-        fd = os.open(self.anchor_path, os.O_APPEND | os.O_CREAT | os.O_WRONLY, 0o600)
         try:
-            payload = record.to_json_bytes() + b"\n"
-            offset = 0
-            while offset < len(payload):
-                offset += os.write(fd, payload[offset:])
-            os.fsync(fd)
-        finally:
-            os.close(fd)
-        directory_fd = os.open(self.anchor_path.parent, os.O_RDONLY)
-        try:
-            os.fsync(directory_fd)
-        finally:
-            os.close(directory_fd)
+            safe_append_bytes(self.anchor_path, record.to_json_bytes() + b"\n")
+        except OSError as exc:
+            raise ResearchError(
+                FailureCode.JOURNAL_DURABILITY_FAILURE,
+                f"unsafe History Anchor append path: {exc}",
+            ) from exc
         return record
 
     def anchor_mutation(self, *, operation: str, at_utc: datetime) -> HistoryAnchor:
         """Anchor one already-fsynced authorized mutation after prefix reconciliation."""
 
         return self._append_current(operation=operation, at_utc=at_utc)
+
+    @staticmethod
+    def _record_definition(record: TrialRecord) -> TrialDefinition:
+        return TrialDefinition(
+            **{
+                field.name: getattr(record, field.name)
+                for field in fields(TrialDefinition)
+            },
+        )
+
+    @staticmethod
+    def _same_record_bytes(
+        left: tuple[TrialRecord, ...],
+        right: tuple[TrialRecord, ...],
+    ) -> bool:
+        return tuple(item.to_json_bytes() for item in left) == tuple(
+            item.to_json_bytes() for item in right
+        )
+
+    def _recover_unanchored_journal_records(
+        self,
+        *,
+        expected_suffix: tuple[TrialRecord, ...],
+        operation: str,
+        at_utc: datetime,
+    ) -> HistoryAnchor | None:
+        """Recover one exact fsynced Journal suffix missing only its Anchor.
+
+        Recovery is deliberately narrow: the current Anchor file must still be
+        byte-identical to committed HEAD, Holdout state must be unchanged, and
+        the complete Journal suffix must equal records independently derived by
+        the caller from its already-authorized operation.
+        """
+
+        _require_utc(at_utc, "anchor.recovery")
+        self._remote_tip_matches()
+        anchors = self.read_anchors()
+        committed = self._committed_anchors()
+        if not anchors or anchors != committed:
+            return None
+        self._verify_committed_anchor_prefixes(anchors)
+        self._verify_state_prefixes(anchors)
+        latest = anchors[-1]
+        state = self._current_state()
+        anchored_state = {
+            "trial_journal_sha256": latest.trial_journal_sha256,
+            "trial_record_count": latest.trial_record_count,
+            "trial_head_sha256": latest.trial_head_sha256,
+            "holdout_lock_sha256": latest.holdout_lock_sha256,
+            "holdout_entry_count": latest.holdout_entry_count,
+            "holdout_history_sha256": latest.holdout_history_sha256,
+        }
+        if state == anchored_state:
+            return None
+        for name in (
+            "holdout_lock_sha256",
+            "holdout_entry_count",
+            "holdout_history_sha256",
+        ):
+            if state[name] != anchored_state[name]:
+                raise ResearchError(
+                    FailureCode.JOURNAL_DURABILITY_FAILURE,
+                    "unanchored Journal recovery found a concurrent Holdout mutation",
+                )
+        records = TrialJournal(self.journal_path).read_records()
+        suffix = records[latest.trial_record_count :]
+        if (
+            not self._same_record_bytes(tuple(suffix), expected_suffix)
+            or len(records) != latest.trial_record_count + len(expected_suffix)
+            or not expected_suffix
+            or state["trial_head_sha256"] != expected_suffix[-1].journal_entry_sha256
+        ):
+            raise ResearchError(
+                FailureCode.JOURNAL_DURABILITY_FAILURE,
+                "unanchored Journal suffix is not the exact recoverable mutation",
+            )
+        return self._append_current(operation=operation, at_utc=at_utc)
+
+    def recover_unanchored_trial_start(
+        self,
+        definition: TrialDefinition,
+    ) -> tuple[TrialRecord, TrialRecord] | None:
+        """Recover an exact PLANNED/STARTED batch after Anchor-process loss."""
+
+        anchors = self.read_anchors()
+        committed = self._committed_anchors()
+        if not anchors or anchors != committed:
+            return None
+        records = TrialJournal(self.journal_path).read_records()
+        base_count = anchors[-1].trial_record_count
+        suffix = records[base_count:]
+        if not suffix:
+            return None
+        if (
+            len(suffix) != 2
+            or suffix[0].state is not TrialState.PLANNED
+            or suffix[1].state is not TrialState.STARTED
+            or suffix[0].trial_id != suffix[1].trial_id
+            or suffix[0].trial_id != definition.trial_id
+            or self._record_definition(suffix[0]) != definition
+            or self._record_definition(suffix[1]) != definition
+            or suffix[0].started_at_utc != suffix[1].started_at_utc
+            or suffix[0].recorded_at_utc != suffix[1].recorded_at_utc
+        ):
+            raise ResearchError(
+                FailureCode.JOURNAL_DURABILITY_FAILURE,
+                "unanchored Trial start is not one exact authorized PLANNED/STARTED batch",
+            )
+        self._recover_unanchored_journal_records(
+            expected_suffix=(suffix[0], suffix[1]),
+            operation=f"TRIAL_STARTED:{definition.trial_id}",
+            at_utc=suffix[0].recorded_at_utc,
+        )
+        return suffix[0], suffix[1]
+
+    def recover_unanchored_trial_terminal(
+        self,
+        trial_id: str,
+        *,
+        state: TrialState,
+        at_utc: datetime,
+        result_ref: str,
+        reason: str,
+        result_exposed: bool,
+    ) -> TrialRecord | None:
+        """Recover one exact terminal record after its Anchor append was lost."""
+
+        anchors = self.read_anchors()
+        committed = self._committed_anchors()
+        if not anchors or anchors != committed:
+            return None
+        records = TrialJournal(self.journal_path).read_records()
+        base_count = anchors[-1].trial_record_count
+        suffix = records[base_count:]
+        if not suffix:
+            return None
+        prior = [item for item in records[:base_count] if item.trial_id == trial_id]
+        if (
+            not prior
+            or prior[-1].state is not TrialState.STARTED
+            or not records[:base_count]
+            or records[base_count - 1] != prior[-1]
+        ):
+            raise ResearchError(
+                FailureCode.JOURNAL_DURABILITY_FAILURE,
+                "terminal recovery has no anchored STARTED predecessor",
+            )
+        expected = TrialRecord.create(
+            definition=self._record_definition(prior[-1]),
+            journal_sequence=base_count + 1,
+            previous_entry_sha256=prior[-1].journal_entry_sha256,
+            state=state,
+            started_at_utc=prior[0].started_at_utc,
+            recorded_at_utc=at_utc,
+            finished_at_utc=at_utc,
+            result_ref=result_ref,
+            failure_or_block_reason=reason,
+            result_exposed=result_exposed,
+        )
+        if not self._same_record_bytes(tuple(suffix), (expected,)):
+            raise ResearchError(
+                FailureCode.JOURNAL_DURABILITY_FAILURE,
+                "unanchored terminal record differs from the authorized retry",
+            )
+        self._recover_unanchored_journal_records(
+            expected_suffix=(expected,),
+            operation=f"TRIAL_TERMINAL:{trial_id}:{state.value}",
+            at_utc=at_utc,
+        )
+        return expected
 
 
 class AuthoritativeResearchHistory:
@@ -416,7 +616,10 @@ class AuthoritativeResearchHistory:
         *,
         at_utc: datetime,
     ) -> tuple[TrialRecord, TrialRecord]:
-        with interprocess_file_lock(self.mutation_lock_path):
+        with _history_file_lock(self.mutation_lock_path):
+            recovered = self.anchors.recover_unanchored_trial_start(definition)
+            if recovered is not None:
+                return recovered
             self.anchors.reconcile_committed()
             result = self.journal.start(definition, at_utc=at_utc)
             self.anchors.anchor_mutation(
@@ -435,7 +638,17 @@ class AuthoritativeResearchHistory:
         reason: str,
         result_exposed: bool,
     ) -> TrialRecord:
-        with interprocess_file_lock(self.mutation_lock_path):
+        with _history_file_lock(self.mutation_lock_path):
+            recovered = self.anchors.recover_unanchored_trial_terminal(
+                trial_id,
+                state=state,
+                at_utc=at_utc,
+                result_ref=result_ref,
+                reason=reason,
+                result_exposed=result_exposed,
+            )
+            if recovered is not None:
+                return recovered
             self.anchors.reconcile_committed()
             return self._finish_reconciled(
                 trial_id,
@@ -479,7 +692,7 @@ class AuthoritativeResearchHistory:
     ) -> TrialRecord:
         """Terminalize a reconciled fsynced-but-uncommitted crash extension."""
 
-        with interprocess_file_lock(self.mutation_lock_path):
+        with _history_file_lock(self.mutation_lock_path):
             self.reconcile()
             return self._finish_reconciled(
                 trial_id,
@@ -497,7 +710,7 @@ class AuthoritativeResearchHistory:
         exposure_resolver: Any,
         at_utc: datetime,
     ) -> HoldoutEntry:
-        with interprocess_file_lock(self.mutation_lock_path):
+        with _history_file_lock(self.mutation_lock_path):
             self.anchors.reconcile_committed()
             mapping = exposure_resolver.require_fresh(exposure, history=self)
             entry = self.holdout.consume(

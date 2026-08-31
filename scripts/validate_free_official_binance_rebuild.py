@@ -18,6 +18,7 @@ from typing import Any, Iterable
 import duckdb
 
 from crypto_lab.config import MarketProfile
+from crypto_lab.data import DatasetRawInventory
 from crypto_lab.data import DatasetRelease
 from crypto_lab.hashing import canonical_json_bytes
 from crypto_lab.hashing import canonical_sha256
@@ -103,6 +104,7 @@ def compare_build_results(primary: dict[str, Any], rebuilt: dict[str, Any]) -> d
         "instrument_metadata_identities",
         "market_state_acceptance",
         "superseded_dataset_releases",
+        "full_raw_inventory_gate",
     )
     mismatches = [key for key in exact_keys if primary.get(key) != rebuilt.get(key)]
     if mismatches:
@@ -127,6 +129,222 @@ def compare_build_results(primary: dict[str, Any], rebuilt: dict[str, Any]) -> d
         "primary_size_bytes": primary["database_size_bytes"],
         "independent_size_bytes": rebuilt["database_size_bytes"],
     }
+
+
+def _add_relational_source_hashes(
+    connection: duckdb.DuckDBPyConnection,
+    hashes: set[str],
+    table: str,
+) -> None:
+    for (payload,) in connection.execute(
+        f"SELECT DISTINCT source_sha256s_json FROM {table}",
+    ).fetchall():
+        values = json.loads(payload)
+        if not isinstance(values, list) or any(not isinstance(item, str) for item in values):
+            raise RuntimeError(f"DATA_HASH_MISMATCH: malformed source inventory in {table}")
+        hashes.update(values)
+
+
+def independent_participation_projection(
+    connection: duckdb.DuckDBPyConnection,
+    profile: str,
+) -> set[str]:
+    """Derive Raw membership without consuming builder result fields."""
+
+    hashes: set[str] = set()
+    if profile == SPOT_PROFILE:
+        _add_relational_source_hashes(connection, hashes, "spot_execution_bars_1m")
+        hashes.update(
+            row[0]
+            for row in connection.execute(
+                "SELECT DISTINCT source_raw_object_sha256 FROM spot_agg_trades",
+            ).fetchall()
+        )
+        for first, second in connection.execute(
+            """
+            SELECT DISTINCT raw_trade_source_sha256, aggtrade_source_sha256
+            FROM verified_no_trade_intervals
+            """,
+        ).fetchall():
+            hashes.update((first, second))
+    else:
+        _add_relational_source_hashes(connection, hashes, "perpetual_execution_bars_1m")
+        _add_relational_source_hashes(connection, hashes, "perpetual_mark_bars_1m")
+        _add_relational_source_hashes(connection, hashes, "perpetual_funding_events")
+        hashes.update(
+            row[0]
+            for row in connection.execute(
+                """
+                SELECT DISTINCT raw_object_sha256 FROM source_observations
+                WHERE parsed_event_time_ms IS NULL AND semantic_row_sha256 IS NULL
+                  AND validation_status = 'UNAVAILABLE'
+                  AND delivery_classification = 'REDUNDANT_OFFICIAL_DELIVERY_ROLE_UNAVAILABLE'
+                  AND source_role LIKE '%MARK%' AND instrument = 'BTCUSDT'
+                """,
+            ).fetchall()
+        )
+    observation_map = dict(
+        connection.execute(
+            "SELECT observation_id, raw_object_sha256 FROM source_observations",
+        ).fetchall(),
+    )
+    for (payload,) in connection.execute(
+        "SELECT source_observation_ids_json FROM source_conflicts WHERE market_profile = ?",
+        [profile],
+    ).fetchall():
+        values = json.loads(payload)
+        if not isinstance(values, list) or any(item not in observation_map for item in values):
+            raise RuntimeError("DATA_HASH_MISMATCH: conflict observation projection is unresolved")
+        hashes.update(observation_map[item] for item in values)
+    hashes.update(
+        row[0]
+        for row in connection.execute(
+            """
+            SELECT DISTINCT binding.source_raw_object_sha256
+            FROM instrument_metadata_source_bindings AS binding
+            JOIN instrument_metadata AS metadata
+              ON metadata.instrument_metadata_identity = binding.instrument_metadata_identity
+            WHERE metadata.market_profile = ?
+            """,
+            [profile],
+        ).fetchall()
+    )
+    for archive_sha256, checksum_sha256 in connection.execute(
+        "SELECT archive_raw_object_sha256, checksum_raw_object_sha256 FROM publisher_checksums",
+    ).fetchall():
+        if archive_sha256 in hashes:
+            hashes.add(checksum_sha256)
+    return hashes
+
+
+def validate_full_raw_inventories(connection: duckdb.DuckDBPyConnection) -> list[dict[str, Any]]:
+    """Independently validate release/member/semantic/blob four-way equality."""
+
+    raw_rows = {
+        row[0]: (int(row[1]), str(row[2]), bool(row[3]))
+        for row in connection.execute(
+            "SELECT raw_object_sha256, byte_size, local_path, content_verified FROM raw_objects",
+        ).fetchall()
+    }
+    results: list[dict[str, Any]] = []
+    for row in connection.execute(
+        """
+        SELECT dataset_release_id, market_profile, raw_inventory_identity,
+               raw_inventory_object_count, semantic_release_json
+        FROM dataset_releases ORDER BY market_profile
+        """,
+    ).fetchall():
+        release_id, profile, inventory_identity, inventory_count, semantic_json = row
+        release = DatasetRelease.from_json_bytes(str(semantic_json).encode("utf-8"))
+        inventory = release.raw_inventory
+        if (
+            release.dataset_release_id != release_id
+            or not isinstance(inventory, DatasetRawInventory)
+            or inventory.raw_inventory_identity != inventory_identity
+            or inventory.raw_object_count != int(inventory_count)
+        ):
+            raise RuntimeError(
+                "DATASET_RAW_INVENTORY_MISMATCH: DatasetRelease Raw inventory DB binding differs",
+            )
+        declared = {item.raw_object_sha256 for item in inventory.raw_objects}
+        members = {
+            item[0]
+            for item in connection.execute(
+                """
+                SELECT member_identity FROM release_members
+                WHERE dataset_release_id = ? AND member_type = 'RAW_OBJECT'
+                """,
+                [release_id],
+            ).fetchall()
+        }
+        projected = independent_participation_projection(connection, profile)
+        verified: set[str] = set()
+        for digest in sorted(projected):
+            database_binding = raw_rows.get(digest)
+            if database_binding is None:
+                continue
+            expected_size, local_path, content_verified = database_binding
+            source = Path(local_path)
+            if not source.is_absolute():
+                source = ROOT / source
+            if (
+                content_verified
+                and source.is_file()
+                and not source.is_symlink()
+                and source.stat().st_size == expected_size
+                and hash_file(source) == digest
+            ):
+                verified.add(digest)
+        if not declared == members == projected == verified:
+            raise RuntimeError(
+                "DATASET_RAW_INVENTORY_MISMATCH: "
+                "release/member/participation/blob inventory differs",
+            )
+        inventory_by_hash = {item.raw_object_sha256: item for item in inventory.raw_objects}
+        if any(
+            item.byte_size != raw_rows[digest][0]
+            for digest, item in inventory_by_hash.items()
+        ):
+            raise RuntimeError("DATA_HASH_MISMATCH: inventory byte size differs")
+        acquisition_rows: dict[str, list[tuple[Any, ...]]] = {}
+        for origin in connection.execute(
+            """
+            SELECT raw_object_sha256, observation_id, source_role, exact_locator,
+                   exact_query_json, http_status, validation_status,
+                   coalesce(delivery_classification, 'NOT_APPLICABLE')
+            FROM source_observations
+            WHERE parsed_event_time_ms IS NULL AND semantic_row_sha256 IS NULL
+            ORDER BY raw_object_sha256, source_role, exact_locator, exact_query_json, observation_id
+            """,
+        ).fetchall():
+            acquisition_rows.setdefault(origin[0], []).append(tuple(origin[1:]))
+        for digest, item in inventory_by_hash.items():
+            declared_origins = [
+                (
+                    origin.observation_id,
+                    origin.source_role,
+                    origin.exact_locator,
+                    origin.exact_query_json,
+                    origin.http_status,
+                    origin.validation_status,
+                    origin.delivery_classification,
+                )
+                for origin in item.origins
+            ]
+            if declared_origins != acquisition_rows.get(digest, []):
+                raise RuntimeError("DATA_SOURCE_INVALID: inventory acquisition origins differ")
+        declared_checksums = {
+            (
+                item.raw_object_sha256,
+                binding.checksum_raw_object_sha256,
+                binding.exact_filename,
+                binding.publisher_sha256,
+            )
+            for item in inventory.raw_objects
+            for binding in item.publisher_checksum_bindings
+        }
+        database_checksums = {
+            tuple(item)
+            for item in connection.execute(
+                """
+                SELECT archive_raw_object_sha256, checksum_raw_object_sha256,
+                       exact_filename, publisher_sha256 FROM publisher_checksums
+                """,
+            ).fetchall()
+            if item[0] in declared
+        }
+        if declared_checksums != database_checksums:
+            raise RuntimeError("DATA_SOURCE_INVALID: inventory publisher checksums differ")
+        results.append(
+            {
+                "market_profile": profile,
+                "dataset_release_id": release_id,
+                "raw_inventory_identity": inventory_identity,
+                "raw_object_count": len(declared),
+                "four_way_equality": True,
+            },
+        )
+    return results
 
 
 def database_gate(path: Path) -> dict[str, Any]:
@@ -237,6 +455,7 @@ def database_gate(path: Path) -> dict[str, Any]:
                 "SELECT count(*) FROM instrument_metadata_source_bindings",
             ).fetchone()[0],
         )
+        full_raw_inventory_results = validate_full_raw_inventories(connection)
     finally:
         connection.close()
     expected_dispositions = {
@@ -276,6 +495,7 @@ def database_gate(path: Path) -> dict[str, Any]:
             for row in supersessions
         )
         or instrument_source_binding_count != 6
+        or len(full_raw_inventory_results) != 2
     ):
         raise RuntimeError("read-only DuckDB acceptance gate failed")
     return {
@@ -302,6 +522,7 @@ def database_gate(path: Path) -> dict[str, Any]:
         "nautilus_market_state_acceptance": [list(row) for row in acceptance_rows],
         "dataset_release_supersessions": [list(row) for row in supersessions],
         "instrument_metadata_source_binding_count": instrument_source_binding_count,
+        "full_raw_inventory_results": full_raw_inventory_results,
     }
 
 
@@ -331,6 +552,55 @@ def preserve_file(source: Path, target: Path) -> None:
         shutil.copyfile(source, target)
     if hash_file(target) != digest:
         raise RuntimeError(f"materialized file hash mismatch: {target}")
+
+
+def preserve_raw_independent_copy(source: Path, target: Path) -> None:
+    """Atomically materialize Raw bytes without sharing an inode with the corpus."""
+
+    if source.is_symlink() or not source.is_file():
+        raise RuntimeError(f"Raw source must be a regular non-symlink file: {source}")
+    digest = hash_file(source)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    if target.exists() or target.is_symlink():
+        if (
+            target.is_symlink()
+            or not target.is_file()
+            or target.stat().st_size != source.stat().st_size
+            or hash_file(target) != digest
+        ):
+            raise RuntimeError(f"content-addressed Raw collision: {target}")
+        return
+    descriptor, temporary_name = tempfile.mkstemp(prefix=f".{target.name}.", dir=target.parent)
+    temporary = Path(temporary_name)
+    try:
+        with source.open("rb") as input_stream, os.fdopen(descriptor, "wb") as output_stream:
+            for chunk in iter(lambda: input_stream.read(1024 * 1024), b""):
+                output_stream.write(chunk)
+            output_stream.flush()
+            os.fsync(output_stream.fileno())
+            os.fchmod(output_stream.fileno(), stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
+            os.fsync(output_stream.fileno())
+        os.replace(temporary, target)
+        directory_descriptor = os.open(
+            target.parent,
+            os.O_RDONLY | getattr(os, "O_DIRECTORY", 0),
+        )
+        try:
+            os.fsync(directory_descriptor)
+        finally:
+            os.close(directory_descriptor)
+    finally:
+        if temporary.exists():
+            temporary.unlink()
+    if (
+        target.is_symlink()
+        or not target.is_file()
+        or target.stat().st_size != source.stat().st_size
+        or hash_file(target) != digest
+        or (target.stat().st_dev, target.stat().st_ino)
+        == (source.stat().st_dev, source.stat().st_ino)
+    ):
+        raise RuntimeError(f"independent Raw materialization failed: {target}")
 
 
 def materialize_catalog(source: Path, target: Path) -> dict[str, Any]:
@@ -384,10 +654,15 @@ def materialize_releases(
         if profile == PERP_PROFILE:
             suffix = f"{release.funding_data_identity}.funding.json"
             preserve_file(artifact_root / suffix, DATA_ROOT / "releases" / suffix)
-        for source in release.source_objects:
-            preserve_file(
-                raw_paths[source.sha256],
-                DATA_ROOT / "raw/sha256" / source.sha256[:2] / f"{source.sha256}.blob",
+        if not isinstance(release.raw_inventory, DatasetRawInventory):
+            raise RuntimeError("typed full Raw inventory is required for materialization")
+        for raw_object in release.raw_inventory.raw_objects:
+            preserve_raw_independent_copy(
+                raw_paths[raw_object.raw_object_sha256],
+                DATA_ROOT
+                / "raw/sha256"
+                / raw_object.raw_object_sha256[:2]
+                / f"{raw_object.raw_object_sha256}.blob",
             )
         frozen = DatasetRelease.from_json_bytes(
             (DATA_ROOT / "releases" / f"{release.dataset_release_id}.json").read_bytes(),
@@ -399,6 +674,8 @@ def materialize_releases(
             "catalog_identity": release.catalog_identity,
             "catalog": catalog,
             "source_object_count": len(release.source_objects),
+            "raw_inventory_identity": release.raw_inventory.raw_inventory_identity,
+            "raw_inventory_object_count": release.raw_inventory.raw_object_count,
         }
     return result
 
@@ -600,7 +877,7 @@ def main() -> int:
     )
     catalog_validation = resolve_and_compare_catalogs(primary, primary_database)
     result = {
-        "schema": "free-official-binance-deterministic-rebuild-validation-v1",
+        "schema": "free-official-binance-deterministic-rebuild-validation-v2-full-raw-inventory",
         "status": "PASS",
         "duckdb_version": duckdb.__version__,
         "comparison": comparison,

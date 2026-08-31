@@ -170,21 +170,33 @@ class AuthoritativeExposureResolver:
         resolved: list[ResolvedExposure] = []
         seen: set[tuple[MarketProfile, str, object, object]] = set()
         for profile in registry.records:
-            if profile.checker_result != "CHECK_PASS" or profile.replay_result != "PASS":
+            historical_v1 = (
+                profile.schema_version == 1
+                and profile.checker_result == "CHECK_PASS"
+                and profile.replay_result == "PASS"
+            )
+            current_v2 = (
+                profile.schema_version == 2
+                and profile.checker_result == "COMPONENT_CHECK_PASS"
+                and profile.replay_result == "PASS"
+            )
+            if not (historical_v1 or current_v2):
                 raise ResearchError(FailureCode.HOLDOUT_HISTORY_VIOLATION,
                     f"M3 profile authority is not accepted: {profile.profile_id.value}",
                 )
             for reference in profile.evidence_references:
                 run_dir = self._contained(self.m3_root / reference)
+                consumed_names = [
+                    "lab_run_config.json",
+                    "dataset_release.json",
+                    "status.json",
+                    "checker.json",
+                    "evidence_manifest.json",
+                ]
+                if current_v2:
+                    consumed_names.append("component_validation.json")
                 consumed = {
-                    (Path(reference) / name).as_posix()
-                    for name in (
-                        "lab_run_config.json",
-                        "dataset_release.json",
-                        "status.json",
-                        "checker.json",
-                        "evidence_manifest.json",
-                    )
+                    (Path(reference) / name).as_posix() for name in consumed_names
                 }
                 if not consumed.issubset(declared):
                     raise ResearchError(FailureCode.HOLDOUT_HISTORY_VIOLATION,
@@ -193,7 +205,10 @@ class AuthoritativeExposureResolver:
                 config = LabRunConfig.from_json_bytes((run_dir / "lab_run_config.json").read_bytes())
                 release = DatasetRelease.from_json_bytes((run_dir / "dataset_release.json").read_bytes())
                 status = json.loads((run_dir / "status.json").read_text(encoding="utf-8"))
-                checker = json.loads((run_dir / "checker.json").read_text(encoding="utf-8"))
+                validation_path = run_dir / (
+                    "component_validation.json" if current_v2 else "checker.json"
+                )
+                component = json.loads(validation_path.read_text(encoding="utf-8"))
                 if (
                     config.run_id not in profile.accepted_run_ids
                     or config.market_profile is not profile.profile_id
@@ -201,7 +216,8 @@ class AuthoritativeExposureResolver:
                     or release.dataset_release_id != profile.dataset_release_id
                     or config.dataset_release_id != release.dataset_release_id
                     or status.get("state") != "COMPLETED"
-                    or checker.get("outcome") != "CHECK_PASS"
+                    or component.get("outcome")
+                    != ("COMPONENT_CHECK_PASS" if current_v2 else "CHECK_PASS")
                 ):
                     raise ResearchError(FailureCode.HOLDOUT_HISTORY_VIOLATION,
                         f"M3 exposure evidence does not reconcile: {reference}",
@@ -254,6 +270,7 @@ class AuthoritativeExposureResolver:
                 "source_revision.json",
                 "dataset_release.json",
                 "status.json",
+                "component_validation.json",
                 "checker.json",
             )
             if any(not (run_dir / name).is_file() for name in required):

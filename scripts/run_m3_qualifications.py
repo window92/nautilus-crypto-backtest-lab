@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import csv
 import json
-import os
 import re
 import shutil
 import subprocess
@@ -59,7 +58,20 @@ def _run_child(
     evidence_root = staging / "runs" / label
     command = [
         str(ROOT / ".venv/bin/python"),
-        str(ROOT / "scripts/run_m3_child.py"),
+        "-I",
+        "-P",
+        "-S",
+        "-B",
+        "-X",
+        "pycache_prefix=/dev/null",
+        str(ROOT / "scripts/isolated_runtime_bootstrap.py"),
+        "--authority",
+        str(ROOT / "runtime-bootstrap-authority.json"),
+        "--repository",
+        str(ROOT),
+        "--script",
+        "scripts/run_m3_child.py",
+        "--",
         "--profile", profile,
         "--run-id", run_id,
         "--evidence-root", str(evidence_root),
@@ -67,13 +79,10 @@ def _run_child(
         *extra,
     ]
     env = {
-        **os.environ,
+        "PATH": "/usr/bin:/bin",
         "TZ": "UTC",
         "LANG": "C.UTF-8",
         "LC_ALL": "C.UTF-8",
-        "PYTHONDONTWRITEBYTECODE": "1",
-        "PYTHONPATH": str(ROOT / "src"),
-        "PYTEST_ADDOPTS": "-p no:cacheprovider",
     }
     completed = subprocess.run(
         command,
@@ -102,9 +111,15 @@ def _run_child(
 def _assert_positive(summary: dict[str, Any], label: str) -> None:
     if not (
         summary["state"] == "COMPLETED"
-        and summary["checker_outcome"] == "CHECK_PASS"
+        and summary["component_validation_outcome"] == "COMPONENT_CHECK_PASS"
         and not summary["failure_codes"]
         and summary["fills_count"] > 0
+        and summary.get("runtime_startup_verified") is True
+        and summary.get("runtime_startup_target") == "scripts/run_m3_child.py"
+        and re.fullmatch(
+            r"[0-9a-f]{64}",
+            str(summary.get("runtime_startup_attestation_sha256", "")),
+        )
     ):
         raise RuntimeError(f"positive profile {label} did not pass: {summary}")
 
@@ -358,7 +373,10 @@ def main() -> int:
     ):
         raise RuntimeError("post-boundary position received prior funding")
     duplicate = controls["DUPLICATE_FUNDING_SETTLEMENT"]["checker"]
-    if duplicate["outcome"] != "CHECK_FAIL" or "FUNDING_DOUBLE_COUNT" not in duplicate["failure_codes"]:
+    if (
+        duplicate["outcome"] != "COMPONENT_CHECK_FAIL"
+        or "FUNDING_DOUBLE_COUNT" not in duplicate["failure_codes"]
+    ):
         raise RuntimeError("duplicate funding settlement checker control did not fail")
     published_controls = {
         name: (
@@ -376,6 +394,7 @@ def main() -> int:
         "BAR_BASED_ESTIMATED_EXECUTION",
         "ESTIMATED_FEE_0.001",
         "CURRENT_METADATA_NOT_EXACT_HISTORICAL_VENUE_RULES",
+        "LEGACY_ACQUISITION_HEADERS_NOT_RECORDED_RAW_BYTES_AND_CHECKSUMS_VERIFIED",
     )
     records: list[QualifiedProfileRecord] = []
     mechanical: dict[str, MechanicalIntegrityResult] = {}
@@ -412,7 +431,7 @@ def main() -> int:
                 {key: value for key, value in strategy_spec.items() if key != "strategy_id"},
             ),
             accepted_run_ids=(primary["run_id"], replay["run_id"]),
-            checker_result="CHECK_PASS",
+            checker_result="COMPONENT_CHECK_PASS",
             replay_result="PASS",
             evidence_references=(
                 str(Path(primary["evidence_dir"]).relative_to(staging)),
@@ -423,14 +442,14 @@ def main() -> int:
         records.append(record)
         integrity = MechanicalIntegrityResult(
             state=MechanicalIntegrity.PASS,
-            checker_result="CHECK_PASS",
+            checker_result="COMPONENT_CHECK_PASS",
             replay_result="PASS",
             run_ids=(primary["run_id"], replay["run_id"]),
             failure_codes=(),
         )
         mechanical[profile.value] = integrity
         bundle = QualificationDownstreamBundle(
-            schema_version=1,
+            schema_version=2,
             profile_record=record,
             run_result=_published_summary(primary, staging),
             evidence_manifest=json.loads(

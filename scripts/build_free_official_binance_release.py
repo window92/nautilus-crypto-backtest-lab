@@ -15,6 +15,7 @@ import csv
 import gc
 import hashlib
 import importlib.util
+import io
 import json
 import os
 import re
@@ -39,11 +40,15 @@ if str(SRC) not in sys.path:
 import duckdb  # noqa: E402
 from crypto_lab.config import MarketProfile  # noqa: E402
 from crypto_lab.data import CoverageDisposition  # noqa: E402
+from crypto_lab.data import DatasetRawInventory  # noqa: E402
 from crypto_lab.data import FUNDING_NATIVE_BINDING_RC2_EXPLICIT_BOUNDARY_PAIR  # noqa: E402
+from crypto_lab.data import FULL_RAW_INVENTORY_NORMALIZER_VERSION  # noqa: E402
 from crypto_lab.data import FundingEvent  # noqa: E402
-from crypto_lab.data import INSTRUMENT_REPAIR_NORMALIZER_VERSION  # noqa: E402
 from crypto_lab.data import MinuteDisposition  # noqa: E402
 from crypto_lab.data import NormalizedBar  # noqa: E402
+from crypto_lab.data import PublisherChecksumBinding  # noqa: E402
+from crypto_lab.data import RawInventoryObject  # noqa: E402
+from crypto_lab.data import RawInventoryOrigin  # noqa: E402
 from crypto_lab.data import SourceObjectBinding  # noqa: E402
 from crypto_lab.data import SourceRole  # noqa: E402
 from crypto_lab.data import TimeRange  # noqa: E402
@@ -87,7 +92,7 @@ ONE_MINUTE_NS = 60_000_000_000
 EXPECTED_MINUTES = (END_MS - START_MS) // ONE_MINUTE_MS
 EXPECTED_ANALYSIS_IDENTITY = "bf7c4d476702a6438e2940d85548943ca1b2b926f74ba64380e20bd0490c654d"
 EXPECTED_ACQUISITION_IDENTITY = "6031d1f37a7e2687ba07988c6d2c9c74d241da368fd3baa4bfd5ffd31f1d8b40"
-EXPECTED_SSOT_IDENTITY = "b4deb7048242239234de7eaa353b623b3e45247eb42f1021dbc26ffd910edb99"
+EXPECTED_SSOT_IDENTITY = "a2170e1dbe95d345ec4dc9485acb20c51d70b7e650926eedefbcc706ba50d1a1"
 EXPECTED_DUCKDB_VERSION = "1.4.5"
 SEMANTIC_EXPORT_CONTRACT = "DUCKDB_1_4_5_SORTED_CSV_HEADER_LF_EXACT_TYPES_V1"
 SPOT_PROFILE = MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY
@@ -288,7 +293,12 @@ class SourceRegistry:
                     if not path.is_absolute():
                         path = ROOT / path
                 size = int(item.get("byte_length", item.get("byte_size")))
-                if not path.is_file() or path.stat().st_size != size or hash_file(path) != digest:
+                if (
+                    path.is_symlink()
+                    or not path.is_file()
+                    or path.stat().st_size != size
+                    or hash_file(path) != digest
+                ):
                     raise RuntimeError(f"raw observation binding failed: {metadata_path}")
                 prior = self.raw.get(digest)
                 binding = RawBinding(digest, size, path)
@@ -343,8 +353,10 @@ class SourceRegistry:
 
     def bytes(self, digest: str) -> bytes:
         binding = self.raw[digest]
+        if binding.local_path.is_symlink() or not binding.local_path.is_file():
+            raise RuntimeError(f"raw object path changed after registry verification: {digest}")
         payload = binding.local_path.read_bytes()
-        if sha256_bytes(payload) != digest:
+        if len(payload) != binding.byte_size or sha256_bytes(payload) != digest:
             raise RuntimeError(f"raw object changed after registry verification: {digest}")
         return payload
 
@@ -358,7 +370,8 @@ def register_historical_order_grid_authority(registry: SourceRegistry) -> dict[s
     """
 
     if (
-        not HISTORICAL_GRID_RAW_PATH.is_file()
+        HISTORICAL_GRID_RAW_PATH.is_symlink()
+        or not HISTORICAL_GRID_RAW_PATH.is_file()
         or HISTORICAL_GRID_RAW_PATH.stat().st_size != HISTORICAL_GRID_SIZE
         or hash_file(HISTORICAL_GRID_RAW_PATH) != HISTORICAL_GRID_SHA256
     ):
@@ -438,7 +451,8 @@ def register_spot_historical_order_grid_authority(registry: SourceRegistry) -> d
     """Bind Binance's official before/after BTCUSDT Spot step-size table."""
 
     if (
-        not SPOT_HISTORICAL_GRID_RAW_PATH.is_file()
+        SPOT_HISTORICAL_GRID_RAW_PATH.is_symlink()
+        or not SPOT_HISTORICAL_GRID_RAW_PATH.is_file()
         or SPOT_HISTORICAL_GRID_RAW_PATH.stat().st_size != SPOT_HISTORICAL_GRID_SIZE
         or hash_file(SPOT_HISTORICAL_GRID_RAW_PATH) != SPOT_HISTORICAL_GRID_SHA256
     ):
@@ -1494,13 +1508,38 @@ def process_funding(
     archive_rows: dict[int, tuple[int, str, str, int]] = {}
     ordered_source_hashes: list[str] = []
     for pair in sorted(pairs, key=lambda item: analyzer.task_value(item, "range_start_ms", "start_ms")):
-        analyzer.verify_pair(pair)
         source_sha = pair["archive"]["raw_object_sha256"]
         ordered_source_hashes.append(source_sha)
-        for row_number, (timestamp, interval_hours, rate) in enumerate(
-            analyzer.iter_funding_archive(pair),
-            start=2,
-        ):
+        analyzer.verify_pair(pair)
+        with zipfile.ZipFile(io.BytesIO(registry.bytes(source_sha))) as archive:
+            members = archive.infolist()
+            if len(members) != 1 or members[0].is_dir():
+                raise RuntimeError("funding archive member mismatch")
+            with archive.open(members[0]) as binary:
+                rows = csv.reader(io.TextIOWrapper(binary, encoding="utf-8", newline=""), strict=True)
+                if next(rows, None) != [
+                    "calc_time",
+                    "funding_interval_hours",
+                    "last_funding_rate",
+                ]:
+                    raise RuntimeError("funding archive header mismatch")
+                raw_rows = tuple(rows)
+        prior_timestamp: int | None = None
+        for row_number, row in enumerate(raw_rows, start=2):
+            if len(row) != 3:
+                raise RuntimeError("funding archive row malformed")
+            timestamp = int(row[0])
+            interval_hours = int(row[1])
+            rate = row[2]
+            try:
+                parsed_rate = Decimal(rate)
+            except Exception as exc:
+                raise RuntimeError("funding archive raw rate lexeme is invalid") from exc
+            if not parsed_rate.is_finite() or not rate or rate.strip() != rate:
+                raise RuntimeError("funding archive raw rate lexeme is invalid")
+            if prior_timestamp is not None and timestamp <= prior_timestamp:
+                raise RuntimeError("funding archive timestamps are non-monotonic")
+            prior_timestamp = timestamp
             if timestamp < START_MS or timestamp >= END_MS:
                 continue
             if timestamp in archive_rows:
@@ -1530,7 +1569,13 @@ def process_funding(
         if item.get("symbol") != "BTCUSDT":
             raise RuntimeError("funding REST symbol mismatch")
         timestamp = int(item["fundingTime"])
-        rate = decimal_text(item["fundingRate"])
+        rate = str(item["fundingRate"])
+        try:
+            parsed_rate = Decimal(rate)
+        except Exception as exc:
+            raise RuntimeError("funding REST raw rate lexeme is invalid") from exc
+        if not parsed_rate.is_finite() or not rate or rate.strip() != rate:
+            raise RuntimeError("funding REST raw rate lexeme is invalid")
         if timestamp in rest_rows:
             raise RuntimeError("duplicate funding REST timestamp")
         rest_rows[timestamp] = (rate, row_number)
@@ -1551,7 +1596,7 @@ def process_funding(
     for timestamp in sorted(archive_rows):
         interval_hours, rate, source_sha, row_number = archive_rows[timestamp]
         rest_row = rest_rows.get(timestamp)
-        if rest_row is None or rest_row[0] != rate:
+        if rest_row is None or Decimal(rest_row[0]) != Decimal(rate):
             raise RuntimeError(f"funding archive/REST conflict at {timestamp}")
         event_key = canonical_sha256(
             {
@@ -1559,6 +1604,7 @@ def process_funding(
                 "calc_time_ns": timestamp * 1_000_000,
                 "funding_interval_hours": interval_hours,
                 "funding_rate": Decimal(rate),
+                "funding_rate_raw_lexeme": rate,
             },
         )
         source_row_hash = canonical_sha256(
@@ -1572,6 +1618,7 @@ def process_funding(
             source_row_number=row_number,
             source_row_sha256=source_row_hash,
             event_key=event_key,
+            raw_rate_text=rate,
         )
         events.append(event)
         source_by_event[event_key] = source_sha
@@ -2040,12 +2087,11 @@ def iter_archive_pairs(old: dict[str, Any], new: dict[str, Any]) -> Iterator[dic
     yield from new["archive_pairs"]
 
 
-def insert_publisher_checksums(
-    connection: duckdb.DuckDBPyConnection,
+def publisher_checksum_rows(
     old: dict[str, Any],
     new: dict[str, Any],
     registry: SourceRegistry,
-) -> int:
+) -> tuple[tuple[Any, ...], ...]:
     rows: dict[tuple[str, str], tuple[Any, ...]] = {}
     for pair in iter_archive_pairs(old, new):
         if not pair.get("archive_available", True):
@@ -2079,11 +2125,336 @@ def insert_publisher_checksums(
             pair["publisher_checksum"],
             True,
         )
+    return tuple(rows[key] for key in sorted(rows))
+
+
+def insert_publisher_checksums(
+    connection: duckdb.DuckDBPyConnection,
+    rows: tuple[tuple[Any, ...], ...],
+) -> None:
     connection.executemany(
         "INSERT INTO publisher_checksums VALUES (?, ?, ?, ?, ?, ?)",
-        [rows[key] for key in sorted(rows)],
+        rows,
     )
-    return len(rows)
+
+
+def close_publisher_checksum_inventory(
+    raw_hashes: set[str],
+    checksum_rows: tuple[tuple[Any, ...], ...],
+) -> set[str]:
+    """Add checksum response bytes for every participating official archive."""
+
+    result = set(raw_hashes)
+    for _, archive_sha256, checksum_sha256, _, _, _ in checksum_rows:
+        if archive_sha256 in result:
+            result.add(checksum_sha256)
+    return result
+
+
+def build_full_raw_inventory(
+    *,
+    registry: SourceRegistry,
+    raw_hashes: set[str],
+    market_profile: MarketProfile,
+    instrument_id: str,
+    data_window_identity: str,
+    source_reconciliation_identity: str,
+    checksum_rows: tuple[tuple[Any, ...], ...],
+) -> DatasetRawInventory:
+    """Build the canonical typed inventory from acquisition-level authority."""
+
+    checksum_by_archive: dict[str, list[PublisherChecksumBinding]] = {}
+    for _, archive_sha256, checksum_sha256, filename, publisher_sha256, local_match in checksum_rows:
+        if archive_sha256 not in raw_hashes:
+            continue
+        if local_match is not True:
+            raise RuntimeError("publisher checksum entered inventory without a local match")
+        checksum_by_archive.setdefault(archive_sha256, []).append(
+            PublisherChecksumBinding(
+                checksum_raw_object_sha256=checksum_sha256,
+                exact_filename=filename,
+                publisher_sha256=publisher_sha256,
+            ),
+        )
+    objects: list[RawInventoryObject] = []
+    for digest in sorted(raw_hashes):
+        binding = registry.raw.get(digest)
+        origins = registry.by_sha.get(digest)
+        if binding is None or not origins:
+            raise RuntimeError(f"participating Raw object lacks acquisition authority: {digest}")
+        typed_origins = tuple(
+            sorted(
+                (
+                    RawInventoryOrigin(
+                        observation_id=str(item["observation_id"]),
+                        source_role=str(item["source_role"]),
+                        exact_locator=str(item["exact_locator"]),
+                        exact_query_json=str(item["exact_query_json"]),
+                        http_status=int(item["http_status"]),
+                        validation_status=(
+                            "UNAVAILABLE" if int(item["http_status"]) == 404 else "RAW_PRESERVED"
+                        ),
+                        delivery_classification=(
+                            "REDUNDANT_OFFICIAL_DELIVERY_ROLE_UNAVAILABLE"
+                            if int(item["http_status"]) == 404 and "MARK" in str(item["source_role"])
+                            else "NOT_APPLICABLE"
+                        ),
+                    )
+                    for item in origins
+                ),
+                key=lambda item: (
+                    item.source_role,
+                    item.exact_locator,
+                    item.exact_query_json,
+                    item.observation_id,
+                ),
+            ),
+        )
+        typed_checksums = tuple(
+            sorted(
+                checksum_by_archive.get(digest, ()),
+                key=lambda item: (
+                    item.exact_filename,
+                    item.publisher_sha256,
+                    item.checksum_raw_object_sha256,
+                ),
+            ),
+        )
+        objects.append(
+            RawInventoryObject(
+                raw_object_sha256=digest,
+                byte_size=binding.byte_size,
+                instrument="BTCUSDT",
+                market_profile=market_profile,
+                origins=typed_origins,
+                publisher_checksum_bindings=typed_checksums,
+            ),
+        )
+    return DatasetRawInventory.create(
+        market_profile=market_profile,
+        instrument_id=instrument_id,
+        data_window_identity=data_window_identity,
+        source_reconciliation_identity=source_reconciliation_identity,
+        raw_object_count=len(objects),
+        raw_objects=tuple(objects),
+    )
+
+
+def _add_source_json_hashes(
+    connection: duckdb.DuckDBPyConnection,
+    result: set[str],
+    table: str,
+) -> None:
+    for (payload,) in connection.execute(
+        f"SELECT DISTINCT source_sha256s_json FROM {table}",
+    ).fetchall():
+        values = json.loads(payload)
+        if not isinstance(values, list) or any(
+            not isinstance(item, str) or re.fullmatch(r"[0-9a-f]{64}", item) is None
+            for item in values
+        ):
+            raise RuntimeError(f"DATA_HASH_MISMATCH: malformed {table} source projection")
+        result.update(values)
+
+
+def derive_participating_raw_hashes(
+    connection: duckdb.DuckDBPyConnection,
+    market_profile: MarketProfile,
+) -> set[str]:
+    """Project participating Raw objects independently from relational semantics."""
+
+    result: set[str] = set()
+    if market_profile is SPOT_PROFILE:
+        _add_source_json_hashes(connection, result, "spot_execution_bars_1m")
+        result.update(
+            row[0]
+            for row in connection.execute(
+                "SELECT DISTINCT source_raw_object_sha256 FROM spot_agg_trades",
+            ).fetchall()
+        )
+        for raw_trade, aggtrade in connection.execute(
+            """
+            SELECT DISTINCT raw_trade_source_sha256, aggtrade_source_sha256
+            FROM verified_no_trade_intervals
+            """,
+        ).fetchall():
+            result.update((raw_trade, aggtrade))
+    else:
+        _add_source_json_hashes(connection, result, "perpetual_execution_bars_1m")
+        _add_source_json_hashes(connection, result, "perpetual_mark_bars_1m")
+        _add_source_json_hashes(connection, result, "perpetual_funding_events")
+        result.update(
+            row[0]
+            for row in connection.execute(
+                """
+                SELECT DISTINCT raw_object_sha256
+                FROM source_observations
+                WHERE parsed_event_time_ms IS NULL
+                  AND semantic_row_sha256 IS NULL
+                  AND validation_status = 'UNAVAILABLE'
+                  AND delivery_classification = 'REDUNDANT_OFFICIAL_DELIVERY_ROLE_UNAVAILABLE'
+                  AND source_role LIKE '%MARK%'
+                  AND instrument = 'BTCUSDT'
+                """,
+            ).fetchall()
+        )
+    conflict_observations: set[str] = set()
+    for (payload,) in connection.execute(
+        "SELECT source_observation_ids_json FROM source_conflicts WHERE market_profile = ?",
+        [market_profile.value],
+    ).fetchall():
+        values = json.loads(payload)
+        if not isinstance(values, list) or any(not isinstance(item, str) for item in values):
+            raise RuntimeError("DATA_HASH_MISMATCH: malformed conflict observation projection")
+        conflict_observations.update(values)
+    if conflict_observations:
+        observation_to_raw = dict(
+            connection.execute(
+                "SELECT observation_id, raw_object_sha256 FROM source_observations",
+            ).fetchall(),
+        )
+        missing = sorted(conflict_observations - set(observation_to_raw))
+        if missing:
+            raise RuntimeError(
+                f"DATA_HASH_MISMATCH: conflict observations do not resolve: {missing[:3]}",
+            )
+        result.update(observation_to_raw[item] for item in conflict_observations)
+    result.update(
+        row[0]
+        for row in connection.execute(
+            """
+            SELECT DISTINCT binding.source_raw_object_sha256
+            FROM instrument_metadata_source_bindings AS binding
+            JOIN instrument_metadata AS metadata
+              ON metadata.instrument_metadata_identity = binding.instrument_metadata_identity
+            WHERE metadata.market_profile = ?
+            """,
+            [market_profile.value],
+        ).fetchall()
+    )
+    for archive_sha256, checksum_sha256 in connection.execute(
+        "SELECT archive_raw_object_sha256, checksum_raw_object_sha256 FROM publisher_checksums",
+    ).fetchall():
+        if archive_sha256 in result:
+            result.add(checksum_sha256)
+    return result
+
+
+def verify_full_raw_inventory_gate(
+    connection: duckdb.DuckDBPyConnection,
+    release: Any,
+    registry: SourceRegistry,
+) -> dict[str, Any]:
+    """Require four-way equality and independently re-hash every participating blob."""
+
+    inventory = release.raw_inventory
+    if not isinstance(inventory, DatasetRawInventory):
+        raise RuntimeError("DATASET_RAW_INVENTORY_MISMATCH: typed full Raw inventory is absent")
+    declared = {item.raw_object_sha256 for item in inventory.raw_objects}
+    members = {
+        row[0]
+        for row in connection.execute(
+            """
+            SELECT member_identity FROM release_members
+            WHERE dataset_release_id = ? AND member_type = 'RAW_OBJECT'
+            """,
+            [release.dataset_release_id],
+        ).fetchall()
+    }
+    participating = derive_participating_raw_hashes(connection, release.market_profile)
+    verified: set[str] = set()
+    database_raw = {
+        row[0]: (int(row[1]), bool(row[2]))
+        for row in connection.execute(
+            "SELECT raw_object_sha256, byte_size, content_verified FROM raw_objects",
+        ).fetchall()
+    }
+    for digest in sorted(participating):
+        binding = registry.raw.get(digest)
+        if binding is None:
+            continue
+        database_binding = database_raw.get(digest)
+        if (
+            database_binding == (binding.byte_size, True)
+            and binding.local_path.is_file()
+            and not binding.local_path.is_symlink()
+            and binding.local_path.stat().st_size == binding.byte_size
+            and hash_file(binding.local_path) == digest
+        ):
+            verified.add(digest)
+    if not declared == members == participating == verified:
+        raise RuntimeError(
+            "DATASET_RAW_INVENTORY_MISMATCH: full Raw inventory equality failed "
+            f"declared={len(declared)} members={len(members)} "
+            f"participating={len(participating)} verified={len(verified)}",
+        )
+    inventory_by_hash = {
+        item.raw_object_sha256: item for item in inventory.raw_objects
+    }
+    for digest in declared:
+        if inventory_by_hash[digest].byte_size != database_raw[digest][0]:
+            raise RuntimeError("DATA_HASH_MISMATCH: Raw inventory byte-size projection differs")
+    acquisition_rows: dict[str, list[tuple[Any, ...]]] = {}
+    for row in connection.execute(
+        """
+        SELECT raw_object_sha256, observation_id, source_role, exact_locator,
+               exact_query_json, http_status, validation_status,
+               coalesce(delivery_classification, 'NOT_APPLICABLE')
+        FROM source_observations
+        WHERE parsed_event_time_ms IS NULL AND semantic_row_sha256 IS NULL
+        ORDER BY raw_object_sha256, source_role, exact_locator, exact_query_json, observation_id
+        """,
+    ).fetchall():
+        acquisition_rows.setdefault(row[0], []).append(tuple(row[1:]))
+    for digest, item in inventory_by_hash.items():
+        declared_origins = [
+            (
+                origin.observation_id,
+                origin.source_role,
+                origin.exact_locator,
+                origin.exact_query_json,
+                origin.http_status,
+                origin.validation_status,
+                origin.delivery_classification,
+            )
+            for origin in item.origins
+        ]
+        if declared_origins != acquisition_rows.get(digest, []):
+            raise RuntimeError("DATA_SOURCE_INVALID: Raw acquisition-origin projection differs")
+    declared_checksums = {
+        (
+            item.raw_object_sha256,
+            binding.checksum_raw_object_sha256,
+            binding.exact_filename,
+            binding.publisher_sha256,
+        )
+        for item in inventory.raw_objects
+        for binding in item.publisher_checksum_bindings
+    }
+    database_checksums = {
+        tuple(row)
+        for row in connection.execute(
+            """
+            SELECT archive_raw_object_sha256, checksum_raw_object_sha256,
+                   exact_filename, publisher_sha256
+            FROM publisher_checksums
+            """,
+        ).fetchall()
+        if row[0] in declared
+    }
+    if declared_checksums != database_checksums:
+        raise RuntimeError("DATA_SOURCE_INVALID: publisher-checksum projection differs")
+    return {
+        "market_profile": release.market_profile.value,
+        "dataset_release_id": release.dataset_release_id,
+        "raw_inventory_identity": inventory.raw_inventory_identity,
+        "raw_object_count": len(declared),
+        "release_equals_members": True,
+        "release_equals_independent_participation_projection": True,
+        "release_equals_verified_blobs": True,
+        "acquisition_origins_equal": True,
+        "publisher_checksum_bindings_equal": True,
+    }
 
 
 def table_columns(connection: duckdb.DuckDBPyConnection, table: str) -> list[str]:
@@ -2283,7 +2654,7 @@ def build(
             "INSERT INTO schema_metadata VALUES (?, ?, ?, ?, ?, ?)",
             [
                 schema_identity,
-                "free-official-binance-duckdb-v2-instrument-representation",
+                "free-official-binance-duckdb-v3-full-raw-inventory",
                 EXPECTED_DUCKDB_VERSION,
                 "UTC_INTEGER_NANOSECONDS_CANONICAL;SOURCE_UNITS_EXPLICIT",
                 False,
@@ -2291,7 +2662,9 @@ def build(
             ],
         )
         insert_raw_inventory(connection, registry)
-        checksum_count = insert_publisher_checksums(connection, old, new, registry)
+        checksum_rows = publisher_checksum_rows(old, new, registry)
+        insert_publisher_checksums(connection, checksum_rows)
+        checksum_count = len(checksum_rows)
 
         spot = process_spot(
             analyzer=analyzer,
@@ -2468,6 +2841,35 @@ def build(
             perp_metadata_observation=perp_metadata_observation,
             historical_grid_observation=historical_grid_observation,
         )
+        spot_raw_hashes = close_publisher_checksum_inventory(
+            set(spot["used_raw_sha256s"])
+            | {spot_metadata.source_object_sha256, SPOT_HISTORICAL_GRID_SHA256},
+            checksum_rows,
+        )
+        perp_raw_hashes = close_publisher_checksum_inventory(
+            set(perpetual["used_raw_sha256s"])
+            | set(funding["used_raw_sha256s"])
+            | {perp_metadata.source_object_sha256, HISTORICAL_GRID_SHA256},
+            checksum_rows,
+        )
+        spot_raw_inventory = build_full_raw_inventory(
+            registry=registry,
+            raw_hashes=spot_raw_hashes,
+            market_profile=SPOT_PROFILE,
+            instrument_id=SPOT_INSTRUMENT,
+            data_window_identity=selected["data_window_identity"],
+            source_reconciliation_identity=spot["source_reconciliation_identity"],
+            checksum_rows=checksum_rows,
+        )
+        perp_raw_inventory = build_full_raw_inventory(
+            registry=registry,
+            raw_hashes=perp_raw_hashes,
+            market_profile=PERP_PROFILE,
+            instrument_id=PERP_INSTRUMENT,
+            data_window_identity=selected["data_window_identity"],
+            source_reconciliation_identity=perpetual["source_reconciliation_identity"],
+            checksum_rows=checksum_rows,
+        )
         spot_release = build_dataset_release(
             market_profile=SPOT_PROFILE,
             instrument_id=SPOT_INSTRUMENT,
@@ -2485,7 +2887,8 @@ def build(
             derived_validation_identity=spot_validation_identity,
             data_tool_lock_identity=data_tool_lock_identity,
             data_quality_exposure_identity=windows["data_quality_exposure_identity"],
-            normalizer_version=INSTRUMENT_REPAIR_NORMALIZER_VERSION,
+            normalizer_version=FULL_RAW_INVENTORY_NORMALIZER_VERSION,
+            raw_inventory=spot_raw_inventory,
         )
         perp_release = build_dataset_release(
             market_profile=PERP_PROFILE,
@@ -2508,7 +2911,8 @@ def build(
             derived_validation_identity=perp_validation_identity,
             data_tool_lock_identity=data_tool_lock_identity,
             data_quality_exposure_identity=windows["data_quality_exposure_identity"],
-            normalizer_version=INSTRUMENT_REPAIR_NORMALIZER_VERSION,
+            normalizer_version=FULL_RAW_INVENTORY_NORMALIZER_VERSION,
+            raw_inventory=perp_raw_inventory,
         )
 
         for stream in streams.values():
@@ -2633,7 +3037,15 @@ def build(
             )
         releases = (spot_release, perp_release)
         connection.executemany(
-            "INSERT INTO dataset_releases VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            """
+            INSERT INTO dataset_releases (
+                dataset_release_id, market_profile, instrument_id,
+                data_window_identity, partition_geometry_identity,
+                minute_coverage_identity, source_reconciliation_identity,
+                raw_inventory_identity, raw_inventory_object_count,
+                catalog_identity, semantic_release_json, status, created_at_utc
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
             [
                 (
                     release.dataset_release_id,
@@ -2643,6 +3055,8 @@ def build(
                     release.partition_geometry_identity,
                     release.minute_coverage_identity,
                     release.source_reconciliation_identity,
+                    release.raw_inventory.raw_inventory_identity,
+                    release.raw_inventory.raw_object_count,
                     release.catalog_identity,
                     release.to_json_bytes().decode("utf-8"),
                     "PASS",
@@ -2653,8 +3067,8 @@ def build(
         )
         # The INSERT statement above names all physical columns explicitly to prevent
         # accidental schema drift from being hidden by positional insertion.
-        # DuckDB reports eleven columns for this table; fail closed otherwise.
-        if len(table_columns(connection, "dataset_releases")) != 11:
+        # DuckDB reports thirteen columns for this table; fail closed otherwise.
+        if len(table_columns(connection, "dataset_releases")) != 13:
             raise RuntimeError("dataset_releases schema drift")
         connection.executemany(
             "INSERT INTO dataset_release_supersessions VALUES (?, ?, ?, ?)",
@@ -2675,13 +3089,9 @@ def build(
         )
 
         for release in releases:
-            source_objects = (
-                set(spot["used_raw_sha256s"])
-                | {spot_metadata.source_object_sha256, SPOT_HISTORICAL_GRID_SHA256}
-                if release.market_profile is SPOT_PROFILE
-                else set(perpetual["used_raw_sha256s"])
-                | set(funding["used_raw_sha256s"])
-                | {perp_metadata.source_object_sha256, HISTORICAL_GRID_SHA256}
+            source_objects = derive_participating_raw_hashes(
+                connection,
+                release.market_profile,
             )
             missing_raw_bindings = sorted(source_objects - set(registry.raw))
             if missing_raw_bindings:
@@ -2747,6 +3157,11 @@ def build(
             FROM minute_dispositions WHERE market_profile = ?
             """,
             [perp_release.dataset_release_id, PERP_PROFILE.value],
+        )
+
+        inventory_gate_results = tuple(
+            verify_full_raw_inventory_gate(connection, release, registry)
+            for release in releases
         )
 
         validations = [
@@ -2823,6 +3238,14 @@ def build(
                     "status": "PASS",
                     "binary_float_material_calculation_used": False,
                     "synthetic_ohlc_count": 0,
+                },
+                checked_at,
+            ),
+            validation_row(
+                "FULL_RAW_INVENTORY_BIDIRECTIONAL_GATE",
+                {
+                    "profiles": list(inventory_gate_results),
+                    "status": "PASS",
                 },
                 checked_at,
             ),
@@ -2904,7 +3327,7 @@ def build(
             {"validation_identity": perp_validation_identity, **perp_market_acceptance},
         )
         result = {
-            "schema": "free-official-binance-duckdb-build-result-v2-instrument-representation",
+            "schema": "free-official-binance-duckdb-build-result-v3-full-raw-inventory",
             "status": "PASS",
             "build_role": role,
             "build_identity": build_identity,
@@ -2915,6 +3338,7 @@ def build(
             "pre_manifest_table_hashes": pre_manifest_hashes,
             "row_counts": counts,
             "dataset_release_ids": release_ids,
+            "full_raw_inventory_gate": list(inventory_gate_results),
             "superseded_dataset_releases": {
                 SUPERSEDED_SPOT_RELEASE: spot_release.dataset_release_id,
                 SUPERSEDED_PERP_RELEASE: perp_release.dataset_release_id,

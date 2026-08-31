@@ -85,7 +85,9 @@ Follow the verified commands in the repository
 2. an accepted DatasetRelease and its materialized catalog;
 3. a reviewed strict `OwnerWorkflowInput` with new identities;
 4. a clean `HEAD == origin/main` checkpoint;
-5. the public `scripts/run_owner_workflow.py` entry point.
+5. the public isolated-bootstrap command documented in the README, targeting
+   `crypto_lab.owner:main`; direct `PYTHONPATH`/wrapper execution is not an
+   Official R2 launch.
 
 The workflow runs the checker and produces JSON/Markdown reports. It does not
 silently create a strategy, data window, fee, or research claim.

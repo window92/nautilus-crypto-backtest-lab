@@ -12,6 +12,7 @@ import unittest
 import venv
 from pathlib import Path
 
+from crypto_lab.checker import CheckerOutcome
 from crypto_lab.checker import check_evidence_directory
 from crypto_lab.runtime import RuntimeLockMismatch
 from crypto_lab.runtime import inspect_installed_distribution_files
@@ -129,7 +130,7 @@ class InstalledRuntimeFileTests(unittest.TestCase):
                     package_relative_path=package,
                 )
 
-    def test_official_runtime_proof_is_required_and_payload_tamper_fails_closed(self) -> None:
+    def test_legacy_runtime_proof_is_diagnostic_only_and_tamper_fails_closed(self) -> None:
         repository = Path(__file__).resolve().parents[2]
         matches = sorted(
             (repository / "runs").glob(
@@ -146,8 +147,13 @@ class InstalledRuntimeFileTests(unittest.TestCase):
                 official_source_required=True,
                 source_revision_current_head_required=False,
             )
-            self.assertEqual(missing.outcome.value, "CHECK_BLOCKED")
-            self.assertIn("RUNTIME_LOCK_MISMATCH", missing.failure_codes)
+            self.assertEqual(missing.outcome, CheckerOutcome.COMPONENT_CHECK_FAIL)
+            missing_proof = next(
+                item
+                for item in missing.checks
+                if item["name"] == "installed_runtime_payload_proof"
+            )
+            self.assertFalse(missing_proof["pass"])
 
             lock = json.loads((copied / "runtime.lock.json").read_text(encoding="utf-8"))
             proof = {
@@ -185,8 +191,7 @@ class InstalledRuntimeFileTests(unittest.TestCase):
                 official_source_required=True,
                 source_revision_current_head_required=False,
             )
-            self.assertEqual(tampered.outcome.value, "CHECK_BLOCKED")
-            self.assertIn("RUNTIME_LOCK_MISMATCH", tampered.failure_codes)
+            self.assertEqual(tampered.outcome, CheckerOutcome.COMPONENT_CHECK_FAIL)
             proof_check = next(
                 item
                 for item in tampered.checks
@@ -225,13 +230,14 @@ class InstalledRuntimeFileTests(unittest.TestCase):
                 official_source_required=True,
                 source_revision_current_head_required=False,
             )
-            proof_check = next(
+            legacy_proof_check = next(
                 item
                 for item in verified.checks
                 if item["name"] == "installed_runtime_payload_proof"
             )
-            self.assertTrue(proof_check["pass"])
-            self.assertNotIn("RUNTIME_LOCK_MISMATCH", verified.failure_codes)
+            self.assertEqual(verified.outcome, CheckerOutcome.COMPONENT_CHECK_FAIL)
+            self.assertFalse(legacy_proof_check["pass"])
+            self.assertTrue(legacy_proof_check["mismatches"])
 
 
 if __name__ == "__main__":

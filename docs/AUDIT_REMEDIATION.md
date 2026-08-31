@@ -1,46 +1,98 @@
-# Comprehensive audit remediation
+# Adversarial audit remediation
 
 This document is the central non-normative guide to
-`COMPREHENSIVE_AUDIT_REMEDIATION_001`. `SSOT.md` remains the sole engineering
-authority. Its Owner-adoption status header was corrected under explicit Owner
-authorization without changing any engineering, financial, or scientific
-contract. The Owner authorized implementation and Development-data reruns
-only; Final Holdout use, a real profitability claim, live trading, automatic
-merge, a tag, and a release remain unauthorized.
+`ADVERSARIAL_AUDIT_REMEDIATION_002`, based on audited commit
+`b5c865c28b83526ffab38152e7e6821f39b77014`. `SSOT.md` remains the sole
+engineering authority. The package candidate is `1.0.1.dev0`. The remediation
+strengthens verification and evidence; it does not replace NautilusTrader as
+the sole execution and financial truth. Only Development-data rebuilds are
+authorized. Final Holdout use, a real profitability claim, live trading,
+automatic merge, a tag, and a release remain unauthorized.
+
+The previous SSOT and historical Evidence bytes remain preserved at their
+original Git identities. New Runs bind the remediated SSOT through their Source
+Revision and Official root attestation. No historical Run directory is edited
+to make it conform to the new contract.
+
+| SSOT generation | SHA-256 | Meaning |
+|---|---|---|
+| Audited base at `b5c865c28b83526ffab38152e7e6821f39b77014` | `9232ebca20e3933b8b36538991001880ae54dbbe37b2da322dca2ac6608d0917` | Immutable historical contract bytes |
+| R2 remediated contract | `a2170e1dbe95d345ec4dc9485acb20c51d70b7e650926eedefbcc706ba50d1a1` | New contract bytes; new Runs additionally bind their final committed Git Source Revision |
+
+## Authority model
+
+The remediation separates five meanings that older reports could blur:
+
+| Meaning | Authority |
+|---|---|
+| Engine truth | Native Nautilus orders, Fills, positions, account, fees, funding, PnL, and portfolio state |
+| Component validation | Read-only causal, financial, provenance, runtime, and Evidence checks; `COMPONENT_CHECK_PASS` is not publication authority |
+| Official seal | Exact final inventory plus manifest/status/root bindings and fresh Product-bound component revalidation; only this non-injectable verifier emits `OFFICIAL_SEAL_PASS` |
+| Research eligibility | Protocol, complete journal/history, partition, benchmark, multiplicity, sample, and claim-scope rules |
+| Profitability authorization | Not granted by this remediation, regardless of metrics or seal outcome |
 
 ## Mandatory merge method
 
 > [!CAUTION]
-> **DO NOT SQUASH OR REBASE.** Merge Pull Request #1 only with GitHub's
-> **Create a merge commit** option.
+> **DO NOT SQUASH OR REBASE.** Merge the remediation Pull Request only with
+> GitHub's **Create a merge commit** option.
 
-The final research validator locates each report's unique addition commit and
-loads the contemporaneous `research/trials.jsonl`,
-`research/history_anchors.jsonl`, Holdout, protocol, replay, diagnostics, and
-run-manifest bytes from that commit. A normal merge commit preserves every
-branch commit and object ID in ancestry, so these snapshots remain resolvable.
-Squash merge omits the report-addition commits from the target ancestry; rebase
-merge creates different commit IDs. Both therefore violate the historical
-snapshot contract and produce fail-closed validation errors. The historical
-SourceRevision verifier enforces this directly by requiring each frozen commit
-to remain an ancestor of the current `HEAD`, while the current-Official path
-continues to require exact branch and `HEAD` identity. No historical Commit or
-Evidence may be deleted or rewritten.
+Historical validator v2 binds the exact source commit/tree, entrypoint,
+wrapper, schemas, executable closure, arguments, isolated interpreter profile,
+and external file dependencies. It materializes and executes those exact bytes
+from an independent snapshot. A normal merge preserves every bound commit and
+object ID in ancestry. Squash omits commits and rebase creates different IDs;
+both therefore fail closed. No historical Commit or Evidence may be deleted or
+rewritten.
 
 ## Historical-result policy
 
-Historical evidence bytes, failed trials, provenance, and hash-chain records
-are immutable. Three additive manifests under
-`evidence/audit/comprehensive-remediation-001/` mark the audited baseline and
-the two superseded remediation epochs as:
+Historical Evidence bytes, failed trials, provenance, and hash-chain records
+are immutable. Existing v1 additive manifests remain historical. The v2 status
+authority adds one closed, content-addressed record per logical result and copy
+role; every Official resolver rejects a result whose effective status is not
+active.
+
+Candidate A/B for Spot and Perpetual, both primary and replay, are classified:
 
 - `historical_run_status: REVOKED`
 - `financial_result_status: INVALIDATED`
+- `reason_code: WARMUP_SCORING_ELIGIBILITY_VIOLATION`
 
-The manifest binds the original `checker.json`, `status.json`, and
-`evidence_manifest.json` hashes and records the current checker outcome. It is
-additive: no old Run is rewritten or deleted. New results use new trial, run,
-protocol, replay, and evidence identities.
+The v2 record binds the original `checker.json`, `status.json`, and
+`evidence_manifest.json` hashes. It is additive: no old Run is rewritten or
+deleted. New results use new Dataset, trial, run, protocol, replay, component,
+metric, and seal identities.
+
+| Logical result | Primary path | Replay parent / status |
+|---|---|---|
+| Spot Candidate A | `runs/comprehensive-audit-remediation-003-spot-candidate-a-run-253086685e94` | `runs/replays/comprehensive-audit-remediation-003-spot-candidate-a-development/comprehensive-audit-remediation-003-spot-candidate-a-run-253086685e94`; revoked/invalidated |
+| Spot Candidate B | `runs/comprehensive-audit-remediation-003-spot-candidate-b-run-736f07f7755e` | `runs/replays/comprehensive-audit-remediation-003-spot-candidate-b-development/comprehensive-audit-remediation-003-spot-candidate-b-run-736f07f7755e`; revoked/invalidated |
+| Perpetual Candidate A | `runs/comprehensive-audit-remediation-003-perpetual-candidate-a-run-5b7c5dba7f8b` | `runs/replays/comprehensive-audit-remediation-003-perpetual-candidate-a-development/comprehensive-audit-remediation-003-perpetual-candidate-a-run-5b7c5dba7f8b`; revoked/invalidated |
+| Perpetual Candidate B | `runs/comprehensive-audit-remediation-003-perpetual-candidate-b-run-85bb3192f559` | `runs/replays/comprehensive-audit-remediation-003-perpetual-candidate-b-development/comprehensive-audit-remediation-003-perpetual-candidate-b-run-85bb3192f559`; revoked/invalidated |
+
+The old Spot and Perpetual Benchmarks were not shown to contain this warmup
+defect. The incompatible v2 Dataset/component/startup/metric/seal result
+contract makes them inactive and the additive registry classifies them
+`SUPERSEDED`, not `INVALIDATED` for an unproved financial reason:
+
+- `runs/comprehensive-audit-remediation-003-spot-benchmark-run-d3e25d52686e`
+- `runs/comprehensive-audit-remediation-003-perpetual-benchmark-run-a0e2b2553ed4`
+
+The old qualification registries are retained but parse-only under the v2
+contract and cannot authorize a new Official Run:
+
+- `evidence/m3/m3-acceptance-001/qualified-profile-registry.json`
+- `evidence/audit/comprehensive-remediation-001/qualification/qualified-profile-registry.json`
+- `evidence/audit/comprehensive-remediation-001/qualification-runtime-proof/qualified-profile-registry.json`
+
+Current authority must be regenerated as schema v2 from the remediated source,
+Runtime/startup authority, full-inventory Dataset Releases, component
+validators, and fresh primary/replay qualification. Re-running a current
+validator over the legacy bytes does not upgrade them.
+
+The following older registries remain preserved as historical records; they
+do not override the v2 result status:
 
 - `historical-result-status.json`: 28 baseline primary/replay records affected
   by F-001/F-002/F-003/F-004.
@@ -51,7 +103,7 @@ protocol, replay, and evidence identities.
   `RuntimeWarning`; the bytes remain preserved, but they are not final audit
   authority.
 
-## Remediated contracts
+## Earlier remediation contracts retained
 
 | Finding | Enforced contract |
 |---|---|
@@ -69,71 +121,110 @@ NautilusTrader remains the sole financial engine. The reconciliation and
 funding components are read-only independent checkers; they do not create a
 parallel ledger, synthesize fills, or replace native PnL.
 
+## R2 contracts
+
+| ID | Enforced contract and independent negative proof |
+|---|---|
+| R2-001 | Full signal interval, not `decision_timestamp`, controls scoring eligibility for execution, daily/weekly aggregation, low-level strategy APIs, checker, diagnostics, and replay. A bar `[T0-period,T0)` cannot submit an order. |
+| R2-002 | The eight affected Candidate primary/replay copies are additively revoked/invalidated; old Benchmarks become superseded only after replacements. Resolvers reject every inactive status. |
+| R2-003 | Decimal read-only Perpetual reconciliation proves Fill order, NETTING position/average entry, commission amount/currency, realized/unrealized PnL, exact funding/account deltas, causal terminal mark, and ending Equity. Every completed cycle additionally binds a detached native `PositionClosed` callback payload so later NETTING reopen cannot mutate the past. Account, position, fee, PnL, Fill, funding, reversal, callback-snapshot, and mark mutations fail. |
+| R2-004 | Dataset Release v2 contains the complete typed Raw inventory and proves exact bidirectional equality to the DuckDB used-Raw inventory. Missing, extra, hash, role, locator, Instrument, profile, or window mutations fail. |
+| R2-005 | Native Evidence → component validation → exact leaf manifest → status → root attestation is acyclic. A missing, extra, altered, invalid-empty, symlinked, escaped, or cross-identity file cannot receive `OFFICIAL_SEAL_PASS`. The public verifier cannot accept a caller-supplied component validator or PASS oracle. |
+| R2-006 | Historical validator v2 binds and executes its source commit/tree, wrapper, entrypoint, schema/dependency closure, arguments, and external bindings. Current `HEAD` cannot reinterpret old Evidence. |
+| R2-007 | A standard-library bootstrap verifies isolated flags, exact environment/`sys.path`, Python/Product/dependency/import identities, `RECORD` and native bytes before Product Code import. Startup authority is separate from `runtime.lock.json`. |
+| R2-008 | Both profiles use scoring-only UTC daily marked total portfolio Equity, `365.2425` annualization, causal open-position valuation, and explicit minimum-sample/undefined behavior. Every daily native snapshot must reconcile to an independent event ledger: Spot Fills/fees plus the causal daily execution-Bar close; Perpetual Fills/fees/funding plus the UTC-midnight subset of an exact eight-hour material Mark grid. Missing points, stale currencies/Instruments, unpriced state, unexpected currencies, and non-terminal intermediate tampering fail. Native metrics with other semantics are diagnostics only. |
+| R2-009 | Post-boundary receipt is derived from actual events; missing Evidence returns structured codes; raw funding lexemes and Instrument/profile identities remain bound; journal/anchor writes and locks fail closed. |
+| R2-010 | Targeted mutations must fail for the intended causal, affordability, funding, commission, account, position, terminal mark, Raw inventory, manifest, validator, runtime, Fill, and Instrument contract—not for an incidental reason. |
+| R2-011 | Machine-readable claims retain the scientific limits: bar execution, no order book/spread/depth/queue, unproved historical fee/filter detail, no liquidation, leverage 1, terminal mark not close, daily not intraday drawdown, single Instrument, Development only, no Final Holdout/profitability/live authorization. |
+
+## Adjacent post-fix closure
+
+The second adversarial pass also requires these neighboring invariants; they
+are not inferred from a passing Manifest hash:
+
+- submitted-intent IDs, native order-event groups, and projected order IDs are
+  equal sets; every native/projected Fill belongs to that chain and exact
+  lifecycle quantities and terminal status agree;
+- the semantic order digest is recomputed from the same immutable native
+  events, so rehashing a deleted or duplicated lifecycle link does not help;
+- native completed units use detached public `Position.to_dict()` snapshots
+  captured at `PositionClosed`, not a cache object observed after reopen;
+- the Perpetual material Mark evidence is exactly one correct-Instrument point
+  at every UTC eight-hour boundary; the daily metric grid is its exact
+  UTC-midnight subset;
+- every Spot and Perpetual daily native portfolio snapshot is non-stale,
+  complete, currency-exact, and independently reconciled at that timestamp;
+- the Official verifier's public signature has no component-validator or PASS
+  callback parameter, and all Official resolution paths use that verifier;
+- all legacy qualification registries and all twelve old 003 primary/replay
+  copies are inactive for current Official resolution. Candidate financial
+  results are invalidated; Benchmark results are superseded without claiming
+  the same financial defect.
+
 ## Historical validator semantics
 
-`contracts/historical-contract-snapshots.json` binds every historical validator
-to the correct ancestor snapshot. `scripts/run_historical_evidence_acceptance.py`
-runs the self-contained validators and reports one of these states:
+`contracts/historical-contract-snapshots.json` v1 remains only an
+input-integrity record. It cannot establish executable-validator authority and
+cannot make a historical result currently acceptable. The v2 authority binds
+the exact Git and executable closure and reports:
 
-- `HISTORICAL_SNAPSHOT_VALID`: historical evidence and its frozen contract
-  agree, and the same bytes are still current.
-- `CURRENT_ROOT_DIFFERS_VALIDLY`: historical evidence and its frozen contract
-  agree, while a named current root file has legitimately changed.
+- `HISTORICAL_EXECUTABLE_SNAPSHOT_VALID`: exact historical executable bytes,
+  authority, ancestry, isolated runtime, exit code, and expected status agree.
+- `HISTORICAL_EXECUTABLE_UNAVAILABLE`: the exact historical executable cannot
+  be proved or run; it is not a PASS.
+- `LEGACY_CONTRACT_ONLY`: old input bytes match but executable semantics were
+  not bound; `acceptable=false`.
 - `EVIDENCE_CORRUPT`: the historical snapshot, expected evidence, or validator
   output does not agree. This is fail-closed.
 
-Historical validity does not restore financial acceptance to a Run listed in
-the revocation registry. It proves preservation and the historical contract,
-not correctness under the repaired contract.
+The old `CURRENT_ROOT_DIFFERS_VALIDLY` label is parse-compatible historical
+vocabulary only and is not proof that changed validator semantics are valid.
+Changing a PASS condition or wrapper, deleting a validator, using a different
+commit, or losing ancestry fails with
+`HISTORICAL_VALIDATOR_IDENTITY_MISMATCH`. Historical validity never restores a
+Run listed in the revocation registry.
 
 ## Acceptance evidence
 
-The remediation acceptance runner records each full command, exit code,
-duration, test count, failures, errors, and skips. The required record belongs
-under `evidence/audit/comprehensive-remediation-001/` and includes full and
-fresh-process discovery, reverse order, targeted regressions, historical
-validators, data provenance, runtime verification/tamper controls, `compileall`,
-and `pip check` for both locked environments. Replacement qualification and
-Development research runs are published separately with deterministic replays.
+The former `comprehensive-audit-remediation-003` acceptance and its numerical
+counts are historical claims under the old checker. They are not R2 acceptance
+evidence and MUST NOT be copied into a new report without recomputation. In
+particular, deterministic replay of an invalid warmup-triggered Candidate only
+repeated the same error.
 
-The active qualification is
-`qualification-runtime-proof/qualified-profile-registry.json`, with registry
-content identity
-`f267296baec7886d2a277c7ac7f2e5b2cd9e0566d0818682fad6146bd8f295c8`.
-It contains one Spot and one Perpetual qualified record and four independently
-revalidated primary/replay Run directories with persisted `runtime_identity.json`.
+R2 acceptance records every command, exit code, duration, test count,
+failures, errors, skips, and semantic identity. It requires at least:
 
-The final Development-only result epoch is
-`comprehensive-audit-remediation-003`. Its central read-only validation is
-`final-research-validation.json`, identity
-`3fafaba675216a453d9d3a9f05329e1aefe9950e49a47e438669ec7fef26abd6`.
-It revalidates all 12 Run directories, the six deterministic replay identities,
-the report source snapshots, the current journal/anchor chain, and the empty
-Holdout lock. It authorizes neither Final Holdout nor a profitability claim.
+- full, fresh-process, and reverse-order discovery with zero skip/xfail;
+- causal, Spot, Perpetual, funding, boundary, provenance, runtime-startup,
+  sealing, historical-validator, journal/Holdout, and mutation regressions;
+- full intent → native-order lifecycle → Fill-chain mutations, non-injectable
+  Official-sealer control, detached close-callback snapshot/reopen control, and
+  intermediate daily ledger-versus-native-snapshot tampering for both profiles;
+- two independent data builds, publisher checksum validation, full Raw
+  inventory equality, and Dataset/catalog semantic identity;
+- a committed four-way rebuild-validation payload sealed into every new
+  research Run and rechecked against its exact DatasetRelease/profile;
+- installed runtime payload verification, fresh locked-environment install,
+  `compileall`, `pip check` for both environments, and `git diff --check`;
+- six new Development primaries and six independent replays, each with
+  `COMPONENT_CHECK_PASS`, profile reconciliation, deterministic semantic
+  equality, and `OFFICIAL_SEAL_PASS`;
+- new scoring-only daily marked metrics and machine-readable scientific
+  limitations;
+- a clean published branch tip and portable GitHub CI.
 
-| Profile / trial | Primary Run | Replay identity | Report ID |
-|---|---|---|---|
-| Spot benchmark | `comprehensive-audit-remediation-003-spot-benchmark-run-d3e25d52686e` | `7edbaaf191ae62638384225452124b53c3d6c18f33f68c40673c75738396bb4f` | `36cecb3f692d3fc7f722de5c1f944002d8f4243bd0bf29663f0a210e68f9e7e7` |
-| Spot candidate A | `comprehensive-audit-remediation-003-spot-candidate-a-run-253086685e94` | `c8cf2837d311a86c93dce89bd5bd4b059ae22527514a48b8504ea13427fbf2da` | `95fbce923d933808c8e86b1fa2e922db99d10317ce9c3f7e452ba37d823c6dda` |
-| Spot candidate B | `comprehensive-audit-remediation-003-spot-candidate-b-run-736f07f7755e` | `c01743e3b92b024d9f5f5b54b7499bd08a9f7f8cddf2aebb6dc78ca243c2b592` | `4b3911b90bb3e2ff6750addb69c7b0e16a06c1fc2c4461a2bf41533b36635004` |
-| Perpetual benchmark | `comprehensive-audit-remediation-003-perpetual-benchmark-run-a0e2b2553ed4` | `25f82d464999cdbd5d68609ad829c30f8c72fa6e40ac699fbbeeb42e1830c6ad` | `0f7be820df1cddfda3aad22248946eb58645fe4d964f7e1e897e765447d66238` |
-| Perpetual candidate A | `comprehensive-audit-remediation-003-perpetual-candidate-a-run-5b7c5dba7f8b` | `f777d6a5fccd451a4504bb85f6f9a7fdabaca649a0b3139636bce6bcbb72ff90` | `1f1e8639399b8a8463c38448bb628097139ba2a14da3377ba03570956971b301` |
-| Perpetual candidate B | `comprehensive-audit-remediation-003-perpetual-candidate-b-run-85bb3192f559` | `82fa0f2304e41399232d59c8e9c80280136ca9d68e3aca22cdec5f1a7b630aed` | `320a54dd4452ed9f711ec75878f93f46701d5a52573cdf52fcf9132aa19276fb` |
+New Run, replay, Dataset Release, report, registry, and acceptance identities
+must be inserted here only after those artifacts exist and their final bytes
+have been independently verified. Until then, the absence of a published R2
+identity is not a PASS.
 
-All six are `CHECK_PASS` with a `PASS` fresh-process replay and clean child
-diagnostics. Spot reconciliation covers 1, 7, and 15 fills respectively.
-Each Perpetual Run binds 542 native settlements exactly once to 636 source
-Funding events; the other 94 boundaries have no eligible pre-boundary position.
-
-The GitHub Actions workflow is deliberately a portable review gate. It installs
+The GitHub Actions workflow remains a portable review gate. It installs
 the hashed Nautilus dependency and runs compilation plus repository-contained
 regressions, but it does not claim Official acceptance: GitHub-hosted machines
 cannot satisfy the host-specific Runtime Lock or access the intentionally
 untracked market-data catalogs.
 
-Run the central result validator from a clean, published branch tip:
-
-```bash
-TZ=UTC LANG=C.UTF-8 LC_ALL=C.UTF-8 PYTHONHASHSEED=0 PYTHONPATH=src:. \
-  .venv/bin/python scripts/validate_audit_research_runs.py
-```
+No R2 outcome, including `OFFICIAL_SEAL_PASS`, authorizes Final Holdout use, a
+profitability claim, investment advice, live trading, a tag, release, automatic
+merge, squash, or rebase.

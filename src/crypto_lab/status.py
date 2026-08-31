@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from enum import StrEnum
+from typing import Any
 
 
 class RunState(StrEnum):
@@ -15,6 +16,7 @@ class RunState(StrEnum):
 class FailureCode(StrEnum):
     RUNTIME_LOCK_MISMATCH = "RUNTIME_LOCK_MISMATCH"
     RUNTIME_WHEEL_HASH_MISMATCH = "RUNTIME_WHEEL_HASH_MISMATCH"
+    RUNTIME_STARTUP_MISMATCH = "RUNTIME_STARTUP_MISMATCH"
     UNSUPPORTED_RUNTIME = "UNSUPPORTED_RUNTIME"
     UNSUPPORTED_MARKET_PROFILE = "UNSUPPORTED_MARKET_PROFILE"
     UNSUPPORTED_V1_ORDER_TYPE = "UNSUPPORTED_V1_ORDER_TYPE"
@@ -28,16 +30,19 @@ class FailureCode(StrEnum):
     DATA_DUPLICATE_CONFLICT = "DATA_DUPLICATE_CONFLICT"
     DATA_ROLE_MISMATCH = "DATA_ROLE_MISMATCH"
     DATASET_RELEASE_STALE = "DATASET_RELEASE_STALE"
+    DATASET_RAW_INVENTORY_MISMATCH = "DATASET_RAW_INVENTORY_MISMATCH"
     IRRECOVERABLE_OFFICIAL_MARK_DELIVERY_GAP = "IRRECOVERABLE_OFFICIAL_MARK_DELIVERY_GAP"
     DATA_WINDOW_QUALITY_EXHAUSTED = "DATA_WINDOW_QUALITY_EXHAUSTED"
     INSTRUMENT_METADATA_INVALID = "INSTRUMENT_METADATA_INVALID"
     TIMEFRAME_AGGREGATION_UNRESOLVED = "TIMEFRAME_AGGREGATION_UNRESOLVED"
     CAUSAL_EXECUTION_UNRESOLVED = "CAUSAL_EXECUTION_UNRESOLVED"
     LOOKAHEAD_DETECTED = "LOOKAHEAD_DETECTED"
+    WARMUP_SCORING_ELIGIBILITY_VIOLATION = "WARMUP_SCORING_ELIGIBILITY_VIOLATION"
     SAME_BAR_EXECUTION_DETECTED = "SAME_BAR_EXECUTION_DETECTED"
     FILL_MUTATION_DETECTED = "FILL_MUTATION_DETECTED"
     SPOT_SHORT_OR_BORROW_DETECTED = "SPOT_SHORT_OR_BORROW_DETECTED"
     PERP_PROFILE_INVALID = "PERP_PROFILE_INVALID"
+    PERPETUAL_RECONCILIATION_FAILURE = "PERPETUAL_RECONCILIATION_FAILURE"
     CROSS_ZERO_ORDER_REJECTED = "CROSS_ZERO_ORDER_REJECTED"
     CONCURRENT_STRATEGY_ORDER_REJECTED = "CONCURRENT_STRATEGY_ORDER_REJECTED"
     FEE_MISSING = "FEE_MISSING"
@@ -50,6 +55,10 @@ class FailureCode(StrEnum):
     DETERMINISTIC_REBUILD_MISMATCH = "DETERMINISTIC_REBUILD_MISMATCH"
     CHECKER_FAILURE = "CHECKER_FAILURE"
     CHECKER_BLOCKED = "CHECKER_BLOCKED"
+    OFFICIAL_SEAL_FAILURE = "OFFICIAL_SEAL_FAILURE"
+    HISTORICAL_VALIDATOR_IDENTITY_MISMATCH = "HISTORICAL_VALIDATOR_IDENTITY_MISMATCH"
+    PERFORMANCE_METRICS_INVALID = "PERFORMANCE_METRICS_INVALID"
+    JOURNAL_DURABILITY_FAILURE = "JOURNAL_DURABILITY_FAILURE"
     TRIAL_HISTORY_INCOMPLETE = "TRIAL_HISTORY_INCOMPLETE"
     RESEARCH_PROTOCOL_INVALID = "RESEARCH_PROTOCOL_INVALID"
     PARTITION_LEAKAGE = "PARTITION_LEAKAGE"
@@ -61,3 +70,64 @@ class FailureCode(StrEnum):
     DEFECT_ROOT_UNRESOLVED = "DEFECT_ROOT_UNRESOLVED"
     RETRY_LIMIT_REACHED = "RETRY_LIMIT_REACHED"
     EVIDENCE_INCOMPLETE = "EVIDENCE_INCOMPLETE"
+
+
+def validated_failure_codes(
+    values: object,
+    *,
+    field: str = "failure_codes",
+) -> tuple[str, ...]:
+    """Return unique canonical enum values or reject a Product/schema bug.
+
+    This helper is for values which the Product is about to persist or expose.
+    It deliberately does not invent a fallback for programmer-controlled
+    output: an unknown code at that boundary is a contract error.
+    """
+
+    if not isinstance(values, list | tuple):
+        raise ValueError(f"{field}: expected a failure-code list or tuple")
+    canonical: list[str] = []
+    for index, value in enumerate(values):
+        try:
+            code = FailureCode(value).value
+        except (TypeError, ValueError) as exc:
+            raise ValueError(
+                f"{field}[{index}]: unknown failure code",
+            ) from exc
+        if code not in canonical:
+            canonical.append(code)
+    return tuple(canonical)
+
+
+def canonicalize_evidence_failure_codes(values: Any) -> tuple[str, ...]:
+    """Fail closed when untrusted evidence contains an unknown code.
+
+    Evidence bytes are not allowed to extend the vocabulary. Known codes are
+    retained, duplicates are removed, and any malformed or unknown member is
+    represented only by the canonical ``EVIDENCE_INCOMPLETE`` code. The
+    attacker-controlled lexeme is never propagated into a report or status.
+    """
+
+    if not isinstance(values, list | tuple):
+        return (FailureCode.EVIDENCE_INCOMPLETE.value,)
+    canonical: list[str] = []
+    unknown = False
+    for value in values:
+        try:
+            code = FailureCode(value).value
+        except (TypeError, ValueError):
+            unknown = True
+            continue
+        if code not in canonical:
+            canonical.append(code)
+    if unknown and FailureCode.EVIDENCE_INCOMPLETE.value not in canonical:
+        canonical.append(FailureCode.EVIDENCE_INCOMPLETE.value)
+    return tuple(canonical)
+
+
+__all__ = [
+    "FailureCode",
+    "RunState",
+    "canonicalize_evidence_failure_codes",
+    "validated_failure_codes",
+]

@@ -206,6 +206,7 @@ class OwnerSmokeDailyStrategyIntegrationTests(unittest.TestCase):
                     item["event_type"] == "PositionClosed"
                     for item in observations["position_sequence"]
                 ),
+                closed_event_snapshots=strategy.native_completed_position_snapshots,
             )
             engine.dispose()
         return observations, orders, fills, signed_position, native_completed
@@ -225,7 +226,10 @@ class OwnerSmokeDailyStrategyIntegrationTests(unittest.TestCase):
         self.assertEqual(signed, Decimal(0))
         self.assertEqual(native_completed.completed_trade_count, 1)
         self.assertEqual(native_completed.terminal_open_position_count, 0)
-        self.assertEqual(native_completed.units[0].source_kind, "CACHE_CLOSED_POSITION")
+        self.assertEqual(
+            native_completed.units[0].source_kind,
+            "DIRECT_POSITION_CLOSED_SNAPSHOT",
+        )
         for fill in fills:
             submitted = next(
                 item
@@ -244,7 +248,10 @@ class OwnerSmokeDailyStrategyIntegrationTests(unittest.TestCase):
         self.assertEqual(signed, Decimal("-0.100"))
         self.assertEqual(native_completed.completed_trade_count, 1)
         self.assertEqual(native_completed.terminal_open_position_count, 1)
-        self.assertEqual(native_completed.units[0].source_kind, "CACHE_POSITION_SNAPSHOT")
+        self.assertEqual(
+            native_completed.units[0].source_kind,
+            "DIRECT_POSITION_CLOSED_SNAPSHOT",
+        )
         sequence = observations["reversal_sequence"]
         self.assertEqual(
             [item["event"] for item in sequence],

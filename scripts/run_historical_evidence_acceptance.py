@@ -1,130 +1,135 @@
 #!/usr/bin/env python3
-"""Run every self-contained historical validator under its frozen contract."""
+"""Execute every historical validator from its immutable v2 authority."""
 
 from __future__ import annotations
 
 import argparse
 import json
-import os
-import subprocess
-import sys
 from pathlib import Path
 from typing import Any
 
 from crypto_lab.hashing import canonical_json_bytes
-from crypto_lab.historical_contracts import HistoricalValidationState
-from crypto_lab.historical_contracts import validate_validator_contract
+from crypto_lab.historical_contracts import HistoricalAuthorityError
+from crypto_lab.historical_contracts import load_historical_authority_manifest
+from crypto_lab.historical_executor import execute_historical_validator
 
 
 ROOT = Path(__file__).resolve().parents[1]
-VALIDATORS = (
-    "validate_audit_qualification.py",
-    "validate_audit_research_runs.py",
-    "validate_m1_evidence.py",
-    "validate_m2_evidence.py",
-    "validate_m3_evidence.py",
-    "validate_m4_evidence.py",
-    "validate_data_provenance_evidence.py",
-    "validate_instrument_repair_evidence.py",
-    "validate_owner_smoke_002_replacement_evidence.py",
-    "validate_native_research_metrics_readiness_evidence.py",
-    "validate_owner_strategy_research_001_evidence.py",
-)
-DATA_TOOL_VALIDATORS = {"validate_data_provenance_evidence.py"}
+DEFAULT_AUTHORITY = ROOT / "contracts/historical-validator-authorities-v2.json"
+DEFAULT_BOOTSTRAP = ROOT / "scripts/isolated_runtime_bootstrap.py"
+LEGACY_MANIFEST = ROOT / "contracts/historical-contract-snapshots.json"
 
 
-def _parse_json_output(stdout: str) -> dict[str, Any] | None:
-    try:
-        value = json.loads(stdout)
-    except json.JSONDecodeError:
-        return None
-    return value if isinstance(value, dict) else None
-
-
-def run_acceptance() -> dict[str, Any]:
-    environment = dict(os.environ)
-    environment.update(
-        {
-            "TZ": "UTC",
-            "LANG": "C.UTF-8",
-            "LC_ALL": "C.UTF-8",
-            "PYTHONDONTWRITEBYTECODE": "1",
-            "PYTHONPATH": str(ROOT / "src"),
-        },
+def _legacy_declared_validators(repository_root: Path) -> set[str]:
+    value = json.loads(
+        (repository_root / "contracts/historical-contract-snapshots.json").read_text(
+            encoding="utf-8",
+        ),
     )
+    validators = value.get("validators") if isinstance(value, dict) else None
+    if not isinstance(validators, dict) or not all(
+        isinstance(name, str) and name for name in validators
+    ):
+        raise HistoricalAuthorityError(
+            "EXECUTION_PLAN_MISMATCH",
+            "legacy declared-validator inventory is malformed",
+        )
+    return set(validators)
+
+
+def run_acceptance(
+    *,
+    authority_path: Path = DEFAULT_AUTHORITY,
+    bootstrap_path: Path = DEFAULT_BOOTSTRAP,
+    repository_root: Path = ROOT,
+) -> dict[str, Any]:
+    """Run only pinned validator bytes; current-root validators are never called."""
+
+    manifest = load_historical_authority_manifest(authority_path)
+    plan = tuple(manifest["execution_plan"])
+    declared = _legacy_declared_validators(repository_root)
+    if set(plan) != declared or len(plan) != 14:
+        raise HistoricalAuthorityError(
+            "EXECUTION_PLAN_MISMATCH",
+            f"v2={sorted(plan)}, legacy={sorted(declared)}",
+        )
     results: dict[str, Any] = {}
-    for name in VALIDATORS:
-        contract = validate_validator_contract(name, repository_root=ROOT)
-        interpreter = (
-            ROOT / ".data-venv/bin/python"
-            if name in DATA_TOOL_VALIDATORS
-            else Path(sys.executable)
-        )
-        command = [str(interpreter), str(ROOT / "scripts" / name)]
-        command_environment = dict(environment)
-        if name in DATA_TOOL_VALIDATORS:
-            command_environment["PYTHONPATH"] = os.pathsep.join(
-                (
-                    str(ROOT / "src"),
-                    str(ROOT),
-                    str(ROOT / ".venv/lib/python3.12/site-packages"),
-                ),
+    for name in plan:
+        authority = manifest["authorities"][name]
+        profile = manifest["runtime_profiles"][authority.interpreter_profile]
+        try:
+            execution = execute_historical_validator(
+                authority,
+                repository_root=repository_root,
+                runtime_profile=profile,
+                bootstrap_path=bootstrap_path,
             )
-        completed = subprocess.run(
-            command,
-            cwd=ROOT,
-            env=command_environment,
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        validator_output = _parse_json_output(completed.stdout)
-        validator_pass = bool(
-            completed.returncode == 0
-            and validator_output is not None
-            and validator_output.get("status") == "PASS"
-        )
-        classification = (
-            contract.state
-            if validator_pass and contract.acceptable
-            else HistoricalValidationState.EVIDENCE_CORRUPT
-        )
-        results[name] = {
-            "command": command,
-            "exit_code": completed.returncode,
-            "validator_status": (
-                None if validator_output is None else validator_output.get("status")
-            ),
-            "classification": classification.value,
-            "contract": contract.to_builtins(),
-            "stderr": completed.stderr,
-            "stdout_was_json": validator_output is not None,
-            "pass": validator_pass and contract.acceptable,
-        }
+        except HistoricalAuthorityError as exc:
+            results[name] = {
+                "validator_name": name,
+                "authority_id": authority.authority_id,
+                "bundle_identity": authority.bundle_identity,
+                "failure_code": exc.code,
+                "failure_reason": exc.reason,
+                "detail": exc.detail,
+                "pass": False,
+                "current_root_validator_executed": False,
+            }
+        else:
+            results[name] = execution.to_builtins()
     passed = sum(bool(item["pass"]) for item in results.values())
     return {
-        "schema": "historical-evidence-acceptance-v1",
-        "status": "PASS" if passed == len(results) else "FAIL",
-        "validator_count": len(results),
+        "schema": "historical-evidence-acceptance-v2",
+        "status": "PASS" if passed == len(plan) else "FAIL",
+        "validator_count": len(plan),
         "passed": passed,
-        "failed": len(results) - passed,
+        "failed": len(plan) - passed,
         "results": results,
+        "legacy_v1_snapshot_is_execution_authority": False,
+        "current_root_validator_executed": False,
         "historical_evidence_mutated": False,
-        "current_root_equality_required": False,
     }
 
 
 def main() -> int:
     parser = argparse.ArgumentParser()
+    parser.add_argument("--authority", type=Path, default=DEFAULT_AUTHORITY)
+    parser.add_argument("--bootstrap", type=Path, default=DEFAULT_BOOTSTRAP)
+    parser.add_argument("--repository", type=Path, default=ROOT)
     parser.add_argument("--output", type=Path)
     arguments = parser.parse_args()
-    result = run_acceptance()
+    try:
+        result = run_acceptance(
+            authority_path=arguments.authority.resolve(strict=True),
+            bootstrap_path=arguments.bootstrap.resolve(strict=True),
+            repository_root=arguments.repository.resolve(strict=True),
+        )
+        exit_code = 0 if result["status"] == "PASS" else 1
+    except (HistoricalAuthorityError, FileNotFoundError, ValueError) as exc:
+        result = {
+            "schema": "historical-evidence-acceptance-v2",
+            "status": "FAIL",
+            "validator_count": 0,
+            "passed": 0,
+            "failed": 0,
+            "failure_code": getattr(
+                exc,
+                "code",
+                "HISTORICAL_VALIDATOR_IDENTITY_MISMATCH",
+            ),
+            "failure_reason": getattr(exc, "reason", type(exc).__name__),
+            "detail": str(exc),
+            "legacy_v1_snapshot_is_execution_authority": False,
+            "current_root_validator_executed": False,
+            "historical_evidence_mutated": False,
+        }
+        exit_code = 1
     payload = canonical_json_bytes(result) + b"\n"
     if arguments.output is not None:
         arguments.output.parent.mkdir(parents=True, exist_ok=True)
         arguments.output.write_bytes(payload)
     print(payload.decode("utf-8"), end="")
-    return 0 if result["status"] == "PASS" else 1
+    return exit_code
 
 
 if __name__ == "__main__":

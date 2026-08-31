@@ -6,6 +6,7 @@ Nautilus.  This module only constrains which V1 intents are eligible for submiss
 
 from __future__ import annotations
 
+import copy
 from dataclasses import dataclass
 from decimal import Decimal
 from types import MappingProxyType
@@ -32,6 +33,74 @@ from crypto_lab.data import validate_market_order_quantity
 
 
 ONE_MINUTE_NS = 60_000_000_000
+EIGHT_HOURS_NS = 8 * 60 * ONE_MINUTE_NS
+
+
+def signal_interval_is_scoring_eligible(
+    *,
+    interval_start_ns: int,
+    interval_end_exclusive_ns: int,
+    scoring_start_ns: int,
+    scoring_end_exclusive_ns: int,
+) -> bool:
+    """Return whether the complete material signal interval is scored.
+
+    The decision timestamp is deliberately absent: it describes when a
+    decision is made, not which market-data interval supplied the signal.
+    """
+
+    return bool(
+        interval_start_ns < interval_end_exclusive_ns
+        and interval_start_ns >= scoring_start_ns
+        and interval_end_exclusive_ns <= scoring_end_exclusive_ns
+    )
+
+
+def spot_base_buy_maximum_cost(
+    *,
+    base_quantity: Decimal,
+    maximum_fill_price: Decimal,
+    taker_fee_rate: Decimal,
+) -> Decimal:
+    """Conservative quote cash needed for a base-quantity Spot MARKET buy."""
+
+    if (
+        not base_quantity.is_finite()
+        or not maximum_fill_price.is_finite()
+        or not taker_fee_rate.is_finite()
+        or base_quantity <= 0
+        or maximum_fill_price <= 0
+        or taker_fee_rate < 0
+    ):
+        raise ValueError("Spot affordability inputs are invalid")
+    return base_quantity * maximum_fill_price * (Decimal(1) + taker_fee_rate)
+
+
+def spot_quote_buy_capacity(
+    *,
+    available_quote: Decimal,
+    taker_fee_rate: Decimal,
+    commission_rounding_reserve: Decimal,
+    base_rounding_reserve: Decimal,
+) -> Decimal:
+    """Maximum quote-denominated order while reserving commission and rounding."""
+
+    if (
+        not available_quote.is_finite()
+        or not taker_fee_rate.is_finite()
+        or not commission_rounding_reserve.is_finite()
+        or not base_rounding_reserve.is_finite()
+        or available_quote < 0
+        or taker_fee_rate < 0
+        or commission_rounding_reserve <= 0
+        or base_rounding_reserve < 0
+    ):
+        raise ValueError("Spot quote-capacity inputs are invalid")
+    return (
+        (available_quote - commission_rounding_reserve)
+        / (Decimal(1) + taker_fee_rate)
+        - base_rounding_reserve
+    )
 
 
 class StrategySpec(StrictModel):
@@ -183,8 +252,14 @@ class GuardedCausalStrategy(Strategy):
         self._initial_capital_currency = ""
         self._spot_plan_quote_notional_from_signal_close = False
         self._live_client_order_id = None
+        # Immutable native Position copies captured at the PositionClosed
+        # callback.  The cache's later NETTING-reopen snapshots are mutable in
+        # the pinned runtime and therefore cannot prove the state which was
+        # observed at the close boundary.
+        self._native_completed_position_snapshots: list[dict[str, Any]] = []
         self.observations: dict[str, Any] = {
             "bars": [],
+            "valuation_bars": [],
             "mark_price_updates": [],
             "funding_rate_updates": [],
             "intents": [],
@@ -194,6 +269,20 @@ class GuardedCausalStrategy(Strategy):
             "position_sequence": [],
             "lifecycle_clearances": [],
             "scoring_boundary": None,
+            "engine_data_callbacks": {
+                "counts": {
+                    "Bar": 0,
+                    "MarkPriceUpdate": 0,
+                    "FundingRateUpdate": 0,
+                },
+                "latest_ts_init_by_type": {
+                    "Bar": None,
+                    "MarkPriceUpdate": None,
+                    "FundingRateUpdate": None,
+                },
+                "post_boundary_count": 0,
+                "post_boundary_samples": [],
+            },
         }
 
     def configure(
@@ -287,6 +376,11 @@ class GuardedCausalStrategy(Strategy):
         self._boundary_snapshot(int(self.clock.timestamp_ns()))
 
     def on_mark_price(self, event: Any) -> None:
+        self._record_engine_data_callback("MarkPriceUpdate", event)
+        # The low-volume qualification fixture preserves every callback so its
+        # arbitrary synthetic funding boundary remains directly provable.
+        # Registered production strategies override this method and retain the
+        # bounded 8-hour material grid via ``_record_material_valuation_mark``.
         self.observations["mark_price_updates"].append(
             {
                 "instrument_id": str(event.instrument_id),
@@ -296,7 +390,56 @@ class GuardedCausalStrategy(Strategy):
             },
         )
 
+    def _record_material_valuation_mark(self, event: Any) -> None:
+        """Persist the causal 8-hour valuation/funding grid, not all minute marks.
+
+        UTC-midnight daily valuation points are a subset of this grid, as are
+        Binance USD-M funding boundaries.  The complete minute source remains
+        content-bound by DatasetRelease; this bounded native callback evidence
+        is what the independent financial checker needs at each material
+        account boundary.
+        """
+
+        timestamp_ns = int(event.ts_init)
+        if (
+            self._scoring_start_ns <= timestamp_ns <= self._scoring_end_exclusive_ns
+            and timestamp_ns % EIGHT_HOURS_NS == 0
+        ):
+            self.observations["mark_price_updates"].append(
+                {
+                    "instrument_id": str(event.instrument_id),
+                    "value": str(event.value),
+                    "ts_event": int(event.ts_event),
+                    "ts_init": timestamp_ns,
+                },
+            )
+
+    def _record_material_valuation_bar(self, bar: Bar) -> None:
+        """Persist the execution Bar at each UTC daily valuation boundary."""
+
+        timestamp_ns = int(bar.ts_init)
+        if (
+            self._execution_bar_type is not None
+            and str(bar.bar_type) == str(self._execution_bar_type)
+            and self._scoring_start_ns <= timestamp_ns <= self._scoring_end_exclusive_ns
+            and timestamp_ns % (3 * EIGHT_HOURS_NS) == 0
+        ):
+            self.observations["valuation_bars"].append(
+                {
+                    "bar_type": str(bar.bar_type),
+                    "ts_event": int(bar.ts_event),
+                    "ts_init": timestamp_ns,
+                    "callback_clock_ns": int(self.clock.timestamp_ns()),
+                    "open": str(bar.open),
+                    "high": str(bar.high),
+                    "low": str(bar.low),
+                    "close": str(bar.close),
+                    "volume": str(bar.volume),
+                },
+            )
+
     def on_funding_rate(self, event: Any) -> None:
+        self._record_engine_data_callback("FundingRateUpdate", event)
         self.observations["funding_rate_updates"].append(
             {
                 "instrument_id": str(event.instrument_id),
@@ -307,6 +450,44 @@ class GuardedCausalStrategy(Strategy):
                 "ts_init": int(event.ts_init),
             },
         )
+
+    def _record_engine_data_callback(self, event_type: str, event: Any) -> None:
+        """Record bounded evidence about data that actually reached the Strategy.
+
+        Completed interval observations (Bars and marks) may be delivered at
+        ``scoring_end_exclusive``. Point funding events may not. The summary is
+        intentionally bounded and contains no duplicated market-data catalog.
+        """
+
+        if event_type not in {"Bar", "MarkPriceUpdate", "FundingRateUpdate"}:
+            raise ValueError(f"unsupported engine callback type {event_type!r}")
+        timestamp_ns = int(event.ts_init)
+        summary = self.observations["engine_data_callbacks"]
+        summary["counts"][event_type] += 1
+        latest = summary["latest_ts_init_by_type"][event_type]
+        if latest is None or timestamp_ns > int(latest):
+            summary["latest_ts_init_by_type"][event_type] = timestamp_ns
+        post_boundary = (
+            timestamp_ns >= self._scoring_end_exclusive_ns
+            if event_type == "FundingRateUpdate"
+            else timestamp_ns > self._scoring_end_exclusive_ns
+        )
+        if post_boundary:
+            summary["post_boundary_count"] += 1
+            samples = summary["post_boundary_samples"]
+            if len(samples) < 16:
+                instrument_id = (
+                    event.bar_type.instrument_id
+                    if event_type == "Bar"
+                    else event.instrument_id
+                )
+                samples.append(
+                    {
+                        "event_type": event_type,
+                        "instrument_id": str(instrument_id),
+                        "ts_init": timestamp_ns,
+                    },
+                )
 
     def _signed_position(self) -> Decimal:
         assert self._instrument_id is not None
@@ -332,6 +513,23 @@ class GuardedCausalStrategy(Strategy):
         order = self.cache.order(self._live_client_order_id)
         if order is not None and order.is_closed:
             assert self._instrument_id is not None
+            fill_events = [
+                event for event in order.events() if type(event).__name__ == "OrderFilled"
+            ]
+            if fill_events:
+                final_fill = fill_events[-1]
+                native_position = self.cache.position(final_fill.position_id)
+                if (
+                    native_position is not None
+                    and native_position.is_closed
+                    and native_position.ts_closed is not None
+                    and int(native_position.ts_closed) == int(final_fill.ts_event)
+                ):
+                    self._record_native_position_projection(
+                        event_type="PositionClosed",
+                        timestamp_ns=int(final_fill.ts_event),
+                        native_position=native_position,
+                    )
             account = self.cache.account_for_venue(self._instrument_id.venue)
             self.observations["lifecycle_clearances"].append(
                 {
@@ -407,12 +605,15 @@ class GuardedCausalStrategy(Strategy):
         now = int(self.clock.timestamp_ns())
         interval_end = int(bar.ts_init)
         interval_start = interval_end - int(bar.bar_type.spec.get_interval_ns())
-        decision_at = interval_end if decision_timestamp_ns is None else decision_timestamp_ns
-        scoring_eligibility_at = (
-            interval_start if decision_timestamp_ns is None else decision_timestamp_ns
+        decision_at = (
+            interval_end
+            if decision_timestamp_ns is None
+            else int(decision_timestamp_ns)
         )
         if decision_at < interval_end:
             raise ValueError("decision timestamp precedes signal availability")
+        if decision_at > now:
+            raise ValueError("decision timestamp is in the future of the engine clock")
         record = {
             "side": intent.side,
             "quantity": intent.quantity,
@@ -426,10 +627,11 @@ class GuardedCausalStrategy(Strategy):
         }
         self.observations["intents"].append(record)
 
-        if (
-            scoring_eligibility_at < self._scoring_start_ns
-            or scoring_eligibility_at >= self._scoring_end_exclusive_ns
-            or interval_end > decision_at
+        if not signal_interval_is_scoring_eligible(
+            interval_start_ns=interval_start,
+            interval_end_exclusive_ns=interval_end,
+            scoring_start_ns=self._scoring_start_ns,
+            scoring_end_exclusive_ns=self._scoring_end_exclusive_ns,
         ):
             self.observations["suppressed_intents"].append(
                 {**record, "reason_code": "SIGNAL_BAR_NOT_SCORING_ELIGIBLE"},
@@ -547,7 +749,11 @@ class GuardedCausalStrategy(Strategy):
                 fee_rate = Decimal(str(instrument.taker_fee))
                 money_quantum = Decimal(1).scaleb(-instrument.quote_currency.precision)
                 if spot_quote_notional is None:
-                    maximum_cost = requested * maximum_fill_price * (Decimal(1) + fee_rate)
+                    maximum_cost = spot_base_buy_maximum_cost(
+                        base_quantity=requested,
+                        maximum_fill_price=maximum_fill_price,
+                        taker_fee_rate=fee_rate,
+                    )
                     if maximum_cost > available_quote:
                         self._record_guard_failure(
                             FailureCode.SPOT_SHORT_OR_BORROW_DETECTED,
@@ -573,9 +779,11 @@ class GuardedCausalStrategy(Strategy):
                         Decimal(str(instrument.size_increment.as_decimal()))
                         * maximum_fill_price
                     )
-                    maximum_quote_notional = (
-                        (available_quote - money_quantum) / (Decimal(1) + fee_rate)
-                        - rounding_reserve
+                    maximum_quote_notional = spot_quote_buy_capacity(
+                        available_quote=available_quote,
+                        taker_fee_rate=fee_rate,
+                        commission_rounding_reserve=money_quantum,
+                        base_rounding_reserve=rounding_reserve,
                     )
                     quantity_quantum = Decimal(1).scaleb(-self._size_precision)
                     safe_quote_notional = min(spot_quote_notional, maximum_quote_notional)
@@ -646,6 +854,8 @@ class GuardedCausalStrategy(Strategy):
     def on_bar(self, bar: Bar) -> None:
         if not self._configured:
             raise RuntimeError("strategy is not configured")
+        self._record_engine_data_callback("Bar", bar)
+        self._record_material_valuation_bar(bar)
         now = int(self.clock.timestamp_ns())
         self._boundary_snapshot(now)
         self.observations["bars"].append(
@@ -694,14 +904,111 @@ class GuardedCausalStrategy(Strategy):
                 },
             )
 
-    def _record_position(self, event: Any) -> None:
+    def _record_native_position_projection(
+        self,
+        *,
+        event_type: str,
+        timestamp_ns: int,
+        native_position: Any,
+    ) -> None:
+        if event_type == "PositionClosed":
+            # Deep-copy the public native ``Position.to_dict`` payload.  This
+            # is an immutable event snapshot, not a project financial
+            # reconstruction.  Keeping the cache object itself would allow a
+            # later reopen to mutate historical close fields.
+            snapshot = copy.deepcopy(native_position.to_dict())
+            if snapshot.get("side") != "FLAT" or snapshot.get("ts_closed") is None:
+                raise RuntimeError("detached PositionClosed snapshot is not closed")
+            snapshot_key = (
+                str(snapshot["position_id"]),
+                int(snapshot["ts_closed"]),
+            )
+            existing_keys = {
+                (str(item["position_id"]), int(item["ts_closed"]))
+                for item in self._native_completed_position_snapshots
+            }
+            if snapshot_key not in existing_keys:
+                self._native_completed_position_snapshots.append(snapshot)
+
+        quantity = Decimal(str(native_position.quantity.as_decimal()))
+        signed_position = (
+            quantity
+            if native_position.is_long
+            else -quantity
+            if native_position.is_short
+            else Decimal(0)
+        )
+        if any(
+            item["event_type"] == event_type
+            and int(item["timestamp_ns"]) == timestamp_ns
+            and item["native_position_id"] == str(native_position.id)
+            for item in self.observations["position_sequence"]
+        ):
+            return
         self.observations["position_sequence"].append(
             {
-                "event_type": type(event).__name__,
-                "timestamp_ns": int(event.ts_event),
-                "signed_position": str(self._signed_position()),
+                "event_type": event_type,
+                "timestamp_ns": timestamp_ns,
+                "signed_position": str(signed_position),
+                "native_position_id": str(native_position.id),
+                "native_side": str(native_position.side),
+                "native_quantity": str(native_position.quantity),
+                "native_signed_quantity": str(signed_position),
+                "native_avg_px_open": str(native_position.avg_px_open),
+                "native_realized_pnl": str(native_position.realized_pnl),
             },
         )
+
+    def _record_position(self, event: Any) -> None:
+        # Persist the native Position object which Nautilus has just mutated,
+        # not a project-derived reconstruction.  These fields let the
+        # read-only Perpetual reconciler bind every Fill to the executor's
+        # actual NETTING state transition (average entry and cumulative
+        # realized PnL included).
+        native_position = self.cache.position(event.position_id)
+        if native_position is None:
+            raise RuntimeError("native Position event has no cache snapshot")
+        self._record_native_position_projection(
+            event_type=type(event).__name__,
+            timestamp_ns=int(event.ts_event),
+            native_position=native_position,
+        )
+
+    def finalize_native_position_evidence(self) -> None:
+        """Capture a terminal close which has no later strategy callback."""
+
+        if self._instrument_id is None:
+            return
+        for order in self.cache.orders(instrument_id=self._instrument_id):
+            if not order.is_closed:
+                continue
+            fills = [
+                event for event in order.events() if type(event).__name__ == "OrderFilled"
+            ]
+            if not fills:
+                continue
+            final_fill = fills[-1]
+            native_position = self.cache.position(final_fill.position_id)
+            if (
+                native_position is not None
+                and native_position.is_closed
+                and native_position.ts_closed is not None
+                and int(native_position.ts_closed) == int(final_fill.ts_event)
+            ):
+                self._record_native_position_projection(
+                    event_type="PositionClosed",
+                    timestamp_ns=int(final_fill.ts_event),
+                    native_position=native_position,
+                )
+        # Preserve native callback/fill order exactly.  Multiple partial fills
+        # can share one timestamp; sorting by event name would invert
+        # PositionOpened and PositionChanged and manufacture a false ledger.
+
+    @property
+    def native_completed_position_snapshots(self) -> tuple[dict[str, Any], ...]:
+        """Return detached native callback snapshots for read-only capture."""
+
+        return tuple(self._native_completed_position_snapshots)
 
     def on_position_opened(self, event: Any) -> None:
         self._record_position(event)
@@ -778,9 +1085,11 @@ class FirstEligibleBarQualificationFixture(GuardedCausalStrategy):
             return
         interval_end = int(bar.ts_init)
         interval_start = interval_end - ONE_MINUTE_NS
-        if (
-            interval_start >= self._scoring_start_ns
-            and interval_end <= self._scoring_end_exclusive_ns
+        if signal_interval_is_scoring_eligible(
+            interval_start_ns=interval_start,
+            interval_end_exclusive_ns=interval_end,
+            scoring_start_ns=self._scoring_start_ns,
+            scoring_end_exclusive_ns=self._scoring_end_exclusive_ns,
         ):
             self._fixture_attempted = True
             self._submit_guarded(

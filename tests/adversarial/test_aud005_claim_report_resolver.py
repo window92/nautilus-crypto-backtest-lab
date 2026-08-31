@@ -38,7 +38,8 @@ def _asserted_claim(*, synthetic: bool) -> ClaimEvaluationInput:
     return ClaimEvaluationInput(
         protocol=protocol,
         mechanical_integrity=MechanicalIntegrity.PASS,
-        checker_result="CHECK_PASS",
+        checker_result="COMPONENT_CHECK_PASS",
+        official_seal_result="OFFICIAL_SEAL_PASS",
         underlying_official_runs_valid=True,
         qualification_only=False,
         protocol_frozen_before_results=True,
@@ -301,7 +302,11 @@ class Aud005ClaimReportResolverTests(unittest.TestCase):
             )
             resolver = object.__new__(OfficialEvidenceResolver)
             with self.assertRaisesRegex(ResearchError, "manifest mismatch"):
-                resolver._verify_manifest(run_dir, "symlink-run")
+                resolver._verify_manifest(
+                    run_dir,
+                    "symlink-run",
+                    allow_legacy_v1=True,
+                )
 
 
 if __name__ == "__main__":
