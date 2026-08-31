@@ -1035,6 +1035,42 @@ def _semantic_event(event: dict[str, Any]) -> dict[str, Any]:
     return result
 
 
+def _semantic_position_sequence(
+    position_rows: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Replace process-local Position IDs with stable occurrence identities.
+
+    The pinned runtime derives the NETTING Position ID from the Strategy ID,
+    whose qualification-only DataActor suffix contains a process memory
+    address.  The exact native ID remains untouched in ``positions.csv`` and
+    the native lifecycle Evidence.  Only the deterministic replay projection
+    replaces it, while preserving equality/inequality relationships between
+    every occurrence of a native Position ID.
+    """
+
+    occurrence_by_native_id: dict[str, str] = {}
+    semantic_rows: list[dict[str, Any]] = []
+    for row in position_rows:
+        native_position_id = str(row["position_id"])
+        if native_position_id not in occurrence_by_native_id:
+            occurrence_by_native_id[native_position_id] = (
+                f"POSITION_OCCURRENCE_{len(occurrence_by_native_id) + 1:06d}"
+            )
+        semantic_rows.append(
+            {
+                "row_type": row["row_type"],
+                "ts_event": row["ts_event"],
+                "instrument_id": row["instrument_id"],
+                "position_id": occurrence_by_native_id[native_position_id],
+                "signed_qty": row["signed_qty"],
+                "quantity": row["quantity"],
+                "avg_px_open": row["avg_px_open"],
+                "realized_pnl": row["realized_pnl"],
+            },
+        )
+    return semantic_rows
+
+
 def _money_projection(value: Any) -> dict[str, str]:
     return {
         "amount": str(value.as_decimal()),
@@ -1319,22 +1355,7 @@ def _capture_engine(
     semantic = {
         "orders": [_semantic_event(event) for event in order_events],
         "fills": [_semantic_event(event) for event in fill_events],
-        "positions": [
-            {
-                key: row[key]
-                for key in (
-                    "row_type",
-                    "ts_event",
-                    "instrument_id",
-                    "position_id",
-                    "signed_qty",
-                    "quantity",
-                    "avg_px_open",
-                    "realized_pnl",
-                )
-            }
-            for row in position_rows
-        ],
+        "positions": _semantic_position_sequence(position_rows),
         "account_events": [_semantic_event(event) for event in account_events],
         "funding": [_semantic_event(event) for event in funding_events],
         "native_completed_positions": [

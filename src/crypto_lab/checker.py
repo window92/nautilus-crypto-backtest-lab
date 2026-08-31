@@ -280,6 +280,36 @@ def _independent_semantic_order_event(event: dict[str, Any]) -> dict[str, Any]:
     return {key: value for key, value in event.items() if key not in excluded}
 
 
+def _independent_semantic_position_sequence(
+    position_rows: list[dict[str, str]],
+) -> list[dict[str, Any]]:
+    """Independently rebuild the replay-stable Position projection."""
+
+    occurrence_by_native_id: dict[str, str] = {}
+    semantic_rows: list[dict[str, Any]] = []
+    for row in position_rows:
+        native_position_id = row.get("position_id", "")
+        if not native_position_id:
+            raise ValueError("position projection has an empty native Position ID")
+        if native_position_id not in occurrence_by_native_id:
+            occurrence_by_native_id[native_position_id] = (
+                f"POSITION_OCCURRENCE_{len(occurrence_by_native_id) + 1:06d}"
+            )
+        semantic_rows.append(
+            {
+                "row_type": row["row_type"],
+                "ts_event": int(row["ts_event"]),
+                "instrument_id": row["instrument_id"],
+                "position_id": occurrence_by_native_id[native_position_id],
+                "signed_qty": row["signed_qty"],
+                "quantity": row["quantity"],
+                "avg_px_open": row["avg_px_open"],
+                "realized_pnl": row["realized_pnl"],
+            },
+        )
+    return semantic_rows
+
+
 def _validate_execution_chain(
     *,
     result: dict[str, Any],
@@ -540,6 +570,13 @@ def _validate_execution_chain(
         ]
         if semantic.get("orders") != expected_semantic_orders:
             errors.append("SEMANTIC_NATIVE_ORDER_PROJECTION_MISMATCH")
+        try:
+            expected_semantic_positions = _independent_semantic_position_sequence(positions)
+        except Exception:
+            errors.append("SEMANTIC_NATIVE_POSITION_PROJECTION_INVALID")
+        else:
+            if semantic.get("positions") != expected_semantic_positions:
+                errors.append("SEMANTIC_NATIVE_POSITION_PROJECTION_MISMATCH")
         backtest = result.get("backtest_result")
         if (
             not isinstance(backtest, dict)
