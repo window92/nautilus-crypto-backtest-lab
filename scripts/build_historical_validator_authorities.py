@@ -71,11 +71,11 @@ _CURRENT_ARGUMENTS = {
     ),
     "validate_instrument_representation_continuity.py": (
         "--historical-database",
-        "{repository}/data/duckdb/free-official-binance-data-duckdb-001/primary-v4.duckdb",
+        "data/duckdb/free-official-binance-data-duckdb-001/primary-v4.duckdb",
         "--repaired-database",
-        "{repository}/data/duckdb/instrument-representation-funding-checker-001/primary-v6.duckdb",
+        "data/duckdb/instrument-representation-funding-checker-001/primary-v6.duckdb",
         "--output",
-        "{repository}/data/duckdb/instrument-representation-funding-checker-001/value-continuity-v1.json",
+        "data/duckdb/instrument-representation-funding-checker-001/value-continuity-v1.json",
     ),
 }
 _CURRENT_TRACKED_DEPENDENCIES = (

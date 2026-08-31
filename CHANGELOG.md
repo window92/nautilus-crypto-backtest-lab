@@ -46,7 +46,9 @@ remains `SSOT.md`; this file does not change normative behavior.
   hardlinks, and pinned modules retain standard `__file__`/origin semantics.
   Each authority also binds the exact exit/status/stdout/stderr observation;
   matching a pinned historical `FAIL` proves rejection rather than being
-  relabeled as PASS. Normal merge ancestry is required.
+  relabeled as PASS. Historical path arguments which appear in validator
+  output are repository-relative so a random snapshot root cannot make the
+  output digest nondeterministic. Normal merge ancestry is required.
 - Added a standard-library isolated startup authority before Product Code or
   site-package import. The Official child uses safe isolated flags, an exact
   environment and `sys.path`, and content-addressed Python, Product,

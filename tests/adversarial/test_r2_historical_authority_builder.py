@@ -392,6 +392,21 @@ class HistoricalAuthorityBuilderTests(unittest.TestCase):
         )
         self.assertTrue(first["validators"]["validate_m2_evidence.py"]["external_files"])
         self.assertFalse(first["validators"]["validate_m1_evidence.py"]["external_files"])
+        continuity_arguments = first["validators"][
+            "validate_instrument_representation_continuity.py"
+        ]["arguments"]
+        self.assertEqual(
+            continuity_arguments,
+            [
+                "--historical-database",
+                "data/duckdb/free-official-binance-data-duckdb-001/primary-v4.duckdb",
+                "--repaired-database",
+                "data/duckdb/instrument-representation-funding-checker-001/primary-v6.duckdb",
+                "--output",
+                "data/duckdb/instrument-representation-funding-checker-001/value-continuity-v1.json",
+            ],
+        )
+        self.assertFalse(any("{repository}" in value for value in continuity_arguments))
         self.assertTrue(
             all(
                 value["expected_stdout_sha256"] == self.fixture.expected_stdout_sha256

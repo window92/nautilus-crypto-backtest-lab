@@ -194,7 +194,10 @@ gate succeeds only when all fourteen pinned executions match their complete
 output contracts, while it reports independently how many historical Evidence
 sets the pinned validators actually accept. It does not assume an all-PASS
 past. In particular, an exact reproducible `FAIL` is evidence of historical
-rejection, not a gate failure and not a financial or Official PASS.
+rejection, not a gate failure and not a financial or Official PASS. Validator
+path arguments which are reflected in stdout are bound as canonical
+repository-relative targets; the random isolated snapshot directory therefore
+cannot change the output digest.
 
 ## Acceptance evidence
 
