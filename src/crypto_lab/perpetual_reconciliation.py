@@ -209,13 +209,140 @@ def _append(errors: list[str], code: str) -> None:
         errors.append(code)
 
 
+def validate_perpetual_native_account_projection(
+    *,
+    native_account_events: Any,
+    account_rows: list[dict[str, str]],
+    instrument_id: str,
+    settlement_currency: str,
+) -> tuple[bool, dict[str, Any]]:
+    """Bind the human account projection to exact native ``AccountState`` events.
+
+    The pinned MarginAccount exposes maintenance margin through both the
+    native ``margins`` collection and ``AccountBalance.locked``.  Preserve and
+    cross-check that native relationship instead of treating the CSV as an
+    independent assertion.
+    """
+
+    errors: list[str] = []
+    projected: list[dict[str, str]] = []
+    account_id: str | None = None
+    if not isinstance(native_account_events, list):
+        return False, {
+            "errors": ["PERP_NATIVE_ACCOUNT_EVENTS_INVALID"],
+            "native_account_event_count": -1,
+            "projected_account_row_count": len(account_rows),
+        }
+    for event_index, event in enumerate(native_account_events):
+        try:
+            if not isinstance(event, dict) or set(event) != {
+                "account_id",
+                "account_type",
+                "balances",
+                "base_currency",
+                "info",
+                "margins",
+                "reported",
+                "ts_event",
+                "ts_init",
+                "type",
+            }:
+                raise ValueError("native AccountState field set mismatch")
+            if (
+                event.get("type") != "AccountState"
+                or event.get("account_type") != "MARGIN"
+                or event.get("base_currency") != "None"
+                or not isinstance(event.get("reported"), bool)
+                or event.get("info") != {}
+                or int(event["ts_event"]) < 0
+                or int(event["ts_init"]) != int(event["ts_event"])
+            ):
+                raise ValueError("native AccountState role mismatch")
+            current_account_id = str(event["account_id"])
+            if not current_account_id or (
+                account_id is not None and current_account_id != account_id
+            ):
+                raise ValueError("native AccountState account changed")
+            account_id = current_account_id
+            balances = event["balances"]
+            margins = event["margins"]
+            if not isinstance(balances, list) or len(balances) != 1:
+                raise ValueError("native settlement balance cardinality mismatch")
+            if not isinstance(margins, list):
+                raise ValueError("native margin collection is invalid")
+            balance = balances[0]
+            if not isinstance(balance, dict) or set(balance) != {
+                "currency",
+                "free",
+                "locked",
+                "total",
+                "type",
+            }:
+                raise ValueError("native AccountBalance field set mismatch")
+            if (
+                balance.get("type") != "AccountBalance"
+                or balance.get("currency") != settlement_currency
+            ):
+                raise ValueError("native AccountBalance currency mismatch")
+            total = _decimal_text(balance["total"])
+            locked = _decimal_text(balance["locked"])
+            free = _decimal_text(balance["free"])
+            if total != locked + free or min(total, locked, free) < 0:
+                raise ValueError("native AccountBalance components mismatch")
+            maintenance_total = Decimal(0)
+            for margin in margins:
+                if not isinstance(margin, dict) or set(margin) != {
+                    "currency",
+                    "initial",
+                    "instrument_id",
+                    "maintenance",
+                    "type",
+                }:
+                    raise ValueError("native MarginBalance field set mismatch")
+                initial = _decimal_text(margin["initial"])
+                maintenance = _decimal_text(margin["maintenance"])
+                if (
+                    margin.get("type") != "MarginBalance"
+                    or margin.get("instrument_id") != instrument_id
+                    or margin.get("currency") != settlement_currency
+                    or initial < 0
+                    or maintenance < 0
+                ):
+                    raise ValueError("native MarginBalance role mismatch")
+                maintenance_total += maintenance
+            if maintenance_total != locked:
+                raise ValueError("native maintenance margin differs from locked balance")
+            projected.append(
+                {
+                    "event_index": str(event_index),
+                    "ts_event": str(event["ts_event"]),
+                    "account_id": current_account_id,
+                    "account_type": "MARGIN",
+                    "currency": settlement_currency,
+                    "total": str(balance["total"]),
+                    "locked": str(balance["locked"]),
+                    "free": str(balance["free"]),
+                    "reported": str(event["reported"]),
+                },
+            )
+        except Exception:
+            _append(errors, "PERP_NATIVE_ACCOUNT_EVENTS_INVALID")
+    if projected != account_rows:
+        _append(errors, "PERP_NATIVE_ACCOUNT_PROJECTION_MISMATCH")
+    return not errors, {
+        "errors": errors,
+        "native_account_event_count": len(native_account_events),
+        "projected_account_row_count": len(account_rows),
+    }
+
+
 def _account_changes(
     rows: list[dict[str, str]],
     *,
     settlement_currency: str,
     initial_balance: Decimal,
     transitions: list[_AccountTransition],
-    margin_init: Decimal,
+    margin_maint: Decimal,
     multiplier: Decimal,
     money_quantum: Decimal,
     errors: list[str],
@@ -232,7 +359,7 @@ def _account_changes(
         _append(errors, "PERP_ACCOUNT_EVIDENCE_EMPTY")
         return {}, Decimal(0), 0
 
-    states: list[tuple[int, Decimal, Decimal, Decimal]] = []
+    states: list[tuple[int, int, Decimal, Decimal, Decimal, str]] = []
     account_id: str | None = None
     for index in sorted(grouped):
         group = grouped[index]
@@ -247,15 +374,16 @@ def _account_changes(
             total = _decimal_text(row["total"])
             locked = _decimal_text(row["locked"])
             free = _decimal_text(row["free"])
+            reported = str(row["reported"])
         except Exception:
             _append(errors, "PERP_ACCOUNT_BALANCE_INVALID")
             continue
         if (
             row.get("account_type") != "MARGIN"
             or row.get("currency") != settlement_currency
-            or row.get("reported") not in {"True", "False"}
-            or (index == 0 and (timestamp != 0 or row.get("reported") != "True"))
-            or (index > 0 and row.get("reported") != "False")
+            or reported not in {"True", "False"}
+            or timestamp < 0
+            or (index == 0 and reported != "True")
             or total != locked + free
             or locked < 0
             or free < 0
@@ -267,23 +395,41 @@ def _account_changes(
                 _append(errors, "PERP_ACCOUNT_ID_CHANGED")
         elif row.get("account_id") != account_id:
             _append(errors, "PERP_ACCOUNT_ID_CHANGED")
-        states.append((timestamp, total, locked, free))
+        states.append((index, timestamp, total, locked, free, reported))
 
     if not states:
         return {}, Decimal(0), 0
-    if states[0][1] != initial_balance:
+    if states[0][2] != initial_balance:
         _append(errors, "PERP_INITIAL_ACCOUNT_BALANCE_MISMATCH")
-    if states[0][2] != 0 or states[0][3] != initial_balance:
+    if states[0][3] != 0 or states[0][4] != initial_balance:
         _append(errors, "PERP_ACCOUNT_MARGIN_STATE_MISMATCH")
-    if [item[0] for item in states] != sorted(item[0] for item in states):
+    if [item[1] for item in states] != sorted(item[1] for item in states):
         _append(errors, "PERP_ACCOUNT_TIMESTAMP_ORDER_INVALID")
+    if transitions and states[0][1] > transitions[0].timestamp_ns:
+        _append(errors, "PERP_ACCOUNT_TRANSITION_MISSING")
 
     changes: dict[int, Decimal] = defaultdict(Decimal)
-    previous = states[0][1]
+    previous = states[0][2]
     signed_position = Decimal(0)
     average_entry = Decimal(0)
     transition_index = 0
-    for timestamp, total, locked, free in states[1:]:
+    pending_report_mirror: tuple[int, Decimal, Decimal, Decimal] | None = None
+    for _index, timestamp, total, locked, free, reported in states[1:]:
+        state_core = (timestamp, total, locked, free)
+        if pending_report_mirror is not None:
+            if state_core == pending_report_mirror and reported == "False":
+                pending_report_mirror = None
+                expected_locked = (
+                    abs(signed_position)
+                    * average_entry
+                    * multiplier
+                    * margin_maint
+                ).quantize(money_quantum)
+                if locked != expected_locked or free != total - expected_locked:
+                    _append(errors, "PERP_ACCOUNT_MARGIN_STATE_MISMATCH")
+                continue
+            _append(errors, "PERP_ACCOUNT_COMPONENT_MISMATCH")
+            pending_report_mirror = None
         while (
             transition_index < len(transitions)
             and transitions[transition_index].timestamp_ns < timestamp
@@ -309,7 +455,7 @@ def _account_changes(
                 abs(candidate.signed_position)
                 * candidate.average_entry
                 * multiplier
-                * margin_init
+                * margin_maint
             ).quantize(money_quantum)
             if total == candidate_total and locked == candidate_locked:
                 if total != previous:
@@ -319,22 +465,30 @@ def _account_changes(
                 average_entry = candidate.average_entry
                 transition_index += 1
                 consumed = True
+                if reported == "True":
+                    pending_report_mirror = state_core
 
         expected_locked = (
             abs(signed_position)
             * average_entry
             * multiplier
-            * margin_init
+            * margin_maint
         ).quantize(money_quantum)
         if total != previous:
             _append(errors, "PERP_ACCOUNT_DELTA_MISMATCH")
             previous = total
+        elif not consumed:
+            _append(errors, "PERP_ACCOUNT_COMPONENT_MISMATCH")
+        if reported == "True" and not consumed:
+            _append(errors, "PERP_ACCOUNT_COMPONENT_MISMATCH")
         if locked != expected_locked or free != total - expected_locked:
             _append(errors, "PERP_ACCOUNT_MARGIN_STATE_MISMATCH")
 
+    if pending_report_mirror is not None:
+        _append(errors, "PERP_ACCOUNT_COMPONENT_MISMATCH")
     if transition_index != len(transitions):
         _append(errors, "PERP_ACCOUNT_TRANSITION_MISSING")
-    return dict(changes), states[-1][1], len(states)
+    return dict(changes), states[-1][2], len(states)
 
 
 def validate_perpetual_reconciliation(
@@ -353,7 +507,7 @@ def validate_perpetual_reconciliation(
     initial_balance: Decimal,
     taker_fee: Decimal,
     quantity_increment: Decimal,
-    margin_init: Decimal,
+    margin_maint: Decimal,
     multiplier: Decimal,
     money_quantum: Decimal,
     scoring_end_exclusive_ns: int,
@@ -374,7 +528,7 @@ def validate_perpetual_reconciliation(
         or initial_balance <= 0
         or taker_fee < 0
         or quantity_increment <= 0
-        or margin_init <= 0
+        or margin_maint <= 0
         or multiplier <= 0
         or money_quantum <= 0
         or scoring_end_exclusive_ns <= 0
@@ -940,7 +1094,7 @@ def validate_perpetual_reconciliation(
         settlement_currency=settlement_currency,
         initial_balance=initial_balance,
         transitions=expected_account_transitions,
-        margin_init=margin_init,
+        margin_maint=margin_maint,
         multiplier=multiplier,
         money_quantum=money_quantum,
         errors=errors,

@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import copy
+import csv
+import json
 import unittest
 from decimal import Decimal
+from pathlib import Path
 
 from crypto_lab.hashing import canonical_sha256
 from crypto_lab.native_positions import NATIVE_COMPLETED_DIRECT_SEQUENCE_SOURCE
@@ -10,6 +13,7 @@ from crypto_lab.native_positions import NativeCommission
 from crypto_lab.native_positions import NativeCompletedPositionUnit
 from crypto_lab.native_positions import NativeCompletedPositionSequence
 from crypto_lab.perpetual_reconciliation import replay_perpetual_valuation_states
+from crypto_lab.perpetual_reconciliation import validate_perpetual_native_account_projection
 from crypto_lab.perpetual_reconciliation import validate_perpetual_reconciliation
 
 
@@ -313,7 +317,7 @@ class PerpetualReconciliationAdversarialTests(unittest.TestCase):
             "initial_balance": Decimal("1000.00000000"),
             "taker_fee": Decimal("0.001"),
             "quantity_increment": Decimal("0.001"),
-            "margin_init": Decimal("0.025"),
+            "margin_maint": Decimal("0.025"),
             "multiplier": Decimal("1"),
             "money_quantum": Decimal("0.00000001"),
             "scoring_end_exclusive_ns": 10,
@@ -332,6 +336,164 @@ class PerpetualReconciliationAdversarialTests(unittest.TestCase):
         self.assertEqual(report.detail["realized_pnl"], "15.73666667")
         self.assertEqual(report.detail["unrealized_pnl"], "53.33333333")
         self.assertEqual(report.detail["ending_equity"], "1069.07000000")
+
+    def test_native_reported_account_pair_is_bound_without_double_counting(self) -> None:
+        rows = copy.deepcopy(self.accounts)
+        rows[3]["reported"] = "True"
+        mirror = copy.deepcopy(rows[3])
+        mirror["event_index"] = "4"
+        mirror["reported"] = "False"
+        rows.insert(4, mirror)
+        rows[5]["event_index"] = "5"
+        report = self._run(account_rows=rows)
+        self.assertTrue(report.passed, report.errors)
+
+        rows[4]["free"] = "998.19000000"
+        self.assertRejected("PERP_ACCOUNT_COMPONENT_MISMATCH", account_rows=rows)
+
+    def test_native_account_projection_binds_margin_and_csv_rows(self) -> None:
+        native_events = []
+        for row in self.accounts:
+            locked = Decimal(row["locked"])
+            native_events.append(
+                {
+                    "account_id": row["account_id"],
+                    "account_type": "MARGIN",
+                    "balances": [
+                        {
+                            "currency": "USDT",
+                            "free": row["free"],
+                            "locked": row["locked"],
+                            "total": row["total"],
+                            "type": "AccountBalance",
+                        },
+                    ],
+                    "base_currency": "None",
+                    "info": {},
+                    "margins": []
+                    if locked == 0
+                    else [
+                        {
+                            "currency": "USDT",
+                            "initial": "0.00000000",
+                            "instrument_id": "BTCUSDT-PERP.BINANCE",
+                            "maintenance": row["locked"],
+                            "type": "MarginBalance",
+                        },
+                    ],
+                    "reported": row["reported"] == "True",
+                    "ts_event": int(row["ts_event"]),
+                    "ts_init": int(row["ts_event"]),
+                    "type": "AccountState",
+                },
+            )
+        passed, detail = validate_perpetual_native_account_projection(
+            native_account_events=native_events,
+            account_rows=self.accounts,
+            instrument_id="BTCUSDT-PERP.BINANCE",
+            settlement_currency="USDT",
+        )
+        self.assertTrue(passed, detail)
+
+        native_events[1]["margins"][0]["maintenance"] = "6.00000000"
+        passed, detail = validate_perpetual_native_account_projection(
+            native_account_events=native_events,
+            account_rows=self.accounts,
+            instrument_id="BTCUSDT-PERP.BINANCE",
+            settlement_currency="USDT",
+        )
+        self.assertFalse(passed)
+        self.assertIn("PERP_NATIVE_ACCOUNT_EVENTS_INVALID", detail["errors"])
+
+        native_events[1]["margins"][0]["maintenance"] = self.accounts[1]["locked"]
+        native_events[1]["base_currency"] = "BTC"
+        passed, detail = validate_perpetual_native_account_projection(
+            native_account_events=native_events,
+            account_rows=self.accounts,
+            instrument_id="BTCUSDT-PERP.BINANCE",
+            settlement_currency="USDT",
+        )
+        self.assertFalse(passed)
+        self.assertIn("PERP_NATIVE_ACCOUNT_EVENTS_INVALID", detail["errors"])
+
+    def test_retained_native_benchmark_account_shape_reconciles_exactly(self) -> None:
+        """Exercise the real rc2 reported/unreported funding AccountState pairs."""
+
+        root = Path(__file__).resolve().parents[2]
+        run = root / (
+            "runs/adversarial-remediation-002-retry-002-perpetual-benchmark-"
+            "run-d97648d2fd36"
+        )
+        result = json.loads((run / "nautilus_result.json").read_text(encoding="utf-8"))
+        config = json.loads((run / "lab_run_config.json").read_text(encoding="utf-8"))
+
+        def rows(name: str) -> list[dict[str, str]]:
+            with (run / name).open(encoding="utf-8", newline="") as stream:
+                return list(csv.DictReader(stream))
+
+        instrument = result["dataset_contract"]["instrument"]
+        self.assertEqual(instrument["margin_init"], "0.0500")
+        self.assertEqual(instrument["margin_maint"], "0.0250")
+        accounts = rows("account.csv")
+        self.assertEqual(len(accounts), 1086)
+        self.assertEqual(
+            sum(row["reported"] == "True" for row in accounts),
+            543,
+        )
+        projection_ok, projection_detail = validate_perpetual_native_account_projection(
+            native_account_events=result["semantic_sequence"]["account_events"],
+            account_rows=accounts,
+            instrument_id="BTCUSDT-PERP.BINANCE",
+            settlement_currency="USDT",
+        )
+        self.assertTrue(projection_ok, projection_detail)
+
+        arguments = {
+            "fills": rows("fills.csv"),
+            "account_rows": accounts,
+            "position_rows": rows("positions.csv"),
+            "funding_rows": rows("funding.csv"),
+            "native_completed_trades": json.loads(
+                (run / "native_completed_trades.json").read_text(encoding="utf-8"),
+            ),
+            "native_closed_position_snapshots": result["native_closed_position_snapshots"],
+            "terminal_portfolio": result["terminal_portfolio"],
+            "terminal_mark": {
+                "instrument_id": "BTCUSDT-PERP.BINANCE",
+                "value": "41445.30000000",
+                "ts_event": 1627776000000000000,
+                "ts_init": 1627776000000000000,
+            },
+            "run_id": config["run_id"],
+            "instrument_id": config["instrument_id"],
+            "settlement_currency": "USDT",
+            "initial_balance": Decimal("10000.00000000"),
+            "taker_fee": Decimal("0.001"),
+            "quantity_increment": Decimal("0.001"),
+            "margin_maint": Decimal(instrument["margin_maint"]),
+            "multiplier": Decimal(instrument["multiplier"]),
+            "money_quantum": Decimal("0.00000001"),
+            "scoring_end_exclusive_ns": 1627776000000000000,
+        }
+        report = validate_perpetual_reconciliation(**arguments)
+        self.assertTrue(report.passed, report.errors)
+        self.assertEqual(report.detail["reconciled_account_delta_count"], 543)
+        self.assertEqual(report.detail["funding_settlement_count"], 542)
+        self.assertEqual(report.detail["realized_pnl"], "-2772.75946187")
+        self.assertEqual(report.detail["unrealized_pnl"], "2526.78870000")
+        self.assertEqual(report.detail["ending_equity"], "9754.02923813")
+
+        wrong_margin_semantics = validate_perpetual_reconciliation(
+            **{
+                **arguments,
+                "margin_maint": Decimal(instrument["margin_init"]),
+            },
+        )
+        self.assertFalse(wrong_margin_semantics.passed)
+        self.assertIn(
+            "PERP_ACCOUNT_MARGIN_STATE_MISMATCH",
+            wrong_margin_semantics.errors,
+        )
 
     def test_no_fill_no_position_run_reconciles_without_inventing_state(self) -> None:
         terminal = {

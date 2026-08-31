@@ -38,6 +38,7 @@ from crypto_lab.hashing import canonical_sha256
 from crypto_lab.hashing import sha256_file
 from crypto_lab.git_identity import verify_source_revision
 from crypto_lab.profile_authority import validate_persisted_profile_authority
+from crypto_lab.perpetual_reconciliation import validate_perpetual_native_account_projection
 from crypto_lab.perpetual_reconciliation import validate_perpetual_reconciliation
 from crypto_lab.runtime import validate_persisted_runtime_identity
 from crypto_lab.status import FailureCode
@@ -2866,6 +2867,23 @@ def check_evidence_directory(
                 )
                 if not 0 <= settlement_precision <= 18:
                     raise ValueError("settlement currency precision is invalid")
+                native_account_ok, native_account_detail = (
+                    validate_perpetual_native_account_projection(
+                        native_account_events=result["semantic_sequence"]["account_events"],
+                        account_rows=account_rows,
+                        instrument_id=config.instrument_id,
+                        settlement_currency=settlement_currency,
+                    )
+                )
+                checks.append(
+                    {
+                        "name": "perpetual_native_account_projection",
+                        "pass": native_account_ok,
+                        **native_account_detail,
+                    },
+                )
+                if not native_account_ok:
+                    failures.append(FailureCode.PERPETUAL_RECONCILIATION_FAILURE.value)
                 reconciliation = validate_perpetual_reconciliation(
                     fills=fills,
                     account_rows=account_rows,
@@ -2890,7 +2908,7 @@ def check_evidence_directory(
                     initial_balance=config.initial_capital.amount,
                     taker_fee=config.fee_assumption.taker_fee,
                     quantity_increment=Decimal(str(instrument_contract["size_increment"])),
-                    margin_init=Decimal(str(instrument_contract["margin_init"])),
+                    margin_maint=Decimal(str(instrument_contract["margin_maint"])),
                     multiplier=Decimal(str(instrument_contract["multiplier"])),
                     money_quantum=Decimal(1).scaleb(-settlement_precision),
                     scoring_end_exclusive_ns=scoring_end_ns,
