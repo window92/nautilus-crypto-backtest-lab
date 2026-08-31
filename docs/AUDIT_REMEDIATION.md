@@ -40,10 +40,13 @@ The remediation separates five meanings that older reports could blur:
 Historical validator v2 binds the exact source commit/tree, entrypoint,
 wrapper, schemas, executable closure, arguments, isolated interpreter profile,
 and external file dependencies. It materializes and executes those exact bytes
-from an independent snapshot. A normal merge preserves every bound commit and
-object ID in ancestry. Squash omits commits and rebase creates different IDs;
-both therefore fail closed. No historical Commit or Evidence may be deleted or
-rewritten.
+from an independent snapshot. Pinned imports preserve standard `__file__` and
+module-origin semantics, and every external input is copied into a distinct
+read-only inode so the validator cannot escape through a symlink or mutate the
+authoritative source through a hardlink. A normal merge preserves every bound
+commit and object ID in ancestry. Squash omits commits and rebase creates
+different IDs; both therefore fail closed. No historical Commit or Evidence
+may be deleted or rewritten.
 
 ## Historical-result policy
 

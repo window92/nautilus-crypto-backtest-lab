@@ -41,8 +41,10 @@ remains `SSOT.md`; this file does not change normative behavior.
 - Replaced legacy input-only historical snapshots as executable authority with
   validator v2 bindings over source commit/tree, entrypoint, wrapper, schemas,
   executable closure, arguments, and external file dependencies. Historical
-  validators execute from isolated immutable snapshots; normal merge ancestry
-  is required.
+  validators execute from isolated immutable snapshots; external inputs are
+  independent read-only copies rather than source-mutable symlinks or
+  hardlinks, and pinned modules retain standard `__file__`/origin semantics.
+  Normal merge ancestry is required.
 - Added a standard-library isolated startup authority before Product Code or
   site-package import. The Official child uses safe isolated flags, an exact
   environment and `sys.path`, and content-addressed Python, Product,

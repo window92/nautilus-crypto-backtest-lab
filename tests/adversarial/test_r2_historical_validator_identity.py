@@ -67,11 +67,22 @@ from pathlib import Path
 from crypto_lab.historical_wrapper import classify
 
 
-value = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+input_path = Path(sys.argv[1])
+value = json.loads(input_path.read_text(encoding="utf-8"))
+root = Path(__file__).resolve().parents[1]
+isolated_regular = (
+    not input_path.is_symlink()
+    and input_path.resolve().is_relative_to(root)
+)
 if value.get("mutate_tracked") is True:
-    root = Path(__file__).resolve().parents[1]
     (root / "src/crypto_lab/__init__.py").write_text("mutated by validator\\n", encoding="utf-8")
-print(json.dumps({"status": classify(value)}, sort_keys=True, separators=(",", ":")))
+if value.get("mutate_external") is True:
+    input_path.chmod(0o600)
+    input_path.write_text("mutated by validator\\n", encoding="utf-8")
+status = classify(value)
+if value.get("require_isolated_regular") is True and not isolated_regular:
+    status = "FAIL"
+print(json.dumps({"status": status}, sort_keys=True, separators=(",", ":")))
 """,
         )
         _git(self.repository, "add", ".")
@@ -235,6 +246,51 @@ class HistoricalValidatorIdentityTests(unittest.TestCase):
         self.assertEqual(self.fixture.invalid_evidence.read_bytes(), before)
         after_stat = self.fixture.invalid_evidence.stat()
         self.assertEqual((after_stat.st_dev, after_stat.st_ino), (before_stat.st_dev, before_stat.st_ino))
+
+    def test_external_view_is_an_isolated_regular_copy_not_a_symlink(self) -> None:
+        payload = b'{"require_isolated_regular":true,"valid":true}\n'
+        self.fixture.invalid_evidence.write_bytes(payload)
+        manifest = self.fixture.manifest()
+        authority = manifest["authorities"]["validate_fixture.py"]
+        binding = authority["external_bindings"][0]
+        binding["target"] = "data/raw/pinned/valid-evidence.json"
+        binding["sha256"] = hashlib.sha256(payload).hexdigest()
+        binding["size_bytes"] = len(payload)
+        authority["arguments"] = ["{repository}/data/raw/pinned/valid-evidence.json"]
+        authority.pop("bundle_identity")
+        authority["bundle_identity"] = _canonical_sha256(authority)
+        self.fixture.write_manifest(manifest)
+
+        result = execute_historical_validator(
+            self.fixture.authority(),
+            repository_root=self.fixture.repository,
+            runtime_profile=self.fixture.runtime.runtime_profile,
+            bootstrap_path=BOOTSTRAP,
+        )
+
+        self.assertTrue(result.passed, result.stderr)
+        self.assertEqual(result.validator_status, "PASS")
+
+    def test_validator_cannot_mutate_authoritative_external_bytes_through_view(self) -> None:
+        payload = b'{"mutate_external":true,"valid":true}\n'
+        self.fixture.invalid_evidence.write_bytes(payload)
+        manifest = self.fixture.manifest()
+        authority = manifest["authorities"]["validate_fixture.py"]
+        binding = authority["external_bindings"][0]
+        binding["sha256"] = hashlib.sha256(payload).hexdigest()
+        binding["size_bytes"] = len(payload)
+        authority.pop("bundle_identity")
+        authority["bundle_identity"] = _canonical_sha256(authority)
+        self.fixture.write_manifest(manifest)
+
+        with self.assertRaisesRegex(HistoricalAuthorityError, "EXTERNAL_BINDING_MISMATCH"):
+            execute_historical_validator(
+                self.fixture.authority(),
+                repository_root=self.fixture.repository,
+                runtime_profile=self.fixture.runtime.runtime_profile,
+                bootstrap_path=BOOTSTRAP,
+            )
+        self.assertEqual(self.fixture.invalid_evidence.read_bytes(), payload)
 
     def test_validator_cannot_modify_tracked_snapshot_after_bootstrap(self) -> None:
         payload = b'{"mutate_tracked":true,"valid":true}\n'

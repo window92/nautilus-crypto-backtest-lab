@@ -119,6 +119,8 @@ def main(argv: list[str]) -> int:
         "environment": dict(ATTESTATION["environment"]),
         "initial_sys_path": list(ATTESTATION["initial_sys_path"]),
         "effective_sys_path": list(ATTESTATION["effective_sys_path"]),
+        "module_file": __file__,
+        "module_origin": __spec__.origin,
         "product_commit": ATTESTATION["product"]["source_commit"],
         "runtime_probe": runtime_probe.IDENTITY,
     }
@@ -334,6 +336,9 @@ class IsolatedRuntimeBootstrapTests(unittest.TestCase):
             result["effective_sys_path"],
             [*self.fixture.initial_sys_path, str(self.fixture.site)],
         )
+        expected_module = str(self.fixture.repository / "src/crypto_lab/probe.py")
+        self.assertEqual(result["module_file"], expected_module)
+        self.assertEqual(result["module_origin"], expected_module)
         self.assertEqual(result["runtime_probe"], "record-verified-runtime-probe")
         self.assertEqual(len(result["attestation_identity"]), 64)
 

@@ -603,7 +603,7 @@ def _verify_external_view(
     git: Path,
     value: object,
 ) -> list[dict[str, Any]]:
-    """Verify exact untracked symlinks to content-addressed external files."""
+    """Verify exact untracked isolated copies of external historical files."""
 
     if not isinstance(value, list):
         _fail("AUTHORITY_INVALID", "external_files must be a list")
@@ -649,10 +649,25 @@ def _verify_external_view(
             parent = parent / part
             if parent.is_symlink() or not parent.is_dir():
                 _fail("EXTERNAL_FILE_MISMATCH", f"invalid view parent: {parent}")
-        if not target.is_symlink() or os.readlink(target) != source_value:
-            _fail("EXTERNAL_FILE_MISMATCH", f"view link differs: {target_relative}")
-        digest, size = _regular_identity(source)
-        if size != item["size_bytes"] or digest != item["sha256"]:
+        try:
+            target_resolved = target.resolve(strict=True)
+        except OSError as exc:
+            _fail("EXTERNAL_FILE_MISMATCH", f"missing view {target_relative}: {exc}")
+        if target.is_symlink() or target_resolved != target or not target.is_file():
+            _fail("EXTERNAL_FILE_MISMATCH", f"view is not a regular copy: {target_relative}")
+        source_digest, source_size = _regular_identity(source)
+        target_digest, target_size = _regular_identity(target)
+        source_stat = source.stat(follow_symlinks=False)
+        target_stat = target.stat(follow_symlinks=False)
+        if (
+            source_size != item["size_bytes"]
+            or source_digest != item["sha256"]
+            or target_size != item["size_bytes"]
+            or target_digest != item["sha256"]
+            or target_stat.st_mode & 0o222
+            or (source_stat.st_dev, source_stat.st_ino)
+            == (target_stat.st_dev, target_stat.st_ino)
+        ):
             _fail("EXTERNAL_FILE_MISMATCH", f"source identity differs: {source}")
         tracked = subprocess.run(
             [str(git), "--no-replace-objects", "ls-files", "--error-unmatch", "--", target_relative],
@@ -968,7 +983,6 @@ def _install_pinned_loader(
             return importlib.util.spec_from_loader(
                 fullname,
                 loader,
-                origin=loader.get_filename(fullname),
                 is_package=loader.is_package(fullname),
             )
 

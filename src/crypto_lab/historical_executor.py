@@ -6,6 +6,7 @@ import hashlib
 import json
 import os
 import re
+import stat
 import subprocess
 import tempfile
 from dataclasses import dataclass
@@ -135,13 +136,12 @@ def _stage_external_bindings(
     repository: Path,
     authority: HistoricalValidatorAuthority,
 ) -> tuple[dict[str, str], list[dict[str, Any]]]:
-    """Create an exact per-file repository view without copying old evidence.
+    """Create an isolated exact-copy view of every external historical input.
 
-    Every view entry is a symlink to one content-addressed regular file in the
-    original repository.  Executable namespaces and tracked historical paths
-    are forbidden.  The isolated bootstrap verifies this view independently
-    before importing Product code, and this module verifies it again after the
-    validator exits.
+    A symlink or hardlink would let a pinned validator escape its temporary
+    repository or mutate authoritative historical bytes.  Each binding is
+    copied into a new read-only inode, content-checked while copying, and
+    checked again after execution.  Large files cost I/O here by design.
     """
 
     substitutions: dict[str, str] = {}
@@ -165,10 +165,6 @@ def _stage_external_bindings(
             or first in {".git", "scripts", "src"}
         ):
             raise HistoricalAuthorityError("EXTERNAL_BINDING_MISMATCH", str(binding))
-        if source.stat().st_size != binding["size_bytes"]:
-            raise HistoricalAuthorityError("EXTERNAL_BINDING_MISMATCH", str(source))
-        if _sha256_file(source) != binding["sha256"]:
-            raise HistoricalAuthorityError("EXTERNAL_BINDING_MISMATCH", str(source))
         target = snapshot / target_relative
         lexical_parent = snapshot
         for part in target_relative.parts[:-1]:
@@ -201,7 +197,74 @@ def _stage_external_bindings(
                 "EXTERNAL_BINDING_MISMATCH",
                 f"view target is tracked by historical Git: {target_relative}",
             )
-        os.symlink(str(source), target)
+        source_flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NOFOLLOW", 0)
+        target_flags = (
+            os.O_WRONLY
+            | os.O_CREAT
+            | os.O_EXCL
+            | getattr(os, "O_CLOEXEC", 0)
+            | getattr(os, "O_NOFOLLOW", 0)
+        )
+        source_descriptor: int | None = None
+        target_descriptor: int | None = None
+        copied = False
+        digest = hashlib.sha256()
+        copied_size = 0
+        try:
+            source_descriptor = os.open(source, source_flags)
+            source_stat = os.fstat(source_descriptor)
+            if (
+                not stat.S_ISREG(source_stat.st_mode)
+                or source_stat.st_size != binding["size_bytes"]
+            ):
+                raise HistoricalAuthorityError(
+                    "EXTERNAL_BINDING_MISMATCH",
+                    f"source identity differs: {source}",
+                )
+            target_descriptor = os.open(target, target_flags, 0o400)
+            while True:
+                chunk = os.read(source_descriptor, 1024 * 1024)
+                if not chunk:
+                    break
+                digest.update(chunk)
+                copied_size += len(chunk)
+                view = memoryview(chunk)
+                while view:
+                    written = os.write(target_descriptor, view)
+                    if written <= 0:
+                        raise OSError("short external-binding write")
+                    view = view[written:]
+            os.fchmod(target_descriptor, 0o400)
+            os.fsync(target_descriptor)
+            copied = True
+        except HistoricalAuthorityError:
+            raise
+        except OSError as exc:
+            raise HistoricalAuthorityError(
+                "EXTERNAL_BINDING_MISMATCH",
+                f"cannot materialize isolated copy {target_relative}: {exc}",
+            ) from exc
+        finally:
+            if source_descriptor is not None:
+                os.close(source_descriptor)
+            if target_descriptor is not None:
+                os.close(target_descriptor)
+            if not copied and (target.exists() or target.is_symlink()):
+                target.unlink()
+        if copied_size != binding["size_bytes"] or digest.hexdigest() != binding["sha256"]:
+            target.unlink()
+            raise HistoricalAuthorityError(
+                "EXTERNAL_BINDING_MISMATCH",
+                f"copied source identity differs: {source}",
+            )
+        directory_descriptor = os.open(
+            target.parent,
+            os.O_RDONLY | getattr(os, "O_DIRECTORY", 0),
+        )
+        try:
+            os.fsync(directory_descriptor)
+        finally:
+            os.close(directory_descriptor)
         token = "{binding:" + binding["target"] + "}"
         substitutions[token] = str(target)
         external_files.append(
@@ -221,19 +284,34 @@ def _verify_external_bindings(
     repository: Path,
     authority: HistoricalValidatorAuthority,
 ) -> None:
-    """Re-hash every source and require the exact staged symlink view."""
+    """Re-hash every source and require an isolated read-only copied view."""
 
     for binding in authority.external_bindings:
         source = repository / str(binding["locator"])
         target = snapshot / str(binding["target"])
+        try:
+            source_stat = source.stat(follow_symlinks=False)
+            target_stat = target.stat(follow_symlinks=False)
+        except OSError as exc:
+            raise HistoricalAuthorityError(
+                "EXTERNAL_BINDING_MISMATCH",
+                f"{binding['target']}: {exc}",
+            ) from exc
         if (
             source.is_symlink()
             or not source.is_file()
             or source.resolve(strict=True) != source
-            or source.stat().st_size != binding["size_bytes"]
+            or not stat.S_ISREG(source_stat.st_mode)
+            or source_stat.st_size != binding["size_bytes"]
             or _sha256_file(source) != binding["sha256"]
-            or not target.is_symlink()
-            or os.readlink(target) != str(source)
+            or target.is_symlink()
+            or not stat.S_ISREG(target_stat.st_mode)
+            or target.resolve(strict=True) != target
+            or target_stat.st_size != binding["size_bytes"]
+            or target_stat.st_mode & 0o222
+            or (source_stat.st_dev, source_stat.st_ino)
+            == (target_stat.st_dev, target_stat.st_ino)
+            or _sha256_file(target) != binding["sha256"]
         ):
             raise HistoricalAuthorityError(
                 "EXTERNAL_BINDING_MISMATCH",
