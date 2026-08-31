@@ -15,6 +15,7 @@ import tempfile
 import unittest
 import venv
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 from unittest import mock
 
@@ -420,6 +421,78 @@ class IsolatedRuntimeBootstrapTests(unittest.TestCase):
                 str(ROOT),
                 "--entrypoint",
                 "crypto_lab.owner:main",
+            ],
+        )
+
+    def test_checkpoint_push_gets_a_separate_sanitized_environment(self) -> None:
+        from crypto_lab import owner
+
+        home = Path(self.temporary.name) / "push-home"
+        (home / ".config/gh").mkdir(parents=True)
+        (home / ".local/state").mkdir(parents=True)
+        (home / ".gitconfig").write_text("[credential]\n", encoding="utf-8")
+
+        with mock.patch.dict(
+            os.environ,
+            {
+                "PYTHONPATH": "/tmp/shadow",
+                "PYTHONHOME": "/tmp/fake-home",
+                "LD_PRELOAD": "/tmp/preload.so",
+                "GH_TOKEN": "must-not-enter-child",
+            },
+            clear=False,
+        ), mock.patch.object(
+            owner.pwd,
+            "getpwuid",
+            return_value=SimpleNamespace(pw_dir=str(home)),
+        ):
+            environment = owner._checkpoint_push_environment()
+        self.assertEqual(
+            set(environment),
+            {
+                *CHILD_ENVIRONMENT,
+                "GH_CONFIG_DIR",
+                "GIT_CONFIG_GLOBAL",
+                "GIT_CONFIG_NOSYSTEM",
+                "GIT_TERMINAL_PROMPT",
+                "XDG_STATE_HOME",
+            },
+        )
+        self.assertEqual(environment["GIT_CONFIG_NOSYSTEM"], "1")
+        self.assertEqual(environment["GIT_TERMINAL_PROMPT"], "0")
+        self.assertNotIn("HOME", environment)
+        self.assertNotIn("GH_TOKEN", environment)
+        self.assertNotIn("PYTHONPATH", environment)
+
+    def test_checkpoint_push_rejects_a_symlinked_git_config(self) -> None:
+        from crypto_lab import owner
+        from crypto_lab.research import ResearchError
+
+        home = Path(self.temporary.name) / "symlinked-push-home"
+        (home / ".config/gh").mkdir(parents=True)
+        (home / ".local/state").mkdir(parents=True)
+        target = home / "actual-gitconfig"
+        target.write_text("[credential]\n", encoding="utf-8")
+        (home / ".gitconfig").symlink_to(target)
+        with mock.patch.object(
+            owner.pwd,
+            "getpwuid",
+            return_value=SimpleNamespace(pw_dir=str(home)),
+        ), self.assertRaises(ResearchError) as rejected:
+            owner._checkpoint_push_environment()
+        self.assertEqual(rejected.exception.code, "TRIAL_HISTORY_INCOMPLETE")
+
+    def test_checkpoint_push_disables_repository_hooks(self) -> None:
+        from crypto_lab.owner import _checkpoint_push_command
+
+        command = _checkpoint_push_command("fix/adversarial-audit-remediation-002")
+        self.assertEqual(command[1:3], ["-c", "core.hooksPath=/dev/null"])
+        self.assertEqual(
+            command[-3:],
+            [
+                "push",
+                "origin",
+                "HEAD:refs/heads/fix/adversarial-audit-remediation-002",
             ],
         )
 

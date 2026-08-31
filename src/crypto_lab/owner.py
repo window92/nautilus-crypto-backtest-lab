@@ -13,6 +13,7 @@ import argparse
 import hashlib
 import json
 import os
+import pwd
 import shutil
 import subprocess
 import sys
@@ -519,6 +520,87 @@ def _official_child_environment() -> dict[str, str]:
     }
 
 
+def _checkpoint_push_environment() -> dict[str, str]:
+    """Return the complete credential-broker environment for Git publication only."""
+
+    try:
+        account = pwd.getpwuid(os.getuid())
+        home = Path(account.pw_dir)
+        metadata = home.lstat()
+    except (KeyError, OSError) as exc:
+        raise ResearchError(
+            FailureCode.TRIAL_HISTORY_INCOMPLETE,
+            "checkpoint publisher account home is unavailable",
+        ) from exc
+    if (
+        not home.is_absolute()
+        or home.is_symlink()
+        or not home.is_dir()
+        or metadata.st_uid != os.getuid()
+    ):
+        raise ResearchError(
+            FailureCode.TRIAL_HISTORY_INCOMPLETE,
+            "checkpoint publisher account home identity is unsafe",
+        )
+    git_config = home / ".gitconfig"
+    gh_config = home / ".config" / "gh"
+    state_home = home / ".local" / "state"
+    try:
+        git_config_metadata = git_config.lstat()
+        gh_config_metadata = gh_config.lstat()
+        state_home_metadata = state_home.lstat()
+    except OSError as exc:
+        raise ResearchError(
+            FailureCode.TRIAL_HISTORY_INCOMPLETE,
+            "checkpoint credential-broker locators are unavailable",
+        ) from exc
+    if (
+        git_config.is_symlink()
+        or not git_config.is_file()
+        or git_config_metadata.st_uid != os.getuid()
+        or gh_config.is_symlink()
+        or not gh_config.is_dir()
+        or gh_config_metadata.st_uid != os.getuid()
+        or state_home.is_symlink()
+        or not state_home.is_dir()
+        or state_home_metadata.st_uid != os.getuid()
+    ):
+        raise ResearchError(
+            FailureCode.TRIAL_HISTORY_INCOMPLETE,
+            "checkpoint credential-broker locator identity is unsafe",
+        )
+    return {
+        **_official_child_environment(),
+        "GH_CONFIG_DIR": str(gh_config),
+        "GIT_CONFIG_GLOBAL": str(git_config),
+        "GIT_CONFIG_NOSYSTEM": "1",
+        "GIT_TERMINAL_PROMPT": "0",
+        "XDG_STATE_HOME": str(state_home),
+    }
+
+
+def _checkpoint_push_command(branch: str) -> list[str]:
+    """Build the non-interactive push command with repository hooks disabled."""
+
+    if (
+        not branch
+        or branch.startswith("-")
+        or any(character.isspace() for character in branch)
+    ):
+        raise ResearchError(
+            FailureCode.TRIAL_HISTORY_INCOMPLETE,
+            "checkpoint branch name is unsafe",
+        )
+    return [
+        "git",
+        "-c",
+        "core.hooksPath=/dev/null",
+        "push",
+        "origin",
+        f"HEAD:refs/heads/{branch}",
+    ]
+
+
 def _official_child_command(repository: Path, workflow_path: Path) -> list[str]:
     """Enter the child only through the stdlib isolated bootstrap."""
 
@@ -581,7 +663,17 @@ def _checkpoint(
         raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE, "empty authoritative checkpoint")
     _git(repository, "commit", "-m", message)
     branch = _git(repository, "symbolic-ref", "--quiet", "--short", "HEAD")
-    _git(repository, "push", "origin", f"HEAD:refs/heads/{branch}")
+    push = subprocess.run(
+        _checkpoint_push_command(branch),
+        cwd=repository,
+        env=_checkpoint_push_environment(),
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if push.returncode != 0:
+        detail = push.stderr.strip() or push.stdout.strip() or "git push failed"
+        raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE, detail)
     head = _git(repository, "rev-parse", "HEAD")
     remote = _git(repository, "rev-parse", f"refs/remotes/origin/{branch}")
     clean, unexpected_after = worktree_is_clean(repository)

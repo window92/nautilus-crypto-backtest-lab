@@ -108,6 +108,30 @@ def _owner_process(
     )
 
 
+def _copy_run_external_dataset_state(
+    *,
+    run_directory: Path,
+    source_repository: Path,
+    target_repository: Path,
+) -> None:
+    """Recreate only the Run-bound ignored Raw/catalog view in a recovery clone."""
+
+    release = json.loads((run_directory / "dataset_release.json").read_text(encoding="utf-8"))
+    raw_inventory = release["raw_inventory"]
+    raw_objects = raw_inventory["raw_objects"]
+    for item in raw_objects:
+        identity = item["raw_object_sha256"]
+        relative = Path("data/raw/sha256") / identity[:2] / f"{identity}.blob"
+        source = source_repository / relative
+        target = target_repository / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, target)
+    catalog_identity = release["catalog_identity"]
+    source_catalog = source_repository / "data/catalog" / catalog_identity
+    target_catalog = target_repository / "data/catalog" / catalog_identity
+    shutil.copytree(source_catalog, target_catalog)
+
+
 class Aud009OwnerWorkflowTests(unittest.TestCase):
     def test_qualification_fixture_cannot_designate_final_holdout(self) -> None:
         value = qualification_workflow_fixture_input(
@@ -513,13 +537,22 @@ class Aud009OwnerWorkflowTests(unittest.TestCase):
                 "owner-recovery@example.invalid",
                 cwd=recovery_repository,
             )
+            _copy_run_external_dataset_state(
+                run_directory=run_dir,
+                source_repository=repository,
+                target_repository=recovery_repository,
+            )
             resume_output = base / "terminal-resume-output.json"
             resumed = _owner_process(
                 recovery_repository,
                 input_path=input_path,
                 output_path=resume_output,
             )
-            self.assertEqual(resumed.returncode, 0, resumed.stderr + resumed.stdout)
+            self.assertEqual(
+                resumed.returncode,
+                0,
+                resumed.stderr + resumed.stdout + resume_output.read_text(encoding="utf-8"),
+            )
             resumed_result = json.loads(resume_output.read_text(encoding="utf-8"))
             self.assertEqual(resumed_result["status"], "PASS")
             self.assertEqual(resumed_result["run_id"], value.run_id)
