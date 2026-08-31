@@ -200,10 +200,10 @@ repository-relative targets; the random isolated snapshot directory therefore
 cannot change the output digest.
 
 The authority built from Product commit
-`c48c2965a61d89ff481c04d434c84e4ba8fdff70` has runtime-authority SHA-256
-`ea828a9a09b72457005cca073489f3c43ff31ab92f5c0b6e0962924de7ab109b`,
+`e365481db4213ffd748af7c97531421d9bc4d4f4` has runtime-authority SHA-256
+`2321eab0a313ecfc383e38cfafd4f9fb5320804a36b20edce9ece3eedfc6bfc0`,
 build-spec SHA-256
-`ea7655653922392c1391bf871e8d4d9b92dc09683be2424996baebadb7f28b0f`,
+`a4844a7ba488ec803eefec305c9f8009b1b0ec89ec50192f892f3ce2e61caef3`,
 and historical manifest SHA-256
 `14af6dbeb28427f1877e2f4945c80d1466fe7f5f056a744c9020fd1aaad2d778`.
 Its canonical acceptance record (SHA-256
