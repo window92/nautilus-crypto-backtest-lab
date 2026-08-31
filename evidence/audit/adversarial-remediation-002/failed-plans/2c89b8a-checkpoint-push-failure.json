@@ -1,0 +1,5 @@
+{
+  "detail": "TRIAL_HISTORY_INCOMPLETE: fatal: could not read Username for 'https://github.com': No such device or address",
+  "error_type": "ResearchError",
+  "status": "BLOCKED"
+}
