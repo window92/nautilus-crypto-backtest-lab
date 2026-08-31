@@ -1,0 +1,5 @@
+{
+  "detail": "OFFICIAL_SEAL_FAILURE: Official root seal failed: OFFICIAL_SEAL_FAILURE,CHECKER_FAILURE",
+  "error_type": "ResearchError",
+  "status": "BLOCKED"
+}

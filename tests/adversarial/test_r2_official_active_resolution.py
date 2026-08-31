@@ -125,6 +125,51 @@ class R2OfficialActiveResolutionTests(unittest.TestCase):
         self.assertEqual(caught.exception.code, "EVIDENCE_INCOMPLETE")
         self.assertIn("selected Run missing", caught.exception.message)
 
+    def test_non_selected_inactive_completed_trial_is_excluded_before_revalidation(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            fixture = ResultStatusFixture(root)
+            install_default_status_authorities(root, fixture)
+            resolver = resolver_for(root)
+            latest = {
+                "superseded-prior": SimpleNamespace(
+                    result_ref=fixture.benchmark_primary.relative_to(root).as_posix(),
+                ),
+                "active-selected": SimpleNamespace(
+                    result_ref=fixture.active.relative_to(root).as_posix(),
+                ),
+            }
+
+            active = resolver._active_result_bearing_trials(
+                started_ids=("superseded-prior", "active-selected"),
+                latest=latest,
+                selected_trial_id="active-selected",
+            )
+
+        self.assertEqual(active, ("active-selected",))
+
+    def test_selected_inactive_completed_trial_remains_ineligible(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            fixture = ResultStatusFixture(root)
+            install_default_status_authorities(root, fixture)
+            resolver = resolver_for(root)
+            latest = {
+                "superseded-selected": SimpleNamespace(
+                    result_ref=fixture.benchmark_primary.relative_to(root).as_posix(),
+                ),
+            }
+
+            with self.assertRaises(ResearchError) as caught:
+                resolver._active_result_bearing_trials(
+                    started_ids=("superseded-selected",),
+                    latest=latest,
+                    selected_trial_id="superseded-selected",
+                )
+
+        self.assertEqual(caught.exception.code, "CLAIM_INELIGIBLE")
+        self.assertIn("selected Result is not ACTIVE", caught.exception.message)
+
     def test_missing_status_authority_fails_closed(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

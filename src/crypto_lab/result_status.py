@@ -21,13 +21,26 @@ DEFAULT_RESULT_STATUS_REFS = (
     "evidence/audit/comprehensive-remediation-001/runtime-proof-supersession-status.json",
     "evidence/audit/comprehensive-remediation-001/owner-child-entrypoint-supersession-status.json",
     "evidence/audit/adversarial-remediation-002/historical-result-status.json",
+    (
+        "evidence/audit/adversarial-remediation-002/"
+        "runtime-authority-supersession-status.json"
+    ),
 )
 RESULT_STATUS_V2_SCHEMA = "historical-result-status-registry-v2"
+RESULT_STATUS_V3_SCHEMA = "historical-result-status-registry-v3"
 RESULT_STATUS_V2_POLICY = (
     "HISTORICAL_BYTES_IMMUTABLE;NON_ACTIVE_RESULTS_INELIGIBLE;"
     "FINAL_HOLDOUT_AND_PROFITABILITY_CLAIMS_NOT_AUTHORIZED"
 )
 V2_EVIDENCE_FILES = ("checker.json", "evidence_manifest.json", "status.json")
+V3_EVIDENCE_FILES = (
+    "component_validation.json",
+    "evidence_manifest.json",
+    "official_seal.json",
+    "runtime_identity.json",
+    "source_revision.json",
+    "status.json",
+)
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 _GIT_SHA = re.compile(r"[0-9a-f]{40}\Z")
 _LOGICAL_RESULT = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*\Z")
@@ -39,6 +52,9 @@ _MARKET_PROFILES = frozenset(
     },
 )
 R2_RESULT_STATUS_AUTHORITY = "ADVERSARIAL_AUDIT_REMEDIATION_002"
+R2_RUNTIME_SUPERSESSION_AUTHORITY = (
+    "ADVERSARIAL_AUDIT_REMEDIATION_002_RUNTIME_SUPERSESSION"
+)
 R2_AUDITED_BASELINE_COMMIT = "b5c865c28b83526ffab38152e7e6821f39b77014"
 
 
@@ -69,6 +85,7 @@ class HistoricalCopyRole(StrEnum):
 class HistoricalStatusReason(StrEnum):
     WARMUP_SCORING_ELIGIBILITY_VIOLATION = "WARMUP_SCORING_ELIGIBILITY_VIOLATION"
     RESULT_CONTRACT_V2_SUPERSESSION = "RESULT_CONTRACT_V2_SUPERSESSION"
+    RUNTIME_AUTHORITY_SUPERSESSION = "RUNTIME_AUTHORITY_SUPERSESSION"
     LEGACY_AUDIT_FINDING = "LEGACY_AUDIT_FINDING"
 
 
@@ -77,6 +94,7 @@ class ReplacementRequirement(StrEnum):
     DATASET_RELEASE_CHECKER_RESULT_SCHEMA_V2_REBUILD = (
         "DATASET_RELEASE_CHECKER_RESULT_SCHEMA_V2_REBUILD"
     )
+    FINAL_PRODUCT_RUNTIME_REBUILD = "FINAL_PRODUCT_RUNTIME_REBUILD"
     LEGACY_UNSPECIFIED = "LEGACY_UNSPECIFIED"
 
 
@@ -141,6 +159,58 @@ R2_EXPECTED_HISTORICAL_RESULTS: dict[str, dict[str, str]] = {
         "replay_path": (
             "runs/replays/comprehensive-audit-remediation-003-spot-candidate-b-development/"
             "comprehensive-audit-remediation-003-spot-candidate-b-run-736f07f7755e"
+        ),
+    },
+}
+
+
+R2_RUNTIME_SUPERSEDED_RESULTS: dict[str, dict[str, str]] = {
+    "retry-002-spot-benchmark": {
+        "market_profile": "BINANCE_SPOT_CASH_LONG_ONLY",
+        "result_class": HistoricalResultClass.BENCHMARK.value,
+        "primary_path": (
+            "runs/adversarial-remediation-002-retry-002-spot-benchmark-run-7da743fdaa06"
+        ),
+        "replay_path": (
+            "runs/replays/adversarial-remediation-002-retry-002-spot-benchmark-"
+            "buy-and-hold-1x-development/adversarial-remediation-002-retry-002-"
+            "spot-benchmark-run-7da743fdaa06"
+        ),
+    },
+    "retry-002-spot-candidate-a": {
+        "market_profile": "BINANCE_SPOT_CASH_LONG_ONLY",
+        "result_class": HistoricalResultClass.CANDIDATE.value,
+        "primary_path": (
+            "runs/adversarial-remediation-002-retry-002-spot-candidate-a-run-e1cacf032f78"
+        ),
+        "replay_path": (
+            "runs/replays/adversarial-remediation-002-retry-002-spot-candidate-a-"
+            "development/adversarial-remediation-002-retry-002-spot-candidate-a-"
+            "run-e1cacf032f78"
+        ),
+    },
+    "retry-002-spot-candidate-b": {
+        "market_profile": "BINANCE_SPOT_CASH_LONG_ONLY",
+        "result_class": HistoricalResultClass.CANDIDATE.value,
+        "primary_path": (
+            "runs/adversarial-remediation-002-retry-002-spot-candidate-b-run-9bbdbc35e204"
+        ),
+        "replay_path": (
+            "runs/replays/adversarial-remediation-002-retry-002-spot-candidate-b-"
+            "development/adversarial-remediation-002-retry-002-spot-candidate-b-"
+            "run-9bbdbc35e204"
+        ),
+    },
+    "retry-003-spot-benchmark": {
+        "market_profile": "BINANCE_SPOT_CASH_LONG_ONLY",
+        "result_class": HistoricalResultClass.BENCHMARK.value,
+        "primary_path": (
+            "runs/adversarial-remediation-002-retry-003-spot-benchmark-run-f28ac747c930"
+        ),
+        "replay_path": (
+            "runs/replays/adversarial-remediation-002-retry-003-spot-benchmark-"
+            "buy-and-hold-1x-development/adversarial-remediation-002-retry-003-"
+            "spot-benchmark-run-f28ac747c930"
         ),
     },
 }
@@ -281,14 +351,18 @@ def _safe_result_path(value: Any) -> str:
     return value
 
 
-def _evidence_hashes(value: Any) -> dict[str, str]:
+def _evidence_hashes(
+    value: Any,
+    *,
+    expected_files: tuple[str, ...] = V2_EVIDENCE_FILES,
+) -> dict[str, str]:
     if (
         not isinstance(value, dict)
-        or tuple(sorted(value)) != V2_EVIDENCE_FILES
+        or tuple(sorted(value)) != expected_files
         or not all(_valid_sha256(item) for item in value.values())
     ):
         raise ValueError("historical result evidence hashes are invalid")
-    return {name: str(value[name]) for name in V2_EVIDENCE_FILES}
+    return {name: str(value[name]) for name in expected_files}
 
 
 def _load_v1_registry(value: dict[str, Any]) -> HistoricalResultRegistry:
@@ -471,6 +545,73 @@ def _v2_record(raw: Any) -> HistoricalResultRecord:
     )
 
 
+def _v3_record(raw: Any) -> HistoricalResultRecord:
+    expected_fields = {
+        "copy_role",
+        "evidence_hashes",
+        "financial_result_status",
+        "finding_ids",
+        "historical_bytes_preserved",
+        "historical_run_status",
+        "logical_result_id",
+        "market_profile",
+        "path",
+        "reason_code",
+        "replacement_requirement",
+        "result_class",
+    }
+    if not isinstance(raw, dict) or set(raw) != expected_fields:
+        raise ValueError("v3 historical result record schema is invalid")
+    relative = _safe_result_path(raw.get("path"))
+    logical_result_id = raw.get("logical_result_id")
+    market_profile = raw.get("market_profile")
+    if (
+        not isinstance(logical_result_id, str)
+        or _LOGICAL_RESULT.fullmatch(logical_result_id) is None
+        or market_profile not in _MARKET_PROFILES
+        or raw.get("finding_ids") != ["R2-002", "R2-007"]
+        or raw.get("historical_bytes_preserved") is not True
+    ):
+        raise ValueError("v3 historical result record material is invalid")
+    try:
+        result_class = HistoricalResultClass(raw.get("result_class"))
+        copy_role = HistoricalCopyRole(raw.get("copy_role"))
+        run_status = HistoricalRunStatus(raw.get("historical_run_status"))
+        financial_status = FinancialResultStatus(raw.get("financial_result_status"))
+        reason = HistoricalStatusReason(raw.get("reason_code"))
+        replacement = ReplacementRequirement(raw.get("replacement_requirement"))
+    except ValueError as exc:
+        raise ValueError("v3 historical result record vocabulary is invalid") from exc
+    if (
+        result_class not in {HistoricalResultClass.CANDIDATE, HistoricalResultClass.BENCHMARK}
+        or copy_role not in {HistoricalCopyRole.PRIMARY, HistoricalCopyRole.REPLAY}
+        or run_status is not HistoricalRunStatus.SUPERSEDED
+        or financial_status is not FinancialResultStatus.SUPERSEDED
+        or reason is not HistoricalStatusReason.RUNTIME_AUTHORITY_SUPERSESSION
+        or replacement is not ReplacementRequirement.FINAL_PRODUCT_RUNTIME_REBUILD
+    ):
+        raise ValueError("v3 runtime supersession contract is inconsistent")
+    return HistoricalResultRecord(
+        path=relative,
+        market_profile=str(market_profile),
+        historical_run_status=run_status,
+        financial_result_status=financial_status,
+        finding_ids=("R2-002", "R2-007"),
+        current_checker_outcome="NOT_APPLICABLE",
+        current_failure_codes=(),
+        historical_bytes_preserved=True,
+        evidence_hashes=_evidence_hashes(
+            raw.get("evidence_hashes"),
+            expected_files=V3_EVIDENCE_FILES,
+        ),
+        logical_result_id=str(logical_result_id),
+        result_class=result_class,
+        copy_role=copy_role,
+        reason_code=reason,
+        replacement_requirement=replacement,
+    )
+
+
 def _load_v2_registry(value: dict[str, Any], payload: bytes) -> HistoricalResultRegistry:
     required_root = {
         "audited_baseline_commit",
@@ -565,6 +706,102 @@ def _load_v2_registry(value: dict[str, Any], payload: bytes) -> HistoricalResult
     )
 
 
+def _load_v3_registry(value: dict[str, Any], payload: bytes) -> HistoricalResultRegistry:
+    required_root = {
+        "audited_baseline_commit",
+        "authority_id",
+        "final_holdout_authorized",
+        "historical_policy",
+        "profitability_claim_authorized",
+        "record_count",
+        "recorded_at_utc",
+        "records",
+        "records_identity",
+        "registry_identity",
+        "schema",
+        "source_commit",
+    }
+    if (
+        set(value) != required_root
+        or value.get("schema") != RESULT_STATUS_V3_SCHEMA
+        or value.get("authority_id") != R2_RUNTIME_SUPERSESSION_AUTHORITY
+        or value.get("audited_baseline_commit") != R2_AUDITED_BASELINE_COMMIT
+        or not _valid_git_sha(value.get("source_commit"))
+        or value.get("historical_policy") != RESULT_STATUS_V2_POLICY
+        or value.get("final_holdout_authorized") is not False
+        or value.get("profitability_claim_authorized") is not False
+    ):
+        raise ValueError("v3 historical result registry schema is invalid")
+    _utc_timestamp(value.get("recorded_at_utc"))
+    raw_records = value.get("records")
+    if (
+        not isinstance(raw_records, list)
+        or not raw_records
+        or value.get("record_count") != len(raw_records)
+        or value.get("records_identity") != canonical_sha256(raw_records)
+    ):
+        raise ValueError("v3 historical result registry records identity is invalid")
+    material = dict(value)
+    declared_identity = material.pop("registry_identity", None)
+    if not _valid_sha256(declared_identity) or canonical_sha256(material) != declared_identity:
+        raise ValueError("v3 historical result registry root identity is invalid")
+    if payload != canonical_json_bytes(value) + b"\n":
+        raise ValueError("v3 historical result registry bytes are not canonical")
+    records = tuple(_v3_record(raw) for raw in raw_records)
+    ordering = tuple(
+        sorted(
+            records,
+            key=lambda item: (item.logical_result_id, item.copy_role.value, item.path),
+        ),
+    )
+    if records != ordering or len({item.path for item in records}) != len(records):
+        raise ValueError("v3 historical result records are unordered or duplicated")
+    by_logical: dict[str, list[HistoricalResultRecord]] = {}
+    for record in records:
+        by_logical.setdefault(record.logical_result_id, []).append(record)
+    if (
+        set(by_logical) != set(R2_RUNTIME_SUPERSEDED_RESULTS)
+        or len(records) != 2 * len(R2_RUNTIME_SUPERSEDED_RESULTS)
+    ):
+        raise ValueError("v3 registry does not cover the exact runtime-supersession scope")
+    for logical_result_id, pair in by_logical.items():
+        if (
+            {item.copy_role for item in pair}
+            != {HistoricalCopyRole.PRIMARY, HistoricalCopyRole.REPLAY}
+            or len(pair) != 2
+        ):
+            raise ValueError(f"v3 primary/replay pair is incomplete: {logical_result_id}")
+        expected = R2_RUNTIME_SUPERSEDED_RESULTS[logical_result_id]
+        paths = {item.copy_role: item.path for item in pair}
+        first, second = pair
+        stable = lambda item: (
+            item.market_profile,
+            item.result_class,
+            item.historical_run_status,
+            item.financial_result_status,
+            item.finding_ids,
+            item.reason_code,
+            item.replacement_requirement,
+        )
+        if (
+            stable(first) != stable(second)
+            or first.market_profile != expected["market_profile"]
+            or first.result_class.value != expected["result_class"]
+            or paths[HistoricalCopyRole.PRIMARY] != expected["primary_path"]
+            or paths[HistoricalCopyRole.REPLAY] != expected["replay_path"]
+        ):
+            raise ValueError(f"v3 runtime-supersession scope mismatch: {logical_result_id}")
+    return HistoricalResultRegistry(
+        source_commit=str(value["source_commit"]),
+        records=records,
+        final_holdout_authorized=False,
+        profitability_claim_authorized=False,
+        registry_schema=RESULT_STATUS_V3_SCHEMA,
+        registry_identity=str(declared_identity),
+        authority_id=str(value["authority_id"]),
+    )
+
+
 def load_historical_result_registry(path: Path) -> HistoricalResultRegistry:
     """Parse one immutable additive registry, preserving legacy v1 authority."""
 
@@ -576,6 +813,8 @@ def load_historical_result_registry(path: Path) -> HistoricalResultRegistry:
         return _load_v1_registry(value)
     if value.get("schema") == RESULT_STATUS_V2_SCHEMA:
         return _load_v2_registry(value, payload)
+    if value.get("schema") == RESULT_STATUS_V3_SCHEMA:
+        return _load_v3_registry(value, payload)
     raise ValueError("historical result registry schema is unsupported")
 
 
@@ -809,6 +1048,83 @@ def build_historical_result_registry_v2(
     return payload
 
 
+def build_runtime_supersession_record_v3(
+    run_directory: Path,
+    *,
+    repository_root: Path,
+    logical_result_id: str,
+    market_profile: str,
+    result_class: HistoricalResultClass,
+    copy_role: HistoricalCopyRole,
+) -> dict[str, Any]:
+    """Bind one immutable current-schema Run as runtime-superseded evidence."""
+
+    run, relative = _resolved_run_path(run_directory, repository_root)
+    evidence_hashes: dict[str, str] = {}
+    for name in V3_EVIDENCE_FILES:
+        path = run / name
+        if path.is_symlink() or not path.is_file():
+            raise ValueError(f"required historical evidence file is missing: {relative}/{name}")
+        evidence_hashes[name] = _hash_file(path)
+    record = {
+        "path": relative,
+        "logical_result_id": logical_result_id,
+        "market_profile": market_profile,
+        "result_class": result_class.value,
+        "copy_role": copy_role.value,
+        "historical_run_status": HistoricalRunStatus.SUPERSEDED.value,
+        "financial_result_status": FinancialResultStatus.SUPERSEDED.value,
+        "finding_ids": ["R2-002", "R2-007"],
+        "reason_code": HistoricalStatusReason.RUNTIME_AUTHORITY_SUPERSESSION.value,
+        "replacement_requirement": ReplacementRequirement.FINAL_PRODUCT_RUNTIME_REBUILD.value,
+        "historical_bytes_preserved": True,
+        "evidence_hashes": evidence_hashes,
+    }
+    _v3_record(record)
+    return record
+
+
+def build_runtime_supersession_registry_v3(
+    records: Iterable[dict[str, Any]],
+    *,
+    authority_id: str,
+    audited_baseline_commit: str,
+    source_commit: str,
+    recorded_at_utc: datetime,
+) -> bytes:
+    """Return the canonical closed R2 runtime-supersession registry bytes."""
+
+    if recorded_at_utc.tzinfo is None or recorded_at_utc.utcoffset() != UTC.utcoffset(
+        recorded_at_utc,
+    ):
+        raise ValueError("recorded_at_utc must use timezone-aware UTC")
+    copied = json.loads(canonical_json_bytes(list(records)))
+    copied.sort(
+        key=lambda item: (
+            str(item.get("logical_result_id")),
+            str(item.get("copy_role")),
+            str(item.get("path")),
+        ),
+    )
+    manifest: dict[str, Any] = {
+        "schema": RESULT_STATUS_V3_SCHEMA,
+        "authority_id": authority_id,
+        "audited_baseline_commit": audited_baseline_commit,
+        "source_commit": source_commit,
+        "recorded_at_utc": recorded_at_utc.isoformat().replace("+00:00", "Z"),
+        "historical_policy": RESULT_STATUS_V2_POLICY,
+        "final_holdout_authorized": False,
+        "profitability_claim_authorized": False,
+        "record_count": len(copied),
+        "records": copied,
+        "records_identity": canonical_sha256(copied),
+    }
+    manifest["registry_identity"] = canonical_sha256(manifest)
+    payload = canonical_json_bytes(manifest) + b"\n"
+    _load_v3_registry(manifest, payload)
+    return payload
+
+
 __all__ = [
     "DEFAULT_RESULT_STATUS_REFS",
     "FinancialResultStatus",
@@ -822,10 +1138,14 @@ __all__ = [
     "R2_AUDITED_BASELINE_COMMIT",
     "R2_EXPECTED_HISTORICAL_RESULTS",
     "R2_RESULT_STATUS_AUTHORITY",
+    "R2_RUNTIME_SUPERSEDED_RESULTS",
+    "R2_RUNTIME_SUPERSESSION_AUTHORITY",
     "ResultNotActiveError",
     "ResultStatusResolution",
     "build_historical_result_record_v2",
     "build_historical_result_registry_v2",
+    "build_runtime_supersession_record_v3",
+    "build_runtime_supersession_registry_v3",
     "load_historical_result_registry",
     "require_active_result",
     "resolve_result_status",

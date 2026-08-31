@@ -1,0 +1,33 @@
+{
+  "completed_trial_ids": [
+    "adversarial-remediation-002-retry-003-spot-benchmark-buy-and-hold-1x-development"
+  ],
+  "diagnostics_commit": "925c26bd36b1489f4fb266a2e3c95298a17256c8",
+  "engine_executed": true,
+  "epoch": "adversarial-remediation-002-retry-003",
+  "execution_plan_sha256": "57c97afe5e0a13d93adbdd4edce1e68a3e7cb52f7793744742f9e2682cdede84",
+  "failure_code": "OFFICIAL_SEAL_FAILURE",
+  "failure_root_cause": "R2-OFFICIAL-RUNTIME-SUPERSESSION-001",
+  "final_holdout_used": false,
+  "live_trading_used": false,
+  "owner_result_sha256": "f3d9528d3e5b52b649379fdf8ef8cda3abe575d516d663d0ceece2aa5f5c1221",
+  "plan_commit": "84c2a99b9fb6083f3b9acdfc4c426fb29b1e38e0",
+  "plan_identity": "79d724250bf3df4a753ab1bca7b8b73498f60bbd4b3755ae9229c9d5848b47e2",
+  "primary_component_validation_sha256": "368792899e5e8c2d4795404f4814288fce118c7d7c326b6932fee262587759be",
+  "primary_official_seal_sha256": "46fd98d099d3c8d0dc6be35a05d84c7c64a6c5f1ac1050762b89c43d38640c43",
+  "primary_replay_semantic_digest": "91e75487555cacd9e4762d9c4b44f0dd7c551b27f91b0e40cc23756e9cd946bc",
+  "profitability_claim_authorized": false,
+  "report_published": false,
+  "result_exposed": true,
+  "runtime_supersession_registry_identity": "4e49efaa7032e7e33c0ff2c65873846b446a486d5cefeab444a9da9441c9e9dc",
+  "runtime_supersession_registry_sha256": "ebe0a23b04d3be81a2fd267623e575f0fa6314a0452357cf42fa27796472db26",
+  "schema": "adversarial-remediation-002-failed-plan-manifest-v1",
+  "terminal_evidence_commit": "4ebd8ec334b41544edd49ff9e78df76a4d6811cb",
+  "unstarted_trial_ids": [
+    "adversarial-remediation-002-retry-003-spot-candidate-a-development",
+    "adversarial-remediation-002-retry-003-spot-candidate-b-development",
+    "adversarial-remediation-002-retry-003-perpetual-benchmark-buy-and-hold-1x-development",
+    "adversarial-remediation-002-retry-003-perpetual-candidate-a-development",
+    "adversarial-remediation-002-retry-003-perpetual-candidate-b-development"
+  ]
+}

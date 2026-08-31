@@ -35,6 +35,7 @@ from crypto_lab.reporting import _build_report_from_resolved_evidence
 from crypto_lab.reporting import _write_resolved_report
 from crypto_lab.result_status import ResultNotActiveError
 from crypto_lab.result_status import require_active_result
+from crypto_lab.result_status import resolve_result_status
 from crypto_lab.research import ClaimEvaluation
 from crypto_lab.research import ClaimEvaluationInput
 from crypto_lab.research import ClaimScope
@@ -180,11 +181,57 @@ class OfficialEvidenceResolver:
             raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "evidence locator escapes repository") from exc
         return resolved
 
-    def _run_dir(self, record: TrialRecord) -> Path:
+    def _located_run_dir(self, record: TrialRecord) -> Path:
         located = self._contained(self.repository_root / record.result_ref)
-        run_dir = located if located.is_dir() else located.parent
+        return located if located.is_dir() else located.parent
+
+    def _run_dir(self, record: TrialRecord) -> Path:
+        run_dir = self._located_run_dir(record)
         self._require_active_run(run_dir, role="primary")
         return run_dir
+
+    def _active_result_bearing_trials(
+        self,
+        *,
+        started_ids: tuple[str, ...],
+        latest: dict[str, TrialRecord],
+        selected_trial_id: str,
+    ) -> tuple[str, ...]:
+        """Return only ACTIVE result-bearing Trials while retaining full history.
+
+        Additively revoked or superseded Runs remain in ``trials.jsonl`` and in
+        the report's disclosed family history, but they are not inputs to the
+        current financial/checker resolution.  Re-executing a newer checker
+        against such immutable bytes would both contradict their non-ACTIVE
+        authority and make every legitimate Product upgrade block all later
+        reports.  The selected result itself must still be ACTIVE.
+        """
+
+        active: list[str] = []
+        for trial_id in started_ids:
+            record = latest[trial_id]
+            if record.result_ref == NOT_APPLICABLE:
+                continue
+            run_dir = self._located_run_dir(record)
+            try:
+                resolution = resolve_result_status(
+                    run_dir,
+                    repository_root=self.repository_root,
+                )
+            except (OSError, ValueError) as exc:
+                raise ResearchError(
+                    FailureCode.EVIDENCE_INCOMPLETE,
+                    "Result status authority is invalid",
+                ) from exc
+            if resolution.is_active:
+                active.append(trial_id)
+                continue
+            if trial_id == selected_trial_id:
+                raise ResearchError(
+                    FailureCode.CLAIM_INELIGIBLE,
+                    f"selected Result is not ACTIVE: {resolution.relative_path}",
+                )
+        return tuple(active)
 
     def _require_active_run(self, run_dir: Path, *, role: str) -> None:
         """Reject revoked/superseded bytes before Official financial use."""
@@ -500,11 +547,14 @@ class OfficialEvidenceResolver:
         )
         if not complete_history:
             raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE, "family contains a non-terminal trial")
+        active_result_ids = self._active_result_bearing_trials(
+            started_ids=started_ids,
+            latest=latest,
+            selected_trial_id=locator.selected_trial_id,
+        )
         resolved_runs: dict[str, tuple[Path, LabRunConfig, SourceRevision, RegisteredStrategyIdentity, str]] = {}
-        for trial_id in started_ids:
+        for trial_id in active_result_ids:
             record = latest[trial_id]
-            if record.result_ref == NOT_APPLICABLE:
-                continue
             record_protocol, _record_protocol_path = self._protocol(record.protocol_id)
             resolved_runs[trial_id] = self._resolve_selected_run(
                 record,
