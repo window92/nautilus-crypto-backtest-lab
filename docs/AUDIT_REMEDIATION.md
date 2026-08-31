@@ -199,6 +199,17 @@ path arguments which are reflected in stdout are bound as canonical
 repository-relative targets; the random isolated snapshot directory therefore
 cannot change the output digest.
 
+The authority built from Product commit
+`fab36cb4fc377fe50c348760ea31970b55532fdf` has manifest SHA-256
+`14af6dbeb28427f1877e2f4945c80d1466fe7f5f056a744c9020fd1aaad2d778`.
+Its canonical acceptance record (SHA-256
+`ae72d01f5e2e1910729736f051df69f87ebeabd60a486c0f49380265af012f7b`)
+matches all fourteen complete output contracts. Twelve pinned validators accept
+their Evidence; `validate_audit_qualification.py` and
+`validate_audit_research_runs.py` reproducibly return `FAIL` and therefore
+reject the corresponding old Evidence. This is historical-authority proof,
+not current research or Official-seal acceptance.
+
 ## Acceptance evidence
 
 The former `comprehensive-audit-remediation-003` acceptance and its numerical
