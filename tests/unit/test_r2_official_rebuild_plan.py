@@ -25,11 +25,13 @@ from scripts.prepare_adversarial_remediation_002_runs import RESEARCH_FAMILY
 from scripts.prepare_adversarial_remediation_002_runs import STRATEGY_FAMILY
 from scripts.prepare_adversarial_remediation_002_runs import ROOT
 from scripts.prepare_adversarial_remediation_002_runs import WARMUP_START
+from scripts.prepare_adversarial_remediation_002_runs import _benchmark_id
 from scripts.prepare_adversarial_remediation_002_runs import _build_protocol_and_workflows
 from scripts.prepare_adversarial_remediation_002_runs import _execution_item
 from scripts.prepare_adversarial_remediation_002_runs import _require_current_registry
 from scripts.prepare_adversarial_remediation_002_runs import _require_external_fresh_output
 from scripts.prepare_adversarial_remediation_002_runs import _require_full_release
+from scripts.prepare_adversarial_remediation_002_runs import _require_new_workflow_identities
 from scripts.prepare_adversarial_remediation_002_runs import _require_rebuild_validation
 
 
@@ -213,6 +215,15 @@ class R2OfficialRebuildPlanTests(unittest.TestCase):
             )
             self.assertIn("FINAL_HOLDOUT_USED_FALSE", workflow.protocol.claim_basis)
 
+        self.assertEqual(
+            protocols[0].required_benchmark.benchmark_id,
+            "BUY_AND_HOLD_1X_R2_SPOT_ADVERSARIAL_REMEDIATION_002",
+        )
+        self.assertEqual(
+            protocols[1].required_benchmark.benchmark_id,
+            "BUY_AND_HOLD_1X_R2_PERPETUAL_ADVERSARIAL_REMEDIATION_002",
+        )
+
         with tempfile.TemporaryDirectory(dir="/tmp") as temporary:
             root = Path(temporary)
             execution = [
@@ -245,6 +256,43 @@ class R2OfficialRebuildPlanTests(unittest.TestCase):
             self.assertIn(str(ROOT / "scripts/isolated_runtime_bootstrap.py"), command)
             self.assertIn(str(ROOT / "runtime-bootstrap-authority.json"), command)
             self.assertIn("crypto_lab.owner:main", command)
+
+    def test_new_epoch_never_overwrites_prior_benchmark_evidence(self) -> None:
+        retry_epoch = "adversarial-remediation-002-planner-regression-control"
+        record_ids = {
+            record.profile_id: record.qualified_profile_record_id
+            for record in self.legacy_registry.records
+        }
+        workflows = []
+        for profile in PROFILE_ORDER:
+            _protocol, values = _build_protocol_and_workflows(
+                profile=profile,
+                release=self.releases[profile],
+                qualified_profile_record_id=record_ids[profile],
+                frozen_at_utc=FROZEN,
+                epoch=retry_epoch,
+                research_family_id=RESEARCH_FAMILY,
+            )
+            workflows.extend(values)
+        benchmark_ids = {
+            item.protocol.required_benchmark.benchmark_id
+            for item in workflows
+            if item.workflow_purpose is OwnerWorkflowPurpose.BENCHMARK_STUDY
+        }
+        self.assertEqual(
+            benchmark_ids,
+            {
+                _benchmark_id(epoch=retry_epoch, suffix="spot"),
+                _benchmark_id(epoch=retry_epoch, suffix="perpetual"),
+            },
+        )
+        self.assertTrue(
+            all(
+                not (ROOT / "research/benchmarks" / f"{benchmark_id}.json").exists()
+                for benchmark_id in benchmark_ids
+            ),
+        )
+        _require_new_workflow_identities(workflows)
 
     def test_rebuild_validation_must_bind_both_release_inventory_and_catalogs(self) -> None:
         inventories = {

@@ -405,6 +405,22 @@ def _require_new_workflow_identities(workflows: list[OwnerWorkflowInput]) -> Non
         raise RuntimeError("R2 workflow identity collision: " + ",".join(sorted(collisions)))
 
 
+def _benchmark_id(*, epoch: str, suffix: str) -> str:
+    """Return an additive benchmark evidence namespace for one frozen plan.
+
+    ``research/benchmarks/<benchmark_id>.json`` is result-bearing evidence,
+    not a replaceable current pointer.  A full requalification epoch must
+    therefore receive a distinct, deterministic benchmark identity so the
+    Owner never overwrites an earlier benchmark result.
+    """
+
+    validated_epoch = validate_safe_component(epoch, field="epoch")
+    if suffix not in {"spot", "perpetual"}:
+        raise ValueError("benchmark profile suffix is invalid")
+    revision = validated_epoch.upper().replace("-", "_")
+    return f"BUY_AND_HOLD_1X_R2_{suffix.upper()}_{revision}"
+
+
 def _build_protocol_and_workflows(
     *,
     profile: MarketProfile,
@@ -415,7 +431,7 @@ def _build_protocol_and_workflows(
     research_family_id: str,
 ) -> tuple[ResearchProtocol, tuple[OwnerWorkflowInput, ...]]:
     suffix = "spot" if profile is MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY else "perpetual"
-    benchmark_id = f"BUY_AND_HOLD_1X_R2_{suffix.upper()}"
+    benchmark_id = _benchmark_id(epoch=epoch, suffix=suffix)
     specs = (
         locked_weekly_tsmom_strategy_spec(TSMOM_FULL_REGISTRATION_ID, profile),
         locked_weekly_tsmom_strategy_spec(TSMOM_VOL20_REGISTRATION_ID, profile),
@@ -475,6 +491,7 @@ def _build_protocol_and_workflows(
             definition=(
                 f"registration_id={BUY_AND_HOLD_REGISTRATION_ID};"
                 f"strategy_spec_id={benchmark_spec.strategy_spec_id};"
+                f"qualification_epoch={epoch};"
                 "enter LONG 1x from the first fully scoring-eligible signal interval after "
                 "60s latency; hold through scoring_end_exclusive without synthetic close"
             ),
