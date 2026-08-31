@@ -242,6 +242,9 @@ def _run_sentinel(
             size_increment=instrument.size_increment.as_decimal(),
             initial_capital_amount=config.initial_capital.amount,
             initial_capital_currency=config.initial_capital.currency,
+            spot_plan_quote_notional_from_signal_close=(
+                config.market_profile is MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY
+            ),
         )
         engine.add_strategy(strategy)
         engine.add_data(list(subset))
@@ -275,6 +278,7 @@ def _run_sentinel(
             "fill_quantity": None if not fills else str(fills[0]["last_qty"]),
             "same_bar_fill": bool(fills and int(fills[0]["ts_event"]) <= int(signal_bar.ts_init)),
             "guard_failure_count": len(strategy.observations["guard_failures"]),
+            "guard_failures": list(strategy.observations["guard_failures"]),
             "status": "PASS" if valid else "FAIL",
             "performance_research": False,
         }
