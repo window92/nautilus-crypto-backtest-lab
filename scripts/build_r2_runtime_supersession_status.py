@@ -63,6 +63,14 @@ EXPECTED_RUNTIME_SUPERSESSION_EVIDENCE_HASHES: dict[str, dict[str, str]] = {
         "source_revision.json": "55d05c39aea5a2324280a95d35799ada7039936d15765b3371fe98b4fe49d3fb",
         "status.json": "80d7918b4992173857057ded913d96f13c01597914d4866fc1fc3f5e73bd5bb3",
     },
+    "runs/adversarial-remediation-002-retry-004-spot-benchmark-run-524a71ec1f23": {
+        "component_validation.json": "222e1adcdf9443cbd711ac1c39aaea8e55f65bd3f0014065cacaa5f47e7e286a",
+        "evidence_manifest.json": "8ea36b3b68dbe783306c6cbfd25c3ba09dfca4de6412bfbaad5758d6f47e39b6",
+        "official_seal.json": "eb8bac5f3269feef8d034c8046fab1a6045e6c5ceb2a3925913e53e914f667c1",
+        "runtime_identity.json": "954a6ad4c20de481cb20f8c851388da76c72bac48cb26755dab3fc26e1895146",
+        "source_revision.json": "e7a80fa0e0b0c3cb8b609df987b7bef5ef2f79f2dc5e398e0b5e706c21227889",
+        "status.json": "621e64de2138d6901379f40c7d155122a9d9c2e6533db2d3929d3ccb3cb771ab",
+    },
     (
         "runs/replays/adversarial-remediation-002-retry-002-spot-benchmark-"
         "buy-and-hold-1x-development/adversarial-remediation-002-retry-002-"
@@ -110,6 +118,18 @@ EXPECTED_RUNTIME_SUPERSESSION_EVIDENCE_HASHES: dict[str, dict[str, str]] = {
         "runtime_identity.json": "a56e465c7506ff4456c3d4e7aed9499564bf49fd4f4b0a6bedb93cbd7c3826a2",
         "source_revision.json": "2afbacf05e04b44d49932882df563f6c2d07553ee722febb3d4f2eb0e1c88b7a",
         "status.json": "318d3be55781bc1b9e1b58d9c28447c5fdc5eae96fac611fcb3772442b612184",
+    },
+    (
+        "runs/replays/adversarial-remediation-002-retry-004-spot-benchmark-"
+        "buy-and-hold-1x-development/adversarial-remediation-002-retry-004-"
+        "spot-benchmark-run-524a71ec1f23"
+    ): {
+        "component_validation.json": "222e1adcdf9443cbd711ac1c39aaea8e55f65bd3f0014065cacaa5f47e7e286a",
+        "evidence_manifest.json": "aa5c4a59086f7f04d69b946bdb90a42d2da6e3b6266d2ab018097db02031942a",
+        "official_seal.json": "0a2dd05e70d825ab0766a3f327fa57961330e7788071f3983708ccc61215b6d4",
+        "runtime_identity.json": "954a6ad4c20de481cb20f8c851388da76c72bac48cb26755dab3fc26e1895146",
+        "source_revision.json": "b98acfc41aa7491439c41a78aadc8c3178e3a8cf405ef14a6a8cdf8323927f7b",
+        "status.json": "e5fc2295289f33e1d7baaa4a6bddcc366197a7a552e966115728f1dc33738257",
     },
 }
 

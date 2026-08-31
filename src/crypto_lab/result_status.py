@@ -213,6 +213,18 @@ R2_RUNTIME_SUPERSEDED_RESULTS: dict[str, dict[str, str]] = {
             "spot-benchmark-run-f28ac747c930"
         ),
     },
+    "retry-004-spot-benchmark": {
+        "market_profile": "BINANCE_SPOT_CASH_LONG_ONLY",
+        "result_class": HistoricalResultClass.BENCHMARK.value,
+        "primary_path": (
+            "runs/adversarial-remediation-002-retry-004-spot-benchmark-run-524a71ec1f23"
+        ),
+        "replay_path": (
+            "runs/replays/adversarial-remediation-002-retry-004-spot-benchmark-"
+            "buy-and-hold-1x-development/adversarial-remediation-002-retry-004-"
+            "spot-benchmark-run-524a71ec1f23"
+        ),
+    },
 }
 
 

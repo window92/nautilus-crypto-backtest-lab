@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import shutil
 import tempfile
 import unittest
 from dataclasses import replace
@@ -16,7 +17,9 @@ from crypto_lab.hashing import sha256_file
 from crypto_lab.official import OfficialEvidenceLocator
 from crypto_lab.official import OfficialEvidenceResolver
 from crypto_lab.official import _candidate_schedule_complete
+from crypto_lab.official import _historical_failed_component_validation_is_retained
 from crypto_lab.official import _historical_failed_checker_is_retained
+from crypto_lab.official import _retained_v2_root_integrity_is_valid
 from crypto_lab.reporting import ReportInput
 from crypto_lab.reporting import build_report
 from crypto_lab.research import ClaimEvaluationInput
@@ -31,6 +34,13 @@ from tests.adversarial.test_aud003_004_authoritative_history import HistoryAttac
 from tests.m4_helpers import valid_protocol
 from tests.m4_helpers import candidate
 from tests.m4_helpers import instant
+
+
+REPOSITORY = Path(__file__).resolve().parents[2]
+RETAINED_V2_FAILURE = (
+    REPOSITORY
+    / "runs/adversarial-remediation-002-retry-002-perpetual-benchmark-run-d97648d2fd36"
+)
 
 
 def _asserted_claim(*, synthetic: bool) -> ClaimEvaluationInput:
@@ -78,6 +88,119 @@ def _diagnostic(*, run_hash: str) -> DiagnosticResolution:
 
 
 class Aud005ClaimReportResolverTests(unittest.TestCase):
+    def test_sealed_v2_component_failure_is_retained_without_legacy_checker(self) -> None:
+        status = {
+            "schema": "run-status-v2",
+            "run_id": "failed-run",
+            "state": "BLOCKED",
+            "failure_codes": [
+                "PERPETUAL_RECONCILIATION_FAILURE",
+                "OFFICIAL_SEAL_FAILURE",
+                "CHECKER_FAILURE",
+            ],
+            "component_validation_outcome": "COMPONENT_CHECK_FAIL",
+            "component_validation_sha256": "1" * 64,
+            "evidence_manifest_sha256": "2" * 64,
+            "official_publication_state": "INELIGIBLE_COMPONENT_RESULT_RETAINED",
+            "started_run_retained": True,
+        }
+        component = {
+            "checks": [],
+            "failure_codes": ["PERPETUAL_RECONCILIATION_FAILURE"],
+            "mutated_run_evidence": False,
+            "outcome": "COMPONENT_CHECK_FAIL",
+        }
+        self.assertTrue(
+            _historical_failed_component_validation_is_retained(
+                TrialState.FAILED,
+                status,
+                component,
+                component_validation_sha256="1" * 64,
+                manifest_sha256="2" * 64,
+                failure_or_block_reason="DETERMINISTIC_REPLAY_MISMATCH_OR_FAILURE",
+            ),
+        )
+        self.assertFalse(
+            _historical_failed_component_validation_is_retained(
+                TrialState.FAILED,
+                status,
+                {**component, "outcome": "COMPONENT_CHECK_PASS"},
+                component_validation_sha256="1" * 64,
+                manifest_sha256="2" * 64,
+                failure_or_block_reason="DETERMINISTIC_REPLAY_MISMATCH_OR_FAILURE",
+            ),
+        )
+        self.assertFalse(
+            _historical_failed_component_validation_is_retained(
+                TrialState.FAILED,
+                status,
+                component,
+                component_validation_sha256="3" * 64,
+                manifest_sha256="2" * 64,
+                failure_or_block_reason="DETERMINISTIC_REPLAY_MISMATCH_OR_FAILURE",
+            ),
+        )
+
+    def test_real_retained_v2_failure_resolves_without_checker_json(self) -> None:
+        trial_id = (
+            "adversarial-remediation-002-retry-002-perpetual-benchmark-"
+            "buy-and-hold-1x-development"
+        )
+        resolver = OfficialEvidenceResolver(
+            repository_root=REPOSITORY,
+            require_remote_tip=False,
+        )
+        record = {
+            item.trial_id: item
+            for item in resolver.history.journal.read_records()
+        }[trial_id]
+        protocol, _path = resolver._protocol(record.protocol_id)
+        with (
+            patch(
+                "crypto_lab.checker.check_evidence_directory",
+                side_effect=RuntimeError("current checker result is non-authoritative"),
+            ),
+            patch("crypto_lab.official.verify_source_revision"),
+            patch(
+                "crypto_lab.official.registered_strategy_identity_matches_frozen_source",
+                return_value=True,
+            ),
+        ):
+            run_dir, _config, _source, _identity, manifest_sha = (
+                resolver._resolve_selected_run(
+                    record,
+                    protocol,
+                    revalidate_current_checker=False,
+                )
+            )
+
+        self.assertFalse((run_dir / "checker.json").exists())
+        self.assertTrue((run_dir / "component_validation.json").is_file())
+        self.assertEqual(manifest_sha, sha256_file(run_dir / "evidence_manifest.json"))
+
+    def test_retained_v2_failure_leaf_tamper_fails_root_integrity(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            copied = Path(temporary) / "retained-failure"
+            shutil.copytree(RETAINED_V2_FAILURE, copied)
+            with patch(
+                "crypto_lab.checker.check_evidence_directory",
+                side_effect=RuntimeError("current checker result is non-authoritative"),
+            ):
+                self.assertTrue(
+                    _retained_v2_root_integrity_is_valid(
+                        copied,
+                        repository_root=REPOSITORY,
+                    ),
+                )
+                component = copied / "component_validation.json"
+                component.write_bytes(component.read_bytes() + b"tamper\n")
+                self.assertFalse(
+                    _retained_v2_root_integrity_is_valid(
+                        copied,
+                        repository_root=REPOSITORY,
+                    ),
+                )
+
     def test_historical_failed_checker_is_preserved_but_cannot_pose_as_pass(self) -> None:
         status = {
             "state": "FAILED",

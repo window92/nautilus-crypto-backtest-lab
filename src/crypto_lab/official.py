@@ -121,6 +121,121 @@ def _historical_failed_checker_is_retained(
     )
 
 
+def _historical_failed_component_validation_is_retained(
+    state: TrialState,
+    status: dict[str, Any],
+    persisted_component: dict[str, Any],
+    *,
+    component_validation_sha256: str,
+    manifest_sha256: str,
+    failure_or_block_reason: str = "NOT_APPLICABLE",
+) -> bool:
+    """Validate a sealed v2 failure without changing its historical verdict."""
+
+    expected_status_fields = {
+        "component_validation_outcome",
+        "component_validation_sha256",
+        "evidence_manifest_sha256",
+        "failure_codes",
+        "official_publication_state",
+        "run_id",
+        "schema",
+        "started_run_retained",
+        "state",
+    }
+    run_state_matches_journal = bool(
+        status.get("state") == state.value
+        or (
+            state is TrialState.FAILED
+            and failure_or_block_reason == "DETERMINISTIC_REPLAY_MISMATCH_OR_FAILURE"
+            and status.get("state") in {TrialState.FAILED.value, TrialState.BLOCKED.value}
+        )
+    )
+    status_failures = status.get("failure_codes")
+    component_failures = persisted_component.get("failure_codes")
+    failures_match = False
+    if (
+        isinstance(status_failures, list)
+        and isinstance(component_failures, list)
+        and status_failures
+        and all(isinstance(code, str) for code in status_failures)
+        and all(isinstance(code, str) for code in component_failures)
+        and len(status_failures) == len(set(status_failures))
+        and len(component_failures) == len(set(component_failures))
+        and set(component_failures) < set(status_failures)
+        and set(status_failures) - set(component_failures)
+        == {FailureCode.OFFICIAL_SEAL_FAILURE.value, FailureCode.CHECKER_FAILURE.value}
+    ):
+        try:
+            for code in status_failures:
+                FailureCode(code)
+        except ValueError:
+            pass
+        else:
+            failures_match = True
+    return bool(
+        state in {TrialState.FAILED, TrialState.BLOCKED, TrialState.ABORTED}
+        and set(status) == expected_status_fields
+        and set(persisted_component)
+        == {"checks", "failure_codes", "mutated_run_evidence", "outcome"}
+        and status.get("schema") == "run-status-v2"
+        and run_state_matches_journal
+        and status.get("component_validation_outcome")
+        in {"COMPONENT_CHECK_FAIL", "COMPONENT_CHECK_BLOCKED"}
+        and persisted_component.get("outcome")
+        == status.get("component_validation_outcome")
+        and status.get("component_validation_sha256") == component_validation_sha256
+        and status.get("evidence_manifest_sha256") == manifest_sha256
+        and status.get("official_publication_state")
+        == "INELIGIBLE_COMPONENT_RESULT_RETAINED"
+        and status.get("started_run_retained") is True
+        and persisted_component.get("mutated_run_evidence") is False
+        and failures_match
+    )
+
+
+def _retained_v2_root_integrity_is_valid(
+    run_dir: Path,
+    *,
+    repository_root: Path,
+) -> bool:
+    """Accept only structurally intact v2 roots whose component result is ineligible.
+
+    ``verify_official_seal`` also executes the current checker, but that result
+    is deliberately excluded here: a newer checker must not reinterpret a
+    historical failure.  Only the checker-independent inventory, schema, and
+    root-attestation checks are authoritative for retention.
+    """
+
+    report = verify_official_seal(
+        run_dir,
+        repository_root=repository_root,
+        source_revision_current_head_required=False,
+    )
+    by_name: dict[str, dict[str, Any]] = {}
+    for check in report.checks:
+        name = check.get("name")
+        if not isinstance(name, str) or name in by_name:
+            return False
+        by_name[name] = check
+    required = {
+        "exact_leaf_inventory",
+        "manifest_schema",
+        "profile_file_contract",
+        "root_file_inventory",
+        "root_regular_files_only",
+        "root_seal_binding",
+        "status_schema",
+    }
+    return bool(
+        report.outcome is OfficialSealOutcome.OFFICIAL_SEAL_FAIL
+        and set(report.failure_codes)
+        == {FailureCode.OFFICIAL_SEAL_FAILURE.value, FailureCode.CHECKER_FAILURE.value}
+        and required <= set(by_name)
+        and all(by_name[name].get("pass") is True for name in required)
+    )
+
+
 class OfficialEvidenceLocator(StrictModel):
     """Only caller-controlled Official claim/report input: immutable identities."""
 
@@ -375,12 +490,20 @@ class OfficialEvidenceResolver:
             "strategy_identity.json",
             "strategy_spec.json",
         }
+        missing = sorted(name for name in required if not (run_dir / name).is_file())
+        if missing:
+            raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "selected Run missing: " + ",".join(missing))
+        status = self._json(run_dir / "status.json")
+        retained_v2_failure = bool(
+            not revalidate_current_checker
+            and status.get("schema") == "run-status-v2"
+        )
         required.add(
             "component_validation.json"
-            if revalidate_current_checker
+            if revalidate_current_checker or retained_v2_failure
             else "checker.json",
         )
-        if revalidate_current_checker:
+        if revalidate_current_checker or retained_v2_failure:
             required.add("official_seal.json")
         missing = sorted(name for name in required if not (run_dir / name).is_file())
         if missing:
@@ -392,25 +515,46 @@ class OfficialEvidenceResolver:
         identity = RegisteredStrategyIdentity.from_json_bytes(
             (run_dir / "strategy_identity.json").read_bytes(),
         )
-        status = self._json(run_dir / "status.json")
         component_path = run_dir / (
             "component_validation.json"
-            if revalidate_current_checker
+            if revalidate_current_checker or retained_v2_failure
             else "checker.json"
         )
         persisted_checker = self._json(component_path)
-        manifest_sha = self._verify_manifest(
-            run_dir,
-            record.run_id,
-            allow_legacy_v1=not revalidate_current_checker,
-        )
+        if retained_v2_failure:
+            if not _retained_v2_root_integrity_is_valid(
+                run_dir,
+                repository_root=self.repository_root,
+            ):
+                raise ResearchError(
+                    FailureCode.EVIDENCE_INCOMPLETE,
+                    "historical failed v2 root integrity is invalid",
+                )
+            manifest_sha = sha256_file(run_dir / "evidence_manifest.json")
+        else:
+            manifest_sha = self._verify_manifest(
+                run_dir,
+                record.run_id,
+                allow_legacy_v1=not revalidate_current_checker,
+            )
         historical_failed_retained = bool(
             not revalidate_current_checker
-            and _historical_failed_checker_is_retained(
-                record.state,
-                status,
-                persisted_checker,
-                failure_or_block_reason=record.failure_or_block_reason,
+            and (
+                _historical_failed_component_validation_is_retained(
+                    record.state,
+                    status,
+                    persisted_checker,
+                    component_validation_sha256=sha256_file(component_path),
+                    manifest_sha256=manifest_sha,
+                    failure_or_block_reason=record.failure_or_block_reason,
+                )
+                if retained_v2_failure
+                else _historical_failed_checker_is_retained(
+                    record.state,
+                    status,
+                    persisted_checker,
+                    failure_or_block_reason=record.failure_or_block_reason,
+                )
             )
         )
         if (
@@ -425,7 +569,7 @@ class OfficialEvidenceResolver:
             )
             or status.get(
                 "component_validation_outcome"
-                if revalidate_current_checker
+                if revalidate_current_checker or retained_v2_failure
                 else "checker_outcome",
             )
             != persisted_checker.get("outcome")
