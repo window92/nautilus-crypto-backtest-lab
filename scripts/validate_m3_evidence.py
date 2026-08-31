@@ -13,13 +13,14 @@ from crypto_lab.hashing import sha256_file
 from crypto_lab.historical_contracts import validate_validator_contract
 from crypto_lab.m3 import QualificationDownstreamBundle
 from crypto_lab.m3 import QualifiedProfileRegistry
+from scripts.validate_audit_qualification import validate as validate_current_qualification
 
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_EVIDENCE = ROOT / "evidence/m3/m3-acceptance-001"
 
 
-def validate(evidence: Path = DEFAULT_EVIDENCE) -> dict[str, Any]:
+def _validate_legacy(evidence: Path) -> dict[str, Any]:
     checks: dict[str, bool] = {}
     historical_contract = validate_validator_contract(
         Path(__file__).name,
@@ -106,6 +107,27 @@ def validate(evidence: Path = DEFAULT_EVIDENCE) -> dict[str, Any]:
         "checks": checks,
         "historical_contract": historical_contract.to_builtins(),
     }
+
+
+def validate(evidence: Path = DEFAULT_EVIDENCE) -> dict[str, Any]:
+    """Validate a qualification with the contract selected by registry schema.
+
+    Schema v1 evidence remains historical and is interpreted only by the
+    legacy validator contract above.  Schema v2 is current R2 evidence and
+    must use the current component-validation vocabulary and revalidation
+    path; silently falling back to legacy ``CHECK_*`` semantics is forbidden.
+    """
+
+    registry_payload = json.loads(
+        (evidence / "qualified-profile-registry.json").read_text(encoding="utf-8"),
+    )
+    schema_version = registry_payload.get("schema_version")
+    if schema_version == 2:
+        result = validate_current_qualification(evidence)
+        return {**result, "contract_mode": "R2_CURRENT"}
+    if schema_version == 1:
+        return {**_validate_legacy(evidence), "contract_mode": "LEGACY_V1"}
+    raise ValueError("M3 qualification registry schema is unsupported")
 
 
 def main() -> int:

@@ -44,6 +44,7 @@ R2_MODULES = (
     "tests.adversarial.test_r2_official_sealing",
     "tests.adversarial.test_r2_perpetual_reconciliation",
     "tests.adversarial.test_r2_runtime_bootstrap",
+    "tests.adversarial.test_r2_semantic_position_replay",
     "tests.adversarial.test_r2_spot_affordability_mutation",
     "tests.unit.test_r2_acceptance_validator",
     "tests.unit.test_r2_failure_code_vocabulary",
@@ -60,6 +61,7 @@ MUTATION_MODULES = (
     "tests.adversarial.test_r2_official_sealing",
     "tests.adversarial.test_r2_perpetual_reconciliation",
     "tests.adversarial.test_r2_runtime_bootstrap",
+    "tests.adversarial.test_r2_semantic_position_replay",
     "tests.adversarial.test_r2_spot_affordability_mutation",
     "tests.unit.test_r2_acceptance_validator",
     "tests.unit.test_r2_failure_code_vocabulary",
@@ -280,6 +282,18 @@ print(json.dumps({
     return (str(DATA_PYTHON), "-c", code, str(database), str(plan))
 
 
+def _qualification_evidence_directory(plan: Path) -> Path:
+    payload = json.loads(plan.read_text(encoding="utf-8"))
+    binding = payload.get("qualification_registry")
+    if not isinstance(binding, dict) or not isinstance(binding.get("path"), str):
+        raise ValueError("R2 plan lacks a qualification registry binding")
+    registry = (ROOT / binding["path"]).resolve(strict=True)
+    registry.relative_to(ROOT)
+    if registry.name != "qualified-profile-registry.json" or not registry.is_file():
+        raise ValueError("R2 qualification binding is not a regular registry file")
+    return registry.parent
+
+
 def _fresh_wheel_phase(
     *,
     ordinal: int,
@@ -418,6 +432,7 @@ def main(argv: list[str] | None = None) -> int:
         or project_wheel.suffix != ".whl"
     ):
         raise ValueError("locked Nautilus or project Wheel identity differs")
+    qualification_evidence = _qualification_evidence_directory(plan)
 
     output.mkdir(mode=0o700)
     logs = output / "logs"
@@ -469,6 +484,16 @@ def main(argv: list[str] | None = None) -> int:
                 str(ROOT / "scripts/run_historical_evidence_acceptance.py"),
                 "--output",
                 str(output / "historical-evidence.json"),
+            ),
+            False,
+        ),
+        (
+            "CURRENT_M3_QUALIFICATION_VALIDATION",
+            (
+                str(PROJECT_PYTHON),
+                str(ROOT / "scripts/validate_m3_evidence.py"),
+                "--evidence",
+                str(qualification_evidence),
             ),
             False,
         ),
