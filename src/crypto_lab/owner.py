@@ -17,6 +17,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+from collections.abc import Mapping
 from dataclasses import dataclass
 from dataclasses import fields
 from dataclasses import replace
@@ -98,6 +99,20 @@ class OwnerWorkflowPurpose(StrEnum):
     QUALIFICATION_INTERFACE_FIXTURE = "QUALIFICATION_INTERFACE_FIXTURE"
 
 
+def _startup_state_to_builtins(value: Any) -> Any:
+    """Reconstruct the canonical JSON shape from bootstrap-frozen state."""
+
+    if isinstance(value, Mapping):
+        if not all(isinstance(key, str) for key in value):
+            raise TypeError("bootstrap state mappings require string keys")
+        return {key: _startup_state_to_builtins(item) for key, item in value.items()}
+    if isinstance(value, tuple):
+        return [_startup_state_to_builtins(item) for item in value]
+    if value is None or isinstance(value, (str, int, bool)):
+        return value
+    raise TypeError(f"unsupported bootstrap state value: {type(value).__name__}")
+
+
 def _require_verified_startup() -> dict[str, Any]:
     """Reject every direct/forged call before Owner workflow side effects."""
 
@@ -114,6 +129,15 @@ def _require_verified_startup() -> dict[str, Any]:
             sort_keys=True,
             separators=(",", ":"),
         ).encode("utf-8")
+        identity_material = dict(parsed)
+        attestation_identity = identity_material.pop("attestation_identity")
+        identity_bytes = json.dumps(
+            identity_material,
+            ensure_ascii=False,
+            allow_nan=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
         product = parsed["product"]
         valid = bool(
             parsed["schema"] == "isolated-runtime-bootstrap-attestation-v1"
@@ -123,8 +147,11 @@ def _require_verified_startup() -> dict[str, Any]:
             and len(product["source_commit"]) == 40
             and isinstance(product["source_tree"], str)
             and len(product["source_tree"]) == 40
+            and isinstance(attestation_identity, str)
+            and attestation_identity == hashlib.sha256(identity_bytes).hexdigest()
+            and encoded.encode("utf-8") == canonical
             and declared_hash == hashlib.sha256(canonical).hexdigest()
-            and dict(attestation) == parsed
+            and _startup_state_to_builtins(attestation) == parsed
             and dict(parsed["environment"]) == _official_child_environment()
         )
     except Exception:

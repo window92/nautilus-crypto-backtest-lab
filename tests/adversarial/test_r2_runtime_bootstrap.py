@@ -635,6 +635,36 @@ class IsolatedRuntimeBootstrapTests(unittest.TestCase):
         failure = json.loads(direct.stderr)
         self.assertEqual(failure["failure_code"], "RUNTIME_STARTUP_MISMATCH")
 
+    def test_real_owner_entrypoint_observes_verified_frozen_attestation(self) -> None:
+        process = subprocess.run(
+            [
+                str(ROOT / ".venv/bin/python"),
+                "-I",
+                "-P",
+                "-S",
+                "-B",
+                "-X",
+                "pycache_prefix=/dev/null",
+                str(BOOTSTRAP),
+                "--authority",
+                str(ROOT / "runtime-bootstrap-authority.json"),
+                "--repository",
+                str(ROOT),
+                "--entrypoint",
+                "crypto_lab.owner:main",
+                "--",
+                "--help",
+            ],
+            cwd=ROOT,
+            env=CHILD_ENVIRONMENT,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(process.returncode, 0, process.stderr)
+        self.assertIn("usage:", process.stdout)
+        self.assertNotIn("RUNTIME_STARTUP_MISMATCH", process.stderr)
+
     def test_record_payload_mutation_fails_before_dependency_import(self) -> None:
         (self.fixture.site / "runtime_probe/__init__.py").write_text(
             "raise AssertionError('mutated dependency executed')\n",
