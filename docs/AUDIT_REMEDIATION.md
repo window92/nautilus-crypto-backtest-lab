@@ -17,7 +17,7 @@ to make it conform to the new contract.
 | SSOT generation | SHA-256 | Meaning |
 |---|---|---|
 | Audited base at `b5c865c28b83526ffab38152e7e6821f39b77014` | `9232ebca20e3933b8b36538991001880ae54dbbe37b2da322dca2ac6608d0917` | Immutable historical contract bytes |
-| R2 remediated contract | `a2170e1dbe95d345ec4dc9485acb20c51d70b7e650926eedefbcc706ba50d1a1` | New contract bytes; new Runs additionally bind their final committed Git Source Revision |
+| R2 remediated contract | `94cc5ac01c6c8c778c1b5332cf1851f238d2082792d389e4c32c0c92206234db` | New contract bytes; new Runs additionally bind their final committed Git Source Revision |
 
 ## Authority model
 
@@ -39,7 +39,8 @@ The remediation separates five meanings that older reports could blur:
 
 Historical validator v2 binds the exact source commit/tree, entrypoint,
 wrapper, schemas, executable closure, arguments, isolated interpreter profile,
-and external file dependencies. It materializes and executes those exact bytes
+external file dependencies, and exact exit/status/stdout/stderr output. It
+materializes and executes those exact bytes
 from an independent snapshot. Pinned imports preserve standard `__file__` and
 module-origin semantics, and every external input is copied into a distinct
 read-only inode so the validator cannot escape through a symlink or mutate the
@@ -133,7 +134,7 @@ parallel ledger, synthesize fills, or replace native PnL.
 | R2-003 | Decimal read-only Perpetual reconciliation proves Fill order, NETTING position/average entry, commission amount/currency, realized/unrealized PnL, exact funding/account deltas, causal terminal mark, and ending Equity. Every completed cycle additionally binds a detached native `PositionClosed` callback payload so later NETTING reopen cannot mutate the past. Account, position, fee, PnL, Fill, funding, reversal, callback-snapshot, and mark mutations fail. |
 | R2-004 | Dataset Release v2 contains the complete typed Raw inventory and proves exact bidirectional equality to the DuckDB used-Raw inventory. Missing, extra, hash, role, locator, Instrument, profile, or window mutations fail. |
 | R2-005 | Native Evidence → component validation → exact leaf manifest → status → root attestation is acyclic. A missing, extra, altered, invalid-empty, symlinked, escaped, or cross-identity file cannot receive `OFFICIAL_SEAL_PASS`. The public verifier cannot accept a caller-supplied component validator or PASS oracle. |
-| R2-006 | Historical validator v2 binds and executes its source commit/tree, wrapper, entrypoint, schema/dependency closure, arguments, and external bindings. Current `HEAD` cannot reinterpret old Evidence. |
+| R2-006 | Historical validator v2 binds and executes its source commit/tree, wrapper, entrypoint, schema/dependency closure, arguments, external bindings, and exact exit/status/stdout/stderr output. Current `HEAD` cannot reinterpret old Evidence, and a matching pinned FAIL remains a rejected historical result rather than being relabeled PASS. |
 | R2-007 | A standard-library bootstrap verifies isolated flags, exact environment/`sys.path`, Python/Product/dependency/import identities, `RECORD` and native bytes before Product Code import. Startup authority is separate from `runtime.lock.json`. |
 | R2-008 | Both profiles use scoring-only UTC daily marked total portfolio Equity, `365.2425` annualization, causal open-position valuation, and explicit minimum-sample/undefined behavior. Every daily native snapshot must reconcile to an independent event ledger: Spot Fills/fees plus the causal daily execution-Bar close; Perpetual Fills/fees/funding plus the UTC-midnight subset of an exact eight-hour material Mark grid. Missing points, stale currencies/Instruments, unpriced state, unexpected currencies, and non-terminal intermediate tampering fail. Native metrics with other semantics are diagnostics only. |
 | R2-009 | Post-boundary receipt is derived from actual events; missing Evidence returns structured codes; raw funding lexemes and Instrument/profile identities remain bound; journal/anchor writes and locks fail closed. |
@@ -172,7 +173,8 @@ cannot make a historical result currently acceptable. The v2 authority binds
 the exact Git and executable closure and reports:
 
 - `HISTORICAL_EXECUTABLE_SNAPSHOT_VALID`: exact historical executable bytes,
-  authority, ancestry, isolated runtime, exit code, and expected status agree.
+  authority, ancestry, isolated runtime, exit code, status, and complete
+  stdout/stderr digests agree with the per-validator observation.
 - `HISTORICAL_EXECUTABLE_UNAVAILABLE`: the exact historical executable cannot
   be proved or run; it is not a PASS.
 - `LEGACY_CONTRACT_ONLY`: old input bytes match but executable semantics were
@@ -186,6 +188,13 @@ Changing a PASS condition or wrapper, deleting a validator, using a different
 commit, or losing ancestry fails with
 `HISTORICAL_VALIDATOR_IDENTITY_MISMATCH`. Historical validity never restores a
 Run listed in the revocation registry.
+
+Authority execution and Evidence acceptance are separate facts. The v2 batch
+gate succeeds only when all fourteen pinned executions match their complete
+output contracts, while it reports independently how many historical Evidence
+sets the pinned validators actually accept. It does not assume an all-PASS
+past. In particular, an exact reproducible `FAIL` is evidence of historical
+rejection, not a gate failure and not a financial or Official PASS.
 
 ## Acceptance evidence
 

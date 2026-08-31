@@ -12,6 +12,7 @@ from typing import Any
 
 from crypto_lab.historical_contracts import load_historical_authority_manifest
 from scripts.build_historical_validator_authorities import BUILD_SPEC_SCHEMA
+from scripts.build_historical_validator_authorities import EXPECTED_RESULTS_SCHEMA
 from scripts.build_historical_validator_authorities import HistoricalAuthorityBuildError
 from scripts.build_historical_validator_authorities import build_manifest
 from scripts.build_historical_validator_authorities import derive_current_product_build_spec
@@ -219,6 +220,8 @@ class HistoricalBuilderFixture:
             },
         )
         self.spec_path = root / "build-spec.json"
+        self.expected_stdout_sha256 = hashlib.sha256(b"PASS\n").hexdigest()
+        self.expected_stderr_sha256 = hashlib.sha256(b"").hexdigest()
         profile = {
             "bootstrap_sha256": "a" * 64,
             "initial_sys_path": [],
@@ -249,6 +252,8 @@ class HistoricalBuilderFixture:
                     "interpreter_profile": "fixture-runtime",
                     "expected_exit_code": 0,
                     "expected_status": "PASS",
+                    "expected_stdout_sha256": self.expected_stdout_sha256,
+                    "expected_stderr_sha256": self.expected_stderr_sha256,
                 }
                 for name in VALIDATORS
             },
@@ -256,7 +261,28 @@ class HistoricalBuilderFixture:
         self.write_spec()
         self.project_runtime_authority = root / "project-runtime-authority.json"
         self.data_runtime_authority = root / "data-runtime-authority.json"
+        self.expected_results = root / "expected-results.json"
         self._write_runtime_authorities()
+        self._write_expected_results()
+
+    def _write_expected_results(self) -> None:
+        _write_json(
+            self.expected_results,
+            {
+                "schema": EXPECTED_RESULTS_SCHEMA,
+                "product_commit": self.commit,
+                "results": {
+                    name: {
+                        "source_commit": self.historical_commit,
+                        "expected_exit_code": 0,
+                        "expected_status": "PASS",
+                        "expected_stdout_sha256": self.expected_stdout_sha256,
+                        "expected_stderr_sha256": self.expected_stderr_sha256,
+                    }
+                    for name in VALIDATORS
+                },
+            },
+        )
 
     def _write_runtime_authorities(self) -> None:
         tree = _git(self.repository, "rev-parse", "HEAD^{tree}")
@@ -301,6 +327,7 @@ class HistoricalBuilderFixture:
             legacy_manifest_path=self.legacy,
             project_runtime_authority_path=self.project_runtime_authority,
             data_runtime_authority_path=self.data_runtime_authority,
+            expected_results_path=self.expected_results,
             builder_path=self.builder,
         )
 
@@ -365,6 +392,13 @@ class HistoricalAuthorityBuilderTests(unittest.TestCase):
         )
         self.assertTrue(first["validators"]["validate_m2_evidence.py"]["external_files"])
         self.assertFalse(first["validators"]["validate_m1_evidence.py"]["external_files"])
+        self.assertTrue(
+            all(
+                value["expected_stdout_sha256"] == self.fixture.expected_stdout_sha256
+                and value["expected_stderr_sha256"] == self.fixture.expected_stderr_sha256
+                for value in first["validators"].values()
+            ),
+        )
 
         derived_path = Path(self.temporary.name) / "derived-spec.json"
         _write_json(derived_path, first)
@@ -384,6 +418,30 @@ class HistoricalAuthorityBuilderTests(unittest.TestCase):
         _write_json(self.fixture.data_runtime_authority, value)
         with self.assertRaisesRegex(HistoricalAuthorityBuildError, "lacks required"):
             self.fixture.derive()
+
+    def test_derive_rejects_missing_or_cross_commit_expected_results(self) -> None:
+        value = json.loads(self.fixture.expected_results.read_text(encoding="utf-8"))
+        value["results"].pop(VALIDATORS[0])
+        _write_json(self.fixture.expected_results, value)
+        with self.assertRaisesRegex(HistoricalAuthorityBuildError, "do not equal"):
+            self.fixture.derive()
+
+        self.fixture._write_expected_results()
+        value = json.loads(self.fixture.expected_results.read_text(encoding="utf-8"))
+        value["results"][VALIDATORS[0]]["source_commit"] = self.fixture.commit
+        _write_json(self.fixture.expected_results, value)
+        with self.assertRaisesRegex(HistoricalAuthorityBuildError, "is invalid"):
+            self.fixture.derive()
+
+    def test_expected_output_digest_is_part_of_bundle_identity(self) -> None:
+        first = self.fixture.build()
+        name = VALIDATORS[0]
+        before = first["authorities"][name]["bundle_identity"]
+        self.fixture.spec["validators"][name]["expected_stdout_sha256"] = "f" * 64
+        self.fixture.write_spec()
+        after = self.fixture.build()["authorities"][name]
+        self.assertEqual(after["expected_stdout_sha256"], "f" * 64)
+        self.assertNotEqual(after["bundle_identity"], before)
 
     def test_external_root_inventory_addition_fails_closed(self) -> None:
         _write(self.fixture.repository / "data/source/unpinned.bin", "surprise\n")

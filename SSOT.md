@@ -2145,6 +2145,7 @@ complete project executable closure used by the decision
 schemas and required dependency/file bindings
 arguments and isolated interpreter profile
 expected exit code and validator status
+exact SHA-256 of complete stdout and stderr bytes
 ```
 
 The source commit MUST remain an ancestor, its tree and closure MUST match Git
@@ -2156,6 +2157,18 @@ merge preserves the required ancestry. Squash or rebase can remove or replace
 it and therefore fails closed. Legacy v1 snapshots may prove preserved input
 bytes only; `CURRENT_ROOT_DIFFERS_VALIDLY` is not executable-validator proof
 and cannot make a result current or Official.
+
+The expected execution result MUST be an explicit, content-addressed
+observation for each exact validator source commit; a builder MUST NOT infer
+that every historical result was `PASS`. Historical authority execution is
+accepted only when exit code, parsed validator status, complete stdout bytes,
+and complete stderr bytes all match that observation. This authority match is
+distinct from acceptance of the historical Evidence itself: a pinned and
+matching `FAIL` proves that the old Evidence is rejected. Batch authority
+acceptance MUST report matched-output and accepted-Evidence counts separately
+and MUST NOT rename a matching historical `FAIL` as a component or Official
+PASS. A changed output digest, status, exit code, source assignment, or
+incomplete expected-result inventory fails closed.
 
 ### 10.10 Mandatory scientific limitations
 

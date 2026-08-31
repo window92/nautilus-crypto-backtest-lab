@@ -44,7 +44,9 @@ remains `SSOT.md`; this file does not change normative behavior.
   validators execute from isolated immutable snapshots; external inputs are
   independent read-only copies rather than source-mutable symlinks or
   hardlinks, and pinned modules retain standard `__file__`/origin semantics.
-  Normal merge ancestry is required.
+  Each authority also binds the exact exit/status/stdout/stderr observation;
+  matching a pinned historical `FAIL` proves rejection rather than being
+  relabeled as PASS. Normal merge ancestry is required.
 - Added a standard-library isolated startup authority before Product Code or
   site-package import. The Official child uses safe isolated flags, an exact
   environment and `sys.path`, and content-addressed Python, Product,

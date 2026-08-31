@@ -29,6 +29,7 @@ from typing import Any
 
 BUILD_SPEC_SCHEMA = "historical-validator-authority-build-spec-v1"
 AUTHORITY_SCHEMA = "historical-validator-authorities-v2"
+EXPECTED_RESULTS_SCHEMA = "historical-validator-expected-results-v1"
 BUILDER_RELATIVE_PATH = "scripts/build_historical_validator_authorities.py"
 _COMMIT = re.compile(r"[0-9a-f]{40}")
 _SHA256 = re.compile(r"[0-9a-f]{64}")
@@ -137,6 +138,70 @@ def _load_json(path: Path) -> dict[str, Any]:
     if not isinstance(value, dict):
         raise HistoricalAuthorityBuildError(f"JSON root is not an object: {path}")
     return value
+
+
+def _load_expected_results(
+    path: Path,
+    *,
+    product_commit: str,
+    historical_commits: dict[str, str],
+) -> dict[str, dict[str, Any]]:
+    """Load the independently observed output contract for every validator.
+
+    Historical validation authority must bind what the pinned executable
+    actually returned.  It must not manufacture an all-PASS expectation from
+    the desired publication outcome.  The source-commit echo prevents an
+    observation made with one historical executable from being assigned to a
+    different validator snapshot.
+    """
+
+    document = _strict_object(
+        _load_json(path),
+        {"product_commit", "results", "schema"},
+        label="historical validator expected results",
+    )
+    if document["schema"] != EXPECTED_RESULTS_SCHEMA:
+        raise HistoricalAuthorityBuildError(
+            "historical validator expected-results schema differs",
+        )
+    if document["product_commit"] != product_commit:
+        raise HistoricalAuthorityBuildError(
+            "historical validator expected results select a different Product commit",
+        )
+    results = document["results"]
+    if not isinstance(results, dict) or set(results) != set(historical_commits):
+        raise HistoricalAuthorityBuildError(
+            "historical validator expected results do not equal the execution plan",
+        )
+    parsed: dict[str, dict[str, Any]] = {}
+    for name in sorted(historical_commits):
+        item = _strict_object(
+            results[name],
+            {
+                "expected_exit_code",
+                "expected_status",
+                "expected_stderr_sha256",
+                "expected_stdout_sha256",
+                "source_commit",
+            },
+            label=f"historical validator expected result {name}",
+        )
+        if (
+            item["source_commit"] != historical_commits[name]
+            or type(item["expected_exit_code"]) is not int
+            or item["expected_exit_code"] < 0
+            or item["expected_exit_code"] > 255
+            or item["expected_status"] not in {"PASS", "FAIL"}
+            or not isinstance(item["expected_stdout_sha256"], str)
+            or _SHA256.fullmatch(item["expected_stdout_sha256"]) is None
+            or not isinstance(item["expected_stderr_sha256"], str)
+            or _SHA256.fullmatch(item["expected_stderr_sha256"]) is None
+        ):
+            raise HistoricalAuthorityBuildError(
+                f"historical validator expected result is invalid: {name}",
+            )
+        parsed[name] = dict(item)
+    return parsed
 
 
 def _safe_relative(value: object, *, label: str) -> str:
@@ -607,6 +672,7 @@ def derive_current_product_build_spec(
     legacy_manifest_path: Path,
     project_runtime_authority_path: Path,
     data_runtime_authority_path: Path,
+    expected_results_path: Path,
     builder_path: Path | None = None,
 ) -> dict[str, Any]:
     """Derive v2 authorities for the validators which judged historical bytes.
@@ -630,6 +696,11 @@ def derive_current_product_build_spec(
     product_tree = _git(repository, "rev-parse", f"{product_commit}^{{tree}}").decode().strip()
     historical_commits = _legacy_validator_commits(repository, legacy_manifest_path)
     plan = sorted(historical_commits)
+    expected_results = _load_expected_results(
+        expected_results_path,
+        product_commit=product_commit,
+        historical_commits=historical_commits,
+    )
     for name, source_commit in historical_commits.items():
         _git_file_identity(
             repository,
@@ -666,6 +737,7 @@ def derive_current_product_build_spec(
     validators: dict[str, dict[str, Any]] = {}
     for name in plan:
         source_commit = historical_commits[name]
+        expected = expected_results[name]
         schema_dependencies = _git_files_under(repository, source_commit, "schemas")
         tracked_dependencies = sorted(
             {
@@ -702,8 +774,10 @@ def derive_current_product_build_spec(
             "interpreter_profile": (
                 "data-runtime" if name in _DATA_RUNTIME_VALIDATORS else "project-runtime"
             ),
-            "expected_exit_code": 0,
-            "expected_status": "PASS",
+            "expected_exit_code": expected["expected_exit_code"],
+            "expected_status": expected["expected_status"],
+            "expected_stdout_sha256": expected["expected_stdout_sha256"],
+            "expected_stderr_sha256": expected["expected_stderr_sha256"],
         }
     return {
         "schema": BUILD_SPEC_SCHEMA,
@@ -954,7 +1028,9 @@ def _authority(
             "closure_paths",
             "entrypoint",
             "expected_exit_code",
+            "expected_stderr_sha256",
             "expected_status",
+            "expected_stdout_sha256",
             "external_files",
             "external_roots",
             "interpreter_profile",
@@ -1012,7 +1088,13 @@ def _authority(
         or not isinstance(arguments, list)
         or not all(isinstance(argument, str) and "\0" not in argument for argument in arguments)
         or type(item["expected_exit_code"]) is not int
+        or item["expected_exit_code"] < 0
+        or item["expected_exit_code"] > 255
         or item["expected_status"] not in {"PASS", "FAIL"}
+        or not isinstance(item["expected_stdout_sha256"], str)
+        or _SHA256.fullmatch(item["expected_stdout_sha256"]) is None
+        or not isinstance(item["expected_stderr_sha256"], str)
+        or _SHA256.fullmatch(item["expected_stderr_sha256"]) is None
     ):
         raise HistoricalAuthorityBuildError(f"validator execution contract is invalid: {name}")
     tree = _git(repository, "rev-parse", f"{source_commit}^{{tree}}").decode().strip()
@@ -1035,6 +1117,8 @@ def _authority(
         "interpreter_profile": profile,
         "expected_exit_code": item["expected_exit_code"],
         "expected_status": item["expected_status"],
+        "expected_stdout_sha256": item["expected_stdout_sha256"],
+        "expected_stderr_sha256": item["expected_stderr_sha256"],
     }
     authority["bundle_identity"] = _canonical_sha256(authority)
     return authority
@@ -1146,6 +1230,7 @@ def main(argv: list[str] | None = None) -> int:
     derive.add_argument("--legacy-manifest", type=Path, required=True)
     derive.add_argument("--project-runtime-authority", type=Path, required=True)
     derive.add_argument("--data-runtime-authority", type=Path, required=True)
+    derive.add_argument("--expected-results", type=Path, required=True)
     derive.add_argument("--output", type=Path, required=True)
     build = commands.add_parser("build", help="build v2 authorities from a committed spec")
     build.add_argument("--repository", type=Path, required=True)
@@ -1160,6 +1245,7 @@ def main(argv: list[str] | None = None) -> int:
             legacy_manifest_path=arguments.legacy_manifest,
             project_runtime_authority_path=arguments.project_runtime_authority,
             data_runtime_authority_path=arguments.data_runtime_authority,
+            expected_results_path=arguments.expected_results,
         )
         payload = _canonical_bytes(spec) + b"\n"
         _atomic_write(arguments.output, payload)

@@ -42,6 +42,7 @@ class HistoricalExecutionResult:
     exit_code: int
     validator_status: str | None
     stdout_sha256: str
+    stderr_sha256: str
     stderr: str
     passed: bool
 
@@ -55,8 +56,15 @@ class HistoricalExecutionResult:
             "exit_code": self.exit_code,
             "validator_status": self.validator_status,
             "stdout_sha256": self.stdout_sha256,
+            "stderr_sha256": self.stderr_sha256,
             "stderr": self.stderr,
             "pass": self.passed,
+            "output_contract_matched": self.passed,
+            "historical_evidence_accepted": bool(
+                self.passed
+                and self.exit_code == 0
+                and self.validator_status == "PASS"
+            ),
             "current_root_validator_executed": False,
         }
 
@@ -493,9 +501,13 @@ def execute_historical_validator(
         except json.JSONDecodeError:
             output = None
         status = output.get("status") if isinstance(output, dict) else None
+        stdout_sha256 = hashlib.sha256(completed.stdout.encode("utf-8")).hexdigest()
+        stderr_sha256 = hashlib.sha256(completed.stderr.encode("utf-8")).hexdigest()
         passed = bool(
             completed.returncode == authority.expected_exit_code
             and status == authority.expected_status
+            and stdout_sha256 == authority.expected_stdout_sha256
+            and stderr_sha256 == authority.expected_stderr_sha256
         )
         return HistoricalExecutionResult(
             validator_name=authority.validator_name,
@@ -505,7 +517,8 @@ def execute_historical_validator(
             bootstrap_authority_sha256=hashlib.sha256(authority_bytes).hexdigest(),
             exit_code=completed.returncode,
             validator_status=status if isinstance(status, str) else None,
-            stdout_sha256=hashlib.sha256(completed.stdout.encode("utf-8")).hexdigest(),
+            stdout_sha256=stdout_sha256,
+            stderr_sha256=stderr_sha256,
             stderr=completed.stderr,
             passed=passed,
         )

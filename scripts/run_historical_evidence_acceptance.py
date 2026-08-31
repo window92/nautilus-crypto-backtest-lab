@@ -73,17 +73,24 @@ def run_acceptance(
                 "failure_reason": exc.reason,
                 "detail": exc.detail,
                 "pass": False,
+                "output_contract_matched": False,
+                "historical_evidence_accepted": False,
                 "current_root_validator_executed": False,
             }
         else:
             results[name] = execution.to_builtins()
-    passed = sum(bool(item["pass"]) for item in results.values())
+    matched = sum(bool(item["output_contract_matched"]) for item in results.values())
+    accepted = sum(bool(item["historical_evidence_accepted"]) for item in results.values())
     return {
         "schema": "historical-evidence-acceptance-v2",
-        "status": "PASS" if passed == len(plan) else "FAIL",
+        "status": "PASS" if matched == len(plan) else "FAIL",
         "validator_count": len(plan),
-        "passed": passed,
-        "failed": len(plan) - passed,
+        "passed": matched,
+        "failed": len(plan) - matched,
+        "authority_output_contracts_matched": matched,
+        "authority_output_contract_mismatches": len(plan) - matched,
+        "historical_evidence_accepted_count": accepted,
+        "historical_evidence_rejected_count": len(plan) - accepted,
         "results": results,
         "legacy_v1_snapshot_is_execution_authority": False,
         "current_root_validator_executed": False,
@@ -112,6 +119,10 @@ def main() -> int:
             "validator_count": 0,
             "passed": 0,
             "failed": 0,
+            "authority_output_contracts_matched": 0,
+            "authority_output_contract_mismatches": 0,
+            "historical_evidence_accepted_count": 0,
+            "historical_evidence_rejected_count": 0,
             "failure_code": getattr(
                 exc,
                 "code",

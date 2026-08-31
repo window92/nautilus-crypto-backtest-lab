@@ -97,6 +97,8 @@ class HistoricalValidatorAuthority:
     interpreter_profile: str
     expected_exit_code: int
     expected_status: str
+    expected_stdout_sha256: str
+    expected_stderr_sha256: str
     bundle_identity: str
 
     def identity_material(self) -> dict[str, Any]:
@@ -113,6 +115,8 @@ class HistoricalValidatorAuthority:
             "interpreter_profile": self.interpreter_profile,
             "expected_exit_code": self.expected_exit_code,
             "expected_status": self.expected_status,
+            "expected_stdout_sha256": self.expected_stdout_sha256,
+            "expected_stderr_sha256": self.expected_stderr_sha256,
         }
 
     def to_builtins(self) -> dict[str, Any]:
@@ -394,7 +398,9 @@ def _parse_authority(name: str, value: object) -> HistoricalValidatorAuthority:
             "entrypoint",
             "executable_closure",
             "expected_exit_code",
+            "expected_stderr_sha256",
             "expected_status",
+            "expected_stdout_sha256",
             "external_bindings",
             "interpreter_profile",
             "source_commit",
@@ -453,7 +459,13 @@ def _parse_authority(name: str, value: object) -> HistoricalValidatorAuthority:
         or not isinstance(item["interpreter_profile"], str)
         or not item["interpreter_profile"]
         or type(item["expected_exit_code"]) is not int
+        or item["expected_exit_code"] < 0
+        or item["expected_exit_code"] > 255
         or item["expected_status"] not in {"PASS", "FAIL"}
+        or not isinstance(item["expected_stdout_sha256"], str)
+        or _SHA256.fullmatch(item["expected_stdout_sha256"]) is None
+        or not isinstance(item["expected_stderr_sha256"], str)
+        or _SHA256.fullmatch(item["expected_stderr_sha256"]) is None
         or not isinstance(item["bundle_identity"], str)
         or _SHA256.fullmatch(item["bundle_identity"]) is None
     ):
@@ -471,6 +483,8 @@ def _parse_authority(name: str, value: object) -> HistoricalValidatorAuthority:
         interpreter_profile=item["interpreter_profile"],
         expected_exit_code=item["expected_exit_code"],
         expected_status=item["expected_status"],
+        expected_stdout_sha256=item["expected_stdout_sha256"],
+        expected_stderr_sha256=item["expected_stderr_sha256"],
         bundle_identity=item["bundle_identity"],
     )
     if _canonical_sha256(authority.identity_material()) != authority.bundle_identity:

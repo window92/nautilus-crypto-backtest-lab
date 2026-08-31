@@ -121,6 +121,10 @@ print(json.dumps({"status": status}, sort_keys=True, separators=(",", ":")))
             "interpreter_profile": "fixture-runtime",
             "expected_exit_code": 0,
             "expected_status": "PASS",
+            "expected_stdout_sha256": hashlib.sha256(
+                b'{"status":"PASS"}\n',
+            ).hexdigest(),
+            "expected_stderr_sha256": hashlib.sha256(b"").hexdigest(),
         }
         self.authority_value["bundle_identity"] = _canonical_sha256(self.authority_value)
         self.manifest_path = root / "historical-authorities.json"
@@ -270,6 +274,33 @@ class HistoricalValidatorIdentityTests(unittest.TestCase):
 
         self.assertTrue(result.passed, result.stderr)
         self.assertEqual(result.validator_status, "PASS")
+        self.assertTrue(result.to_builtins()["historical_evidence_accepted"])
+
+    def test_matching_status_with_changed_stdout_contract_fails_closed(self) -> None:
+        payload = b'{"valid":true}\n'
+        self.fixture.invalid_evidence.write_bytes(payload)
+        manifest = self.fixture.manifest()
+        authority = manifest["authorities"]["validate_fixture.py"]
+        binding = authority["external_bindings"][0]
+        binding["sha256"] = hashlib.sha256(payload).hexdigest()
+        binding["size_bytes"] = len(payload)
+        authority["expected_stdout_sha256"] = "f" * 64
+        authority.pop("bundle_identity")
+        authority["bundle_identity"] = _canonical_sha256(authority)
+        self.fixture.write_manifest(manifest)
+
+        result = execute_historical_validator(
+            self.fixture.authority(),
+            repository_root=self.fixture.repository,
+            runtime_profile=self.fixture.runtime.runtime_profile,
+            bootstrap_path=BOOTSTRAP,
+        )
+
+        self.assertEqual(result.exit_code, 0, result.stderr)
+        self.assertEqual(result.validator_status, "PASS")
+        self.assertFalse(result.passed)
+        self.assertFalse(result.to_builtins()["output_contract_matched"])
+        self.assertFalse(result.to_builtins()["historical_evidence_accepted"])
 
     def test_validator_cannot_mutate_authoritative_external_bytes_through_view(self) -> None:
         payload = b'{"mutate_external":true,"valid":true}\n'
