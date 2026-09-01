@@ -20,6 +20,7 @@ to make it conform to the new contract.
 | R2 remediated contract | `c55f73ef591926081dbdaecb59002c60dad62fa13045fa393ab035353b196142` | New contract bytes; new Runs additionally bind their final committed Git Source Revision |
 | R2 pinned-native-precision addendum | `cc71cccda50e5905cfa3d4fbba12062df739c871538944f4c32c686d128d006d` | Strengthens Perpetual fixed/binary64 reconciliation after the retained retry-007 Candidate A negative control; the preceding R2 identity remains historical |
 | R2 explicit repository-authority addendum | `9dbf82fee879a7ae0865b77619e2966cc9b9e1cea86cf8b85674e3a20983d256` | Requires Qualification and Official requests to resolve all external authority from a caller-bound repository root; package/install location inference is forbidden |
+| R2 Holdout claim-state clarification | `ab78a388ee6727cb5409504e8e63e2543ad4827ed2cb3c2a2cb7489d66532947` | Preserves the prohibition on Final Holdout use while distinguishing an unused Final Holdout from an invalid or previously consumed selected Final Holdout |
 
 ## Authority model
 
@@ -141,6 +142,28 @@ failures. A recursive comparison with retry-007 differs only in the two
 permitted physical DuckDB hashes and sizes. The retry-008 databases, staging
 trees, and duplicate catalogs are temporary rebuild products, not historical
 Evidence or replacements for the accepted content-addressed releases.
+
+The first final Full/Fresh/Reverse acceptance over retry-011 then found one
+fail-closed authority mismatch: the later Owner-authorized Holdout claim-state
+clarification had changed the SSOT bytes, while the offline builder preflight
+still pinned the preceding SSOT identity. No data transform or accepted release
+had changed. Commit `6260725d75f907f80e14fe0ea42df5beb0080876` updates only
+that exact preflight binding and records the defect additively. Two fresh
+offline builds from the immutable Raw corpus produced the additive proof
+`data-rebuild-reverification-retry-009.json` (SHA-256
+`8139406a9eae5f27f59d6feae975da5b31c3612ee4112ee411f8746e2db653b9`).
+Its Primary and independent DuckDB hashes are respectively
+`9d54177faadd64ad5bbc9c3fadd10749919c48b1fba41a0735e32822d4bdc6bc`
+and `d796740ffbb3c341a304d1272746d1e030c2f33370df23df2212f666f3e5cb24`;
+both are 1,761,095,680 bytes. The semantic database, DatasetRelease, catalog,
+table, row-count, funding, Mark, disposition, market-state, and complete Raw
+inventory identities remain equal to retry-008. A recursive comparison differs
+at exactly four permitted fields: the two physical hashes and two physical
+sizes. The independent Raw validator rehashed 2,243 source locators with zero
+hash/size failures and no network use; the read-only semantic gate again proves
+four-way equality for all 774 Spot and 1,457 Perpetual objects. This additive
+post-repair proof does not rewrite the retry-008 proof sealed into the immutable
+retry-011 Runs.
 
 The following older registries remain preserved as historical records; they
 do not override the v2 result status:

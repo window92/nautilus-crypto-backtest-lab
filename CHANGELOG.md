@@ -138,6 +138,12 @@ remains `SSOT.md`; this file does not change normative behavior.
 - Corrected the offline Dataset builder's locked SSOT SHA to the explicitly
   authorized R2 bytes and added a direct identity regression. The stale lock
   had correctly failed closed but prevented the mandated post-repair rebuild.
+  A fresh Primary/independent retry-009 rebuild from the immutable Raw corpus
+  preserves the exact semantic database, DatasetRelease, catalog, funding,
+  Mark, disposition, market-state, and complete Raw-inventory identities; its
+  committed proof differs from retry-008 only in the two physical DuckDB hashes
+  and sizes. Independent rehashing covers all 2,243 Raw locators with zero
+  checksum/size failures and no network use.
 - Extended the closed `FailureCode` vocabulary with
   `RUNTIME_STARTUP_MISMATCH`, `DATASET_RAW_INVENTORY_MISMATCH`,
   `WARMUP_SCORING_ELIGIBILITY_VIOLATION`,
