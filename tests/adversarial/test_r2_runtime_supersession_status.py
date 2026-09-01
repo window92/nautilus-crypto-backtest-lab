@@ -125,6 +125,10 @@ class R2RuntimeSupersessionStatusTests(unittest.TestCase):
                 "retry-006-spot-benchmark:PRIMARY",
                 "retry-006-spot-candidate-a:REPLAY",
                 "retry-006-spot-candidate-b:PRIMARY",
+                "retry-007-perpetual-benchmark:REPLAY",
+                "retry-007-spot-benchmark:PRIMARY",
+                "retry-007-spot-candidate-a:REPLAY",
+                "retry-007-spot-candidate-b:PRIMARY",
             ):
                 with self.subTest(key=key), self.assertRaises(ResultNotActiveError):
                     require_active_result(
@@ -132,6 +136,11 @@ class R2RuntimeSupersessionStatusTests(unittest.TestCase):
                         repository_root=root,
                         registry_paths=(registry,),
                     )
+
+            self.assertNotIn(
+                "retry-007-perpetual-candidate-a",
+                R2_RUNTIME_SUPERSEDED_RESULTS,
+            )
 
     def test_missing_pair_or_rehashed_status_mutation_fails_closed(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

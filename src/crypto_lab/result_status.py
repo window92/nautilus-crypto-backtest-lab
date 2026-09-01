@@ -310,6 +310,55 @@ R2_RUNTIME_SUPERSEDED_RESULTS: dict[str, dict[str, str]] = {
             "run-c5ea2b43962f"
         ),
     },
+    "retry-007-perpetual-benchmark": {
+        "market_profile": "BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING",
+        "result_class": HistoricalResultClass.BENCHMARK.value,
+        "primary_path": (
+            "runs/adversarial-remediation-002-retry-007-perpetual-benchmark-run-"
+            "df8caf74b27d"
+        ),
+        "replay_path": (
+            "runs/replays/adversarial-remediation-002-retry-007-perpetual-benchmark-"
+            "buy-and-hold-1x-development/adversarial-remediation-002-retry-007-"
+            "perpetual-benchmark-run-df8caf74b27d"
+        ),
+    },
+    "retry-007-spot-benchmark": {
+        "market_profile": "BINANCE_SPOT_CASH_LONG_ONLY",
+        "result_class": HistoricalResultClass.BENCHMARK.value,
+        "primary_path": (
+            "runs/adversarial-remediation-002-retry-007-spot-benchmark-run-46d5ef9362e7"
+        ),
+        "replay_path": (
+            "runs/replays/adversarial-remediation-002-retry-007-spot-benchmark-"
+            "buy-and-hold-1x-development/adversarial-remediation-002-retry-007-"
+            "spot-benchmark-run-46d5ef9362e7"
+        ),
+    },
+    "retry-007-spot-candidate-a": {
+        "market_profile": "BINANCE_SPOT_CASH_LONG_ONLY",
+        "result_class": HistoricalResultClass.CANDIDATE.value,
+        "primary_path": (
+            "runs/adversarial-remediation-002-retry-007-spot-candidate-a-run-80168115684f"
+        ),
+        "replay_path": (
+            "runs/replays/adversarial-remediation-002-retry-007-spot-candidate-a-"
+            "development/adversarial-remediation-002-retry-007-spot-candidate-a-"
+            "run-80168115684f"
+        ),
+    },
+    "retry-007-spot-candidate-b": {
+        "market_profile": "BINANCE_SPOT_CASH_LONG_ONLY",
+        "result_class": HistoricalResultClass.CANDIDATE.value,
+        "primary_path": (
+            "runs/adversarial-remediation-002-retry-007-spot-candidate-b-run-4a9e4ae97945"
+        ),
+        "replay_path": (
+            "runs/replays/adversarial-remediation-002-retry-007-spot-candidate-b-"
+            "development/adversarial-remediation-002-retry-007-spot-candidate-b-"
+            "run-4a9e4ae97945"
+        ),
+    },
 }
 
 
