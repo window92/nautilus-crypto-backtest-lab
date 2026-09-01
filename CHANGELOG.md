@@ -23,8 +23,7 @@ remains `SSOT.md`; this file does not change normative behavior.
   non-authorizing Qualification interface fixture retains its isolated-Git
   portability. Plan preparation rejects an explicitly supplied older Registry.
   The valid retry-014 package that exposed the cycle is retained as pre-final
-  evidence; final Product authority and qualification are rebuilt after this
-  repair.
+  evidence; retry-015 is the rebuilt current authority after this repair.
 - Made `repository_root` a mandatory typed field of Qualification as well as
   Official run requests. Runtime, source, Dataset/catalog, bootstrap, and
   evidence authorities can no longer be inferred from the Product module's
@@ -129,11 +128,11 @@ remains `SSOT.md`; this file does not change normative behavior.
   final Evidence inventory, validator identity, runtime startup injection,
   missing/duplicate Fills, and altered Instrument identity.
 - Published the final additive schema-v2 qualification at
-  `qualification-retry-013`, bound to the post-repair Product/runtime and
+  `qualification-retry-015`, bound to the post-repair Product/runtime and
   repository authority after the final Raw rebuild re-verification.
   Both exposed profiles have independent Primary/Replay evidence;
   all eight qualification negative controls pass, with no Final Holdout or
-  profitability authorization. The pre-final retry-007 through retry-012 packages are
+  profitability authorization. The pre-final retry-007 through retry-014 packages are
   retained, while their record IDs are rejected by the Owner API so an older
   v2 Registry cannot bypass the current Authority.
 - Corrected the offline Dataset builder's locked SSOT SHA to the explicitly
