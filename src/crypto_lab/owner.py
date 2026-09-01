@@ -865,6 +865,8 @@ def _qualified_profile_registry_candidates(repository: Path) -> tuple[Path, ...]
 
     return (
         repository
+        / "evidence/audit/adversarial-remediation-002/qualification-retry-009/qualified-profile-registry.json",
+        repository
         / "evidence/audit/adversarial-remediation-002/qualification-retry-008/qualified-profile-registry.json",
         repository
         / "evidence/audit/adversarial-remediation-002/qualification-retry-007/qualified-profile-registry.json",
@@ -883,22 +885,24 @@ def _qualified_profile(
     value: OwnerWorkflowInput,
 ) -> tuple[QualifiedProfileRecord, Path]:
     candidates = _qualified_profile_registry_candidates(repository)
-    matches: list[tuple[QualifiedProfileRecord, Path]] = []
-    for registry_path in candidates:
-        if not registry_path.is_file():
-            continue
-        registry = QualifiedProfileRegistry.from_json_bytes(registry_path.read_bytes())
-        matches.extend(
-            (item, registry_path)
-            for item in registry.records
-            if item.qualified_profile_record_id == value.qualified_profile_record_id
+    registry_path = next((path for path in candidates if path.is_file()), None)
+    if registry_path is None:
+        raise ResearchError(
+            FailureCode.DOWNSTREAM_CONTRACT_FAILURE,
+            "Current Qualified Profile registry is unavailable",
         )
+    registry = QualifiedProfileRegistry.from_json_bytes(registry_path.read_bytes())
+    matches = [
+        item
+        for item in registry.records
+        if item.qualified_profile_record_id == value.qualified_profile_record_id
+    ]
     if len(matches) != 1:
         raise ResearchError(
             FailureCode.DOWNSTREAM_CONTRACT_FAILURE,
-            "Qualified Profile locator must resolve exactly once",
+            "Qualified Profile must resolve exactly once in the current authority",
         )
-    record, registry_path = matches[0]
+    record = matches[0]
     if record.profile_id is not value.protocol.market_profile:
         raise ResearchError(FailureCode.DOWNSTREAM_CONTRACT_FAILURE, "Qualified Profile locator mismatch")
     if (

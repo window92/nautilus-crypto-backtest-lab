@@ -13,6 +13,7 @@ from crypto_lab.data import DatasetRelease
 from crypto_lab.m3 import ProfileQualificationState
 from crypto_lab.m3 import QualifiedProfileRegistry
 from crypto_lab.m3 import qualification_dataset_release
+from crypto_lab.owner import _qualified_profile
 from crypto_lab.owner import _qualified_profile_registry_candidates
 from crypto_lab.owner import _release
 from crypto_lab.owner import OwnerWorkflowPurpose
@@ -122,19 +123,50 @@ class R2OfficialRebuildPlanTests(unittest.TestCase):
         self.assertEqual(
             candidates[0],
             ROOT
-            / "evidence/audit/adversarial-remediation-002/qualification-retry-008/qualified-profile-registry.json",
+            / "evidence/audit/adversarial-remediation-002/qualification-retry-009/qualified-profile-registry.json",
         )
         self.assertEqual(
             candidates[1],
             ROOT
-            / "evidence/audit/adversarial-remediation-002/qualification-retry-007/qualified-profile-registry.json",
+            / "evidence/audit/adversarial-remediation-002/qualification-retry-008/qualified-profile-registry.json",
         )
         self.assertEqual(
             candidates[2],
             ROOT
+            / "evidence/audit/adversarial-remediation-002/qualification-retry-007/qualified-profile-registry.json",
+        )
+        self.assertEqual(
+            candidates[3],
+            ROOT
             / "evidence/audit/adversarial-remediation-002/qualification/qualified-profile-registry.json",
         )
         self.assertEqual(len(candidates), len(set(candidates)))
+
+    def test_owner_rejects_a_v2_profile_from_an_older_registry(self) -> None:
+        candidates = _qualified_profile_registry_candidates(ROOT)
+        current_index = next(index for index, path in enumerate(candidates) if path.is_file())
+        current_path = candidates[current_index]
+        older_path = next(
+            path
+            for path in candidates[current_index + 1 :]
+            if path.is_file()
+            and QualifiedProfileRegistry.from_json_bytes(path.read_bytes()).schema_version == 2
+        )
+        current = QualifiedProfileRegistry.from_json_bytes(current_path.read_bytes()).records[0]
+        older = QualifiedProfileRegistry.from_json_bytes(older_path.read_bytes()).records[0]
+        current_value = SimpleNamespace(
+            qualified_profile_record_id=current.qualified_profile_record_id,
+            protocol=SimpleNamespace(market_profile=current.profile_id),
+        )
+        resolved, resolved_path = _qualified_profile(ROOT, current_value)
+        self.assertEqual(resolved.qualified_profile_record_id, current.qualified_profile_record_id)
+        self.assertEqual(resolved_path, current_path)
+        older_value = SimpleNamespace(
+            qualified_profile_record_id=older.qualified_profile_record_id,
+            protocol=SimpleNamespace(market_profile=older.profile_id),
+        )
+        with self.assertRaisesRegex(ResearchError, "current authority"):
+            _qualified_profile(ROOT, older_value)
 
     def test_legacy_check_pass_registry_fails_the_component_gate(self) -> None:
         with self.assertRaisesRegex(RuntimeError, "schema version 2"):
