@@ -865,6 +865,10 @@ def _qualified_profile_registry_candidates(repository: Path) -> tuple[Path, ...]
 
     return (
         repository
+        / "evidence/audit/adversarial-remediation-002/qualification-retry-011/qualified-profile-registry.json",
+        repository
+        / "evidence/audit/adversarial-remediation-002/qualification-retry-010/qualified-profile-registry.json",
+        repository
         / "evidence/audit/adversarial-remediation-002/qualification-retry-009/qualified-profile-registry.json",
         repository
         / "evidence/audit/adversarial-remediation-002/qualification-retry-008/qualified-profile-registry.json",
