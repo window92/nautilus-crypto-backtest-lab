@@ -125,6 +125,21 @@ inventory, table, row-count, disposition, funding, Mark, or market-state
 semantic changed. The large retry databases are temporary rebuild products,
 not replacement historical Evidence.
 
+After the final R2 Product authority and repository-authority supersession
+were published, a second fresh two-build verification was executed from clean
+local/remote commit `c991dd4ae8669d17f8349cd8b28fb0f21383c1a1` without network access or a
+strategy/Official trial. Its additive proof is
+`data-rebuild-reverification-retry-008.json` (SHA-256
+`f46d6bacc4e03fc14b0678fc6d3073766cce6d90f4b080a89273b4e8e7e4e30b`).
+Both builds again report semantic database identity
+`df7aeddd2f8cd2274cc6ccb5e568c98ffd896fd69e608067442b0182f0332c7b`,
+the same two DatasetRelease and catalog identities, exact four-way equality
+for 774 Spot and 1457 Perpetual Raw objects, and zero publisher-checksum
+failures. A recursive comparison with retry-007 differs only in the two
+permitted physical DuckDB hashes and sizes. The retry-008 databases, staging
+trees, and duplicate catalogs are temporary rebuild products, not historical
+Evidence or replacements for the accepted content-addressed releases.
+
 The following older registries remain preserved as historical records; they
 do not override the v2 result status:
 
