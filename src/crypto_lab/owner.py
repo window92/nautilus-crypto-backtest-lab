@@ -865,6 +865,8 @@ def _qualified_profile_registry_candidates(repository: Path) -> tuple[Path, ...]
 
     return (
         repository
+        / "evidence/audit/adversarial-remediation-002/qualification-retry-007/qualified-profile-registry.json",
+        repository
         / "evidence/audit/adversarial-remediation-002/qualification/qualified-profile-registry.json",
         repository
         / "evidence/audit/comprehensive-remediation-001/qualification-runtime-proof/qualified-profile-registry.json",
@@ -1286,21 +1288,9 @@ def qualification_workflow_fixture_input(
     """Build the fixed exposed-data interface fixture, never an Owner study."""
 
     repository = Path(repository_root).resolve(strict=True)
-    current_registry = (
-        repository
-        / "evidence/audit/adversarial-remediation-002/qualification/qualified-profile-registry.json"
-    )
-    prior_audit_registry = (
-        repository
-        / "evidence/audit/comprehensive-remediation-001/qualification-runtime-proof/qualified-profile-registry.json"
-    )
     registry_path = next(
         path
-        for path in (
-            current_registry,
-            prior_audit_registry,
-            repository / "evidence/m3/m3-acceptance-001/qualified-profile-registry.json",
-        )
+        for path in _qualified_profile_registry_candidates(repository)
         if path.is_file()
     )
     registry = QualifiedProfileRegistry.from_json_bytes(
