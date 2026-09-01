@@ -94,7 +94,7 @@ jobs:
         run: >-
           .venv/bin/python -m unittest -v
           tests.unit.test_comprehensive_audit_regressions.AuditRegressionTests.test_acceptance_empty_output_log_has_no_blank_line_at_eof
-          tests.unit.test_comprehensive_audit_regressions.AuditRegressionTests.test_owner_child_uses_single_cli_module_identity
+          tests.unit.test_comprehensive_audit_regressions.AuditRegressionTests.test_owner_child_enters_only_through_isolated_bootstrap
           tests.unit.test_comprehensive_audit_regressions.AuditRegressionTests.test_f009_failure_code_vocabulary_exactly_matches_ssot_section_15
           tests.unit.test_comprehensive_audit_regressions.AuditRegressionTests.test_f007_utc_conversion_uses_exact_integer_arithmetic
           tests.unit.test_comprehensive_audit_regressions.AuditRegressionTests.test_f005_mark_converter_rejects_cross_instrument_relabel
