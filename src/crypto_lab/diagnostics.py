@@ -745,6 +745,7 @@ def derive_performance_diagnostics(
                 initial_balance=config.initial_capital.amount,
                 taker_fee=config.fee_assumption.taker_fee,
                 quantity_increment=Decimal(str(instrument_contract["size_increment"])),
+                multiplier=Decimal(str(instrument_contract["multiplier"])),
                 money_quantum=Decimal(1).scaleb(-settlement_precision),
             )
         except (KeyError, OSError, TypeError, ValueError) as exc:

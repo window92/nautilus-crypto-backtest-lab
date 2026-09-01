@@ -121,6 +121,19 @@ workflows were never started, and the retry-005 result packages are made
 inactive additively before any replacement epoch; their Run/Replay bytes are
 not edited.
 
+Retry-006 is also retained. Its three Spot workflows completed, but the first
+Perpetual workflow exposed a separate checker false negative at one daily
+valuation. The exact Decimal price PnL was `2244.52758836500`; Decimal
+half-even produced `2244.52758836`, while the pinned rc2 path first evaluated
+the linear formula in IEEE-754 binary64 and its native `Money` result was
+`2244.52758837`. Primary and Replay were semantically identical and both
+failed closed. The repaired read-only validator now reproduces the pinned
+`f64_to_fixed_i128` currency boundary exactly—including binary64 scaling,
+ties-away-from-zero, fixed-point overflow, and the Instrument multiplier—while
+keeping all event/account arithmetic in Decimal and never feeding the replay
+back to Nautilus. The failed Run/Replay remain unchanged; a new complete epoch
+is required under rebuilt runtime authority.
+
 ## Earlier remediation contracts retained
 
 | Finding | Enforced contract |
@@ -145,7 +158,7 @@ parallel ledger, synthesize fills, or replace native PnL.
 |---|---|
 | R2-001 | Full signal interval, not `decision_timestamp`, controls scoring eligibility for execution, daily/weekly aggregation, low-level strategy APIs, checker, diagnostics, and replay. A bar `[T0-period,T0)` cannot submit an order. |
 | R2-002 | The eight affected Candidate primary/replay copies are additively revoked/invalidated; old Benchmarks become superseded only after replacements. Resolvers reject every inactive status. |
-| R2-003 | Decimal read-only Perpetual reconciliation proves Fill order, NETTING position/average entry, commission amount/currency, realized/unrealized PnL, exact funding/account deltas, causal terminal mark, and ending Equity. Every completed cycle additionally binds a detached native `PositionClosed` callback payload so later NETTING reopen cannot mutate the past. Account, position, fee, PnL, Fill, funding, reversal, callback-snapshot, and mark mutations fail. |
+| R2-003 | Decimal read-only Perpetual reconciliation proves Fill order, NETTING position/average entry, commission amount/currency, realized/unrealized PnL, exact funding/account deltas, causal terminal mark, and ending Equity. Native price PnL is compared through the exact pinned rc2 binary64-to-`Money` boundary rather than an assumed Decimal midpoint rule. Every completed cycle additionally binds a detached native `PositionClosed` callback payload so later NETTING reopen cannot mutate the past. Account, position, fee, PnL, Fill, funding, reversal, callback-snapshot, mark, multiplier, and rounding mutations fail. |
 | R2-004 | Dataset Release v2 contains the complete typed Raw inventory and proves exact bidirectional equality to the DuckDB used-Raw inventory. Missing, extra, hash, role, locator, Instrument, profile, or window mutations fail. |
 | R2-005 | Native Evidence → component validation → exact leaf manifest → status → root attestation is acyclic. A missing, extra, altered, invalid-empty, symlinked, escaped, or cross-identity file cannot receive `OFFICIAL_SEAL_PASS`. The public verifier cannot accept a caller-supplied component validator or PASS oracle. |
 | R2-006 | Historical validator v2 binds and executes its source commit/tree, wrapper, entrypoint, schema/dependency closure, arguments, external bindings, and exact exit/status/stdout/stderr output. Current `HEAD` cannot reinterpret old Evidence, and a matching pinned FAIL remains a rejected historical result rather than being relabeled PASS. |

@@ -7,11 +7,15 @@ import unittest
 from decimal import Decimal
 from pathlib import Path
 
+from nautilus_trader.model import Currency
+from nautilus_trader.model import Money
+
 from crypto_lab.hashing import canonical_sha256
 from crypto_lab.native_positions import NATIVE_COMPLETED_DIRECT_SEQUENCE_SOURCE
 from crypto_lab.native_positions import NativeCommission
 from crypto_lab.native_positions import NativeCompletedPositionUnit
 from crypto_lab.native_positions import NativeCompletedPositionSequence
+from crypto_lab.perpetual_reconciliation import _pinned_money_from_f64
 from crypto_lab.perpetual_reconciliation import replay_perpetual_valuation_states
 from crypto_lab.perpetual_reconciliation import validate_perpetual_native_account_projection
 from crypto_lab.perpetual_reconciliation import validate_perpetual_reconciliation
@@ -336,6 +340,88 @@ class PerpetualReconciliationAdversarialTests(unittest.TestCase):
         self.assertEqual(report.detail["realized_pnl"], "15.73666667")
         self.assertEqual(report.detail["unrealized_pnl"], "53.33333333")
         self.assertEqual(report.detail["ending_equity"], "1069.07000000")
+
+    def test_pinned_f64_money_rounding_matches_runtime_and_not_decimal_shortcuts(
+        self,
+    ) -> None:
+        """Bind exact rc2 binary64 scaling and midpoint behavior."""
+
+        currency = Currency.from_str("USDT")
+        cases = (
+            (2244.527588365, "2244.52758837"),
+            (-2244.527588365, "-2244.52758837"),
+            (1.234567885, "1.23456788"),
+            (-1.234567885, "-1.23456788"),
+            (0.000000005, "0.00000001"),
+            (-0.000000005, "-0.00000001"),
+        )
+        quantum = Decimal("0.00000001")
+        for native_input, expected in cases:
+            with self.subTest(native_input=native_input):
+                # Hard-coded expectations come from the pinned Rust conversion
+                # contract, not from the project helper under test.
+                self.assertEqual(str(Money(native_input, currency)), f"{expected} USDT")
+                self.assertEqual(
+                    _pinned_money_from_f64(native_input, quantum),
+                    Decimal(expected),
+                )
+
+        self.assertEqual(
+            Decimal("2244.52758836500").quantize(quantum),
+            Decimal("2244.52758836"),
+        )
+        self.assertNotEqual(
+            _pinned_money_from_f64(1.234567885, quantum),
+            Decimal("1.234567885").quantize(
+                quantum,
+                rounding="ROUND_HALF_UP",
+            ),
+        )
+
+    def test_real_retry_006_tie_replays_native_unrealized_money_exactly(self) -> None:
+        quantity = Decimal("0.302")
+        entry = Decimal("33078.45000000")
+        mark = Decimal("40510.66055750")
+        fee = (quantity * entry * Decimal("0.001")).quantize(
+            Decimal("0.00000001"),
+        )
+        fill = self._fill(
+            0,
+            1,
+            "BUY",
+            str(quantity),
+            str(entry),
+            str(fee),
+        )
+        states = replay_perpetual_valuation_states(
+            fills=[fill],
+            funding_rows=[],
+            valuation_marks=[
+                {
+                    "instrument_id": "BTCUSDT-PERP.BINANCE",
+                    "value": str(mark),
+                    "ts_event": 2,
+                    "ts_init": 2,
+                },
+            ],
+            instrument_id="BTCUSDT-PERP.BINANCE",
+            settlement_currency="USDT",
+            initial_balance=Decimal("10000"),
+            taker_fee=Decimal("0.001"),
+            quantity_increment=Decimal("0.001"),
+            multiplier=Decimal("1"),
+            money_quantum=Decimal("0.00000001"),
+        )
+        self.assertEqual(states[0].unrealized_pnl, Decimal("2244.52758837"))
+        self.assertEqual(
+            str(
+                Money(
+                    float(quantity) * (float(mark) - float(entry)),
+                    Currency.from_str("USDT"),
+                ),
+            ),
+            "2244.52758837 USDT",
+        )
 
     def test_native_reported_account_pair_is_bound_without_double_counting(self) -> None:
         rows = copy.deepcopy(self.accounts)
@@ -681,6 +767,7 @@ class PerpetualReconciliationAdversarialTests(unittest.TestCase):
             initial_balance=Decimal("1000"),
             taker_fee=Decimal("0.001"),
             quantity_increment=Decimal("0.001"),
+            multiplier=Decimal("1"),
             money_quantum=Decimal("0.00000001"),
         )
         self.assertEqual(states[0].equity, Decimal("1019.80000000"))

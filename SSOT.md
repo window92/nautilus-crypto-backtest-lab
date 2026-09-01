@@ -1470,6 +1470,20 @@ account, position, PnL, or future terminal mark fails with
 verification of Nautilus output only; it MUST NOT feed state back to the
 engine or substitute a recomputed outcome.
 
+Persisted quantities, prices, fees, funding, balances, and account arithmetic
+remain exact Decimal inputs to that validator. When the pinned rc2 source
+explicitly computes a linear realized or unrealized price PnL in IEEE-754
+`f64` before constructing native `Money`, however, exact verification MUST
+replay that documented operation order and the pinned `f64_to_fixed_i128`
+currency boundary: binary64 currency-scale multiplication, Rust
+ties-away-from-zero rounding, fixed-point range, Instrument multiplier, and
+currency precision. It MUST NOT substitute Decimal context rounding,
+unconditional Decimal half-up, a tolerance, or a later-runtime rule. Golden
+controls MUST include a decimal midpoint which binary64 moves above the tie
+and another which binary64 moves below it, with both signs. This narrowly
+scoped numeric projection is read-only comparison with native `Money`; it is
+not a project PnL ledger and cannot alter or supply engine state.
+
 ### 8.5 Component outcome and Official seal
 
 Current component validation uses the closed outcome vocabulary:

@@ -8,6 +8,7 @@ so a self-consistent hash manifest cannot make an impossible result valid.
 
 from __future__ import annotations
 
+import math
 from collections import defaultdict
 from dataclasses import dataclass
 from decimal import Decimal
@@ -107,6 +108,8 @@ _NATIVE_CLOSED_SNAPSHOT_FIELDS = {
     "venue_order_ids",
 }
 
+_PINNED_FIXED_PRECISION = 16
+
 
 @dataclass(frozen=True)
 class PerpetualReconciliationReport:
@@ -179,6 +182,86 @@ def _money(value: Any) -> tuple[Decimal, str]:
     if not amount.is_finite() or not parts[1]:
         raise ValueError("money value is invalid")
     return amount, parts[1]
+
+
+def _pinned_money_from_f64(value: float, money_quantum: Decimal) -> Decimal:
+    """Project a finite ``f64`` through the pinned Nautilus Money boundary.
+
+    NautilusTrader 2.0.0rc2 ``Money::new_checked`` delegates to
+    ``f64_to_fixed_i128``.  That function first performs the currency-scale
+    multiplication in IEEE-754 binary64, then applies Rust ``f64::round``
+    (nearest, with exact ties away from zero), and finally rescales the integer
+    to the wheel's 16-decimal fixed representation.  Replaying that explicit
+    boundary is necessary: Decimal half-even and unconditional Decimal
+    half-up both disagree with real native output for legitimate inputs.
+
+    The result remains verification-only.  It never enters the engine or
+    replaces a native Money value.
+    """
+
+    if not isinstance(value, float) or not math.isfinite(value):
+        raise ValueError("native Money input must be a finite f64")
+    if not money_quantum.is_finite() or money_quantum <= 0:
+        raise ValueError("money quantum must be finite and positive")
+    exponent = money_quantum.as_tuple().exponent
+    if not isinstance(exponent, int) or exponent > 0:
+        raise ValueError("money quantum must be one decimal precision unit")
+    precision = -exponent
+    if (
+        precision > _PINNED_FIXED_PRECISION
+        or money_quantum != Decimal(1).scaleb(-precision)
+    ):
+        raise ValueError("money quantum is incompatible with the pinned fixed precision")
+
+    # Python ``float`` and Rust ``f64`` use the same IEEE-754 binary64
+    # operations here.  Use truncation plus an explicit fractional comparison
+    # instead of Python round(), whose midpoint rule is ties-to-even.
+    scaled = value * float(10**precision)
+    if not math.isfinite(scaled):
+        raise ValueError("native Money scale overflow")
+    rounded = math.trunc(scaled)
+    fraction = scaled - rounded
+    if fraction >= 0.5:
+        rounded += 1
+    elif fraction <= -0.5:
+        rounded -= 1
+    fixed_raw = rounded * 10 ** (_PINNED_FIXED_PRECISION - precision)
+    if not -(1 << 127) <= fixed_raw <= (1 << 127) - 1:
+        raise ValueError("native Money fixed-point overflow")
+    return Decimal(rounded).scaleb(-precision)
+
+
+def _pinned_linear_pnl_money(
+    *,
+    signed_quantity: Decimal,
+    average_entry: Decimal,
+    close_price: Decimal,
+    multiplier: Decimal,
+    money_quantum: Decimal,
+) -> Decimal:
+    """Replay the pinned native linear-position ``f64 -> Money`` operation."""
+
+    if not all(
+        item.is_finite()
+        for item in (signed_quantity, average_entry, close_price, multiplier)
+    ):
+        raise ValueError("linear PnL components must be finite")
+    if average_entry < 0 or close_price < 0 or multiplier <= 0:
+        raise ValueError("linear PnL components are outside the supported domain")
+    if signed_quantity == 0:
+        return _pinned_money_from_f64(0.0, money_quantum)
+
+    quantity_f64 = float(abs(signed_quantity))
+    multiplier_f64 = float(multiplier)
+    entry_f64 = float(average_entry)
+    close_f64 = float(close_price)
+    points_f64 = (
+        close_f64 - entry_f64
+        if signed_quantity > 0
+        else entry_f64 - close_f64
+    )
+    pnl_f64 = quantity_f64 * multiplier_f64 * points_f64
+    return _pinned_money_from_f64(pnl_f64, money_quantum)
 
 
 def _native_money_list_total(value: Any, currency: str) -> Decimal:
@@ -686,11 +769,17 @@ def validate_perpetual_reconciliation(
             assert current.fill_rows is not None
             current.fill_rows.append(row)
             closed_quantity = min(abs(signed_position), quantity)
-            realized = (
-                closed_quantity
-                * (price - average_entry)
-                * (Decimal(1) if signed_position > 0 else Decimal(-1))
-            ).quantize(money_quantum)
+            realized = _pinned_linear_pnl_money(
+                signed_quantity=(
+                    closed_quantity
+                    if signed_position > 0
+                    else -closed_quantity
+                ),
+                average_entry=average_entry,
+                close_price=price,
+                multiplier=multiplier,
+                money_quantum=money_quantum,
+            )
             gross_realized += realized
             current.gross_price_pnl += realized
             current.close_quantity += closed_quantity
@@ -1124,9 +1213,13 @@ def validate_perpetual_reconciliation(
             or mark_value <= 0
         ):
             raise ValueError("terminal mark is not the causal boundary observation")
-        expected_unrealized = (
-            signed_position * (mark_value - average_entry)
-        ).quantize(money_quantum)
+        expected_unrealized = _pinned_linear_pnl_money(
+            signed_quantity=signed_position,
+            average_entry=average_entry,
+            close_price=mark_value,
+            multiplier=multiplier,
+            money_quantum=money_quantum,
+        )
     except Exception:
         mark_value = Decimal(0)
         mark_ts = -1
@@ -1195,6 +1288,7 @@ def replay_perpetual_valuation_states(
     initial_balance: Decimal,
     taker_fee: Decimal,
     quantity_increment: Decimal,
+    multiplier: Decimal,
     money_quantum: Decimal,
 ) -> tuple[PerpetualValuationState, ...]:
     """Replay immutable native effects at multiple causal mark boundaries.
@@ -1211,6 +1305,7 @@ def replay_perpetual_valuation_states(
         or initial_balance <= 0
         or taker_fee < 0
         or quantity_increment <= 0
+        or multiplier <= 0
         or money_quantum <= 0
         or not valuation_marks
     ):
@@ -1311,20 +1406,30 @@ def replay_perpetual_valuation_states(
                 if signed_position * next_position < 0:
                     raise ValueError("cross-zero Fill in valuation replay")
                 closed_quantity = min(abs(signed_position), quantity)
-                gross_realized += (
-                    closed_quantity
-                    * (price - average_entry)
-                    * (Decimal(1) if signed_position > 0 else Decimal(-1))
-                ).quantize(money_quantum)
+                gross_realized += _pinned_linear_pnl_money(
+                    signed_quantity=(
+                        closed_quantity
+                        if signed_position > 0
+                        else -closed_quantity
+                    ),
+                    average_entry=average_entry,
+                    close_price=price,
+                    multiplier=multiplier,
+                    money_quantum=money_quantum,
+                )
                 signed_position = next_position
                 if signed_position == 0:
                     average_entry = Decimal(0)
             commissions += commission
 
         realized = (gross_realized - commissions + funding).quantize(money_quantum)
-        unrealized = (
-            signed_position * (mark - average_entry)
-        ).quantize(money_quantum)
+        unrealized = _pinned_linear_pnl_money(
+            signed_quantity=signed_position,
+            average_entry=average_entry,
+            close_price=mark,
+            multiplier=multiplier,
+            money_quantum=money_quantum,
+        )
         total = realized + unrealized
         states.append(
             PerpetualValuationState(

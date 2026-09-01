@@ -336,6 +336,7 @@ def _validate_official_daily_portfolio_snapshots(
                 initial_balance=config.initial_capital.amount,
                 taker_fee=config.fee_assumption.taker_fee,
                 quantity_increment=Decimal(str(instrument_contract["size_increment"])),
+                multiplier=Decimal(str(instrument_contract["multiplier"])),
                 money_quantum=Decimal(1).scaleb(-settlement_precision),
             )
             for state in states:

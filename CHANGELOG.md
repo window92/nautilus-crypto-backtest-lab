@@ -72,6 +72,14 @@ remains `SSOT.md`; this file does not change normative behavior.
   every selected day before sealing. The incomplete retry-005 plan and its
   original bytes are retained; all of its primary/replay result packages are
   inactive under additive runtime supersession before a replacement epoch.
+- Closed a distinct retry-006 Perpetual checker false negative at a one-quantum
+  midpoint: native rc2 linear PnL is calculated in binary64 before the
+  `f64_to_fixed_i128` Money boundary, whereas the validator had applied
+  Decimal half-even directly. The read-only reconciliation now reproduces the
+  exact pinned binary64 scaling, ties-away-from-zero, fixed-point overflow,
+  Instrument multiplier, and currency precision. Hard-coded midpoint and
+  binary-below controls match the installed wheel, and the retained retry-006
+  Primary/Replay daily ledgers now reconcile without changing their bytes.
 - Added exact negative controls for causal intervals, Spot affordability,
   Perpetual accounting/funding, post-boundary events, full Raw inventory,
   final Evidence inventory, validator identity, runtime startup injection,
