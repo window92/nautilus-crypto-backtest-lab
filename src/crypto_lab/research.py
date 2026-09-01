@@ -1563,6 +1563,7 @@ class ClaimEvaluationInput(StrictModel):
     supporting_trial_protocol_ids: tuple[str, ...]
     complete_trial_history: bool
     partitions_valid: bool
+    selected_partition_role: PartitionRole
     holdout_valid: bool
     benchmark_valid: bool
     multiple_testing_valid: bool
@@ -1575,6 +1576,19 @@ class ClaimEvaluationInput(StrictModel):
     synthetic_contract_fixture: bool
 
     def __post_init__(self) -> None:
+        if not isinstance(self.selected_partition_role, PartitionRole):
+            raise ResearchError(
+                FailureCode.RESEARCH_PROTOCOL_INVALID,
+                "claim.selected_partition_role must use the closed PartitionRole vocabulary",
+            )
+        if (
+            self.selected_partition_role is not PartitionRole.FINAL_HOLDOUT
+            and self.holdout_valid
+        ):
+            raise ResearchError(
+                FailureCode.RESEARCH_PROTOCOL_INVALID,
+                "a non-FINAL_HOLDOUT selection cannot assert holdout validity",
+            )
         for identity in self.supporting_trial_protocol_ids:
             _require_sha256(identity, "claim.supporting_trial_protocol_ids")
         _freeze_field(self, "sample_adequacy_by_instrument")
@@ -1687,7 +1701,10 @@ def _evaluate_claim_from_resolved_evidence(value: ClaimEvaluationInput) -> Claim
     if not value.partitions_valid:
         hard_reasons.append("PARTITION_LEAKAGE")
         codes.append("PARTITION_LEAKAGE")
-    if not value.holdout_valid:
+    if value.selected_partition_role is not PartitionRole.FINAL_HOLDOUT:
+        hard_reasons.append("FINAL_HOLDOUT_NOT_USED")
+        codes.append("CLAIM_INELIGIBLE")
+    elif not value.holdout_valid:
         hard_reasons.append("HOLDOUT_INVALID_OR_CONSUMED")
         codes.append("HOLDOUT_ALREADY_CONSUMED")
     if not value.benchmark_valid:

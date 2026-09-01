@@ -479,6 +479,7 @@ def _research_lifecycle(staging: Path, *, head: str) -> dict[str, Any]:
         supporting_trial_protocol_ids=(protocol.protocol_id,),
         complete_trial_history=True,
         partitions_valid=True,
+        selected_partition_role=PartitionRole.FINAL_HOLDOUT,
         holdout_valid=True,
         benchmark_valid=True,
         multiple_testing_valid=True,

@@ -1735,6 +1735,17 @@ use exposed Development data only. They MUST NOT read, execute, consume,
 authorize, or make a claim from a Final Holdout. Mechanical repair and
 `OFFICIAL_SEAL_PASS` do not grant profitability authorization.
 
+Claim evaluation MUST preserve the distinction between an unselected Final
+Holdout and an invalid or previously consumed selected Final Holdout. When the
+selected trial has `partition_role != FINAL_HOLDOUT`, the claim is
+`INELIGIBLE` with reason `FINAL_HOLDOUT_NOT_USED` and failure code
+`CLAIM_INELIGIBLE`; absence of a matching Holdout-lock entry in that state
+MUST NOT be reported as `HOLDOUT_ALREADY_CONSUMED`. Only a selected
+`FINAL_HOLDOUT` whose required exposure/lock reconciliation is invalid,
+missing, overlapping, or previously consumed may produce
+`HOLDOUT_ALREADY_CONSUMED` (or the more specific applicable Holdout-history
+code). A single boolean MUST NOT collapse these states.
+
 ### 9.8 Multiple testing
 
 If the research compares more than one candidate and makes a confirmatory statistical claim, the ResearchProtocol MUST predeclare the multiple-testing treatment.
@@ -2025,6 +2036,7 @@ and claim_scope is supported by the frozen Instrument/universe evidence
 and required performance diagnostics are complete for every supporting Run
 and every supporting trial has the same protocol_id as the confirmatory claim
 and that protocol was frozen before those trials produced result-bearing output
+and the selected partition is FINAL_HOLDOUT with valid reconciled Holdout evidence
 and the claim uses the frozen scored interval and metric
 ```
 

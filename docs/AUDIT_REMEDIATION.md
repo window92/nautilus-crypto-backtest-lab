@@ -247,6 +247,11 @@ are not inferred from a passing Manifest hash:
   copies are inactive for current Official resolution. Candidate financial
   results are invalidated; Benchmark results are superseded without claiming
   the same financial defect.
+- Development claim evaluation preserves the difference between
+  `FINAL_HOLDOUT_NOT_USED` and an invalid/consumed selected Final Holdout. The
+  three partial retry-010 Spot primaries and their replays are additively
+  `SUPERSEDED`, not financially invalidated, because their reports conflated
+  those states; a fresh six-Run epoch is required.
 
 ## Historical validator semantics
 

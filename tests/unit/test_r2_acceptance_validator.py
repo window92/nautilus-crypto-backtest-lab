@@ -413,8 +413,27 @@ class R2AcceptanceValidatorTests(unittest.TestCase):
                 payload = validate_report_claim_projection(
                     report,
                     trial_id=path.stem,
+                    require_current_development_holdout_semantics=False,
                 )
                 self.assertEqual(payload["claim_result"], report.claim_evaluation.to_builtins())
+
+    def test_partial_retry_010_reports_fail_current_holdout_semantics(self) -> None:
+        reports = sorted(
+            (VALIDATOR_ROOT / "research/reports").glob(
+                "adversarial-remediation-002-retry-010-spot-*.json",
+            ),
+        )
+        self.assertEqual(len(reports), 3)
+        for path in reports:
+            with self.subTest(path=path.name):
+                report = ReportOutput.from_json_bytes(path.read_bytes())
+                self.assert_code(
+                    FailureCode.CLAIM_INELIGIBLE,
+                    lambda report=report, path=path: validate_report_claim_projection(
+                        report,
+                        trial_id=path.stem,
+                    ),
+                )
 
     def test_dataset_rebuild_missing_four_way_proof_is_structured(self) -> None:
         invalid = {

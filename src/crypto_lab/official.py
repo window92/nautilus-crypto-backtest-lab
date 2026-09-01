@@ -939,6 +939,7 @@ class OfficialEvidenceResolver:
                 ),
                 complete_trial_history=complete_history,
                 partitions_valid=partitions_valid,
+                selected_partition_role=selected.partition_role,
                 holdout_valid=holdout_valid,
                 benchmark_valid=diagnostic.benchmark_status == "COMPLETE",
                 multiple_testing_valid=(

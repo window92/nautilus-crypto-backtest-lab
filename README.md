@@ -17,6 +17,14 @@ additively `REVOKED` / `INVALIDATED` with reason
 `WARMUP_SCORING_ELIGIBILITY_VIOLATION`. Their historical `CHECK_PASS` bytes are
 not current Official evidence.
 
+The interrupted retry-010 publication also exposed a claim-reporting defect:
+its three Spot Development reports correctly stated that Final Holdout was not
+used, but incorrectly labeled that absence as an already consumed Holdout.
+Those three primaries and their replays are preserved and additively
+`SUPERSEDED` without alleging a financial defect. Current claim evaluation
+uses `FINAL_HOLDOUT_NOT_USED` for non-Holdout selections and reserves
+`HOLDOUT_ALREADY_CONSUMED` for an invalid selected `FINAL_HOLDOUT`.
+
 All legacy Qualified Profile registries are likewise historical, parse-only
 evidence: none can authorize a new Run under the v2 component/startup/data/
 metric/seal contract. The old Benchmarks are not accused of the Candidate

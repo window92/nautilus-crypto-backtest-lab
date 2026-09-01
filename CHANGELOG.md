@@ -7,6 +7,12 @@ remains `SSOT.md`; this file does not change normative behavior.
 
 ### Adversarial audit remediation R2
 
+- Corrected the claim gate's Holdout state model: Development/Validation/OOS
+  selections remain ineligible with `FINAL_HOLDOUT_NOT_USED` and
+  `CLAIM_INELIGIBLE`, while `HOLDOUT_ALREADY_CONSUMED` is reserved for an
+  invalid or consumed selected `FINAL_HOLDOUT`. The three partial retry-010
+  Spot primaries and three replays are retained byte-for-byte and additively
+  superseded before a complete replacement epoch.
 - Made `repository_root` a mandatory typed field of Qualification as well as
   Official run requests. Runtime, source, Dataset/catalog, bootstrap, and
   evidence authorities can no longer be inferred from the Product module's

@@ -24,6 +24,7 @@ from crypto_lab.reporting import ReportInput
 from crypto_lab.reporting import build_report
 from crypto_lab.research import ClaimEvaluationInput
 from crypto_lab.research import MonteCarloStatus
+from crypto_lab.research import PartitionRole
 from crypto_lab.research import ResearchError
 from crypto_lab.research import SampleAdequacy
 from crypto_lab.research import TrialDefinition
@@ -56,6 +57,7 @@ def _asserted_claim(*, synthetic: bool) -> ClaimEvaluationInput:
         supporting_trial_protocol_ids=(protocol.protocol_id,),
         complete_trial_history=True,
         partitions_valid=True,
+        selected_partition_role=PartitionRole.FINAL_HOLDOUT,
         holdout_valid=True,
         benchmark_valid=True,
         multiple_testing_valid=True,

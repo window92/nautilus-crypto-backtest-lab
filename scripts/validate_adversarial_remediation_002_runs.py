@@ -544,6 +544,7 @@ def validate_report_claim_projection(
     report: ReportOutput,
     *,
     trial_id: str,
+    require_current_development_holdout_semantics: bool = True,
 ) -> dict[str, Any]:
     """Validate the semantic JSON projection after strict immutable parsing."""
 
@@ -563,6 +564,26 @@ def validate_report_claim_projection(
         or payload.get("claim_result") != report.claim_evaluation.to_builtins()
     ):
         _reject(FailureCode.CLAIM_INELIGIBLE, stage, "report claim projection is inconsistent")
+    claim_result = payload.get("claim_result")
+    failure_codes = (
+        claim_result.get("failure_codes")
+        if isinstance(claim_result, Mapping)
+        else None
+    )
+    reasons = claim_result.get("reasons") if isinstance(claim_result, Mapping) else None
+    if require_current_development_holdout_semantics and (
+        not isinstance(failure_codes, (list, tuple))
+        or not isinstance(reasons, (list, tuple))
+        or FailureCode.CLAIM_INELIGIBLE.value not in failure_codes
+        or "FINAL_HOLDOUT_NOT_USED" not in reasons
+        or FailureCode.HOLDOUT_ALREADY_CONSUMED.value in failure_codes
+        or "HOLDOUT_INVALID_OR_CONSUMED" in reasons
+    ):
+        _reject(
+            FailureCode.CLAIM_INELIGIBLE,
+            stage,
+            "Development claim confuses an unused Final Holdout with a consumed Holdout",
+        )
     return payload
 
 
