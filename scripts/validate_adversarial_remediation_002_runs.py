@@ -17,6 +17,7 @@ import json
 import os
 import subprocess
 import tempfile
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -494,7 +495,7 @@ def validate_performance_payload(
         _reject(FailureCode.PERFORMANCE_METRICS_INVALID, stage, "official daily metric basis differs")
 
 
-def validate_claim_payload(value: dict[str, Any], *, trial_id: str) -> None:
+def validate_claim_payload(value: Mapping[str, Any], *, trial_id: str) -> None:
     stage = f"report:{trial_id}"
     limitations = value.get("qualification_limitations")
     trial_history = value.get("trial_history")
@@ -524,16 +525,16 @@ def validate_claim_payload(value: dict[str, Any], *, trial_id: str) -> None:
         not in {"EXPLORATORY_ONLY", "INELIGIBLE", "BLOCKED"}
         or value.get("development_only") is not True
         or any(value.get(name) != expected for name, expected in required_claim_fields.items())
-        or not isinstance(trial_history, list)
+        or not isinstance(trial_history, (list, tuple))
         or value.get("trial_count") != len(trial_history)
         or not trial_history
         or any(
-            not isinstance(item, dict)
+            not isinstance(item, Mapping)
             or not str(item.get("trial_id", "")).startswith(f"{EXPECTED_EPOCH}-")
             for item in trial_history
         )
         or trial_id not in {str(item.get("trial_id")) for item in trial_history}
-        or not isinstance(limitations, list)
+        or not isinstance(limitations, (list, tuple))
         or not set(REQUIRED_SCIENTIFIC_LIMITATIONS).issubset(limitations)
     ):
         _reject(FailureCode.CLAIM_INELIGIBLE, stage, "report exceeds Development-only authority")

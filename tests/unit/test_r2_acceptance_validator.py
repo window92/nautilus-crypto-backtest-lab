@@ -3,6 +3,7 @@ from __future__ import annotations
 import tempfile
 import unittest
 from pathlib import Path
+from types import MappingProxyType
 
 from crypto_lab.config import MarketProfile
 from crypto_lab.hashing import canonical_sha256
@@ -334,6 +335,24 @@ class R2AcceptanceValidatorTests(unittest.TestCase):
             "qualification_limitations": list(REQUIRED_SCIENTIFIC_LIMITATIONS),
         }
         validate_claim_payload(valid, trial_id=f"{EXPECTED_EPOCH}-trial")
+        frozen = MappingProxyType(
+            {
+                **valid,
+                "trial_history": tuple(
+                    MappingProxyType(dict(item)) for item in valid["trial_history"]
+                ),
+                "qualification_limitations": tuple(valid["qualification_limitations"]),
+            },
+        )
+        validate_claim_payload(frozen, trial_id=f"{EXPECTED_EPOCH}-trial")
+        frozen_tamper = MappingProxyType({**frozen, "development_only": False})
+        self.assert_code(
+            FailureCode.CLAIM_INELIGIBLE,
+            lambda: validate_claim_payload(
+                frozen_tamper,
+                trial_id=f"{EXPECTED_EPOCH}-trial",
+            ),
+        )
         for field, value in (
             ("profitability_claim_is_real", True),
             ("live_trading_authorized", True),
