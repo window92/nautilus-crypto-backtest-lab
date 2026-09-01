@@ -10,7 +10,7 @@ from unittest import mock
 from crypto_lab.git_identity import require_repository_root
 from crypto_lab.sealing import OfficialSealOutcome
 from crypto_lab.sealing import verify_official_seal
-from tests.adversarial.test_r2_official_sealing import OfficialSealingAdversarialTests
+from tests.adversarial import test_r2_official_sealing as _official_sealing
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -68,7 +68,7 @@ class RepositoryRootAuthorityTests(unittest.TestCase):
         )
 
     def test_verify_official_seal_requires_repository_root(self) -> None:
-        fixture = OfficialSealingAdversarialTests()
+        fixture = _official_sealing.OfficialSealingAdversarialTests()
         fixture.setUp()
         try:
             with self.assertRaises(TypeError):

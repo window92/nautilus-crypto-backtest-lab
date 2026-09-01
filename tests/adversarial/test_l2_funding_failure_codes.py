@@ -13,10 +13,8 @@ from crypto_lab.sealing import OfficialSealOutcome
 from crypto_lab.sealing import verify_official_seal
 from crypto_lab.status import FailureCode
 from crypto_lab.status import ordered_funding_failure_codes
-from tests.adversarial.test_r2_official_sealing import OfficialSealingAdversarialTests
-from tests.unit.test_instrument_representation_funding_checker_repair import (
-    FundingCheckerRepairTests,
-)
+from tests.adversarial import test_r2_official_sealing as _official_sealing
+from tests.unit import test_instrument_representation_funding_checker_repair as _funding_repair
 from tests.unit.test_instrument_representation_funding_checker_repair import funding_case
 
 
@@ -29,7 +27,7 @@ M3_REPLAY = next(
 )
 
 
-class PreciseFundingFailureCodeTests(FundingCheckerRepairTests):
+class PreciseFundingFailureCodeTests(_funding_repair.FundingCheckerRepairTests):
     def _codes(self, case):
         valid, failures, _detail = self.validate(case)
         self.assertFalse(valid)
@@ -171,7 +169,7 @@ class PreciseFundingFailureCodeTests(FundingCheckerRepairTests):
             self.assertIn(FailureCode.OFFICIAL_SEAL_FAILURE.value, seal.failure_codes)
 
     def test_funding_component_failure_cannot_receive_official_seal_pass(self) -> None:
-        fixture = OfficialSealingAdversarialTests()
+        fixture = _official_sealing.OfficialSealingAdversarialTests()
         fixture.setUp()
         try:
             fixture.component["outcome"] = "COMPONENT_CHECK_FAIL"
