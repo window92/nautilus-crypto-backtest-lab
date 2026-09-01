@@ -274,6 +274,42 @@ R2_RUNTIME_SUPERSEDED_RESULTS: dict[str, dict[str, str]] = {
             "perpetual-benchmark-run-2a0ab6ee5579"
         ),
     },
+    "retry-006-spot-benchmark": {
+        "market_profile": "BINANCE_SPOT_CASH_LONG_ONLY",
+        "result_class": HistoricalResultClass.BENCHMARK.value,
+        "primary_path": (
+            "runs/adversarial-remediation-002-retry-006-spot-benchmark-run-9602e7984645"
+        ),
+        "replay_path": (
+            "runs/replays/adversarial-remediation-002-retry-006-spot-benchmark-"
+            "buy-and-hold-1x-development/adversarial-remediation-002-retry-006-"
+            "spot-benchmark-run-9602e7984645"
+        ),
+    },
+    "retry-006-spot-candidate-a": {
+        "market_profile": "BINANCE_SPOT_CASH_LONG_ONLY",
+        "result_class": HistoricalResultClass.CANDIDATE.value,
+        "primary_path": (
+            "runs/adversarial-remediation-002-retry-006-spot-candidate-a-run-1a928b3db2d3"
+        ),
+        "replay_path": (
+            "runs/replays/adversarial-remediation-002-retry-006-spot-candidate-a-"
+            "development/adversarial-remediation-002-retry-006-spot-candidate-a-"
+            "run-1a928b3db2d3"
+        ),
+    },
+    "retry-006-spot-candidate-b": {
+        "market_profile": "BINANCE_SPOT_CASH_LONG_ONLY",
+        "result_class": HistoricalResultClass.CANDIDATE.value,
+        "primary_path": (
+            "runs/adversarial-remediation-002-retry-006-spot-candidate-b-run-c5ea2b43962f"
+        ),
+        "replay_path": (
+            "runs/replays/adversarial-remediation-002-retry-006-spot-candidate-b-"
+            "development/adversarial-remediation-002-retry-006-spot-candidate-b-"
+            "run-c5ea2b43962f"
+        ),
+    },
 }
 
 

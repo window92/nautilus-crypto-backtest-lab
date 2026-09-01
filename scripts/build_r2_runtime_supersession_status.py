@@ -28,8 +28,10 @@ OUTPUT_RELATIVE_PATH = Path(
 _GIT_SHA = re.compile(r"[0-9a-f]{40}\Z")
 
 # These identities were frozen from the immutable retry-002 through retry-005
-# terminal bytes. Re-running the builder cannot silently bless modified
-# evidence merely by computing new hashes.
+# terminal bytes and the completed Spot retry-006 terminal bytes.  The failed
+# retry-006 Perpetual trial remains failed evidence, not a superseded result.
+# Re-running the builder cannot silently bless modified evidence merely by
+# computing new hashes.
 EXPECTED_RUNTIME_SUPERSESSION_EVIDENCE_HASHES: dict[str, dict[str, str]] = {
     "runs/adversarial-remediation-002-retry-002-spot-benchmark-run-7da743fdaa06": {
         "component_validation.json": "7cee36205bb968d5b89c7a209cb7eacbeb17a933cf09b8b4417340ae6545c1cf",
@@ -213,6 +215,66 @@ EXPECTED_RUNTIME_SUPERSESSION_EVIDENCE_HASHES: dict[str, dict[str, str]] = {
         "runtime_identity.json": "7c7f7796c96c9e18ed9496bd72b9e1b0657e5f74f3b74539db4f4c0e0c1945e3",
         "source_revision.json": "173103806ffe4e75966a42a94028ef1c8d448ac222de7fabb8e0f1eecf2c2572",
         "status.json": "3b612181e10ce80dc971e41ceb28f6e835164f8dc71a75a6850510a942a4b76a",
+    },
+    "runs/adversarial-remediation-002-retry-006-spot-benchmark-run-9602e7984645": {
+        "component_validation.json": "621535b4b096665e0736f14e0d60fe01e09f90deca3d6b45e67c056fae628ec5",
+        "evidence_manifest.json": "e950032b5ed1b6bf4cc5ec33bacc53677d8cc2461bccf40a06ee9ffe858e737d",
+        "official_seal.json": "3c78626bbd115b99352fe6a3f5109f1b2b2d41cc0f5163c96c25d458cccda23b",
+        "runtime_identity.json": "c180a96d274e4f63454ee3233e38cb0115942160cdab0ef1e4dafd5d561226de",
+        "source_revision.json": "00b7c447141eef6d729500f2cf875f5f68efce039c30d754fa53459fbc1d2b17",
+        "status.json": "6082b726f416d814c6afafd79780c22626d672b59e9cf4f70efa98ed9951173d",
+    },
+    (
+        "runs/replays/adversarial-remediation-002-retry-006-spot-benchmark-"
+        "buy-and-hold-1x-development/adversarial-remediation-002-retry-006-"
+        "spot-benchmark-run-9602e7984645"
+    ): {
+        "component_validation.json": "621535b4b096665e0736f14e0d60fe01e09f90deca3d6b45e67c056fae628ec5",
+        "evidence_manifest.json": "544073b12493a5cef620c20eb4b095d445b5fdce21e84b9ca5d41ddf5e630cb2",
+        "official_seal.json": "c188f885263b6786ed8322400fe5ac5711ee5a3b6da7a93e51aebcff82eff4a8",
+        "runtime_identity.json": "c180a96d274e4f63454ee3233e38cb0115942160cdab0ef1e4dafd5d561226de",
+        "source_revision.json": "5d2a8b149726b556538bb74a58434fb14ee532c513b170861e6278397c9d255d",
+        "status.json": "184d4b7009941e96e29c02114042e3cba66045f5d469a0249090de775e8e027e",
+    },
+    "runs/adversarial-remediation-002-retry-006-spot-candidate-a-run-1a928b3db2d3": {
+        "component_validation.json": "e5c9572e4aa9b288bdff291a2f680774b528663158f15bae6c203b5a486ed7ea",
+        "evidence_manifest.json": "e1f1ba7c3dd591e32cff5fcbad034fb60ffd9cb42d52fff64d73c43153fa85cd",
+        "official_seal.json": "24a18c3b51b8f3fd10d1fe5f9a7c7213d97f8448450cc0c99c68f8c369032389",
+        "runtime_identity.json": "c180a96d274e4f63454ee3233e38cb0115942160cdab0ef1e4dafd5d561226de",
+        "source_revision.json": "8605eb2817c566d340d92afc79fc6468fb64015aac23b1b9f3504fba175ee220",
+        "status.json": "77bf09cc1fd109e1c9810e0cc6a9c6f97623d588b7baade99905872c0633abc2",
+    },
+    (
+        "runs/replays/adversarial-remediation-002-retry-006-spot-candidate-a-"
+        "development/adversarial-remediation-002-retry-006-spot-candidate-a-"
+        "run-1a928b3db2d3"
+    ): {
+        "component_validation.json": "e5c9572e4aa9b288bdff291a2f680774b528663158f15bae6c203b5a486ed7ea",
+        "evidence_manifest.json": "ccd2b6a7bb889bc218100a4ee1466dd6145eb3b95d002d92e98ba0171b86fd10",
+        "official_seal.json": "40128c9e3523894647596a1916751b22ec7c917948fc2473ed6819bd19dd5eff",
+        "runtime_identity.json": "c180a96d274e4f63454ee3233e38cb0115942160cdab0ef1e4dafd5d561226de",
+        "source_revision.json": "bf96d489ff10d0675eb9040679c8fff8f5e5f6cfeab9db33971b8c124dcdfb17",
+        "status.json": "0dd2dee5aec65b15e5e374c44b64ab6b097ba3bb5a82c73b93f0a51167644c31",
+    },
+    "runs/adversarial-remediation-002-retry-006-spot-candidate-b-run-c5ea2b43962f": {
+        "component_validation.json": "e97baa8c3969cf9dd467ceea2b1b3f6392739d17343423e8421953a4eaa8dafa",
+        "evidence_manifest.json": "f86c05bd518e5cfcf3c30d26ea5708e4f8ee653064b460a78c4f0a29da5e338e",
+        "official_seal.json": "ccce5d8086e897f835b4fb6941706cefc7321b2bdf382d730325ab5ee80c2cd6",
+        "runtime_identity.json": "c180a96d274e4f63454ee3233e38cb0115942160cdab0ef1e4dafd5d561226de",
+        "source_revision.json": "a5cab71fbed0c858555c234f4988fd285de499c954925b9973ec5a9a24a81474",
+        "status.json": "28bb7cc4715027f3a9bba54aaba16e0118b29926b27da85a4f0d406b2fec1366",
+    },
+    (
+        "runs/replays/adversarial-remediation-002-retry-006-spot-candidate-b-"
+        "development/adversarial-remediation-002-retry-006-spot-candidate-b-"
+        "run-c5ea2b43962f"
+    ): {
+        "component_validation.json": "e97baa8c3969cf9dd467ceea2b1b3f6392739d17343423e8421953a4eaa8dafa",
+        "evidence_manifest.json": "6fc9ba6d43fda297bf54465011ce70f217a212f8fe8bac2e118ff66c9eccdb10",
+        "official_seal.json": "0b9ed5cf50dc7eae2ebc48b650bc37f5f901cc6ee43a7ebe2a15899efd43109f",
+        "runtime_identity.json": "c180a96d274e4f63454ee3233e38cb0115942160cdab0ef1e4dafd5d561226de",
+        "source_revision.json": "16ed32e6b68ab59c3d8b6ed29c265ec9824267ee641504eefe0bd6e0e9941c40",
+        "status.json": "bfc62467af4b97e6f696fba5ac9057e65a7f4ef6c8f66c4b74e1bce64dea73c4",
     },
 }
 
