@@ -111,6 +111,12 @@ retained additive pre-final qualification history; their otherwise valid v2
 record IDs cannot authorize a new Owner workflow. Re-running a current validator over legacy
 bytes does not upgrade them.
 
+The current Development epoch is `adversarial-remediation-002-retry-012`,
+bound by the ACTIVE execution-plan pointer. Retry-011 remains
+`SUPERSEDED`. Host Acceptance for this epoch is recorded at
+`evidence/audit/adversarial-remediation-002/final-acceptance-retry-012`
+(20/20 PASS, Full/Fresh/Reverse discovery 597 tests, no Final Holdout).
+
 After the data-builder SSOT binding was repaired, a fresh two-build
 Raw-to-DuckDB-and-catalog verification was executed from clean local/remote
 commit `e79f70a63aa03154522d961a35f1d84a8059b45a`. The additive canonical proof

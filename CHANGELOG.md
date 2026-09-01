@@ -33,6 +33,11 @@ remains `SSOT.md`; this file does not change normative behavior.
   exposed profiles have independent Primary/Replay evidence; all eight
   qualification negative controls pass, with no Final Holdout or
   profitability authorization. Retry-015 remains historical.
+- Published the retry-012 ACTIVE execution plan and six Development
+  Primary/Replay packages from DuckDB retry-010. Independent Decimal
+  verification, the funding tamper matrix, and Host Acceptance 20/20 all
+  pass (`final_holdout_used=false`). GitHub `portable-review-gates` is not
+  Official acceptance.
 
 ### Adversarial audit remediation R2
 

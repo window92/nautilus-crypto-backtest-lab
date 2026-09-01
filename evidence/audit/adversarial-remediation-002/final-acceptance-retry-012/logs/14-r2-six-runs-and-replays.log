@@ -1,0 +1,217 @@
+$ /home/builder/projects/nautilus-crypto-backtest-lab/.venv/bin/python /home/builder/projects/nautilus-crypto-backtest-lab/scripts/validate_adversarial_remediation_002_runs.py --plan /home/builder/projects/nautilus-crypto-backtest-lab/evidence/audit/adversarial-remediation-002/execution-plans/current/execution-plan.json --epoch adversarial-remediation-002-retry-012 --output /tmp/r2-acceptance-retry-012c/r2-runs-validation.json
+exit_code=0
+duration_seconds=366.005277
+
+{
+  "epoch": "adversarial-remediation-002-retry-012",
+  "failure_codes": [],
+  "failures": [],
+  "final_holdout_used": false,
+  "historical_result_status": {
+    "invalidated_candidate_copy_count": 8,
+    "record_count": 12,
+    "registry_identity": "fbb21770f5b34ac71dce3b8fd8ed16503261de44fc7952d8cbe1f8047913ff7b",
+    "superseded_benchmark_copy_count": 4
+  },
+  "live_trading_used": false,
+  "plan_identity": "b66afdf42c556ed9cd2ab4510886c43a38a9b18072a5abbf19bff235aefc9973",
+  "profitability_claim_authorized": false,
+  "raw_inventory_counts": {
+    "BINANCE_SPOT_CASH_LONG_ONLY": 774,
+    "BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING": 1457
+  },
+  "runs": [
+    {
+      "daily_return_sample_count": 181,
+      "evidence": [
+        {
+          "component_validation": "COMPONENT_CHECK_PASS",
+          "official_seal": "OFFICIAL_SEAL_PASS",
+          "reconciliation_check": "perpetual_full_financial_reconciliation",
+          "reference": "runs/adversarial-remediation-002-retry-012-perpetual-benchmark-run-81fe58a28828",
+          "role": "PRIMARY",
+          "semantic_digest": "a8640232973ace89cd83d2fbb52f96f6c3c6a74d548812c89baacd8bea118d1f"
+        },
+        {
+          "component_validation": "COMPONENT_CHECK_PASS",
+          "official_seal": "OFFICIAL_SEAL_PASS",
+          "reconciliation_check": "perpetual_full_financial_reconciliation",
+          "reference": "runs/replays/adversarial-remediation-002-retry-012-perpetual-benchmark-buy-and-hold-1x-development/adversarial-remediation-002-retry-012-perpetual-benchmark-run-81fe58a28828",
+          "role": "REPLAY",
+          "semantic_digest": "a8640232973ace89cd83d2fbb52f96f6c3c6a74d548812c89baacd8bea118d1f"
+        }
+      ],
+      "final_holdout_used": false,
+      "market_profile": "BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING",
+      "partition_role": "DEVELOPMENT",
+      "performance_diagnostics_id": "f29494fd32f63b5a89a46d2b59c5115f2ce9d5b754b508baec2f8666597793e9",
+      "profitability_claim_authorized": false,
+      "replay_identity": "4e7317bc07c546aeedeadfd783a643d345bdae03aa3a1e6ea4063940cc6a49d3",
+      "report_commit": "6ad31c979ea7bbd2b85a61cc06c494b5298b1ddf",
+      "report_id": "d646e3587c4f0e1244ff7ed9b9d03bfe3b381daf2ff9424bd8cb992b32d122f6",
+      "run_id": "adversarial-remediation-002-retry-012-perpetual-benchmark-run",
+      "trial_id": "adversarial-remediation-002-retry-012-perpetual-benchmark-buy-and-hold-1x-development"
+    },
+    {
+      "daily_return_sample_count": 181,
+      "evidence": [
+        {
+          "component_validation": "COMPONENT_CHECK_PASS",
+          "official_seal": "OFFICIAL_SEAL_PASS",
+          "reconciliation_check": "perpetual_full_financial_reconciliation",
+          "reference": "runs/adversarial-remediation-002-retry-012-perpetual-candidate-a-run-306f69e74b26",
+          "role": "PRIMARY",
+          "semantic_digest": "7c3ebc47f0479af63fd8d81ffa8641f027e3001ca81159c488e6b151ae4c97ed"
+        },
+        {
+          "component_validation": "COMPONENT_CHECK_PASS",
+          "official_seal": "OFFICIAL_SEAL_PASS",
+          "reconciliation_check": "perpetual_full_financial_reconciliation",
+          "reference": "runs/replays/adversarial-remediation-002-retry-012-perpetual-candidate-a-development/adversarial-remediation-002-retry-012-perpetual-candidate-a-run-306f69e74b26",
+          "role": "REPLAY",
+          "semantic_digest": "7c3ebc47f0479af63fd8d81ffa8641f027e3001ca81159c488e6b151ae4c97ed"
+        }
+      ],
+      "final_holdout_used": false,
+      "market_profile": "BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING",
+      "partition_role": "DEVELOPMENT",
+      "performance_diagnostics_id": "9fe5e1d0e037d2ac3991fdc237f7c5c517c7cd354a9b24e9eb21fdd1201396d4",
+      "profitability_claim_authorized": false,
+      "replay_identity": "df3087768f3baba77f6892ad386066960f83b183b892446e54d235008924101b",
+      "report_commit": "d6a6b5a06f803c4042544127c4f4f6f6e21dad7a",
+      "report_id": "d7b66df7af2c192f92c0ed85874b394180f7200aac4da6bd7e66960d9a19ed85",
+      "run_id": "adversarial-remediation-002-retry-012-perpetual-candidate-a-run",
+      "trial_id": "adversarial-remediation-002-retry-012-perpetual-candidate-a-development"
+    },
+    {
+      "daily_return_sample_count": 181,
+      "evidence": [
+        {
+          "component_validation": "COMPONENT_CHECK_PASS",
+          "official_seal": "OFFICIAL_SEAL_PASS",
+          "reconciliation_check": "perpetual_full_financial_reconciliation",
+          "reference": "runs/adversarial-remediation-002-retry-012-perpetual-candidate-b-run-bd26bd68a201",
+          "role": "PRIMARY",
+          "semantic_digest": "04f51e1aa4e15c18db52ca8953307bab97e241b86f89fa4cfe0984660307d346"
+        },
+        {
+          "component_validation": "COMPONENT_CHECK_PASS",
+          "official_seal": "OFFICIAL_SEAL_PASS",
+          "reconciliation_check": "perpetual_full_financial_reconciliation",
+          "reference": "runs/replays/adversarial-remediation-002-retry-012-perpetual-candidate-b-development/adversarial-remediation-002-retry-012-perpetual-candidate-b-run-bd26bd68a201",
+          "role": "REPLAY",
+          "semantic_digest": "04f51e1aa4e15c18db52ca8953307bab97e241b86f89fa4cfe0984660307d346"
+        }
+      ],
+      "final_holdout_used": false,
+      "market_profile": "BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING",
+      "partition_role": "DEVELOPMENT",
+      "performance_diagnostics_id": "4f5d73c9110aff56bfc6e479223eee1f293162c93e1bee4a3e09c1f50f1a277a",
+      "profitability_claim_authorized": false,
+      "replay_identity": "666cca366d6ca8d2b6564ce42c4f348211a6058676a95a1f092978d19c0515c7",
+      "report_commit": "f5b73795dccf034a2e6687e1ac7741986e579135",
+      "report_id": "3ca452dd332b35ac6e81e1e5b1f6935f3e3c5b683429fbca564789bb879c8ef8",
+      "run_id": "adversarial-remediation-002-retry-012-perpetual-candidate-b-run",
+      "trial_id": "adversarial-remediation-002-retry-012-perpetual-candidate-b-development"
+    },
+    {
+      "daily_return_sample_count": 181,
+      "evidence": [
+        {
+          "component_validation": "COMPONENT_CHECK_PASS",
+          "official_seal": "OFFICIAL_SEAL_PASS",
+          "reconciliation_check": "spot_cash_reconciliation",
+          "reference": "runs/adversarial-remediation-002-retry-012-spot-benchmark-run-89a146f07e52",
+          "role": "PRIMARY",
+          "semantic_digest": "91e75487555cacd9e4762d9c4b44f0dd7c551b27f91b0e40cc23756e9cd946bc"
+        },
+        {
+          "component_validation": "COMPONENT_CHECK_PASS",
+          "official_seal": "OFFICIAL_SEAL_PASS",
+          "reconciliation_check": "spot_cash_reconciliation",
+          "reference": "runs/replays/adversarial-remediation-002-retry-012-spot-benchmark-buy-and-hold-1x-development/adversarial-remediation-002-retry-012-spot-benchmark-run-89a146f07e52",
+          "role": "REPLAY",
+          "semantic_digest": "91e75487555cacd9e4762d9c4b44f0dd7c551b27f91b0e40cc23756e9cd946bc"
+        }
+      ],
+      "final_holdout_used": false,
+      "market_profile": "BINANCE_SPOT_CASH_LONG_ONLY",
+      "partition_role": "DEVELOPMENT",
+      "performance_diagnostics_id": "1612d55c9954ac9eba11792e1fcb41ce3a966c1139646a414808430ceeeadd2c",
+      "profitability_claim_authorized": false,
+      "replay_identity": "054ea4072d9dd0cf9bc72d1c8468873b52e4c0a6be19c14dbe1d6e8a0383df90",
+      "report_commit": "89c46f0ab9f28c666ebb90f1c4e2dc894781b578",
+      "report_id": "177df5832cf773e8499ee078a5dc430dd97cc9e517b4174eb37e3b3ad7dc38c0",
+      "run_id": "adversarial-remediation-002-retry-012-spot-benchmark-run",
+      "trial_id": "adversarial-remediation-002-retry-012-spot-benchmark-buy-and-hold-1x-development"
+    },
+    {
+      "daily_return_sample_count": 181,
+      "evidence": [
+        {
+          "component_validation": "COMPONENT_CHECK_PASS",
+          "official_seal": "OFFICIAL_SEAL_PASS",
+          "reconciliation_check": "spot_cash_reconciliation",
+          "reference": "runs/adversarial-remediation-002-retry-012-spot-candidate-a-run-db0f8a5fc93d",
+          "role": "PRIMARY",
+          "semantic_digest": "b36ef8eb35967a694d2ff6e716f8ddc8a6d3ded8b8d89da2fee589c070bfbcf5"
+        },
+        {
+          "component_validation": "COMPONENT_CHECK_PASS",
+          "official_seal": "OFFICIAL_SEAL_PASS",
+          "reconciliation_check": "spot_cash_reconciliation",
+          "reference": "runs/replays/adversarial-remediation-002-retry-012-spot-candidate-a-development/adversarial-remediation-002-retry-012-spot-candidate-a-run-db0f8a5fc93d",
+          "role": "REPLAY",
+          "semantic_digest": "b36ef8eb35967a694d2ff6e716f8ddc8a6d3ded8b8d89da2fee589c070bfbcf5"
+        }
+      ],
+      "final_holdout_used": false,
+      "market_profile": "BINANCE_SPOT_CASH_LONG_ONLY",
+      "partition_role": "DEVELOPMENT",
+      "performance_diagnostics_id": "025a12705329922ed1379d4fdc77eb48ec29779f19722a1c780fa75278383efb",
+      "profitability_claim_authorized": false,
+      "replay_identity": "b970fac2615f80fac975f3228cdadbeca781bbcd239f9bf9f1d8d13901ce331a",
+      "report_commit": "d6192f672f04378ab8d2c4717603a71403d87996",
+      "report_id": "7c12f7b403c7155c3400b74e9633ca6d8b8d3e73eac2e7ae31956a8f3c55096e",
+      "run_id": "adversarial-remediation-002-retry-012-spot-candidate-a-run",
+      "trial_id": "adversarial-remediation-002-retry-012-spot-candidate-a-development"
+    },
+    {
+      "daily_return_sample_count": 181,
+      "evidence": [
+        {
+          "component_validation": "COMPONENT_CHECK_PASS",
+          "official_seal": "OFFICIAL_SEAL_PASS",
+          "reconciliation_check": "spot_cash_reconciliation",
+          "reference": "runs/adversarial-remediation-002-retry-012-spot-candidate-b-run-978d34af0dbe",
+          "role": "PRIMARY",
+          "semantic_digest": "d95785d67d1d83ae1da1daf3deaac729eb6da2c9a807a083540c9867945848db"
+        },
+        {
+          "component_validation": "COMPONENT_CHECK_PASS",
+          "official_seal": "OFFICIAL_SEAL_PASS",
+          "reconciliation_check": "spot_cash_reconciliation",
+          "reference": "runs/replays/adversarial-remediation-002-retry-012-spot-candidate-b-development/adversarial-remediation-002-retry-012-spot-candidate-b-run-978d34af0dbe",
+          "role": "REPLAY",
+          "semantic_digest": "d95785d67d1d83ae1da1daf3deaac729eb6da2c9a807a083540c9867945848db"
+        }
+      ],
+      "final_holdout_used": false,
+      "market_profile": "BINANCE_SPOT_CASH_LONG_ONLY",
+      "partition_role": "DEVELOPMENT",
+      "performance_diagnostics_id": "da9df60f3ad5e928da25836eb1c37171186e05ec7f869323334259e40719cd8c",
+      "profitability_claim_authorized": false,
+      "replay_identity": "6b8844991d517cc9c8b56de88664960b0b14b67c5e801b247fa5db61c40eea62",
+      "report_commit": "56c16b21687ef63535d6f6dca69f4711157c5f7b",
+      "report_id": "79b519b8b05bf060b87af9b1146efb4ed2b32fe6e3039368279cc007337e7bcb",
+      "run_id": "adversarial-remediation-002-retry-012-spot-candidate-b-run",
+      "trial_id": "adversarial-remediation-002-retry-012-spot-candidate-b-development"
+    }
+  ],
+  "schema": "adversarial-remediation-002-research-validation-v1",
+  "source_commit": "168dc3b5861bcf545b078b05d627c06ae500ec32",
+  "status": "PASS",
+  "validated_evidence_directory_count": 12,
+  "validated_primary_run_count": 6,
+  "validation_identity": "fe1cc3d21ef0942cb0a5b7f09b1ca970a723f0d83b8a8b098fcc0ea056d62635"
+}

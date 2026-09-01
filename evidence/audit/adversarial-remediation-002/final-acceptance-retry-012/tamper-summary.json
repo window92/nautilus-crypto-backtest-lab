@@ -1,0 +1,19 @@
+{
+  "copy_based_duplicate_funding": {
+    "checker_outcome": "COMPONENT_CHECK_FAIL",
+    "failure_codes": [
+      "FUNDING_DOUBLE_COUNT",
+      "PERPETUAL_RECONCILIATION_FAILURE",
+      "PERFORMANCE_METRICS_INVALID"
+    ],
+    "method": "shutil/cp without hardlinks; append first funding data row",
+    "official_seal_outcome": "OFFICIAL_SEAL_FAIL",
+    "source": "runs/adversarial-remediation-002-retry-012-perpetual-benchmark-run-81fe58a28828"
+  },
+  "unittest_batches": {
+    "l1_l2_spot_affordability_perpetual_reconciliation": {
+      "status": "PASS",
+      "tests": 54
+    }
+  }
+}

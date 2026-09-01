@@ -1,0 +1,5 @@
+$ /home/builder/projects/nautilus-crypto-backtest-lab/.venv/bin/python -m pip check
+exit_code=0
+duration_seconds=0.989649
+
+No broken requirements found.
