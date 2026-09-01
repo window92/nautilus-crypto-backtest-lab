@@ -11,6 +11,7 @@ from crypto_lab.reporting import OFFICIAL_ANNUALIZATION_DAYS
 from crypto_lab.reporting import OFFICIAL_EQUITY_OBSERVATION_BASIS
 from crypto_lab.reporting import OFFICIAL_RISK_MINIMUM_SAMPLE_COUNT
 from crypto_lab.reporting import REQUIRED_SCIENTIFIC_LIMITATIONS
+from crypto_lab.reporting import ReportOutput
 from crypto_lab.status import FailureCode
 from scripts.validate_adversarial_remediation_002_runs import COMPONENT_PASS
 from scripts.validate_adversarial_remediation_002_runs import EXPECTED_BRANCH
@@ -26,6 +27,7 @@ from scripts.validate_adversarial_remediation_002_runs import validate_component
 from scripts.validate_adversarial_remediation_002_runs import validate_performance_payload
 from scripts.validate_adversarial_remediation_002_runs import validate_plan_payload
 from scripts.validate_adversarial_remediation_002_runs import validate_rebuild_payload
+from scripts.validate_adversarial_remediation_002_runs import validate_report_claim_projection
 from scripts.validate_adversarial_remediation_002_runs import validate_replay_payload
 
 
@@ -371,6 +373,22 @@ class R2AcceptanceValidatorTests(unittest.TestCase):
                         trial_id=f"{EXPECTED_EPOCH}-trial",
                     ),
                 )
+
+    def test_persisted_retry_009_reports_survive_strict_immutable_projection(self) -> None:
+        reports = sorted(
+            (VALIDATOR_ROOT / "research/reports").glob(
+                "adversarial-remediation-002-retry-009-*.json",
+            ),
+        )
+        self.assertEqual(len(reports), 6)
+        for path in reports:
+            with self.subTest(path=path.name):
+                report = ReportOutput.from_json_bytes(path.read_bytes())
+                payload = validate_report_claim_projection(
+                    report,
+                    trial_id=path.stem,
+                )
+                self.assertEqual(payload["claim_result"], report.claim_evaluation.to_builtins())
 
     def test_dataset_rebuild_missing_four_way_proof_is_structured(self) -> None:
         invalid = {

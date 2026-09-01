@@ -540,6 +540,32 @@ def validate_claim_payload(value: Mapping[str, Any], *, trial_id: str) -> None:
         _reject(FailureCode.CLAIM_INELIGIBLE, stage, "report exceeds Development-only authority")
 
 
+def validate_report_claim_projection(
+    report: ReportOutput,
+    *,
+    trial_id: str,
+) -> dict[str, Any]:
+    """Validate the semantic JSON projection after strict immutable parsing."""
+
+    stage = f"report:{trial_id}"
+    report_builtins = report.to_builtins()
+    payload = report_builtins.get("json_payload")
+    if not isinstance(payload, dict):
+        _reject(FailureCode.EVIDENCE_INCOMPLETE, stage, "report JSON payload is malformed")
+    validate_claim_payload(payload, trial_id=trial_id)
+    if (
+        payload.get("research_eligibility")
+        != report.claim_evaluation.research_eligibility.value
+        or payload.get("research_intent")
+        != report.claim_evaluation.research_intent.value
+        or payload.get("mechanical_integrity")
+        != report.claim_evaluation.mechanical_integrity.value
+        or payload.get("claim_result") != report.claim_evaluation.to_builtins()
+    ):
+        _reject(FailureCode.CLAIM_INELIGIBLE, stage, "report claim projection is inconsistent")
+    return payload
+
+
 def validate_rebuild_payload(
     value: dict[str, Any],
     *,
@@ -941,17 +967,7 @@ def _validate_report_and_metrics(
     )
 
     report = ReportOutput.from_json_bytes(report_path.read_bytes())
-    validate_claim_payload(report.json_payload, trial_id=trial_id)
-    if (
-        report.json_payload.get("research_eligibility")
-        != report.claim_evaluation.research_eligibility.value
-        or report.json_payload.get("research_intent")
-        != report.claim_evaluation.research_intent.value
-        or report.json_payload.get("mechanical_integrity")
-        != report.claim_evaluation.mechanical_integrity.value
-        or report.json_payload.get("claim_result") != report.claim_evaluation.to_builtins()
-    ):
-        _reject(FailureCode.CLAIM_INELIGIBLE, stage, "report claim projection is inconsistent")
+    validate_report_claim_projection(report, trial_id=trial_id)
     if report.markdown != markdown_path.read_text(encoding="utf-8"):
         _reject(FailureCode.EVIDENCE_INCOMPLETE, stage, "report Markdown differs")
     relative = report_path.relative_to(repository).as_posix()
