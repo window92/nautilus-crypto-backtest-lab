@@ -21,7 +21,7 @@ class AuditQualificationValidatorTests(unittest.TestCase):
         )
         self.r2_evidence = (
             self.repository
-            / "evidence/audit/adversarial-remediation-002/qualification-retry-012"
+            / "evidence/audit/adversarial-remediation-002/qualification-retry-013"
         )
 
     @staticmethod
