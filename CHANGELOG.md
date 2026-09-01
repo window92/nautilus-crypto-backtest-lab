@@ -13,6 +13,11 @@ remains `SSOT.md`; this file does not change normative behavior.
   source-tree or installed-Wheel location; fresh-Wheel tests mutate that
   location and execute the installed Product payload against the explicit
   root.
+- Classified every immutable retry-009 Primary/Replay package as
+  `SUPERSEDED` through a new closed additive registry after that material
+  repository-authority interface repair. The classification does not claim a
+  financial defect in those bytes; it prevents them from remaining active and
+  requires fresh Product authority, qualification, and Development Runs.
 - Enforced the unchanged full signal-interval scoring rule at execution,
   daily/weekly aggregation, low-level strategy, checker, diagnostic, and replay
   boundaries; `decision_timestamp` no longer makes a warmup interval eligible.

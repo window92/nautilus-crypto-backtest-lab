@@ -126,35 +126,40 @@ class R2OfficialRebuildPlanTests(unittest.TestCase):
         self.assertEqual(
             candidates[0],
             ROOT
-            / "evidence/audit/adversarial-remediation-002/qualification-retry-012/qualified-profile-registry.json",
+            / "evidence/audit/adversarial-remediation-002/qualification-retry-013/qualified-profile-registry.json",
         )
         self.assertEqual(
             candidates[1],
             ROOT
-            / "evidence/audit/adversarial-remediation-002/qualification-retry-011/qualified-profile-registry.json",
+            / "evidence/audit/adversarial-remediation-002/qualification-retry-012/qualified-profile-registry.json",
         )
         self.assertEqual(
             candidates[2],
             ROOT
-            / "evidence/audit/adversarial-remediation-002/qualification-retry-010/qualified-profile-registry.json",
+            / "evidence/audit/adversarial-remediation-002/qualification-retry-011/qualified-profile-registry.json",
         )
         self.assertEqual(
             candidates[3],
             ROOT
-            / "evidence/audit/adversarial-remediation-002/qualification-retry-009/qualified-profile-registry.json",
+            / "evidence/audit/adversarial-remediation-002/qualification-retry-010/qualified-profile-registry.json",
         )
         self.assertEqual(
             candidates[4],
             ROOT
-            / "evidence/audit/adversarial-remediation-002/qualification-retry-008/qualified-profile-registry.json",
+            / "evidence/audit/adversarial-remediation-002/qualification-retry-009/qualified-profile-registry.json",
         )
         self.assertEqual(
             candidates[5],
             ROOT
-            / "evidence/audit/adversarial-remediation-002/qualification-retry-007/qualified-profile-registry.json",
+            / "evidence/audit/adversarial-remediation-002/qualification-retry-008/qualified-profile-registry.json",
         )
         self.assertEqual(
             candidates[6],
+            ROOT
+            / "evidence/audit/adversarial-remediation-002/qualification-retry-007/qualified-profile-registry.json",
+        )
+        self.assertEqual(
+            candidates[7],
             ROOT
             / "evidence/audit/adversarial-remediation-002/qualification/qualified-profile-registry.json",
         )
