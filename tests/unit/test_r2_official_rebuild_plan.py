@@ -122,10 +122,15 @@ class R2OfficialRebuildPlanTests(unittest.TestCase):
         self.assertEqual(
             candidates[0],
             ROOT
-            / "evidence/audit/adversarial-remediation-002/qualification-retry-007/qualified-profile-registry.json",
+            / "evidence/audit/adversarial-remediation-002/qualification-retry-008/qualified-profile-registry.json",
         )
         self.assertEqual(
             candidates[1],
+            ROOT
+            / "evidence/audit/adversarial-remediation-002/qualification-retry-007/qualified-profile-registry.json",
+        )
+        self.assertEqual(
+            candidates[2],
             ROOT
             / "evidence/audit/adversarial-remediation-002/qualification/qualified-profile-registry.json",
         )
