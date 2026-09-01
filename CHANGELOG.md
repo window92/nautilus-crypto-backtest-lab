@@ -24,6 +24,10 @@ remains `SSOT.md`; this file does not change normative behavior.
 - Classified the complete retry-011 Primary/Replay set as additive
   `SUPERSEDED` after the Official active-Raw-inventory repair. The
   classification does not claim a financial defect in those bytes.
+- Rebuilt `runtime-bootstrap-authority.json` to the L-1..L-4 freeze commit
+  `c3065b89b22a8bacbd8bb46f259718accb6d7b5f` so isolated Official and M3
+  children match current Product source hashes. The Host Acceptance
+  attestation product-source identity was regenerated for that authority.
 
 ### Adversarial audit remediation R2
 
