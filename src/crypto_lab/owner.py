@@ -14,6 +14,7 @@ import hashlib
 import json
 import os
 import pwd
+import re
 import shutil
 import subprocess
 import sys
@@ -891,23 +892,62 @@ def _reconcile_recoverable_history(
 
 
 def _qualified_profile_registry_candidates(repository: Path) -> tuple[Path, ...]:
-    """Return current-to-historical registry locators in explicit authority order."""
+    """Return Git-committed qualification authorities newest first.
 
-    return (
-        repository
-        / "evidence/audit/adversarial-remediation-002/qualification-retry-013/qualified-profile-registry.json",
-        repository
-        / "evidence/audit/adversarial-remediation-002/qualification-retry-012/qualified-profile-registry.json",
-        repository
-        / "evidence/audit/adversarial-remediation-002/qualification-retry-011/qualified-profile-registry.json",
-        repository
-        / "evidence/audit/adversarial-remediation-002/qualification-retry-010/qualified-profile-registry.json",
-        repository
-        / "evidence/audit/adversarial-remediation-002/qualification-retry-009/qualified-profile-registry.json",
-        repository
-        / "evidence/audit/adversarial-remediation-002/qualification-retry-008/qualified-profile-registry.json",
-        repository
-        / "evidence/audit/adversarial-remediation-002/qualification-retry-007/qualified-profile-registry.json",
+    A frozen list makes every new qualification require a Product-Code change,
+    which immediately makes that qualification stale.  Enumerating Git HEAD
+    breaks that cycle while ensuring an untracked directory cannot become
+    authority merely because it has a larger retry suffix.
+    """
+
+    root = "evidence/audit/adversarial-remediation-002"
+    listing = subprocess.run(
+        [
+            "git",
+            "--no-replace-objects",
+            "ls-tree",
+            "-r",
+            "--name-only",
+            "HEAD",
+            "--",
+            root,
+        ],
+        cwd=repository,
+        env={
+            **_official_child_environment(),
+            "GIT_CONFIG_NOSYSTEM": "1",
+            "GIT_NO_REPLACE_OBJECTS": "1",
+        },
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if listing.returncode != 0:
+        raise ResearchError(
+            FailureCode.DOWNSTREAM_CONTRACT_FAILURE,
+            "cannot enumerate committed Qualified Profile registries",
+        )
+    pattern = re.compile(
+        rf"^{re.escape(root)}/qualification-retry-([0-9]{{3}})/"
+        r"qualified-profile-registry[.]json$",
+    )
+    retry_paths: dict[int, Path] = {}
+    for relative in listing.stdout.splitlines():
+        match = pattern.fullmatch(relative)
+        if match is None:
+            continue
+        epoch = int(match.group(1))
+        if epoch in retry_paths:
+            raise ResearchError(
+                FailureCode.DOWNSTREAM_CONTRACT_FAILURE,
+                "duplicate committed qualification retry authority",
+            )
+        retry_paths[epoch] = repository / relative
+    ordered_retries = tuple(
+        retry_paths[epoch]
+        for epoch in sorted(retry_paths, reverse=True)
+    )
+    return ordered_retries + (
         repository
         / "evidence/audit/adversarial-remediation-002/qualification/qualified-profile-registry.json",
         repository
@@ -918,18 +958,157 @@ def _qualified_profile_registry_candidates(repository: Path) -> tuple[Path, ...]
     )
 
 
+def _committed_qualified_profile_registry_bytes(
+    repository: Path,
+    registry_path: Path,
+) -> bytes:
+    """Read the selected Registry only when worktree bytes equal Git HEAD."""
+
+    lexical = Path(os.path.abspath(registry_path))
+    try:
+        relative = lexical.relative_to(repository).as_posix()
+        resolved = lexical.resolve(strict=True)
+    except (OSError, ValueError) as exc:
+        raise ResearchError(
+            FailureCode.DOWNSTREAM_CONTRACT_FAILURE,
+            "Current Qualified Profile registry is unavailable",
+        ) from exc
+    if (
+        resolved != lexical
+        or lexical.is_symlink()
+        or not lexical.is_file()
+    ):
+        raise ResearchError(
+            FailureCode.DOWNSTREAM_CONTRACT_FAILURE,
+            "Current Qualified Profile registry is unavailable",
+        )
+    committed = subprocess.run(
+        ["git", "--no-replace-objects", "show", f"HEAD:{relative}"],
+        cwd=repository,
+        env={
+            **_official_child_environment(),
+            "GIT_CONFIG_NOSYSTEM": "1",
+            "GIT_NO_REPLACE_OBJECTS": "1",
+        },
+        check=False,
+        capture_output=True,
+    )
+    try:
+        current = lexical.read_bytes()
+    except OSError as exc:
+        raise ResearchError(
+            FailureCode.DOWNSTREAM_CONTRACT_FAILURE,
+            "Current Qualified Profile registry is unavailable",
+        ) from exc
+    if committed.returncode != 0 or committed.stdout != current:
+        raise ResearchError(
+            FailureCode.DOWNSTREAM_CONTRACT_FAILURE,
+            "Current Qualified Profile registry differs from Git HEAD",
+        )
+    return committed.stdout
+
+
+_QUALIFICATION_EXECUTABLE_CLOSURE = (
+    "SSOT.md",
+    "pyproject.toml",
+    "requirements.lock.txt",
+    "runtime.lock.json",
+    "runtime-bootstrap-authority.json",
+    "configs/m3",
+    "src",
+    "scripts/build_runtime_bootstrap_authority.py",
+    "scripts/isolated_runtime_bootstrap.py",
+    "scripts/prepare_adversarial_remediation_002_runs.py",
+    "scripts/run_m3_child.py",
+    "scripts/run_m3_qualifications.py",
+    "scripts/validate_audit_qualification.py",
+    "scripts/validate_m3_evidence.py",
+)
+
+
+def _require_qualification_executable_closure_current(
+    repository: Path,
+    source_commit: str,
+) -> None:
+    """Require the newest Registry to qualify the current executable closure."""
+
+    if (
+        len(source_commit) != 40
+        or any(character not in "0123456789abcdef" for character in source_commit)
+    ):
+        raise ResearchError(
+            FailureCode.DOWNSTREAM_CONTRACT_FAILURE,
+            "Qualified Profile Source Revision is invalid",
+        )
+    environment = {
+        **_official_child_environment(),
+        "GIT_CONFIG_NOSYSTEM": "1",
+        "GIT_NO_REPLACE_OBJECTS": "1",
+    }
+    ancestor = subprocess.run(
+        [
+            "git",
+            "--no-replace-objects",
+            "merge-base",
+            "--is-ancestor",
+            source_commit,
+            "HEAD",
+        ],
+        cwd=repository,
+        env=environment,
+        check=False,
+        capture_output=True,
+    )
+    if ancestor.returncode != 0:
+        raise ResearchError(
+            FailureCode.DOWNSTREAM_CONTRACT_FAILURE,
+            "Qualified Profile Source Revision is not current ancestry",
+        )
+    closure = subprocess.run(
+        [
+            "git",
+            "--no-replace-objects",
+            "diff",
+            "--quiet",
+            source_commit,
+            "HEAD",
+            "--",
+            *_QUALIFICATION_EXECUTABLE_CLOSURE,
+        ],
+        cwd=repository,
+        env=environment,
+        check=False,
+        capture_output=True,
+    )
+    if closure.returncode != 0:
+        raise ResearchError(
+            FailureCode.DOWNSTREAM_CONTRACT_FAILURE,
+            "Qualified Profile executable closure differs from current Git HEAD",
+        )
+
+
 def _qualified_profile(
     repository: Path,
     value: OwnerWorkflowInput,
 ) -> tuple[QualifiedProfileRecord, Path]:
     candidates = _qualified_profile_registry_candidates(repository)
-    registry_path = next((path for path in candidates if path.is_file()), None)
-    if registry_path is None:
+    if not candidates:
         raise ResearchError(
             FailureCode.DOWNSTREAM_CONTRACT_FAILURE,
             "Current Qualified Profile registry is unavailable",
         )
-    registry = QualifiedProfileRegistry.from_json_bytes(registry_path.read_bytes())
+    registry_path = candidates[0]
+    try:
+        registry = QualifiedProfileRegistry.from_json_bytes(
+            _committed_qualified_profile_registry_bytes(repository, registry_path),
+        )
+    except ResearchError:
+        raise
+    except (TypeError, ValueError) as exc:
+        raise ResearchError(
+            FailureCode.DOWNSTREAM_CONTRACT_FAILURE,
+            "Current Qualified Profile registry is invalid",
+        ) from exc
     matches = [
         item
         for item in registry.records
@@ -941,6 +1120,14 @@ def _qualified_profile(
             "Qualified Profile must resolve exactly once in the current authority",
         )
     record = matches[0]
+    if (
+        getattr(value, "workflow_purpose", OwnerWorkflowPurpose.OWNER_STUDY)
+        is not OwnerWorkflowPurpose.QUALIFICATION_INTERFACE_FIXTURE
+    ):
+        _require_qualification_executable_closure_current(
+            repository,
+            record.source_revision.git_commit,
+        )
     if record.profile_id is not value.protocol.market_profile:
         raise ResearchError(FailureCode.DOWNSTREAM_CONTRACT_FAILURE, "Qualified Profile locator mismatch")
     if (

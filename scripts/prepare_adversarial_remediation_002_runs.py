@@ -35,6 +35,7 @@ from crypto_lab.m3 import QualifiedProfileRecord
 from crypto_lab.m3 import QualifiedProfileRegistry
 from crypto_lab.owner import OwnerWorkflowInput
 from crypto_lab.owner import OwnerWorkflowPurpose
+from crypto_lab.owner import _qualified_profile_registry_candidates
 from crypto_lab.paths import validate_safe_component
 from crypto_lab.reporting import REQUIRED_SCIENTIFIC_LIMITATIONS
 from crypto_lab.research import BenchmarkSpec
@@ -251,6 +252,16 @@ def _require_current_registry(
         ):
             raise RuntimeError(f"{profile.value} is not current component-qualified evidence")
     return records
+
+
+def _require_current_registry_locator(registry_path: Path) -> None:
+    """Reject an otherwise valid older Registry at plan-preparation time."""
+
+    candidates = _qualified_profile_registry_candidates(ROOT)
+    if not candidates or registry_path != candidates[0]:
+        raise RuntimeError(
+            "qualification registry is not the current Git-committed authority",
+        )
 
 
 def _require_qualification_evidence(
@@ -700,6 +711,7 @@ def main(argv: list[str] | None = None) -> int:
         arguments.qualification_registry,
         label="qualification registry",
     )
+    _require_current_registry_locator(registry_path)
     rebuild_validation_path = _contained_committed_file(
         arguments.data_rebuild_validation,
         label="Dataset rebuild validation",

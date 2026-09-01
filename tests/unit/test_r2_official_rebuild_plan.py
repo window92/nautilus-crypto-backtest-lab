@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import hashlib
+import re
+import subprocess
 import tempfile
 import unittest
 from datetime import UTC
 from datetime import datetime
 from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import patch
 
 from crypto_lab.config import MarketProfile
 from crypto_lab.data import DatasetRelease
@@ -15,6 +18,7 @@ from crypto_lab.m3 import QualifiedProfileRegistry
 from crypto_lab.m3 import qualification_dataset_release
 from crypto_lab.owner import _qualified_profile
 from crypto_lab.owner import _qualified_profile_registry_candidates
+from crypto_lab.owner import _require_qualification_executable_closure_current
 from crypto_lab.owner import _release
 from crypto_lab.owner import _require_scientific_claim_contract
 from crypto_lab.owner import DEVELOPMENT_CLAIM_CONTROL_TOKENS
@@ -33,6 +37,7 @@ from scripts.prepare_adversarial_remediation_002_runs import _benchmark_id
 from scripts.prepare_adversarial_remediation_002_runs import _build_protocol_and_workflows
 from scripts.prepare_adversarial_remediation_002_runs import _execution_item
 from scripts.prepare_adversarial_remediation_002_runs import _require_current_registry
+from scripts.prepare_adversarial_remediation_002_runs import _require_current_registry_locator
 from scripts.prepare_adversarial_remediation_002_runs import _require_external_fresh_output
 from scripts.prepare_adversarial_remediation_002_runs import _require_full_release
 from scripts.prepare_adversarial_remediation_002_runs import _require_new_workflow_identities
@@ -123,47 +128,90 @@ class R2OfficialRebuildPlanTests(unittest.TestCase):
 
     def test_owner_resolves_the_r2_qualification_registry_before_legacy_authorities(self) -> None:
         candidates = _qualified_profile_registry_candidates(ROOT)
+        listing = subprocess.run(
+            [
+                "git",
+                "--no-replace-objects",
+                "ls-tree",
+                "-r",
+                "--name-only",
+                "HEAD",
+                "--",
+                "evidence/audit/adversarial-remediation-002",
+            ],
+            cwd=ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.splitlines()
+        tracked = []
+        pattern = re.compile(
+            r"^evidence/audit/adversarial-remediation-002/"
+            r"qualification-retry-([0-9]{3})/qualified-profile-registry[.]json$",
+        )
+        for relative in listing:
+            match = pattern.fullmatch(relative)
+            if match is not None:
+                tracked.append((int(match.group(1)), ROOT / relative))
+        self.assertTrue(tracked)
         self.assertEqual(
             candidates[0],
-            ROOT
-            / "evidence/audit/adversarial-remediation-002/qualification-retry-013/qualified-profile-registry.json",
+            max(tracked)[1],
+        )
+        retry_candidates = candidates[: len(tracked)]
+        self.assertEqual(
+            retry_candidates,
+            tuple(path for _epoch, path in sorted(tracked, reverse=True)),
         )
         self.assertEqual(
-            candidates[1],
-            ROOT
-            / "evidence/audit/adversarial-remediation-002/qualification-retry-012/qualified-profile-registry.json",
-        )
-        self.assertEqual(
-            candidates[2],
-            ROOT
-            / "evidence/audit/adversarial-remediation-002/qualification-retry-011/qualified-profile-registry.json",
-        )
-        self.assertEqual(
-            candidates[3],
-            ROOT
-            / "evidence/audit/adversarial-remediation-002/qualification-retry-010/qualified-profile-registry.json",
-        )
-        self.assertEqual(
-            candidates[4],
-            ROOT
-            / "evidence/audit/adversarial-remediation-002/qualification-retry-009/qualified-profile-registry.json",
-        )
-        self.assertEqual(
-            candidates[5],
-            ROOT
-            / "evidence/audit/adversarial-remediation-002/qualification-retry-008/qualified-profile-registry.json",
-        )
-        self.assertEqual(
-            candidates[6],
-            ROOT
-            / "evidence/audit/adversarial-remediation-002/qualification-retry-007/qualified-profile-registry.json",
-        )
-        self.assertEqual(
-            candidates[7],
+            candidates[len(tracked)],
             ROOT
             / "evidence/audit/adversarial-remediation-002/qualification/qualified-profile-registry.json",
         )
         self.assertEqual(len(candidates), len(set(candidates)))
+
+    def test_missing_latest_registry_fails_closed_without_older_fallback(self) -> None:
+        current_path = _qualified_profile_registry_candidates(ROOT)[0]
+        current = QualifiedProfileRegistry.from_json_bytes(current_path.read_bytes()).records[0]
+        value = SimpleNamespace(
+            qualified_profile_record_id=current.qualified_profile_record_id,
+            protocol=SimpleNamespace(market_profile=current.profile_id),
+        )
+        missing = (
+            ROOT
+            / "evidence/audit/adversarial-remediation-002/"
+            "qualification-retry-999/qualified-profile-registry.json"
+        )
+        with (
+            patch(
+                "crypto_lab.owner._qualified_profile_registry_candidates",
+                return_value=(missing, current_path),
+            ),
+            self.assertRaisesRegex(ResearchError, "Current Qualified Profile registry is unavailable"),
+        ):
+            _qualified_profile(ROOT, value)
+
+    def test_uncommitted_registry_bytes_cannot_become_current_authority(self) -> None:
+        current_path = _qualified_profile_registry_candidates(ROOT)[0]
+        current = QualifiedProfileRegistry.from_json_bytes(current_path.read_bytes()).records[0]
+        value = SimpleNamespace(
+            qualified_profile_record_id=current.qualified_profile_record_id,
+            protocol=SimpleNamespace(market_profile=current.profile_id),
+        )
+        with tempfile.TemporaryDirectory(
+            dir=ROOT,
+            prefix=".r2-uncommitted-registry-",
+        ) as temporary:
+            uncommitted = Path(temporary) / "qualified-profile-registry.json"
+            uncommitted.write_bytes(current_path.read_bytes())
+            with (
+                patch(
+                    "crypto_lab.owner._qualified_profile_registry_candidates",
+                    return_value=(uncommitted, current_path),
+                ),
+                self.assertRaisesRegex(ResearchError, "differs from Git HEAD"),
+            ):
+                _qualified_profile(ROOT, value)
 
     def test_owner_rejects_a_v2_profile_from_an_older_registry(self) -> None:
         candidates = _qualified_profile_registry_candidates(ROOT)
@@ -190,6 +238,41 @@ class R2OfficialRebuildPlanTests(unittest.TestCase):
         )
         with self.assertRaisesRegex(ResearchError, "current authority"):
             _qualified_profile(ROOT, older_value)
+
+    def test_plan_preparation_rejects_an_older_qualification_registry(self) -> None:
+        candidates = _qualified_profile_registry_candidates(ROOT)
+        current_path = candidates[0]
+        older_path = next(
+            path
+            for path in candidates[1:]
+            if path.is_file()
+            and QualifiedProfileRegistry.from_json_bytes(path.read_bytes()).schema_version == 2
+        )
+        _require_current_registry_locator(current_path)
+        with self.assertRaisesRegex(RuntimeError, "current Git-committed authority"):
+            _require_current_registry_locator(older_path)
+
+    def test_qualification_executable_closure_rejects_stale_product_bytes(self) -> None:
+        candidates = _qualified_profile_registry_candidates(ROOT)
+        current = QualifiedProfileRegistry.from_json_bytes(candidates[0].read_bytes()).records[0]
+        older = next(
+            QualifiedProfileRegistry.from_json_bytes(path.read_bytes()).records[0]
+            for path in candidates[1:]
+            if path.is_file()
+            and QualifiedProfileRegistry.from_json_bytes(path.read_bytes()).schema_version == 2
+        )
+        _require_qualification_executable_closure_current(
+            ROOT,
+            current.source_revision.git_commit,
+        )
+        with self.assertRaisesRegex(
+            ResearchError,
+            "executable closure differs from current Git HEAD",
+        ):
+            _require_qualification_executable_closure_current(
+                ROOT,
+                older.source_revision.git_commit,
+            )
 
     def test_legacy_check_pass_registry_fails_the_component_gate(self) -> None:
         with self.assertRaisesRegex(RuntimeError, "schema version 2"):

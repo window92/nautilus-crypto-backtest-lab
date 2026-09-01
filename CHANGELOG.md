@@ -13,6 +13,18 @@ remains `SSOT.md`; this file does not change normative behavior.
   invalid or consumed selected `FINAL_HOLDOUT`. The three partial retry-010
   Spot primaries and three replays are retained byte-for-byte and additively
   superseded before a complete replacement epoch.
+- Removed the static Qualified Profile retry list which made each newly
+  generated qualification unreachable until Product Code changed again.
+  Owner resolution now orders only canonical `qualification-retry-NNN`
+  registries enumerated from Git HEAD, reads the newest authority without an
+  older fallback, and requires its worktree bytes to equal the committed blob.
+  It also rejects a Registry whose qualification-time executable closure
+  differs from current Git HEAD for Owner/Benchmark studies. The explicitly
+  non-authorizing Qualification interface fixture retains its isolated-Git
+  portability. Plan preparation rejects an explicitly supplied older Registry.
+  The valid retry-014 package that exposed the cycle is retained as pre-final
+  evidence; final Product authority and qualification are rebuilt after this
+  repair.
 - Made `repository_root` a mandatory typed field of Qualification as well as
   Official run requests. Runtime, source, Dataset/catalog, bootstrap, and
   evidence authorities can no longer be inferred from the Product module's
