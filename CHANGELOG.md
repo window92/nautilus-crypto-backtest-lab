@@ -79,7 +79,10 @@ remains `SSOT.md`; this file does not change normative behavior.
   exact pinned binary64 scaling, ties-away-from-zero, fixed-point overflow,
   Instrument multiplier, and currency precision. Hard-coded midpoint and
   binary-below controls match the installed wheel, and the retained retry-006
-  Primary/Replay daily ledgers now reconcile without changing their bytes.
+  Perpetual Primary/Replay daily ledgers now reconcile without changing their
+  bytes. The failed plan is retained additively; its six completed Spot
+  Primary/Replay packages are superseded by exact immutable Evidence hashes,
+  while the failed Perpetual package remains failed rather than being relabeled.
 - Added exact negative controls for causal intervals, Spot affordability,
   Perpetual accounting/funding, post-boundary events, full Raw inventory,
   final Evidence inventory, validator identity, runtime startup injection,

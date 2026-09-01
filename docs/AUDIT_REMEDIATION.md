@@ -17,7 +17,7 @@ to make it conform to the new contract.
 | SSOT generation | SHA-256 | Meaning |
 |---|---|---|
 | Audited base at `b5c865c28b83526ffab38152e7e6821f39b77014` | `9232ebca20e3933b8b36538991001880ae54dbbe37b2da322dca2ac6608d0917` | Immutable historical contract bytes |
-| R2 remediated contract | `94cc5ac01c6c8c778c1b5332cf1851f238d2082792d389e4c32c0c92206234db` | New contract bytes; new Runs additionally bind their final committed Git Source Revision |
+| R2 remediated contract | `c55f73ef591926081dbdaecb59002c60dad62fa13045fa393ab035353b196142` | New contract bytes; new Runs additionally bind their final committed Git Source Revision |
 
 ## Authority model
 
@@ -131,8 +131,14 @@ failed closed. The repaired read-only validator now reproduces the pinned
 `f64_to_fixed_i128` currency boundary exactly—including binary64 scaling,
 ties-away-from-zero, fixed-point overflow, and the Instrument multiplier—while
 keeping all event/account arithmetic in Decimal and never feeding the replay
-back to Nautilus. The failed Run/Replay remain unchanged; a new complete epoch
-is required under rebuilt runtime authority.
+back to Nautilus. The plan, Owner summaries, mismatch, and immutable evidence
+hashes are retained under
+`evidence/audit/adversarial-remediation-002/failed-plans/dc5a80d-*`. The failed
+Perpetual Run/Replay remain unchanged. The six completed Spot Primary/Replay
+packages are additively `SUPERSEDED` by the 24-record runtime-authority
+registry (`registry_identity`
+`b25d87f0c56be89a8aa8c61f7aa351833e0b0c265f006f7f56e017d7cbc7f047`);
+a new complete epoch is required under rebuilt runtime authority.
 
 ## Earlier remediation contracts retained
 
@@ -231,15 +237,15 @@ repository-relative targets; the random isolated snapshot directory therefore
 cannot change the output digest.
 
 The authority built from Product commit
-`e6760b99733a3ed66de85600d311a30aa0594530` has project-runtime authority
+`426b058e17c87a4fbc70c012253dd71222729443` has project-runtime authority
 SHA-256
-`9c245ff940167450ed29c5aec52e30a046c5d5d7a6a144fea712bc1d4fc968f1`,
+`d270eed067912e4d122cfc3bc64516b946f5e09531fd5e2fd3dd5a352926cc32`,
 combined data-runtime authority SHA-256
-`450b8257c53a214d72f9a3575c278ab68608f995ae72ae9514535d26c7d1d13f`,
+`a6ad394c0ecdfb2f1347d15209733166d5abbb1431a6b5b7027df6ad8bd1e502`,
 expected-results SHA-256
-`74995b74d3f2f7f137292b375cbc5ecf2a32c0484ad4d211e12e956825eca5e2`,
+`7a0041972990319d9d2061bffb58271d4865d291df580f69647eafdb22955b8f`,
 build-spec SHA-256
-`8119cd825beb47a4dca8c1c5ce201589635e7f2310ccb1155aa9c207e8a783d4`,
+`23c533bdc1d701a333eb6a6162b8f3672bb1567f14a853b46d5267d21f2de23e`,
 and historical manifest SHA-256
 `14af6dbeb28427f1877e2f4945c80d1466fe7f5f056a744c9020fd1aaad2d778`.
 Its canonical acceptance record (SHA-256
