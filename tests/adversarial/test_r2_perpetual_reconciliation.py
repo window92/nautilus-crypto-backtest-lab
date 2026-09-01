@@ -53,14 +53,14 @@ class PerpetualReconciliationAdversarialTests(unittest.TestCase):
                 1,
                 2,
                 "3.000",
-                "103.3333333333333333333333333",
+                "103.33333333333333",
                 "-0.31000000 USDT",
             ),
             self._position(
                 2,
                 4,
                 "2.000",
-                "103.3333333333333333333333333",
+                "103.33333333333333",
                 "15.73666667 USDT",
             ),
             {
@@ -72,7 +72,7 @@ class PerpetualReconciliationAdversarialTests(unittest.TestCase):
                 "side": "LONG",
                 "signed_qty": "2.000",
                 "quantity": "2.000",
-                "avg_px_open": "103.3333333333333333333333333",
+                "avg_px_open": "103.33333333333333",
                 "realized_pnl": "15.73666667 USDT",
             },
         ]
@@ -244,7 +244,7 @@ class PerpetualReconciliationAdversarialTests(unittest.TestCase):
             "sell_qty": "2.000",
             "avg_px_open": "100.00000000",
             "avg_px_close": "120.00000000",
-            "realized_return": "0.1978",
+            "realized_return": "0.2",
             "realized_pnl": "39.56000000 USDT",
             "commissions": ["0.44000000 USDT"],
             "trade_ids": ["trade-0", "trade-1"],
@@ -282,7 +282,7 @@ class PerpetualReconciliationAdversarialTests(unittest.TestCase):
             peak_quantity=Decimal("2.000"),
             realized_pnl=Decimal("39.56000000"),
             realized_pnl_currency="USDT",
-            realized_return=Decimal("0.1978"),
+            realized_return=Decimal("0.2"),
             commissions=commissions,
             duration_ns=1,
             funding_adjustment_count=0,
@@ -300,7 +300,7 @@ class PerpetualReconciliationAdversarialTests(unittest.TestCase):
             terminal_closed_position_count=1,
             units=(unit,),
             net_outcomes=(Decimal("39.56000000"),),
-            realized_returns=(Decimal("0.1978"),),
+            realized_returns=(Decimal("0.2"),),
             unambiguous_net_after_cost=True,
             project_trade_pairing_used=False,
         ).to_builtins()
@@ -321,6 +321,8 @@ class PerpetualReconciliationAdversarialTests(unittest.TestCase):
             "initial_balance": Decimal("1000.00000000"),
             "taker_fee": Decimal("0.001"),
             "quantity_increment": Decimal("0.001"),
+            "price_precision": 8,
+            "size_precision": 3,
             "margin_maint": Decimal("0.025"),
             "multiplier": Decimal("1"),
             "money_quantum": Decimal("0.00000001"),
@@ -409,6 +411,8 @@ class PerpetualReconciliationAdversarialTests(unittest.TestCase):
             initial_balance=Decimal("10000"),
             taker_fee=Decimal("0.001"),
             quantity_increment=Decimal("0.001"),
+            price_precision=8,
+            size_precision=3,
             multiplier=Decimal("1"),
             money_quantum=Decimal("0.00000001"),
         )
@@ -556,6 +560,8 @@ class PerpetualReconciliationAdversarialTests(unittest.TestCase):
             "initial_balance": Decimal("10000.00000000"),
             "taker_fee": Decimal("0.001"),
             "quantity_increment": Decimal("0.001"),
+            "price_precision": int(instrument["price_precision"]),
+            "size_precision": int(instrument["size_precision"]),
             "margin_maint": Decimal(instrument["margin_maint"]),
             "multiplier": Decimal(instrument["multiplier"]),
             "money_quantum": Decimal("0.00000001"),
@@ -580,6 +586,122 @@ class PerpetualReconciliationAdversarialTests(unittest.TestCase):
             "PERP_ACCOUNT_MARGIN_STATE_MISMATCH",
             wrong_margin_semantics.errors,
         )
+
+    def test_retained_candidate_a_pinned_f64_reconciles_positions_and_daily_equity(
+        self,
+    ) -> None:
+        """Golden regression for the first real multi-cycle Candidate failure.
+
+        These expected values are persisted rc2 outputs from the retained
+        retry-007 failed Official attempt.  In particular, they exercise raw
+        fixed-to-f64 conversion, chained average entry, partial reductions,
+        exact-close residual normalization, completed snapshots, and the
+        one-USDT-quantum daily valuation which the former Decimal shortcut
+        rejected.
+        """
+
+        root = Path(__file__).resolve().parents[2]
+        run = root / (
+            "runs/adversarial-remediation-002-retry-007-perpetual-candidate-a-"
+            "run-f6d786e1917f"
+        )
+        result = json.loads((run / "nautilus_result.json").read_text(encoding="utf-8"))
+        config = json.loads((run / "lab_run_config.json").read_text(encoding="utf-8"))
+
+        def rows(name: str) -> list[dict[str, str]]:
+            with (run / name).open(encoding="utf-8", newline="") as stream:
+                return list(csv.DictReader(stream))
+
+        fills = rows("fills.csv")
+        funding = rows("funding.csv")
+        positions = rows("positions.csv")
+        instrument = result["dataset_contract"]["instrument"]
+        arguments = {
+            "fills": fills,
+            "account_rows": rows("account.csv"),
+            "position_rows": positions,
+            "funding_rows": funding,
+            "native_completed_trades": json.loads(
+                (run / "native_completed_trades.json").read_text(encoding="utf-8"),
+            ),
+            "native_closed_position_snapshots": result[
+                "native_closed_position_snapshots"
+            ],
+            "terminal_portfolio": result["terminal_portfolio"],
+            "terminal_mark": {
+                "instrument_id": config["instrument_id"],
+                "value": "41445.30000000",
+                "ts_event": 1627776000000000000,
+                "ts_init": 1627776000000000000,
+            },
+            "run_id": config["run_id"],
+            "instrument_id": config["instrument_id"],
+            "settlement_currency": "USDT",
+            "initial_balance": Decimal(config["initial_capital"]["amount"]),
+            "taker_fee": Decimal(config["fee_assumption"]["taker_fee"]),
+            "quantity_increment": Decimal(instrument["size_increment"]),
+            "price_precision": int(instrument["price_precision"]),
+            "size_precision": int(instrument["size_precision"]),
+            "margin_maint": Decimal(instrument["margin_maint"]),
+            "multiplier": Decimal(instrument["multiplier"]),
+            "money_quantum": Decimal("0.00000001"),
+            "scoring_end_exclusive_ns": 1627776000000000000,
+        }
+        report = validate_perpetual_reconciliation(**arguments)
+        self.assertTrue(report.passed, report.errors)
+        self.assertEqual(report.errors, ())
+        self.assertEqual(report.detail["completed_lifecycle_count"], 6)
+        self.assertEqual(report.detail["terminal_average_entry"], "35304.0")
+        self.assertEqual(report.detail["realized_pnl"], "7133.58711041")
+        self.assertEqual(report.detail["unrealized_pnl"], "2984.67180000")
+        self.assertEqual(report.detail["ending_equity"], "20118.25891041")
+
+        event_positions = [
+            row for row in positions if row["row_type"] != "FINAL_NATIVE_POSITION"
+        ]
+        self.assertEqual(event_positions[14]["avg_px_open"], "54611.62275080907")
+        self.assertEqual(event_positions[18]["avg_px_open"], "44850.917196616545")
+        self.assertEqual(event_positions[22]["side"], "FLAT")
+        self.assertEqual(event_positions[22]["avg_px_open"], "35588.65")
+
+        tampered_positions = copy.deepcopy(positions)
+        tampered_positions[14]["avg_px_open"] = "54611.62275080906"
+        tampered = validate_perpetual_reconciliation(
+            **{**arguments, "position_rows": tampered_positions},
+        )
+        self.assertFalse(tampered.passed)
+        self.assertIn("PERP_POSITION_AVERAGE_ENTRY_MISMATCH", tampered.errors)
+
+        day_ns = 86_400_000_000_000
+        daily_marks = [
+            row
+            for row in result["strategy_observations"]["mark_price_updates"]
+            if int(row["ts_init"]) % day_ns == 0
+            and 1612137600000000000
+            <= int(row["ts_init"])
+            <= 1627776000000000000
+        ]
+        states = replay_perpetual_valuation_states(
+            fills=fills,
+            funding_rows=funding,
+            valuation_marks=daily_marks,
+            instrument_id=config["instrument_id"],
+            settlement_currency="USDT",
+            initial_balance=Decimal(config["initial_capital"]["amount"]),
+            taker_fee=Decimal(config["fee_assumption"]["taker_fee"]),
+            quantity_increment=Decimal(instrument["size_increment"]),
+            price_precision=int(instrument["price_precision"]),
+            size_precision=int(instrument["size_precision"]),
+            multiplier=Decimal(instrument["multiplier"]),
+            money_quantum=Decimal("0.00000001"),
+        )
+        target = next(
+            state for state in states if state.timestamp_ns == 1619827200000000000
+        )
+        self.assertEqual(target.average_entry, Decimal("54611.62275080907"))
+        self.assertEqual(target.realized_pnl, Decimal("3490.25778168"))
+        self.assertEqual(target.unrealized_pnl, Decimal("-952.31098851"))
+        self.assertEqual(target.equity, Decimal("12537.94679317"))
 
     def test_no_fill_no_position_run_reconciles_without_inventing_state(self) -> None:
         terminal = {
@@ -767,6 +889,8 @@ class PerpetualReconciliationAdversarialTests(unittest.TestCase):
             initial_balance=Decimal("1000"),
             taker_fee=Decimal("0.001"),
             quantity_increment=Decimal("0.001"),
+            price_precision=8,
+            size_precision=3,
             multiplier=Decimal("1"),
             money_quantum=Decimal("0.00000001"),
         )

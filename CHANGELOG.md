@@ -83,6 +83,18 @@ remains `SSOT.md`; this file does not change normative behavior.
   bytes. The failed plan is retained additively; its six completed Spot
   Primary/Replay packages are superseded by exact immutable Evidence hashes,
   while the failed Perpetual package remains failed rather than being relabeled.
+- Closed the adjacent multi-cycle defect exposed by the retained retry-007
+  Perpetual Candidate A attempt. The earlier checker converted persisted
+  Decimals directly to `float`, used an exact-Decimal weighted average, and
+  treated native `Position.realized_return` as a net-after-cost return. The
+  pinned rc2 Position instead crosses the 16-decimal fixed raw boundary,
+  carries binary64 signed quantity/open/close averages, applies its reversal
+  test before fixed-precision exact-close normalization, and reports a native
+  price return. The read-only validator and daily ledger now reproduce that
+  exact order while keeping the economic Decimal ledger separate. A retained
+  31-Fill/six-cycle Golden regression reconciles every native Position event,
+  completed callback, terminal account, and the former one-quantum daily
+  mismatch; an altered average entry still fails with its specific code.
 - Added exact negative controls for causal intervals, Spot affordability,
   Perpetual accounting/funding, post-boundary events, full Raw inventory,
   final Evidence inventory, validator identity, runtime startup injection,

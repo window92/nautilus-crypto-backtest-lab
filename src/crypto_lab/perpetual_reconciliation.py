@@ -109,6 +109,8 @@ _NATIVE_CLOSED_SNAPSHOT_FIELDS = {
 }
 
 _PINNED_FIXED_PRECISION = 16
+_PINNED_FIXED_SCALAR_INT = 10**_PINNED_FIXED_PRECISION
+_PINNED_FIXED_SCALAR_FLOAT = float(_PINNED_FIXED_SCALAR_INT)
 
 
 @dataclass(frozen=True)
@@ -159,6 +161,10 @@ class _Lifecycle:
     fill_rows: list[dict[str, str]] | None = None
     closed_ns: int | None = None
     closing_order_id: str | None = None
+    native_snapshot_average_open_price: Decimal | None = None
+    native_average_close_price: Decimal | None = None
+    native_realized_return: Decimal | None = None
+    native_realized_pnl: Decimal | None = None
 
     @property
     def average_close_price(self) -> Decimal:
@@ -174,6 +180,192 @@ class _Lifecycle:
         )
 
 
+@dataclass(frozen=True)
+class _PinnedNativeFillEffect:
+    """One independently replayed rc2 ``Position.apply`` financial effect."""
+
+    price_pnl_money: Decimal
+    quantity: Decimal
+    average_open_price: Decimal
+    average_close_price: Decimal | None
+    realized_return: Decimal
+    realized_pnl: Decimal
+
+
+@dataclass
+class _PinnedNativePositionState:
+    """Read-only replay of the pinned rc2 Position arithmetic boundaries.
+
+    The native Position stores its signed quantity and average prices as
+    binary64 values, while ``Price``, ``Quantity`` and ``Money`` cross a
+    16-decimal fixed-point boundary.  Keeping those two domains explicit is
+    required to reproduce real evidence: an exact fixed-point close can leave
+    a transient binary64 residual before ``Quantity::new`` normalizes the
+    Position to FLAT.  This object verifies persisted native state only; it is
+    never used by the engine or order path.
+    """
+
+    size_precision: int
+    money_quantum: Decimal
+    multiplier: Decimal
+    signed_qty_f64: float = 0.0
+    quantity: Decimal = Decimal(0)
+    quantity_f64: float = 0.0
+    avg_px_open_f64: float = 0.0
+    avg_px_close_f64: float | None = None
+    realized_return_f64: float = 0.0
+    realized_pnl: Decimal | None = None
+    buy_qty: Decimal = Decimal(0)
+    sell_qty: Decimal = Decimal(0)
+
+    def apply_funding(self, amount: Decimal) -> None:
+        if self.quantity == 0 or self.realized_pnl is None:
+            raise ValueError("native funding has no open Position")
+        if amount != amount.quantize(self.money_quantum):
+            raise ValueError("native funding is outside Money precision")
+        # ``Money + Money`` is fixed-point addition; no f64 boundary occurs.
+        self.realized_pnl = (self.realized_pnl + amount).quantize(
+            self.money_quantum,
+        )
+
+    def apply_fill(
+        self,
+        *,
+        side: str,
+        quantity: Decimal,
+        price: Decimal,
+        commission: Decimal,
+    ) -> _PinnedNativeFillEffect:
+        if side not in {"BUY", "SELL"}:
+            raise ValueError("native Fill side is invalid")
+        last_qty = _pinned_fixed_as_f64(quantity)
+        last_px = _pinned_fixed_as_f64(price)
+        commission_f64 = _pinned_fixed_as_f64(commission)
+        multiplier_f64 = _pinned_fixed_as_f64(self.multiplier)
+        if min(last_qty, last_px, multiplier_f64) <= 0 or commission_f64 < 0:
+            raise ValueError("native Fill components are invalid")
+
+        # Position::apply_fill resets the cycle before applying a Fill to a
+        # FLAT cached NETTING Position.
+        if self.quantity == 0:
+            self.signed_qty_f64 = 0.0
+            self.quantity_f64 = 0.0
+            self.avg_px_open_f64 = last_px
+            self.avg_px_close_f64 = None
+            self.realized_return_f64 = 0.0
+            self.realized_pnl = None
+            self.buy_qty = Decimal(0)
+            self.sell_qty = Decimal(0)
+
+        prior_signed = self.signed_qty_f64
+        price_pnl_raw = 0.0
+        if side == "BUY":
+            if prior_signed > 0.0:
+                self.avg_px_open_f64 = _pinned_average_price_f64(
+                    quantity_f64=self.quantity_f64,
+                    average_price_f64=self.avg_px_open_f64,
+                    last_price_f64=last_px,
+                    last_quantity_f64=last_qty,
+                )
+            elif prior_signed < 0.0:
+                self.avg_px_close_f64 = self._next_close_average(
+                    previous_quantity=self.buy_qty,
+                    last_price_f64=last_px,
+                    last_quantity_f64=last_qty,
+                )
+                self.realized_return_f64 = (
+                    self.avg_px_open_f64 - self.avg_px_close_f64
+                ) / self.avg_px_open_f64
+                closing_qty = min(last_qty, abs(prior_signed))
+                price_pnl_raw = (
+                    closing_qty
+                    * multiplier_f64
+                    * (self.avg_px_open_f64 - last_px)
+                )
+            self.signed_qty_f64 += last_qty
+            self.buy_qty += quantity
+            if prior_signed < 0.0 and self.signed_qty_f64 > 0.0:
+                self.avg_px_open_f64 = last_px
+        else:
+            if prior_signed < 0.0:
+                self.avg_px_open_f64 = _pinned_average_price_f64(
+                    quantity_f64=self.quantity_f64,
+                    average_price_f64=self.avg_px_open_f64,
+                    last_price_f64=last_px,
+                    last_quantity_f64=last_qty,
+                )
+            elif prior_signed > 0.0:
+                self.avg_px_close_f64 = self._next_close_average(
+                    previous_quantity=self.sell_qty,
+                    last_price_f64=last_px,
+                    last_quantity_f64=last_qty,
+                )
+                self.realized_return_f64 = (
+                    self.avg_px_close_f64 - self.avg_px_open_f64
+                ) / self.avg_px_open_f64
+                closing_qty = min(last_qty, abs(prior_signed))
+                price_pnl_raw = (
+                    closing_qty
+                    * multiplier_f64
+                    * (last_px - self.avg_px_open_f64)
+                )
+            self.signed_qty_f64 -= last_qty
+            self.sell_qty += quantity
+            if prior_signed > 0.0 and self.signed_qty_f64 < 0.0:
+                self.avg_px_open_f64 = last_px
+
+        current_realized_f64 = (
+            0.0
+            if self.realized_pnl is None
+            else _pinned_fixed_as_f64(self.realized_pnl)
+        )
+        self.realized_pnl = _pinned_money_from_f64(
+            current_realized_f64 - commission_f64 + price_pnl_raw,
+            self.money_quantum,
+        )
+        self.quantity, self.quantity_f64 = _pinned_quantity_from_f64(
+            abs(self.signed_qty_f64),
+            self.size_precision,
+        )
+        if self.quantity == 0:
+            # This normalization happens after the reversal test above.  The
+            # average-open field can therefore legitimately contain the close
+            # price in a real FLAT rc2 snapshot.
+            self.signed_qty_f64 = 0.0
+
+        return _PinnedNativeFillEffect(
+            price_pnl_money=_pinned_money_from_f64(
+                price_pnl_raw,
+                self.money_quantum,
+            ),
+            quantity=self.quantity,
+            average_open_price=Decimal(str(self.avg_px_open_f64)),
+            average_close_price=(
+                None
+                if self.avg_px_close_f64 is None
+                else Decimal(str(self.avg_px_close_f64))
+            ),
+            realized_return=Decimal(str(self.realized_return_f64)),
+            realized_pnl=self.realized_pnl,
+        )
+
+    def _next_close_average(
+        self,
+        *,
+        previous_quantity: Decimal,
+        last_price_f64: float,
+        last_quantity_f64: float,
+    ) -> float:
+        if self.avg_px_close_f64 is None:
+            return last_price_f64
+        return _pinned_average_price_f64(
+            quantity_f64=_pinned_fixed_as_f64(previous_quantity),
+            average_price_f64=self.avg_px_close_f64,
+            last_price_f64=last_price_f64,
+            last_quantity_f64=last_quantity_f64,
+        )
+
+
 def _money(value: Any) -> tuple[Decimal, str]:
     parts = str(value).split(" ", maxsplit=1)
     if len(parts) != 2:
@@ -182,6 +374,90 @@ def _money(value: Any) -> tuple[Decimal, str]:
     if not amount.is_finite() or not parts[1]:
         raise ValueError("money value is invalid")
     return amount, parts[1]
+
+
+def _rust_f64_round_to_int(value: float) -> int:
+    """Return Rust ``f64::round`` projected to an integer."""
+
+    if not math.isfinite(value):
+        raise ValueError("native f64 rounding input must be finite")
+    rounded = math.trunc(value)
+    fraction = value - rounded
+    if fraction >= 0.5:
+        rounded += 1
+    elif fraction <= -0.5:
+        rounded -= 1
+    return rounded
+
+
+def _pinned_fixed_as_f64(value: Decimal) -> float:
+    """Replay high-precision rc2 fixed ``raw as f64 / 1e16``.
+
+    Persisted native ``Price``, ``Quantity`` and ``Money`` text is an exact
+    projection of a 16-decimal raw integer in the pinned high-precision wheel.
+    Calling ``float(Decimal)`` skips that integer cast and can differ by one
+    binary64 ULP for legitimate BTCUSDT prices.
+    """
+
+    if not value.is_finite():
+        raise ValueError("native fixed value must be finite")
+    scaled = value * _PINNED_FIXED_SCALAR_INT
+    if scaled != scaled.to_integral_value():
+        raise ValueError("native fixed value exceeds pinned precision")
+    raw = int(scaled)
+    if not -(1 << 127) <= raw <= (1 << 127) - 1:
+        raise ValueError("native fixed value overflows i128")
+    result = float(raw) / _PINNED_FIXED_SCALAR_FLOAT
+    if not math.isfinite(result):
+        raise ValueError("native fixed conversion overflow")
+    return result
+
+
+def _pinned_quantity_from_f64(value: float, precision: int) -> tuple[Decimal, float]:
+    """Replay ``Quantity::new(value, precision).{as_decimal,as_f64}``."""
+
+    if not math.isfinite(value) or value < 0 or not 0 <= precision <= 16:
+        raise ValueError("native Quantity input is invalid")
+    units = _rust_f64_round_to_int(value * float(10**precision))
+    if units < 0:
+        raise ValueError("native Quantity became negative")
+    decimal_value = Decimal(units).scaleb(-precision)
+    raw = units * 10 ** (_PINNED_FIXED_PRECISION - precision)
+    if not 0 <= raw <= (1 << 128) - 1:
+        raise ValueError("native Quantity overflows u128")
+    return decimal_value, float(raw) / _PINNED_FIXED_SCALAR_FLOAT
+
+
+def _pinned_average_price_f64(
+    *,
+    quantity_f64: float,
+    average_price_f64: float,
+    last_price_f64: float,
+    last_quantity_f64: float,
+) -> float:
+    """Replay rc2 ``Position::calculate_avg_px`` operation order."""
+
+    values = (
+        quantity_f64,
+        average_price_f64,
+        last_price_f64,
+        last_quantity_f64,
+    )
+    if not all(math.isfinite(value) for value in values):
+        raise ValueError("native average-price input must be finite")
+    if quantity_f64 < 0 or last_quantity_f64 <= 0:
+        raise ValueError("native average-price quantity is invalid")
+    if quantity_f64 == 0:
+        return last_price_f64
+    start_cost = average_price_f64 * quantity_f64
+    event_cost = last_price_f64 * last_quantity_f64
+    total_quantity = quantity_f64 + last_quantity_f64
+    if total_quantity <= 0:
+        raise ValueError("native average-price total quantity is invalid")
+    result = (start_cost + event_cost) / total_quantity
+    if not math.isfinite(result):
+        raise ValueError("native average-price result is invalid")
+    return result
 
 
 def _pinned_money_from_f64(value: float, money_quantum: Decimal) -> Decimal:
@@ -219,12 +495,7 @@ def _pinned_money_from_f64(value: float, money_quantum: Decimal) -> Decimal:
     scaled = value * float(10**precision)
     if not math.isfinite(scaled):
         raise ValueError("native Money scale overflow")
-    rounded = math.trunc(scaled)
-    fraction = scaled - rounded
-    if fraction >= 0.5:
-        rounded += 1
-    elif fraction <= -0.5:
-        rounded -= 1
+    rounded = _rust_f64_round_to_int(scaled)
     fixed_raw = rounded * 10 ** (_PINNED_FIXED_PRECISION - precision)
     if not -(1 << 127) <= fixed_raw <= (1 << 127) - 1:
         raise ValueError("native Money fixed-point overflow")
@@ -251,10 +522,10 @@ def _pinned_linear_pnl_money(
     if signed_quantity == 0:
         return _pinned_money_from_f64(0.0, money_quantum)
 
-    quantity_f64 = float(abs(signed_quantity))
-    multiplier_f64 = float(multiplier)
+    quantity_f64 = _pinned_fixed_as_f64(abs(signed_quantity))
+    multiplier_f64 = _pinned_fixed_as_f64(multiplier)
     entry_f64 = float(average_entry)
-    close_f64 = float(close_price)
+    close_f64 = _pinned_fixed_as_f64(close_price)
     points_f64 = (
         close_f64 - entry_f64
         if signed_quantity > 0
@@ -590,6 +861,8 @@ def validate_perpetual_reconciliation(
     initial_balance: Decimal,
     taker_fee: Decimal,
     quantity_increment: Decimal,
+    price_precision: int,
+    size_precision: int,
     margin_maint: Decimal,
     multiplier: Decimal,
     money_quantum: Decimal,
@@ -611,6 +884,12 @@ def validate_perpetual_reconciliation(
         or initial_balance <= 0
         or taker_fee < 0
         or quantity_increment <= 0
+        or type(price_precision) is not int
+        or type(size_precision) is not int
+        or not 0 <= price_precision <= _PINNED_FIXED_PRECISION
+        or not 0 <= size_precision <= _PINNED_FIXED_PRECISION
+        or quantity_increment
+        != quantity_increment.quantize(Decimal(1).scaleb(-size_precision))
         or margin_maint <= 0
         or multiplier <= 0
         or money_quantum <= 0
@@ -635,6 +914,11 @@ def validate_perpetual_reconciliation(
         tuple[int, Decimal, Decimal, Decimal, str, str]
     ] = []
     fill_ids: set[str] = set()
+    native_state = _PinnedNativePositionState(
+        size_precision=size_precision,
+        money_quantum=money_quantum,
+        multiplier=multiplier,
+    )
 
     ordered_events: list[tuple[int, int, int, str, dict[str, str]]] = []
     for index, row in enumerate(funding_rows):
@@ -677,6 +961,7 @@ def validate_perpetual_reconciliation(
                 else:
                     current.funding += amount
                     current.funding_count += 1
+                    native_state.apply_funding(amount)
                 total_funding += amount
                 expected_account_changes[timestamp] += amount
                 expected_account_transitions.append(
@@ -724,6 +1009,7 @@ def validate_perpetual_reconciliation(
                 or price <= 0
                 or commission < 0
                 or quantity % quantity_increment != 0
+                or price != price.quantize(Decimal(1).scaleb(-price_precision))
                 or commission_currency != settlement_currency
             ):
                 raise ValueError("fill amount/currency mismatch")
@@ -738,26 +1024,34 @@ def validate_perpetual_reconciliation(
             _append(errors, "PERP_FILL_ROW_INVALID")
             continue
 
+        try:
+            native_effect = native_state.apply_fill(
+                side=str(row["order_side"]),
+                quantity=quantity,
+                price=price,
+                commission=commission,
+            )
+        except Exception:
+            _append(errors, "PERP_NATIVE_POSITION_ARITHMETIC_INVALID")
+            continue
+
         realized = Decimal(0)
         signed_before = signed_position
-        average_before = average_entry
         if signed_position == 0:
             current = _Lifecycle(
                 opened_ns=timestamp,
                 opening_order_id=str(row["client_order_id"]),
                 entry_side="BUY" if delta > 0 else "SELL",
-                average_open_price=price,
+                average_open_price=native_effect.average_open_price,
                 peak_quantity=quantity,
                 commissions=commission,
                 fill_rows=[row],
             )
-            average_entry = price
+            average_entry = native_effect.average_open_price
             signed_position = delta
         elif signed_position * delta > 0:
             assert current is not None
-            average_entry = (
-                abs(signed_position) * average_entry + quantity * price
-            ) / (abs(signed_position) + quantity)
+            average_entry = native_effect.average_open_price
             signed_position += delta
             current.average_open_price = average_entry
             current.peak_quantity = max(current.peak_quantity, abs(signed_position))
@@ -769,17 +1063,7 @@ def validate_perpetual_reconciliation(
             assert current.fill_rows is not None
             current.fill_rows.append(row)
             closed_quantity = min(abs(signed_position), quantity)
-            realized = _pinned_linear_pnl_money(
-                signed_quantity=(
-                    closed_quantity
-                    if signed_position > 0
-                    else -closed_quantity
-                ),
-                average_entry=average_entry,
-                close_price=price,
-                multiplier=multiplier,
-                money_quantum=money_quantum,
-            )
+            realized = native_effect.price_pnl_money
             gross_realized += realized
             current.gross_price_pnl += realized
             current.close_quantity += closed_quantity
@@ -795,6 +1079,16 @@ def validate_perpetual_reconciliation(
             if next_position == 0 or signed_position * next_position < 0:
                 current.closed_ns = timestamp
                 current.closing_order_id = str(row["client_order_id"])
+                current.native_snapshot_average_open_price = (
+                    native_effect.average_open_price
+                )
+                current.native_average_close_price = (
+                    native_effect.average_close_price
+                )
+                current.native_realized_return = native_effect.realized_return
+                current.native_realized_pnl = native_effect.realized_pnl
+                if current.net_realized(money_quantum) != native_effect.realized_pnl:
+                    _append(errors, "PERP_NATIVE_POSITION_REALIZED_PNL_MISMATCH")
                 completed.append(current)
                 current = None
             if next_position == 0:
@@ -805,13 +1099,16 @@ def validate_perpetual_reconciliation(
                     opened_ns=timestamp,
                     opening_order_id=str(row["client_order_id"]),
                     entry_side="BUY" if next_position > 0 else "SELL",
-                    average_open_price=price,
+                    average_open_price=native_effect.average_open_price,
                     peak_quantity=remaining,
                     commissions=commission - old_commission,
                     fill_rows=[row],
                 )
-                average_entry = price
+                average_entry = native_effect.average_open_price
             signed_position = next_position
+
+        if native_effect.quantity != abs(signed_position):
+            _append(errors, "PERP_NATIVE_POSITION_QUANTITY_MISMATCH")
 
         total_commissions += commission
         account_delta = (realized - commission).quantize(money_quantum)
@@ -824,15 +1121,7 @@ def validate_perpetual_reconciliation(
                 average_entry=average_entry,
             ),
         )
-        native_position_realized = (
-            current.net_realized(money_quantum)
-            if current is not None
-            else (
-                completed[-1].net_realized(money_quantum)
-                if completed
-                else Decimal(0)
-            )
-        )
+        native_position_realized = native_effect.realized_pnl
         expected_event_type = (
             "PositionOpened"
             if signed_before == 0 and signed_position != 0
@@ -843,14 +1132,11 @@ def validate_perpetual_reconciliation(
         expected_side = (
             "LONG" if signed_position > 0 else "SHORT" if signed_position < 0 else "FLAT"
         )
-        native_event_average = (
-            average_before if signed_position == 0 else average_entry
-        )
         signed_after_fill.append(
             (
                 timestamp,
                 signed_position,
-                native_event_average,
+                native_effect.average_open_price,
                 native_position_realized,
                 expected_event_type,
                 expected_side,
@@ -921,13 +1207,7 @@ def validate_perpetual_reconciliation(
             final_realized_amount, final_realized_currency = _money(final["realized_pnl"])
             final_position_realized = final_realized_amount
             expected_side = "LONG" if signed_position > 0 else "SHORT" if signed_position < 0 else "FLAT"
-            expected_final_average = (
-                average_entry
-                if signed_position != 0
-                else completed[-1].average_open_price
-                if completed
-                else Decimal(0)
-            )
+            expected_final_average = Decimal(str(native_state.avg_px_open_f64))
             expected_final_timestamp = max(
                 [int(row["ts_event"]) for row in fills]
                 + [int(row["ts_event"]) for row in funding_rows],
@@ -950,13 +1230,7 @@ def validate_perpetual_reconciliation(
             final_position_realized = Decimal(0)
             _append(errors, "PERP_FINAL_POSITION_INVALID")
 
-    expected_current_realized = (
-        current.net_realized(money_quantum)
-        if current is not None
-        else completed[-1].net_realized(money_quantum)
-        if completed
-        else Decimal(0)
-    )
+    expected_current_realized = native_state.realized_pnl or Decimal(0)
     if final_positions and final_position_realized != expected_current_realized:
         _append(errors, "PERP_FINAL_POSITION_REALIZED_PNL_MISMATCH")
 
@@ -1077,9 +1351,14 @@ def validate_perpetual_reconciliation(
                     Decimal(0),
                 )
                 expected_net = expected.net_realized(money_quantum)
-                expected_return = expected_net / (
-                    expected.average_open_price * expected.peak_quantity * multiplier
-                )
+                if (
+                    expected.native_snapshot_average_open_price is None
+                    or expected.native_average_close_price is None
+                    or expected.native_realized_return is None
+                    or expected.native_realized_pnl is None
+                ):
+                    raise ValueError("native close arithmetic was not captured")
+                expected_return = expected.native_realized_return
                 if (
                     len(expected_account_ids) != 1
                     or native_snapshot.get("account_id") not in expected_account_ids
@@ -1095,21 +1374,20 @@ def validate_perpetual_reconciliation(
                     or _decimal_text(native_snapshot.get("sell_qty")) != expected_sell
                     or native_snapshot.get("entry") != expected.entry_side
                     or _decimal_text(native_snapshot.get("avg_px_open"))
-                    != expected.average_open_price
+                    != expected.native_snapshot_average_open_price
                     or _decimal_text(native_snapshot.get("avg_px_close"))
-                    != expected.average_close_price
+                    != expected.native_average_close_price
                     or _decimal_text(native_snapshot.get("peak_qty"))
                     != expected.peak_quantity
+                    or raw_realized != expected.native_realized_pnl
                     or raw_realized != expected_net
                     or raw_realized_currency != settlement_currency
                     or not raw_commissions
                     or any(item[1] != settlement_currency for item in raw_commissions)
                     or raw_commission_total.quantize(money_quantum)
                     != expected.commissions.quantize(money_quantum)
-                    or _decimal_text(native_snapshot.get("realized_return")).quantize(
-                        Decimal("0.0000000000000001"),
-                    )
-                    != expected_return.quantize(Decimal("0.0000000000000001"))
+                    or _decimal_text(native_snapshot.get("realized_return"))
+                    != expected_return
                     or int(native_snapshot.get("ts_init", -1)) != expected.opened_ns
                     or int(native_snapshot.get("ts_last", -1)) != expected.closed_ns
                     or int(native_snapshot.get("duration_ns", -1))
@@ -1152,16 +1430,17 @@ def validate_perpetual_reconciliation(
                     or unit.opening_order_id != expected.opening_order_id
                     or unit.closing_order_id != expected.closing_order_id
                     or unit.entry_side != expected.entry_side
-                    or unit.average_open_price.quantize(money_quantum)
-                    != expected.average_open_price.quantize(money_quantum)
-                    or unit.average_close_price.quantize(money_quantum)
-                    != expected.average_close_price.quantize(money_quantum)
+                    or unit.average_open_price
+                    != expected.native_snapshot_average_open_price
+                    or unit.average_close_price != expected.native_average_close_price
                     or unit.peak_quantity != expected.peak_quantity
                     or native_commission.quantize(money_quantum)
                     != expected.commissions.quantize(money_quantum)
                     or unit.funding_adjustment_count != expected.funding_count
+                    or unit.realized_pnl != expected.native_realized_pnl
                     or unit.realized_pnl != expected_net
                     or unit.realized_pnl_currency != settlement_currency
+                    or unit.realized_return != expected.native_realized_return
                     or native_sequence.net_outcomes[index] != expected_net
                     or native_sequence.realized_returns[index] != unit.realized_return
                 ):
@@ -1288,6 +1567,8 @@ def replay_perpetual_valuation_states(
     initial_balance: Decimal,
     taker_fee: Decimal,
     quantity_increment: Decimal,
+    price_precision: int,
+    size_precision: int,
     multiplier: Decimal,
     money_quantum: Decimal,
 ) -> tuple[PerpetualValuationState, ...]:
@@ -1305,6 +1586,12 @@ def replay_perpetual_valuation_states(
         or initial_balance <= 0
         or taker_fee < 0
         or quantity_increment <= 0
+        or type(price_precision) is not int
+        or type(size_precision) is not int
+        or not 0 <= price_precision <= _PINNED_FIXED_PRECISION
+        or not 0 <= size_precision <= _PINNED_FIXED_PRECISION
+        or quantity_increment
+        != quantity_increment.quantize(Decimal(1).scaleb(-size_precision))
         or multiplier <= 0
         or money_quantum <= 0
         or not valuation_marks
@@ -1346,6 +1633,11 @@ def replay_perpetual_valuation_states(
     funding = Decimal(0)
     event_index = 0
     states: list[PerpetualValuationState] = []
+    native_state = _PinnedNativePositionState(
+        size_precision=size_precision,
+        money_quantum=money_quantum,
+        multiplier=multiplier,
+    )
 
     for timestamp, mark in parsed_marks:
         while (
@@ -1366,6 +1658,7 @@ def replay_perpetual_valuation_states(
                     or amount != amount.quantize(money_quantum)
                 ):
                     raise ValueError("invalid funding event in valuation replay")
+                native_state.apply_funding(amount)
                 funding += amount
                 continue
 
@@ -1384,6 +1677,7 @@ def replay_perpetual_valuation_states(
                 quantity <= 0
                 or price <= 0
                 or quantity % quantity_increment != 0
+                or price != price.quantize(Decimal(1).scaleb(-price_precision))
                 or commission_currency != settlement_currency
                 or commission
                 != (quantity * price * taker_fee).quantize(money_quantum)
@@ -1393,33 +1687,28 @@ def replay_perpetual_valuation_states(
             if row.get("order_side") not in {"BUY", "SELL"}:
                 raise ValueError("invalid Fill side in valuation replay")
             delta = direction * quantity
+            native_effect = native_state.apply_fill(
+                side=str(row["order_side"]),
+                quantity=quantity,
+                price=price,
+                commission=commission,
+            )
             if signed_position == 0:
                 signed_position = delta
-                average_entry = price
+                average_entry = native_effect.average_open_price
             elif signed_position * delta > 0:
-                average_entry = (
-                    abs(signed_position) * average_entry + quantity * price
-                ) / (abs(signed_position) + quantity)
+                average_entry = native_effect.average_open_price
                 signed_position += delta
             else:
                 next_position = signed_position + delta
                 if signed_position * next_position < 0:
                     raise ValueError("cross-zero Fill in valuation replay")
-                closed_quantity = min(abs(signed_position), quantity)
-                gross_realized += _pinned_linear_pnl_money(
-                    signed_quantity=(
-                        closed_quantity
-                        if signed_position > 0
-                        else -closed_quantity
-                    ),
-                    average_entry=average_entry,
-                    close_price=price,
-                    multiplier=multiplier,
-                    money_quantum=money_quantum,
-                )
+                gross_realized += native_effect.price_pnl_money
                 signed_position = next_position
                 if signed_position == 0:
                     average_entry = Decimal(0)
+            if native_effect.quantity != abs(signed_position):
+                raise ValueError("native/exact Position quantity mismatch")
             commissions += commission
 
         realized = (gross_realized - commissions + funding).quantize(money_quantum)

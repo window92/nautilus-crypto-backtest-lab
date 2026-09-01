@@ -1472,17 +1472,34 @@ engine or substitute a recomputed outcome.
 
 Persisted quantities, prices, fees, funding, balances, and account arithmetic
 remain exact Decimal inputs to that validator. When the pinned rc2 source
-explicitly computes a linear realized or unrealized price PnL in IEEE-754
-`f64` before constructing native `Money`, however, exact verification MUST
-replay that documented operation order and the pinned `f64_to_fixed_i128`
-currency boundary: binary64 currency-scale multiplication, Rust
-ties-away-from-zero rounding, fixed-point range, Instrument multiplier, and
-currency precision. It MUST NOT substitute Decimal context rounding,
-unconditional Decimal half-up, a tolerance, or a later-runtime rule. Golden
-controls MUST include a decimal midpoint which binary64 moves above the tie
-and another which binary64 moves below it, with both signs. This narrowly
-scoped numeric projection is read-only comparison with native `Money`; it is
-not a project PnL ledger and cannot alter or supply engine state.
+explicitly converts the high-precision fixed `Price`, `Quantity`, or `Money`
+raw integer through `raw as f64 / 10^16`, or stores NETTING signed quantity,
+average-open price, average-close price, or realized price return in IEEE-754
+`f64`, exact verification MUST replay those documented conversions and
+operation order. This includes the pinned weighted-average calculation,
+partial reductions, `min(last_qty, abs(signed_qty))` realized-PnL quantity,
+same-side accumulation, close-average accumulation, and the ordering of the
+binary64 reversal test before fixed-precision `Quantity::new` normalizes an
+exact close to FLAT. A transient binary64 residual MAY therefore leave a
+native FLAT callback snapshot whose `avg_px_open` equals the closing Fill;
+the validator MUST predict and bind that native field while retaining the
+pre-close economic average entry independently for price-PnL reconciliation.
+It MUST NOT reinterpret the native `Position.realized_return` as a net return
+after commissions or funding; that field remains a separately verified native
+price-return diagnostic.
+
+When rc2 constructs native `Money`, exact verification MUST additionally
+replay the pinned `f64_to_fixed_i128` currency boundary: binary64
+currency-scale multiplication, Rust ties-away-from-zero rounding, fixed-point
+range, Instrument multiplier, and currency precision. It MUST NOT substitute
+Decimal context rounding, unconditional Decimal half-up, a tolerance, direct
+`float(Decimal)` conversion where the native fixed raw conversion differs, or
+a later-runtime rule. Golden controls MUST include a decimal midpoint which
+binary64 moves above the tie and another which binary64 moves below it, with
+both signs, plus a real multi-Fill increase/reduction/exact-close sequence and
+an intermediate daily valuation. This narrowly scoped numeric projection is
+read-only comparison with native state and `Money`; it is not a project PnL
+ledger and cannot alter or supply engine state.
 
 ### 8.5 Component outcome and Official seal
 
@@ -1933,6 +1950,9 @@ commissions, and funding effects through each daily boundary, derive signed
 NETTING position, average entry, realized and unrealized PnL from that
 boundary's causal Mark, and require realized PnL, unrealized PnL, total PnL,
 and Equity to equal the native portfolio snapshot at every daily point. A
+Perpetual daily replay MUST use the same pinned fixed-to-binary64 Position and
+Money operation order required by Section 8.4; a Decimal-only weighted average
+or direct `float(Decimal)` shortcut is not an equivalent financial replay. A
 missing, duplicate, wrong-Instrument, stale, non-boundary, future, or
 substituted Mark fails with `MARK_ROLE_INVALID`; any daily financial mismatch
 fails with `PERFORMANCE_METRICS_INVALID`. Passing the terminal reconciliation

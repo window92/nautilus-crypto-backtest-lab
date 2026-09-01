@@ -243,6 +243,8 @@ class DailySnapshotReconciliationTests(unittest.TestCase):
                         "settlement_currency": "USDT",
                         "settlement_currency_precision": 8,
                         "size_increment": "1",
+                        "price_precision": 2,
+                        "size_precision": 0,
                         "multiplier": "1",
                     },
                 },
