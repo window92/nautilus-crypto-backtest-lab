@@ -100,10 +100,10 @@ remains `SSOT.md`; this file does not change normative behavior.
   final Evidence inventory, validator identity, runtime startup injection,
   missing/duplicate Fills, and altered Instrument identity.
 - Published the final additive schema-v2 qualification at
-  `qualification-retry-009`, bound to the post-repair Product/runtime
+  `qualification-retry-011`, bound to the post-repair Product/runtime
   authority. Both exposed profiles have independent Primary/Replay evidence;
   all eight qualification negative controls pass, with no Final Holdout or
-  profitability authorization. The pre-final retry-007/retry-008 packages are
+  profitability authorization. The pre-final retry-007 through retry-010 packages are
   retained, while their record IDs are rejected by the Owner API so an older
   v2 Registry cannot bypass the current Authority.
 - Corrected the offline Dataset builder's locked SSOT SHA to the explicitly

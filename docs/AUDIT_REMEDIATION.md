@@ -92,18 +92,18 @@ contract and cannot authorize a new Official Run:
 - `evidence/audit/comprehensive-remediation-001/qualification-runtime-proof/qualified-profile-registry.json`
 
 The current schema-v2 qualification authority is
-`evidence/audit/adversarial-remediation-002/qualification-retry-009`. It was
+`evidence/audit/adversarial-remediation-002/qualification-retry-011`. It was
 generated from clean local/remote commit
-`24bcccd0fe3f77a7d592e32284fcf27c4d129723`, after the final Product repair and
+`8860e76e8cb7fe19b40971ded941936a5141b93c`, after the final Product repair and
 Runtime/startup authority were committed. Its exact Manifest SHA-256 is
-`9b30ea362184e8d614d8baf31428c2089df90343a09cab7637d9cd2d624c1306`;
+`eb2e313006f9813744aebc063fc1930482085c66451bb653473c39a451137b99`;
 the Qualified Profile Registry file SHA-256 is
-`ebc208cb701014daa0ff10f1b61f7c72cc14aadb4d16eb8f9be5de829df26e06`.
+`74b9b95367aa30103621b40ca05e72b68477b0e0ad3c9370f75a12c0b125506f`.
 Both profiles' fresh Primary and Replay component checks pass, all eight
 qualification negative controls are bound, and the validators record
 `final_holdout_used=false` and `profitability_claim_authorized=false`.
 Owner resolution accepts records from this first current Registry only.
-`qualification-retry-007` and `qualification-retry-008` are retained additive
+`qualification-retry-007` through `qualification-retry-010` are retained additive
 pre-final qualification history; their otherwise valid v2 record IDs cannot
 authorize a new Owner workflow. Re-running a current validator over legacy
 bytes does not upgrade them.

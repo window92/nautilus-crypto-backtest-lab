@@ -1,0 +1,1 @@
+{"checker_outcome":"COMPONENT_CHECK_FAIL","component_validation_outcome":"COMPONENT_CHECK_FAIL","failure_codes":["FUNDING_DOUBLE_COUNT","PERP_PROFILE_INVALID"],"official_seal_outcome":"NOT_APPLICABLE","run_id":"adversarial-remediation-002-retry-011-m3-control-perp_above_market_max","schema":"qualification-run-status-v2","started_run_retained":true,"state":"FAILED"}
