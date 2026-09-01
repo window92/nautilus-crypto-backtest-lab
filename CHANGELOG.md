@@ -87,11 +87,16 @@ remains `SSOT.md`; this file does not change normative behavior.
   Perpetual accounting/funding, post-boundary events, full Raw inventory,
   final Evidence inventory, validator identity, runtime startup injection,
   missing/duplicate Fills, and altered Instrument identity.
-- Published a fresh additive schema-v2 qualification at
-  `qualification-retry-007`, bound to the post-repair Product/runtime
+- Published the final additive schema-v2 qualification at
+  `qualification-retry-009`, bound to the post-repair Product/runtime
   authority. Both exposed profiles have independent Primary/Replay evidence;
   all eight qualification negative controls pass, with no Final Holdout or
-  profitability authorization.
+  profitability authorization. The pre-final retry-007/retry-008 packages are
+  retained, while their record IDs are rejected by the Owner API so an older
+  v2 Registry cannot bypass the current Authority.
+- Corrected the offline Dataset builder's locked SSOT SHA to the explicitly
+  authorized R2 bytes and added a direct identity regression. The stale lock
+  had correctly failed closed but prevented the mandated post-repair rebuild.
 - Extended the closed `FailureCode` vocabulary with
   `RUNTIME_STARTUP_MISMATCH`, `DATASET_RAW_INVENTORY_MISMATCH`,
   `WARMUP_SCORING_ELIGIBILITY_VIOLATION`,

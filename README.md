@@ -335,10 +335,11 @@ registries are parse-only and cannot authorize replacement Runs. See
 identities and additive status policy.
 
 The current replacement qualification is the additive schema-v2 package at
-`evidence/audit/adversarial-remediation-002/qualification-retry-007`, generated
-from clean local/remote commit `4d3c512b807388bc821ee205a05ed211ce7b48d3`.
+`evidence/audit/adversarial-remediation-002/qualification-retry-009`, generated
+from clean local/remote commit `24bcccd0fe3f77a7d592e32284fcf27c4d129723`.
 It authorizes only the two exposed Development profiles; it does not authorize
-Final Holdout use, a profitability claim, or live trading.
+Final Holdout use, a profitability claim, or live trading. Older v2
+qualification records remain historical and are rejected by the Owner API.
 
 New Development Runs are publishable only after full Raw inventory equality,
 isolated startup verification, independent Spot/Perpetual reconciliation,
