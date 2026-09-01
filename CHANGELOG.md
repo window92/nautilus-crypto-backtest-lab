@@ -28,6 +28,11 @@ remains `SSOT.md`; this file does not change normative behavior.
   `c3065b89b22a8bacbd8bb46f259718accb6d7b5f` so isolated Official and M3
   children match current Product source hashes. The Host Acceptance
   attestation product-source identity was regenerated for that authority.
+- Published additive schema-v2 `qualification-retry-016`, bound to clean
+  local/remote commit `3580cee854a5f9f90d3ceb3f2bd6ec2db929769d`. Both
+  exposed profiles have independent Primary/Replay evidence; all eight
+  qualification negative controls pass, with no Final Holdout or
+  profitability authorization. Retry-015 remains historical.
 
 ### Adversarial audit remediation R2
 
@@ -151,14 +156,13 @@ remains `SSOT.md`; this file does not change normative behavior.
   Perpetual accounting/funding, post-boundary events, full Raw inventory,
   final Evidence inventory, validator identity, runtime startup injection,
   missing/duplicate Fills, and altered Instrument identity.
-- Published the final additive schema-v2 qualification at
-  `qualification-retry-015`, bound to the post-repair Product/runtime and
-  repository authority after the final Raw rebuild re-verification.
-  Both exposed profiles have independent Primary/Replay evidence;
-  all eight qualification negative controls pass, with no Final Holdout or
-  profitability authorization. The pre-final retry-007 through retry-014 packages are
-  retained, while their record IDs are rejected by the Owner API so an older
-  v2 Registry cannot bypass the current Authority.
+- Published the additive schema-v2 qualification at
+  `qualification-retry-016`, bound to the L-1..L-4 freeze and the rebuilt
+  isolated runtime authority. Both exposed profiles have independent
+  Primary/Replay evidence; all eight qualification negative controls pass,
+  with no Final Holdout or profitability authorization. Retry-007 through
+  retry-015 remain historical; their record IDs are rejected by the Owner API
+  so an older v2 Registry cannot bypass the current Authority.
 - Corrected the offline Dataset builder's locked SSOT SHA to the explicitly
   authorized R2 bytes and added a direct identity regression. The stale lock
   had correctly failed closed but prevented the mandated post-repair rebuild.

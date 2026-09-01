@@ -365,12 +365,12 @@ registries are parse-only and cannot authorize replacement Runs. See
 identities and additive status policy.
 
 The current replacement qualification is the additive schema-v2 package at
-`evidence/audit/adversarial-remediation-002/qualification-retry-015`, generated
-from clean local/remote commit `3ce914aec65aef015eedf5fd309698e57451db57`.
+`evidence/audit/adversarial-remediation-002/qualification-retry-016`, generated
+from clean local/remote commit `3580cee854a5f9f90d3ceb3f2bd6ec2db929769d`.
 It authorizes only the two exposed Development profiles; it does not authorize
 Final Holdout use, a profitability claim, or live trading. Older v2
-qualification records, including the pre-final retry-014 package, remain
-historical and are rejected by the Owner API.
+qualification records, including retry-015, remain historical and are rejected
+by the Owner API.
 
 New Development Runs are publishable only after full Raw inventory equality,
 isolated startup verification, independent Spot/Perpetual reconciliation,

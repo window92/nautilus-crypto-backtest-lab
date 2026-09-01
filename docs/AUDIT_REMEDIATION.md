@@ -94,20 +94,19 @@ contract and cannot authorize a new Official Run:
 - `evidence/audit/comprehensive-remediation-001/qualification-runtime-proof/qualified-profile-registry.json`
 
 The current schema-v2 qualification authority is
-`evidence/audit/adversarial-remediation-002/qualification-retry-015`. It was
+`evidence/audit/adversarial-remediation-002/qualification-retry-016`. It was
 generated from clean local/remote commit
-`3ce914aec65aef015eedf5fd309698e57451db57`, after the final Product repair,
-Runtime/startup authority, repository-authority supersession, and Raw rebuild
-re-verification were committed. Its exact Manifest SHA-256 is
-`86319fdfcf2dee1c74fee284aed6f67d9c6bc82272fa7e3224a82dd17df13dd7`;
+`3580cee854a5f9f90d3ceb3f2bd6ec2db929769d`, after the L-1..L-4 freeze and the
+matching isolated runtime bootstrap rebuild. Its exact Manifest SHA-256 is
+`75dc65b4b58f2d0ca682b6532755f43c1bc5568fc1f668bbfd50e52f4546755f`;
 the Qualified Profile Registry file SHA-256 is
-`c68ea32cd04b9a469705081fbd5fbe52961b71e0c4cc6635d445256d2cd4fc13`.
+`39f2cbf62618e34e2d3d7c1038eacb901a256b4a988db7bb040cb1e1c32082d2`.
 Both profiles' fresh Primary and Replay component checks pass, all eight
 qualification negative controls are bound, and the validators record
 `final_holdout_used=false` and `profitability_claim_authorized=false`.
 Owner resolution discovers canonical committed retry authorities newest-first,
 requires an unchanged executable closure, and accepts records from this current
-Registry only. `qualification-retry-007` through `qualification-retry-014` are
+Registry only. `qualification-retry-007` through `qualification-retry-015` are
 retained additive pre-final qualification history; their otherwise valid v2
 record IDs cannot authorize a new Owner workflow. Re-running a current validator over legacy
 bytes does not upgrade them.
