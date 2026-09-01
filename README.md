@@ -38,6 +38,15 @@ and validation rules are described in
 [docs/AUDIT_REMEDIATION.md](docs/AUDIT_REMEDIATION.md). Nothing in this branch
 authorizes Final Holdout use, a profitability claim, or live trading.
 
+The final local R2 acceptance record is
+[`final-acceptance-retry-011/acceptance.json`](evidence/audit/adversarial-remediation-002/final-acceptance-retry-011/acceptance.json).
+It binds source commit `e569d669a4c5dce57ee5224a8d31d371bdc33791`, the
+fresh retry-009 DuckDB, the locked Nautilus Wheel, and the rebuilt Project
+Wheel. All 20 local phases pass, including 568-test Full/Fresh/Reverse runs,
+targeted mutations, Raw/provenance gates, both financial reconciliations,
+Official seals, deterministic replays, and a fresh installed-Wheel process.
+Every published retry-011 result remains Development-only and claim-ineligible.
+
 ## Merge-history safety
 
 > [!CAUTION]

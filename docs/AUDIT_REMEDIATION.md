@@ -361,10 +361,26 @@ failures, errors, skips, and semantic identity. It requires at least:
   limitations;
 - a clean published branch tip and portable GitHub CI.
 
-New Run, replay, Dataset Release, report, registry, and acceptance identities
-must be inserted here only after those artifacts exist and their final bytes
-have been independently verified. Until then, the absence of a published R2
-identity is not a PASS.
+The final local acceptance record is
+`final-acceptance-retry-011/acceptance.json` (file SHA-256
+`a0d63b8afb7b6a926b2b6e3433fa710595dd53b49314e2ca6586ccd0d2b23004`,
+semantic acceptance identity
+`c91ea6e5eb54929ad61c51043ab3e9992d86899fbeaa3596464772efb5290f8c`).
+It binds source commit `e569d669a4c5dce57ee5224a8d31d371bdc33791`,
+retry-011 plan epoch, retry-009 Primary DuckDB SHA-256
+`9d54177faadd64ad5bbc9c3fadd10749919c48b1fba41a0735e32822d4bdc6bc`,
+locked Nautilus Wheel SHA-256
+`716169aca15bfb615a27610a9230e670dec5be3d4606fea591fe64eca145a5ac`,
+and Project Wheel SHA-256
+`88c7b6c314fb29d157f9d2595ee6ef99c651857bd30f7a3fde0c15de836a0ffd`.
+All 20 phases pass with zero failures, errors, or skips; Full, independent
+fresh-process, and reverse-order discovery each execute 568 tests. The record
+also preserves every command log, the 12-directory independent Run/replay
+validation, and the historical-validator result. It explicitly records no
+network use, no Final Holdout, no live trading, and no profitability
+authorization. Its later Evidence-publication commit changes no Product,
+financial, causal, DatasetRelease, catalog, Run, replay, or accepted Wheel
+bytes.
 
 The GitHub Actions workflow remains a portable review gate. It installs
 the hashed Nautilus dependency and runs compilation plus repository-contained

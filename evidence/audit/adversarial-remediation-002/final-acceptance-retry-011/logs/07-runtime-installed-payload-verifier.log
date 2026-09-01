@@ -1,0 +1,5 @@
+$ /home/builder/projects/nautilus-crypto-backtest-lab/.venv/bin/python -c 'from pathlib import Path; from crypto_lab.config import RuntimeLock; from crypto_lab.runtime import verify_runtime_lock; r=Path.cwd(); print(verify_runtime_lock(RuntimeLock.from_json_bytes((r/'"'"'runtime.lock.json'"'"').read_bytes()), dependency_lock_path=r/'"'"'requirements.lock.txt'"'"')['"'"'installed_files_verified'"'"'])'
+exit_code=0
+duration_seconds=1.066458
+
+True

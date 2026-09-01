@@ -144,6 +144,13 @@ remains `SSOT.md`; this file does not change normative behavior.
   committed proof differs from retry-008 only in the two physical DuckDB hashes
   and sizes. Independent rehashing covers all 2,243 Raw locators with zero
   checksum/size failures and no network use.
+- Published the complete retry-011 local acceptance record and all command
+  logs. All 20 phases pass; Full, fresh-process, and reverse-order discovery
+  each execute 568 tests with zero skips, targeted mutations execute 140
+  tests, and the six Development primaries plus six replays pass independent
+  Spot/Perpetual reconciliation, funding, seal, and semantic replay gates.
+  The acceptance remains explicitly non-Holdout, non-live, and
+  non-profitability-authorizing.
 - Extended the closed `FailureCode` vocabulary with
   `RUNTIME_STARTUP_MISMATCH`, `DATASET_RAW_INVENTORY_MISMATCH`,
   `WARMUP_SCORING_ELIGIBILITY_VIOLATION`,

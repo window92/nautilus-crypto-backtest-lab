@@ -1,0 +1,99 @@
+$ /home/builder/projects/nautilus-crypto-backtest-lab/.venv/bin/python /home/builder/projects/nautilus-crypto-backtest-lab/scripts/validate_m3_evidence.py --evidence /home/builder/projects/nautilus-crypto-backtest-lab/evidence/audit/adversarial-remediation-002/qualification-retry-015
+exit_code=0
+duration_seconds=0.697627
+
+{
+  "checker_revalidations": {
+    "runs/perpetual-primary/adversarial-remediation-002-retry-015-m3-perpetual-primary-7244938fbeee": {
+      "checker_outcome": "COMPONENT_CHECK_PASS",
+      "failure_codes": [],
+      "pass": true
+    },
+    "runs/perpetual-replay/adversarial-remediation-002-retry-015-m3-perpetual-replay-7244938fbeee": {
+      "checker_outcome": "COMPONENT_CHECK_PASS",
+      "failure_codes": [],
+      "pass": true
+    },
+    "runs/spot-primary/adversarial-remediation-002-retry-015-m3-spot-primary-be4c778b8efa": {
+      "checker_outcome": "COMPONENT_CHECK_PASS",
+      "failure_codes": [],
+      "pass": true
+    },
+    "runs/spot-replay/adversarial-remediation-002-retry-015-m3-spot-replay-be4c778b8efa": {
+      "checker_outcome": "COMPONENT_CHECK_PASS",
+      "failure_codes": [],
+      "pass": true
+    }
+  },
+  "checks": {
+    "accepted_attempt_bindings": true,
+    "active_runtime_qualified": true,
+    "clean_published_source": true,
+    "complete_content_addressed_inventory": true,
+    "current_checker_revalidation": true,
+    "downstream_v2_bindings": true,
+    "fresh_deterministic_replays": true,
+    "negative_controls": true,
+    "no_research_holdout_or_claim_authority": true,
+    "persisted_runtime_payload_proof": true,
+    "r2_current_registry_contract": true,
+    "source_revision_bindings": true
+  },
+  "contract_mode": "R2_CURRENT",
+  "downstream_revalidations": {
+    "BINANCE_SPOT_CASH_LONG_ONLY": {
+      "detail": null,
+      "pass": true
+    },
+    "BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING": {
+      "detail": null,
+      "pass": true
+    }
+  },
+  "failed_checks": [],
+  "final_holdout_used": false,
+  "profitability_claim_authorized": false,
+  "qualified_profile_registry_identity": "2691bcd0606d3a61b7f012d5f2f2c909e365eac65f2e3c76f9fcbc4444857fb1",
+  "runtime_proof_revalidations": {
+    "runs/perpetual-primary/adversarial-remediation-002-retry-015-m3-perpetual-primary-7244938fbeee": {
+      "detail": null,
+      "pass": true
+    },
+    "runs/perpetual-replay/adversarial-remediation-002-retry-015-m3-perpetual-replay-7244938fbeee": {
+      "detail": null,
+      "pass": true
+    },
+    "runs/spot-primary/adversarial-remediation-002-retry-015-m3-spot-primary-be4c778b8efa": {
+      "detail": null,
+      "pass": true
+    },
+    "runs/spot-replay/adversarial-remediation-002-retry-015-m3-spot-replay-be4c778b8efa": {
+      "detail": null,
+      "pass": true
+    }
+  },
+  "schema": "adversarial-remediation-qualification-validation-v2",
+  "source_revalidations": {
+    "runs/perpetual-primary/adversarial-remediation-002-retry-015-m3-perpetual-primary-7244938fbeee": {
+      "git_commit": "3ce914aec65aef015eedf5fd309698e57451db57",
+      "git_tree": "341ac652068afab23b691ec93030568afb22e3ef",
+      "pass": true
+    },
+    "runs/perpetual-replay/adversarial-remediation-002-retry-015-m3-perpetual-replay-7244938fbeee": {
+      "git_commit": "3ce914aec65aef015eedf5fd309698e57451db57",
+      "git_tree": "341ac652068afab23b691ec93030568afb22e3ef",
+      "pass": true
+    },
+    "runs/spot-primary/adversarial-remediation-002-retry-015-m3-spot-primary-be4c778b8efa": {
+      "git_commit": "3ce914aec65aef015eedf5fd309698e57451db57",
+      "git_tree": "341ac652068afab23b691ec93030568afb22e3ef",
+      "pass": true
+    },
+    "runs/spot-replay/adversarial-remediation-002-retry-015-m3-spot-replay-be4c778b8efa": {
+      "git_commit": "3ce914aec65aef015eedf5fd309698e57451db57",
+      "git_tree": "341ac652068afab23b691ec93030568afb22e3ef",
+      "pass": true
+    }
+  },
+  "status": "PASS"
+}

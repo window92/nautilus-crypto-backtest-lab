@@ -1,0 +1,6 @@
+$ /home/builder/projects/nautilus-crypto-backtest-lab/.venv/bin/python /home/builder/projects/nautilus-crypto-backtest-lab/scripts/run_reverse_test_order.py --output-dir /tmp/r2-final-acceptance-retry011-e569d66-002/reverse-order
+exit_code=0
+duration_seconds=545.380475
+
+{"errors": 0, "execution_occurrences": 568, "failures": 0, "skipped": 0, "status": "PASS", "unique_discovered_test_cases": 568}
+1970-01-01T00:02:00.000000000Z [ERROR] BACKTESTER-001.nautilus_portfolio::manager: Cannot complete transaction: no BTC to deduct a -1.00000000 BTC realized PnL from
