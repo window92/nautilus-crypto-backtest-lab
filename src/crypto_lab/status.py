@@ -50,6 +50,15 @@ class FailureCode(StrEnum):
     FUNDING_MISSING = "FUNDING_MISSING"
     FUNDING_AMBIGUOUS = "FUNDING_AMBIGUOUS"
     FUNDING_DOUBLE_COUNT = "FUNDING_DOUBLE_COUNT"
+    FUNDING_UNEXPECTED_SETTLEMENT = "FUNDING_UNEXPECTED_SETTLEMENT"
+    FUNDING_SIGN_INVALID = "FUNDING_SIGN_INVALID"
+    FUNDING_RATE_INVALID = "FUNDING_RATE_INVALID"
+    FUNDING_MARK_INVALID = "FUNDING_MARK_INVALID"
+    FUNDING_POSITION_INVALID = "FUNDING_POSITION_INVALID"
+    FUNDING_BOUNDARY_INVALID = "FUNDING_BOUNDARY_INVALID"
+    FUNDING_CURRENCY_INVALID = "FUNDING_CURRENCY_INVALID"
+    FUNDING_AMOUNT_INVALID = "FUNDING_AMOUNT_INVALID"
+    FUNDING_ACCOUNT_DELTA_INVALID = "FUNDING_ACCOUNT_DELTA_INVALID"
     MARK_ROLE_INVALID = "MARK_ROLE_INVALID"
     DETERMINISM_FAILURE = "DETERMINISM_FAILURE"
     DETERMINISTIC_REBUILD_MISMATCH = "DETERMINISTIC_REBUILD_MISMATCH"
@@ -70,6 +79,31 @@ class FailureCode(StrEnum):
     DEFECT_ROOT_UNRESOLVED = "DEFECT_ROOT_UNRESOLVED"
     RETRY_LIMIT_REACHED = "RETRY_LIMIT_REACHED"
     EVIDENCE_INCOMPLETE = "EVIDENCE_INCOMPLETE"
+
+
+FUNDING_DIAGNOSIS_PRIORITY: tuple[FailureCode, ...] = (
+    FailureCode.FUNDING_MISSING,
+    FailureCode.FUNDING_DOUBLE_COUNT,
+    FailureCode.FUNDING_UNEXPECTED_SETTLEMENT,
+    FailureCode.FUNDING_BOUNDARY_INVALID,
+    FailureCode.FUNDING_POSITION_INVALID,
+    FailureCode.FUNDING_RATE_INVALID,
+    FailureCode.FUNDING_MARK_INVALID,
+    FailureCode.FUNDING_SIGN_INVALID,
+    FailureCode.FUNDING_AMOUNT_INVALID,
+    FailureCode.FUNDING_CURRENCY_INVALID,
+    FailureCode.FUNDING_ACCOUNT_DELTA_INVALID,
+    FailureCode.FUNDING_AMBIGUOUS,
+    FailureCode.MARK_ROLE_INVALID,
+)
+
+
+def ordered_funding_failure_codes(values: list[str] | tuple[str, ...]) -> tuple[str, ...]:
+    """Return unique funding diagnosis codes in the SSOT-fixed priority order."""
+
+    rank = {code.value: index for index, code in enumerate(FUNDING_DIAGNOSIS_PRIORITY)}
+    unique = list(dict.fromkeys(values))
+    return tuple(sorted(unique, key=lambda item: (rank.get(item, len(rank)), item)))
 
 
 def validated_failure_codes(
@@ -127,7 +161,9 @@ def canonicalize_evidence_failure_codes(values: Any) -> tuple[str, ...]:
 
 __all__ = [
     "FailureCode",
+    "FUNDING_DIAGNOSIS_PRIORITY",
     "RunState",
     "canonicalize_evidence_failure_codes",
+    "ordered_funding_failure_codes",
     "validated_failure_codes",
 ]

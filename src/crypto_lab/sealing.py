@@ -320,7 +320,7 @@ def _profile_required_leaves(
 def verify_official_seal(
     run_dir: Path,
     *,
-    repository_root: Path | None = None,
+    repository_root: Path,
     source_revision_current_head_required: bool = True,
 ) -> OfficialSealReport:
     """Independently verify exact final inventory and all root bindings.
@@ -332,6 +332,9 @@ def verify_official_seal(
     cannot supply an alternative PASS oracle through this API.
     """
 
+    from crypto_lab.git_identity import require_repository_root
+
+    root = require_repository_root(repository_root)
     checks: list[dict[str, Any]] = []
     failures: list[str] = []
     try:
@@ -512,11 +515,6 @@ def verify_official_seal(
     try:
         from crypto_lab.checker import check_evidence_directory
 
-        root = (
-            Path(__file__).resolve().parents[2]
-            if repository_root is None
-            else Path(repository_root)
-        )
         regenerated = check_evidence_directory(
             run_dir,
             repository_root=root,

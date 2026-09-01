@@ -25,6 +25,8 @@ from tests.m1_helpers import make_bars
 from tests.m1_helpers import make_request
 from tests.m1_helpers import plan
 
+ROOT = Path(__file__).resolve().parents[2]
+
 
 class M1EvidenceContractTests(unittest.TestCase):
     def test_downstream_can_read_stable_run_result_and_bundle_without_strategy_edge(self) -> None:
@@ -72,7 +74,10 @@ class M1EvidenceContractTests(unittest.TestCase):
                 for path in result.evidence_dir.iterdir()
                 if path.is_file()
             }
-            repeated = check_evidence_directory(result.evidence_dir)
+            repeated = check_evidence_directory(
+                result.evidence_dir,
+                repository_root=ROOT,
+            )
             after = {
                 path.name: sha256_file(path)
                 for path in result.evidence_dir.iterdir()
@@ -173,7 +178,10 @@ class M1EvidenceContractTests(unittest.TestCase):
             dataset = json.loads(path.read_text())
             dataset["instrument_id"] = "ETHUSDT.BINANCE"
             path.write_bytes(canonical_json_bytes(dataset) + b"\n")
-            report = check_evidence_directory(result.evidence_dir)
+            report = check_evidence_directory(
+                result.evidence_dir,
+                repository_root=ROOT,
+            )
             self.assertEqual(report.outcome, CheckerOutcome.CHECK_BLOCKED)
             self.assertIn("DATA_HASH_MISMATCH", report.failure_codes)
             self.assertIn("EVIDENCE_INCOMPLETE", report.failure_codes)
@@ -195,7 +203,10 @@ class M1EvidenceContractTests(unittest.TestCase):
             fill = json.loads(path.read_text())
             fill["last_px"] = "999.99"
             path.write_bytes(canonical_json_bytes(fill) + b"\n")
-            report = check_evidence_directory(result.evidence_dir)
+            report = check_evidence_directory(
+                result.evidence_dir,
+                repository_root=ROOT,
+            )
             self.assertEqual(report.outcome, CheckerOutcome.CHECK_FAIL)
             self.assertIn("FILL_MUTATION_DETECTED", report.failure_codes)
 

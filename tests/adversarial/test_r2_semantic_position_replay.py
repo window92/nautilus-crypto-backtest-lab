@@ -12,6 +12,7 @@ from crypto_lab.config import MarketProfile
 from crypto_lab.hashing import canonical_sha256
 from crypto_lab.runner import _semantic_position_sequence
 from crypto_lab.status import FailureCode
+from tests.adversarial.test_r2_causality_boundaries import ROOT
 from tests.adversarial.test_r2_causality_boundaries import _small_scored_run
 
 
@@ -118,6 +119,7 @@ class SemanticPositionReplayTests(unittest.TestCase):
 
             report = check_evidence_directory(
                 result.evidence_dir,
+                repository_root=ROOT,
                 official_source_required=False,
                 source_revision_current_head_required=False,
             )

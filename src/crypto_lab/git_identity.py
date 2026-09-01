@@ -36,7 +36,83 @@ def _git(repository: Path, *args: str, check: bool = True) -> str:
     return process.stdout.strip()
 
 
+def require_repository_root(
+    repository_root: Path | None,
+    *,
+    expected_git_commit: str | None = None,
+    require_current_head: bool = False,
+) -> Path:
+    """Reject any attempt to infer repository authority from location heuristics.
+
+    Official and authority-sensitive callers MUST pass an explicit absolute
+    Git product root.  ``None``, a relative path, a missing path, a symlink
+    root, a copied ``crypto_lab`` package tree, and a root whose Git
+    toplevel or commit does not match the bound authority all fail closed.
+    """
+
+    if repository_root is None:
+        raise ValueError("repository_root is required")
+    if not isinstance(repository_root, Path):
+        raise TypeError("repository_root must be pathlib.Path")
+    if not repository_root.is_absolute():
+        raise ValueError("repository_root must be an absolute path")
+    if repository_root.is_symlink():
+        raise ValueError("repository_root must not be a symlink")
+    if not repository_root.exists():
+        raise ValueError("repository_root does not exist")
+    if not repository_root.is_dir():
+        raise ValueError("repository_root must be a directory")
+    ssot = repository_root / "SSOT.md"
+    if ssot.is_symlink() or not ssot.is_file():
+        raise ValueError("repository_root is not the product repository")
+    package_copy = repository_root / "sealing.py"
+    src_package = repository_root / "src" / "crypto_lab" / "sealing.py"
+    if package_copy.is_file() and not src_package.is_file():
+        raise ValueError("repository_root is a copied package tree")
+    try:
+        actual = Path(
+            _git(repository_root, "rev-parse", "--show-toplevel"),
+        ).resolve(strict=True)
+    except GitIdentityError as exc:
+        raise ValueError("repository_root is not a Git repository") from exc
+    requested = repository_root.resolve(strict=True)
+    if actual != requested:
+        raise ValueError(
+            f"repository_root is not the Git repository root {actual}",
+        )
+    if expected_git_commit is not None:
+        if (
+            not isinstance(expected_git_commit, str)
+            or len(expected_git_commit) != 40
+        ):
+            raise ValueError("expected_git_commit is not a 40-character SHA")
+        try:
+            resolved = _git(
+                requested,
+                "rev-parse",
+                "--verify",
+                f"{expected_git_commit}^{{commit}}",
+            )
+        except GitIdentityError as exc:
+            raise ValueError(
+                "repository_root does not contain the expected commit",
+            ) from exc
+        if require_current_head:
+            head = _git(requested, "rev-parse", "HEAD")
+            if head != expected_git_commit or resolved != expected_git_commit:
+                raise ValueError(
+                    "repository_root HEAD does not match the expected commit",
+                )
+    return requested
+
+
 def _repository_root(repository: Path) -> Path:
+    if not isinstance(repository, Path):
+        raise TypeError("repository_root must be pathlib.Path")
+    if not repository.is_absolute():
+        raise GitIdentityError("EVIDENCE_INCOMPLETE: repository locator must be absolute")
+    if repository.is_symlink():
+        raise GitIdentityError("EVIDENCE_INCOMPLETE: repository locator must not be a symlink")
     requested = Path(repository).resolve(strict=True)
     actual = Path(_git(requested, "rev-parse", "--show-toplevel")).resolve(strict=True)
     if actual != requested:
@@ -194,6 +270,7 @@ __all__ = [
     "GitIdentityError",
     "GitVerification",
     "capture_actual_source_revision",
+    "require_repository_root",
     "verify_source_revision",
     "worktree_is_clean",
 ]

@@ -37,12 +37,17 @@ DEFAULT_RESULT_STATUS_REFS = (
         "evidence/audit/adversarial-remediation-002/"
         "claim-holdout-supersession-status.json"
     ),
+    (
+        "evidence/audit/adversarial-remediation-002/"
+        "active-inventory-supersession-status.json"
+    ),
 )
 RESULT_STATUS_V2_SCHEMA = "historical-result-status-registry-v2"
 RESULT_STATUS_V3_SCHEMA = "historical-result-status-registry-v3"
 RESULT_STATUS_V4_SCHEMA = "historical-result-status-registry-v4"
 RESULT_STATUS_V5_SCHEMA = "historical-result-status-registry-v5"
 RESULT_STATUS_V6_SCHEMA = "historical-result-status-registry-v6"
+RESULT_STATUS_V7_SCHEMA = "historical-result-status-registry-v7"
 RESULT_STATUS_V2_POLICY = (
     "HISTORICAL_BYTES_IMMUTABLE;NON_ACTIVE_RESULTS_INELIGIBLE;"
     "FINAL_HOLDOUT_AND_PROFITABILITY_CLAIMS_NOT_AUTHORIZED"
@@ -59,6 +64,7 @@ V3_EVIDENCE_FILES = (
 V4_EVIDENCE_FILES = V3_EVIDENCE_FILES
 V5_EVIDENCE_FILES = V3_EVIDENCE_FILES
 V6_EVIDENCE_FILES = V3_EVIDENCE_FILES
+V7_EVIDENCE_FILES = V3_EVIDENCE_FILES
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 _GIT_SHA = re.compile(r"[0-9a-f]{40}\Z")
 _LOGICAL_RESULT = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*\Z")
@@ -81,6 +87,9 @@ R2_REPOSITORY_AUTHORITY_SUPERSESSION_AUTHORITY = (
 )
 R2_CLAIM_HOLDOUT_SUPERSESSION_AUTHORITY = (
     "ADVERSARIAL_AUDIT_REMEDIATION_002_CLAIM_HOLDOUT_SUPERSESSION"
+)
+R2_ACTIVE_INVENTORY_SUPERSESSION_AUTHORITY = (
+    "ADVERSARIAL_AUDIT_REMEDIATION_002_ACTIVE_INVENTORY_SUPERSESSION"
 )
 R2_AUDITED_BASELINE_COMMIT = "b5c865c28b83526ffab38152e7e6821f39b77014"
 
@@ -117,6 +126,7 @@ class HistoricalStatusReason(StrEnum):
         "SCIENTIFIC_LIMITATION_SCHEMA_SUPERSESSION"
     )
     CLAIM_HOLDOUT_SEMANTIC_SUPERSESSION = "CLAIM_HOLDOUT_SEMANTIC_SUPERSESSION"
+    OFFICIAL_ACTIVE_INVENTORY_SUPERSESSION = "OFFICIAL_ACTIVE_INVENTORY_SUPERSESSION"
     LEGACY_AUDIT_FINDING = "LEGACY_AUDIT_FINDING"
 
 
@@ -132,6 +142,7 @@ class ReplacementRequirement(StrEnum):
     CLAIM_HOLDOUT_SEMANTIC_FIX_AND_REBUILD = (
         "CLAIM_HOLDOUT_SEMANTIC_FIX_AND_REBUILD"
     )
+    OFFICIAL_ACTIVE_INVENTORY_REBUILD = "OFFICIAL_ACTIVE_INVENTORY_REBUILD"
     LEGACY_UNSPECIFIED = "LEGACY_UNSPECIFIED"
 
 
@@ -594,6 +605,87 @@ R2_CLAIM_HOLDOUT_SUPERSEDED_RESULTS: dict[str, dict[str, str]] = {
             "runs/replays/adversarial-remediation-002-retry-010-spot-candidate-b-"
             "development/adversarial-remediation-002-retry-010-spot-candidate-b-"
             "run-e50933d46dd4"
+        ),
+    },
+}
+
+
+R2_ACTIVE_INVENTORY_SUPERSEDED_RESULTS: dict[str, dict[str, str]] = {
+    "retry-011-perpetual-benchmark": {
+        "market_profile": "BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING",
+        "result_class": HistoricalResultClass.BENCHMARK.value,
+        "primary_path": (
+            "runs/adversarial-remediation-002-retry-011-perpetual-benchmark-run-"
+            "09eadae82221"
+        ),
+        "replay_path": (
+            "runs/replays/adversarial-remediation-002-retry-011-perpetual-benchmark-"
+            "buy-and-hold-1x-development/adversarial-remediation-002-retry-011-"
+            "perpetual-benchmark-run-09eadae82221"
+        ),
+    },
+    "retry-011-perpetual-candidate-a": {
+        "market_profile": "BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING",
+        "result_class": HistoricalResultClass.CANDIDATE.value,
+        "primary_path": (
+            "runs/adversarial-remediation-002-retry-011-perpetual-candidate-a-run-"
+            "6b933ded4ae4"
+        ),
+        "replay_path": (
+            "runs/replays/adversarial-remediation-002-retry-011-perpetual-candidate-a-"
+            "development/adversarial-remediation-002-retry-011-perpetual-candidate-a-"
+            "run-6b933ded4ae4"
+        ),
+    },
+    "retry-011-perpetual-candidate-b": {
+        "market_profile": "BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING",
+        "result_class": HistoricalResultClass.CANDIDATE.value,
+        "primary_path": (
+            "runs/adversarial-remediation-002-retry-011-perpetual-candidate-b-run-"
+            "77de68aaa779"
+        ),
+        "replay_path": (
+            "runs/replays/adversarial-remediation-002-retry-011-perpetual-candidate-b-"
+            "development/adversarial-remediation-002-retry-011-perpetual-candidate-b-"
+            "run-77de68aaa779"
+        ),
+    },
+    "retry-011-spot-benchmark": {
+        "market_profile": "BINANCE_SPOT_CASH_LONG_ONLY",
+        "result_class": HistoricalResultClass.BENCHMARK.value,
+        "primary_path": (
+            "runs/adversarial-remediation-002-retry-011-spot-benchmark-run-fbfa1ef39cce"
+        ),
+        "replay_path": (
+            "runs/replays/adversarial-remediation-002-retry-011-spot-benchmark-"
+            "buy-and-hold-1x-development/adversarial-remediation-002-retry-011-"
+            "spot-benchmark-run-fbfa1ef39cce"
+        ),
+    },
+    "retry-011-spot-candidate-a": {
+        "market_profile": "BINANCE_SPOT_CASH_LONG_ONLY",
+        "result_class": HistoricalResultClass.CANDIDATE.value,
+        "primary_path": (
+            "runs/adversarial-remediation-002-retry-011-spot-candidate-a-run-"
+            "213964820a51"
+        ),
+        "replay_path": (
+            "runs/replays/adversarial-remediation-002-retry-011-spot-candidate-a-"
+            "development/adversarial-remediation-002-retry-011-spot-candidate-a-"
+            "run-213964820a51"
+        ),
+    },
+    "retry-011-spot-candidate-b": {
+        "market_profile": "BINANCE_SPOT_CASH_LONG_ONLY",
+        "result_class": HistoricalResultClass.CANDIDATE.value,
+        "primary_path": (
+            "runs/adversarial-remediation-002-retry-011-spot-candidate-b-run-"
+            "d74d9de1e933"
+        ),
+        "replay_path": (
+            "runs/replays/adversarial-remediation-002-retry-011-spot-candidate-b-"
+            "development/adversarial-remediation-002-retry-011-spot-candidate-b-"
+            "run-d74d9de1e933"
         ),
     },
 }
@@ -1198,6 +1290,73 @@ def _v6_record(raw: Any) -> HistoricalResultRecord:
     )
 
 
+def _v7_record(raw: Any) -> HistoricalResultRecord:
+    expected_fields = {
+        "copy_role",
+        "evidence_hashes",
+        "financial_result_status",
+        "finding_ids",
+        "historical_bytes_preserved",
+        "historical_run_status",
+        "logical_result_id",
+        "market_profile",
+        "path",
+        "reason_code",
+        "replacement_requirement",
+        "result_class",
+    }
+    if not isinstance(raw, dict) or set(raw) != expected_fields:
+        raise ValueError("v7 historical result record schema is invalid")
+    relative = _safe_result_path(raw.get("path"))
+    logical_result_id = raw.get("logical_result_id")
+    market_profile = raw.get("market_profile")
+    if (
+        not isinstance(logical_result_id, str)
+        or _LOGICAL_RESULT.fullmatch(logical_result_id) is None
+        or market_profile not in _MARKET_PROFILES
+        or raw.get("finding_ids") != ["R2-002"]
+        or raw.get("historical_bytes_preserved") is not True
+    ):
+        raise ValueError("v7 historical result record material is invalid")
+    try:
+        result_class = HistoricalResultClass(raw.get("result_class"))
+        copy_role = HistoricalCopyRole(raw.get("copy_role"))
+        run_status = HistoricalRunStatus(raw.get("historical_run_status"))
+        financial_status = FinancialResultStatus(raw.get("financial_result_status"))
+        reason = HistoricalStatusReason(raw.get("reason_code"))
+        replacement = ReplacementRequirement(raw.get("replacement_requirement"))
+    except ValueError as exc:
+        raise ValueError("v7 historical result record vocabulary is invalid") from exc
+    if (
+        result_class not in {HistoricalResultClass.CANDIDATE, HistoricalResultClass.BENCHMARK}
+        or copy_role not in {HistoricalCopyRole.PRIMARY, HistoricalCopyRole.REPLAY}
+        or run_status is not HistoricalRunStatus.SUPERSEDED
+        or financial_status is not FinancialResultStatus.SUPERSEDED
+        or reason is not HistoricalStatusReason.OFFICIAL_ACTIVE_INVENTORY_SUPERSESSION
+        or replacement is not ReplacementRequirement.OFFICIAL_ACTIVE_INVENTORY_REBUILD
+    ):
+        raise ValueError("v7 active-inventory supersession contract is inconsistent")
+    return HistoricalResultRecord(
+        path=relative,
+        market_profile=str(market_profile),
+        historical_run_status=run_status,
+        financial_result_status=financial_status,
+        finding_ids=("R2-002",),
+        current_checker_outcome="NOT_APPLICABLE",
+        current_failure_codes=(),
+        historical_bytes_preserved=True,
+        evidence_hashes=_evidence_hashes(
+            raw.get("evidence_hashes"),
+            expected_files=V7_EVIDENCE_FILES,
+        ),
+        logical_result_id=str(logical_result_id),
+        result_class=result_class,
+        copy_role=copy_role,
+        reason_code=reason,
+        replacement_requirement=replacement,
+    )
+
+
 def _load_v2_registry(value: dict[str, Any], payload: bytes) -> HistoricalResultRegistry:
     required_root = {
         "audited_baseline_commit",
@@ -1681,6 +1840,107 @@ def _load_v6_registry(value: dict[str, Any], payload: bytes) -> HistoricalResult
     )
 
 
+def _load_v7_registry(value: dict[str, Any], payload: bytes) -> HistoricalResultRegistry:
+    required_root = {
+        "audited_baseline_commit",
+        "authority_id",
+        "final_holdout_authorized",
+        "historical_policy",
+        "profitability_claim_authorized",
+        "record_count",
+        "recorded_at_utc",
+        "records",
+        "records_identity",
+        "registry_identity",
+        "schema",
+        "source_commit",
+    }
+    if (
+        set(value) != required_root
+        or value.get("schema") != RESULT_STATUS_V7_SCHEMA
+        or value.get("authority_id") != R2_ACTIVE_INVENTORY_SUPERSESSION_AUTHORITY
+        or value.get("audited_baseline_commit") != R2_AUDITED_BASELINE_COMMIT
+        or not _valid_git_sha(value.get("source_commit"))
+        or value.get("historical_policy") != RESULT_STATUS_V2_POLICY
+        or value.get("final_holdout_authorized") is not False
+        or value.get("profitability_claim_authorized") is not False
+    ):
+        raise ValueError("v7 historical result registry schema is invalid")
+    _utc_timestamp(value.get("recorded_at_utc"))
+    raw_records = value.get("records")
+    if (
+        not isinstance(raw_records, list)
+        or not raw_records
+        or value.get("record_count") != len(raw_records)
+        or value.get("records_identity") != canonical_sha256(raw_records)
+    ):
+        raise ValueError("v7 historical result registry records identity is invalid")
+    material = dict(value)
+    declared_identity = material.pop("registry_identity", None)
+    if not _valid_sha256(declared_identity) or canonical_sha256(material) != declared_identity:
+        raise ValueError("v7 historical result registry root identity is invalid")
+    if payload != canonical_json_bytes(value) + b"\n":
+        raise ValueError("v7 historical result registry bytes are not canonical")
+    records = tuple(_v7_record(raw) for raw in raw_records)
+    ordering = tuple(
+        sorted(
+            records,
+            key=lambda item: (item.logical_result_id, item.copy_role.value, item.path),
+        ),
+    )
+    if records != ordering or len({item.path for item in records}) != len(records):
+        raise ValueError("v7 historical result records are unordered or duplicated")
+    by_logical: dict[str, list[HistoricalResultRecord]] = {}
+    for record in records:
+        by_logical.setdefault(record.logical_result_id, []).append(record)
+    if (
+        set(by_logical) != set(R2_ACTIVE_INVENTORY_SUPERSEDED_RESULTS)
+        or len(records) != 2 * len(R2_ACTIVE_INVENTORY_SUPERSEDED_RESULTS)
+    ):
+        raise ValueError("v7 registry does not cover the exact active-inventory supersession scope")
+    for logical_result_id, pair in by_logical.items():
+        if (
+            {item.copy_role for item in pair}
+            != {HistoricalCopyRole.PRIMARY, HistoricalCopyRole.REPLAY}
+            or len(pair) != 2
+        ):
+            raise ValueError(f"v7 primary/replay pair is incomplete: {logical_result_id}")
+        expected = R2_ACTIVE_INVENTORY_SUPERSEDED_RESULTS[logical_result_id]
+        paths = {item.copy_role: item.path for item in pair}
+        first, second = pair
+
+        def stable(item: HistoricalResultRecord) -> tuple[object, ...]:
+            return (
+                item.market_profile,
+                item.result_class,
+                item.historical_run_status,
+                item.financial_result_status,
+                item.finding_ids,
+                item.reason_code,
+                item.replacement_requirement,
+            )
+
+        if (
+            stable(first) != stable(second)
+            or first.market_profile != expected["market_profile"]
+            or first.result_class.value != expected["result_class"]
+            or paths[HistoricalCopyRole.PRIMARY] != expected["primary_path"]
+            or paths[HistoricalCopyRole.REPLAY] != expected["replay_path"]
+        ):
+            raise ValueError(
+                f"v7 active-inventory supersession scope mismatch: {logical_result_id}",
+            )
+    return HistoricalResultRegistry(
+        source_commit=str(value["source_commit"]),
+        records=records,
+        final_holdout_authorized=False,
+        profitability_claim_authorized=False,
+        registry_schema=RESULT_STATUS_V7_SCHEMA,
+        registry_identity=str(declared_identity),
+        authority_id=str(value["authority_id"]),
+    )
+
+
 def load_historical_result_registry(path: Path) -> HistoricalResultRegistry:
     """Parse one immutable additive registry, preserving legacy v1 authority."""
 
@@ -1700,6 +1960,8 @@ def load_historical_result_registry(path: Path) -> HistoricalResultRegistry:
         return _load_v5_registry(value, payload)
     if value.get("schema") == RESULT_STATUS_V6_SCHEMA:
         return _load_v6_registry(value, payload)
+    if value.get("schema") == RESULT_STATUS_V7_SCHEMA:
+        return _load_v7_registry(value, payload)
     raise ValueError("historical result registry schema is unsupported")
 
 
@@ -2245,6 +2507,85 @@ def build_claim_holdout_supersession_registry_v6(
     return payload
 
 
+def build_active_inventory_supersession_record_v7(
+    run_directory: Path,
+    *,
+    repository_root: Path,
+    logical_result_id: str,
+    market_profile: str,
+    result_class: HistoricalResultClass,
+    copy_role: HistoricalCopyRole,
+) -> dict[str, Any]:
+    """Bind one immutable retry-011 Run superseded by the official active inventory."""
+
+    run, relative = _resolved_run_path(run_directory, repository_root)
+    evidence_hashes: dict[str, str] = {}
+    for name in V7_EVIDENCE_FILES:
+        path = run / name
+        if path.is_symlink() or not path.is_file():
+            raise ValueError(f"required historical evidence file is missing: {relative}/{name}")
+        evidence_hashes[name] = _hash_file(path)
+    record = {
+        "path": relative,
+        "logical_result_id": logical_result_id,
+        "market_profile": market_profile,
+        "result_class": result_class.value,
+        "copy_role": copy_role.value,
+        "historical_run_status": HistoricalRunStatus.SUPERSEDED.value,
+        "financial_result_status": FinancialResultStatus.SUPERSEDED.value,
+        "finding_ids": ["R2-002"],
+        "reason_code": HistoricalStatusReason.OFFICIAL_ACTIVE_INVENTORY_SUPERSESSION.value,
+        "replacement_requirement": (
+            ReplacementRequirement.OFFICIAL_ACTIVE_INVENTORY_REBUILD.value
+        ),
+        "historical_bytes_preserved": True,
+        "evidence_hashes": evidence_hashes,
+    }
+    _v7_record(record)
+    return record
+
+
+def build_active_inventory_supersession_registry_v7(
+    records: Iterable[dict[str, Any]],
+    *,
+    authority_id: str,
+    audited_baseline_commit: str,
+    source_commit: str,
+    recorded_at_utc: datetime,
+) -> bytes:
+    """Return the canonical closed retry-011 active-inventory registry."""
+
+    if recorded_at_utc.tzinfo is None or recorded_at_utc.utcoffset() != UTC.utcoffset(
+        recorded_at_utc,
+    ):
+        raise ValueError("recorded_at_utc must use timezone-aware UTC")
+    copied = json.loads(canonical_json_bytes(list(records)))
+    copied.sort(
+        key=lambda item: (
+            str(item.get("logical_result_id")),
+            str(item.get("copy_role")),
+            str(item.get("path")),
+        ),
+    )
+    manifest: dict[str, Any] = {
+        "schema": RESULT_STATUS_V7_SCHEMA,
+        "authority_id": authority_id,
+        "audited_baseline_commit": audited_baseline_commit,
+        "source_commit": source_commit,
+        "recorded_at_utc": recorded_at_utc.isoformat().replace("+00:00", "Z"),
+        "historical_policy": RESULT_STATUS_V2_POLICY,
+        "final_holdout_authorized": False,
+        "profitability_claim_authorized": False,
+        "record_count": len(copied),
+        "records": copied,
+        "records_identity": canonical_sha256(copied),
+    }
+    manifest["registry_identity"] = canonical_sha256(manifest)
+    payload = canonical_json_bytes(manifest) + b"\n"
+    _load_v7_registry(manifest, payload)
+    return payload
+
+
 __all__ = [
     "DEFAULT_RESULT_STATUS_REFS",
     "FinancialResultStatus",
@@ -2264,6 +2605,8 @@ __all__ = [
     "R2_RESULT_STATUS_AUTHORITY",
     "R2_REPOSITORY_AUTHORITY_SUPERSEDED_RESULTS",
     "R2_REPOSITORY_AUTHORITY_SUPERSESSION_AUTHORITY",
+    "R2_ACTIVE_INVENTORY_SUPERSEDED_RESULTS",
+    "R2_ACTIVE_INVENTORY_SUPERSESSION_AUTHORITY",
     "R2_RUNTIME_SUPERSEDED_RESULTS",
     "R2_RUNTIME_SUPERSESSION_AUTHORITY",
     "ResultNotActiveError",
@@ -2276,6 +2619,8 @@ __all__ = [
     "build_claim_schema_supersession_registry_v4",
     "build_repository_authority_supersession_record_v5",
     "build_repository_authority_supersession_registry_v5",
+    "build_active_inventory_supersession_record_v7",
+    "build_active_inventory_supersession_registry_v7",
     "build_runtime_supersession_record_v3",
     "build_runtime_supersession_registry_v3",
     "load_historical_result_registry",

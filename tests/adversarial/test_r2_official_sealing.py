@@ -17,6 +17,8 @@ from crypto_lab.sealing import build_official_status
 from crypto_lab.sealing import verify_official_seal
 from crypto_lab.sealing import write_canonical_json
 
+ROOT = Path(__file__).resolve().parents[2]
+
 
 class OfficialSealingAdversarialTests(unittest.TestCase):
     def setUp(self) -> None:
@@ -83,7 +85,7 @@ class OfficialSealingAdversarialTests(unittest.TestCase):
         # callers cannot inject an alternative validator into the seal API.
         with mock.patch("crypto_lab.checker.check_evidence_directory") as checker:
             checker.return_value.to_builtins.return_value = self.component
-            return verify_official_seal(self.run_dir)
+            return verify_official_seal(self.run_dir, repository_root=ROOT)
 
     def test_public_api_rejects_injected_component_pass_oracle(self) -> None:
         with self.assertRaises(TypeError):

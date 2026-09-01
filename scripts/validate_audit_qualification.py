@@ -264,7 +264,7 @@ def validate(evidence: Path) -> dict[str, Any]:
             relative = Path(reference)
             run_dir = root / relative
             persisted = _json(run_dir / "checker.json")
-            regenerated = check_evidence_directory(run_dir)
+            regenerated = check_evidence_directory(run_dir, repository_root=ROOT)
             persisted_source = _json(run_dir / "source_revision.json")
             source_pass = bool(
                 record.source_revision.git_commit == source_commit

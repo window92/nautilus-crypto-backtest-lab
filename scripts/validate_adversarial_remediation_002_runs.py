@@ -55,6 +55,8 @@ from crypto_lab.result_status import RESULT_STATUS_V2_SCHEMA
 from crypto_lab.result_status import load_historical_result_registry
 from crypto_lab.result_status import require_active_result
 from crypto_lab.result_status import resolve_result_status
+from crypto_lab.execution_plan import ExecutionPlanError
+from crypto_lab.execution_plan import load_active_execution_plan
 from crypto_lab.sealing import OfficialSealOutcome
 from crypto_lab.sealing import verify_official_seal
 from crypto_lab.status import FailureCode
@@ -1076,7 +1078,13 @@ def _validate_historical_status(repository: Path, path: Path) -> dict[str, Any]:
     }
 
 
-def _resolve_plan(plan: Path | None, *, epoch: str, plan_root: Path | None) -> Path:
+def _resolve_plan(
+    plan: Path | None,
+    *,
+    epoch: str,
+    plan_root: Path | None,
+    repository: Path,
+) -> Path:
     if plan is not None:
         if plan.is_symlink():
             _reject(FailureCode.EVIDENCE_INCOMPLETE, "plan", "plan must not be a symlink")
@@ -1084,26 +1092,24 @@ def _resolve_plan(plan: Path | None, *, epoch: str, plan_root: Path | None) -> P
         if not path.is_file():
             _reject(FailureCode.EVIDENCE_INCOMPLETE, "plan", "plan must be a regular file")
         return path
-    if plan_root is None:
-        _reject(FailureCode.RESEARCH_PROTOCOL_INVALID, "plan", "--plan or --plan-root is required")
-    if plan_root.is_symlink():
-        _reject(FailureCode.EVIDENCE_INCOMPLETE, "plan", "plan root must not be a symlink")
-    root = plan_root.resolve(strict=True)
-    matches: list[Path] = []
-    for candidate in root.rglob("execution-plan.json"):
-        try:
-            value = _strict_json(candidate.read_bytes(), stage="plan-discovery")
-        except R2ValidationFailure:
-            continue
-        if value.get("schema") == EXPECTED_PLAN_SCHEMA and value.get("epoch") == epoch:
-            matches.append(candidate)
-    if len(matches) != 1:
+    if plan_root is not None:
         _reject(
             FailureCode.RESEARCH_PROTOCOL_INVALID,
             "plan",
-            f"expected one plan for epoch {epoch}, found {len(matches)}",
+            "plan-root discovery is forbidden; use --plan or the committed ACTIVE pointer",
         )
-    return matches[0]
+    try:
+        loaded = load_active_execution_plan(repository)
+    except ExecutionPlanError as exc:
+        _reject(exc.code, "plan", exc.detail)
+    pointer_epoch = str(loaded["pointer"]["epoch"])
+    if pointer_epoch != epoch:
+        _reject(
+            FailureCode.RESEARCH_PROTOCOL_INVALID,
+            "plan",
+            f"ACTIVE pointer epoch {pointer_epoch} differs from requested {epoch}",
+        )
+    return repository / loaded["plan_path"]
 
 
 def validate(
@@ -1123,7 +1129,12 @@ def validate(
     inventory_counts: dict[str, int] = {}
     source_commit = "UNAVAILABLE"
     try:
-        resolved_plan = _resolve_plan(plan_path, epoch=epoch, plan_root=plan_root)
+        resolved_plan = _resolve_plan(
+            plan_path,
+            epoch=epoch,
+            plan_root=plan_root,
+            repository=repository,
+        )
         plan_bytes = resolved_plan.read_bytes()
         plan = _strict_json(plan_bytes, stage="plan")
         if plan_bytes != canonical_json_bytes(plan) + b"\n":
@@ -1314,9 +1325,8 @@ def _write_atomic(path: Path, payload: bytes) -> None:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    source = parser.add_mutually_exclusive_group(required=True)
-    source.add_argument("--plan", type=Path)
-    source.add_argument("--plan-root", type=Path)
+    parser.add_argument("--plan", type=Path)
+    parser.add_argument("--plan-root", type=Path)
     parser.add_argument("--epoch", default=EXPECTED_EPOCH)
     parser.add_argument("--repository", type=Path, default=ROOT)
     parser.add_argument("--result-status", type=Path)

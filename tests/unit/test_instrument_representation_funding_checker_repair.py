@@ -308,13 +308,13 @@ class FundingCheckerRepairTests(unittest.TestCase):
     def test_missing_future_and_stale_mark_fail_closed(self) -> None:
         missing = funding_case()
         missing[1][0]["native_mark_price"] = None
-        self.assertIn(FailureCode.MARK_ROLE_INVALID.value, self.validate(missing)[1])
+        self.assertIn(FailureCode.FUNDING_MARK_INVALID.value, self.validate(missing)[1])
 
         future = funding_case(mark_ts=BOUNDARY + 1)
-        self.assertIn(FailureCode.MARK_ROLE_INVALID.value, self.validate(future)[1])
+        self.assertIn(FailureCode.FUNDING_MARK_INVALID.value, self.validate(future)[1])
 
         stale = funding_case(mark_ts=BOUNDARY - 60_000_000_001)
-        self.assertIn(FailureCode.MARK_ROLE_INVALID.value, self.validate(stale)[1])
+        self.assertIn(FailureCode.FUNDING_MARK_INVALID.value, self.validate(stale)[1])
 
     def test_position_opened_after_boundary_is_a_no_position_boundary(self) -> None:
         case = funding_case(signed_qty=None)
@@ -338,31 +338,31 @@ class FundingCheckerRepairTests(unittest.TestCase):
             missing[1][0]["account_balances_before_boundary"],
         )
         missing[2].clear()
-        self.assertIn(FailureCode.FUNDING_DOUBLE_COUNT.value, self.validate(missing)[1])
+        self.assertIn(FailureCode.FUNDING_MISSING.value, self.validate(missing)[1])
 
         wrong_rate = funding_case()
         wrong_rate[1][0]["runtime_updates_at_boundary"][1]["rate"] = "0.0002"
-        self.assertIn(FailureCode.FUNDING_AMBIGUOUS.value, self.validate(wrong_rate)[1])
+        self.assertIn(FailureCode.FUNDING_RATE_INVALID.value, self.validate(wrong_rate)[1])
 
     def test_wrong_mark_position_and_boundary_fail_closed(self) -> None:
         wrong_mark = funding_case()
         wrong_mark[4][0]["value"] = "50000.00000001"
-        self.assertIn(FailureCode.MARK_ROLE_INVALID.value, self.validate(wrong_mark)[1])
+        self.assertIn(FailureCode.FUNDING_MARK_INVALID.value, self.validate(wrong_mark)[1])
 
         wrong_position = funding_case()
         wrong_position[1][0]["open_positions"][0]["signed_qty"] = "2"
-        self.assertIn(FailureCode.FUNDING_AMBIGUOUS.value, self.validate(wrong_position)[1])
+        self.assertIn(FailureCode.FUNDING_POSITION_INVALID.value, self.validate(wrong_position)[1])
 
         wrong_boundary = funding_case()
         wrong_boundary[1][0]["boundary_ns"] = BOUNDARY + 1
-        self.assertIn(FailureCode.FUNDING_AMBIGUOUS.value, self.validate(wrong_boundary)[1])
+        self.assertIn(FailureCode.FUNDING_BOUNDARY_INVALID.value, self.validate(wrong_boundary)[1])
 
     def test_wrong_account_delta_and_no_position_settlement_fail_closed(self) -> None:
         wrong_delta = funding_case()
         wrong_delta[1][0]["account_balances_after_boundary"][0]["total"] = (
             "994.99999999 USDT"
         )
-        self.assertIn(FailureCode.FUNDING_DOUBLE_COUNT.value, self.validate(wrong_delta)[1])
+        self.assertIn(FailureCode.FUNDING_ACCOUNT_DELTA_INVALID.value, self.validate(wrong_delta)[1])
 
         no_position = funding_case(signed_qty=None)
         no_position[1][0]["native_adjustments"] = [{
@@ -379,7 +379,7 @@ class FundingCheckerRepairTests(unittest.TestCase):
             "pnl_change": "-5.00000000 USDT",
             "reason": "funding_settlement:ineligible",
         })
-        self.assertIn(FailureCode.FUNDING_DOUBLE_COUNT.value, self.validate(no_position)[1])
+        self.assertIn(FailureCode.FUNDING_UNEXPECTED_SETTLEMENT.value, self.validate(no_position)[1])
 
 
 class HistoricalCheckerRegressionTests(unittest.TestCase):

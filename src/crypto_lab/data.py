@@ -3194,6 +3194,29 @@ def verify_dataset_raw_inventory(release: DatasetRelease, data_root: Path) -> No
                 )
 
 
+def assert_official_active_raw_inventory(
+    active: set[str],
+    declared_union: set[str],
+    extra_checksums: list[tuple[str, str]] | tuple[tuple[str, str], ...] = (),
+) -> None:
+    """Fail closed when Official DuckDB active objects are not the release union."""
+
+    extra_active = sorted(active - declared_union)
+    missing_active = sorted(declared_union - active)
+    if extra_active or missing_active or len(active) != len(declared_union):
+        raise RuntimeError(
+            "DATASET_RAW_INVENTORY_MISMATCH: DuckDB active raw_objects differ from "
+            "DatasetRelease inventories extra="
+            f"{len(extra_active)} missing={len(missing_active)} "
+            f"active={len(active)} declared_union={len(declared_union)}",
+        )
+    if extra_checksums:
+        raise RuntimeError(
+            "DATASET_RAW_INVENTORY_MISMATCH: publisher_checksums contain "
+            f"inactive archives count={len(extra_checksums)}",
+        )
+
+
 RESEARCH_REBUILD_VALIDATION_SCHEMA = (
     "free-official-binance-deterministic-rebuild-validation-v2-full-raw-inventory"
 )
@@ -3751,6 +3774,7 @@ __all__ = [
     "RawInventoryOrigin",
     "RESEARCH_REBUILD_VALIDATION_SCHEMA",
     "RESEARCH_REBUILD_VALIDATION_REF",
+    "assert_official_active_raw_inventory",
     "validate_research_dataset_rebuild_proof",
     "verify_dataset_raw_inventory",
 ]

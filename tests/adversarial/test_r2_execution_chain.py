@@ -27,6 +27,7 @@ from tests.m1_helpers import plan
 
 
 MINUTE_NS = 60_000_000_000
+ROOT = Path(__file__).resolve().parents[2]
 
 
 class _FutureLowLevelDecisionStrategy(GuardedCausalStrategy):
@@ -81,6 +82,7 @@ class ExecutionChainAdversarialTests(unittest.TestCase):
     def _check(self, evidence_dir: Path):
         return check_evidence_directory(
             evidence_dir,
+            repository_root=ROOT,
             official_source_required=False,
             source_revision_current_head_required=False,
         )

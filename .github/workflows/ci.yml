@@ -205,6 +205,17 @@ jobs:
           tests.unit.test_r2_official_rebuild_plan.R2OfficialRebuildPlanTests.test_r2_research_family_is_new_but_strategy_lineage_is_preserved
           tests.unit.test_r2_official_rebuild_plan.R2OfficialRebuildPlanTests.test_rebuild_validation_must_bind_both_release_inventory_and_catalogs
           tests.unit.test_r2_official_rebuild_plan.R2OfficialRebuildPlanTests.test_uncommitted_registry_bytes_cannot_become_current_authority
+          tests.adversarial.test_l1_active_raw_equality
+          tests.adversarial.test_l2_funding_failure_codes
+          tests.adversarial.test_l3_host_acceptance_attestation
+          tests.adversarial.test_l4_repository_root
+          tests.adversarial.test_execution_plan_active_pointer
+          tests.adversarial.test_r2_active_inventory_supersession
+      - name: Verify committed Host Acceptance attestation still matches product source
+        run: >-
+          .venv/bin/python scripts/verify_host_acceptance_attestation.py
+          --repository "${GITHUB_WORKSPACE}"
+          --portable-only
 
 # This workflow is intentionally not the Official acceptance runner. It proves
 # the locked wheel and installed payload, then runs only host-portable tests.

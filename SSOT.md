@@ -608,11 +608,23 @@ DatasetRelease full Raw inventory == DuckDB actually-used Raw inventory
 ```
 
 The comparison is over the complete typed member identity, not only the
-SHA-256 set. A missing or extra member, wrong hash or size, wrong role or
-locator, mismatched Instrument, Market Profile, or window, a DuckDB source not
-attested by the release, or an attested source not used by the build blocks
-with `DATASET_RAW_INVENTORY_MISMATCH` (or a more specific Raw hash/source code
-when the bytes themselves fail). The portable Evidence MUST contain every
+SHA-256 set. Official DuckDB `raw_objects` (the active set) MUST equal the
+union of DatasetRelease inventories exactly: Spot 774, Perpetual 1,457, and
+2,231 unique active objects for the V1 BTCUSDT research window. Leftover
+historical Raw objects MUST NOT appear in any Official table or Official
+count; they MAY be documented only as an explicit inactive/historical
+inventory that no Official gate reads. The required four-way equality is:
+
+1. DatasetRelease JSON inventory;
+2. DuckDB active members;
+3. the actually-used Raw inventory;
+4. catalog derivation inputs.
+
+A missing member, extra member, wrong role, wrong Market Profile, wrong
+Instrument, wrong hash, or wrong locator fails with
+`DATASET_RAW_INVENTORY_MISMATCH` (or a more specific Raw hash/source code
+when the bytes themselves fail). A DuckDB source not attested by the release,
+or an attested source not used by the build, likewise blocks. The portable Evidence MUST contain every
 identity and binding required to repeat that proof without implicit builder
 knowledge; the large immutable Raw bytes may remain in their separately
 managed content-addressed corpus.
@@ -733,7 +745,7 @@ The project MUST NOT:
 - copy a last-price row into a mark-price role;
 - silently deduplicate conflicting rows.
 
-For execution coverage, `SOURCE_CONFLICT` blocks with `DATA_DUPLICATE_CONFLICT` unless a more specific role-conflict code applies; `SOURCE_INCOMPLETE` blocks with `DATA_SOURCE_INVALID`, `DATA_HASH_MISMATCH`, or `DATA_GAP` as the preserved evidence requires; and `UNRESOLVED_GAP` blocks with `DATA_GAP`. A required mark minute absent from every allowed free official representation blocks the window with `IRRECOVERABLE_OFFICIAL_MARK_DELIVERY_GAP`; any other unusable required mark minute blocks with `DATA_GAP` unless a more specific mark-role code applies. A conflicting or semantically unresolved funding event is `FUNDING_AMBIGUOUS`; a proven missing required funding event is `FUNDING_MISSING`.
+For execution coverage, `SOURCE_CONFLICT` blocks with `DATA_DUPLICATE_CONFLICT` unless a more specific role-conflict code applies; `SOURCE_INCOMPLETE` blocks with `DATA_SOURCE_INVALID`, `DATA_HASH_MISMATCH`, or `DATA_GAP` as the preserved evidence requires; and `UNRESOLVED_GAP` blocks with `DATA_GAP`. A required mark minute absent from every allowed free official representation blocks the window with `IRRECOVERABLE_OFFICIAL_MARK_DELIVERY_GAP`; any other unusable required mark minute blocks with `DATA_GAP` unless a more specific mark-role code applies. A conflicting or semantically unresolved funding event is `FUNDING_AMBIGUOUS`; a proven missing required funding event is `FUNDING_MISSING`. Native funding tamper diagnosis MUST use the most specific code: missing settlement `FUNDING_MISSING`; duplicate settlement `FUNDING_DOUBLE_COUNT`; unexpected settlement with no eligible position `FUNDING_UNEXPECTED_SETTLEMENT`; wrong boundary `FUNDING_BOUNDARY_INVALID`; wrong position or checkpoint `FUNDING_POSITION_INVALID`; wrong rate `FUNDING_RATE_INVALID`; wrong mark at the funding boundary `FUNDING_MARK_INVALID`; wrong sign `FUNDING_SIGN_INVALID`; wrong amount `FUNDING_AMOUNT_INVALID`; wrong currency `FUNDING_CURRENCY_INVALID`; wrong account delta `FUNDING_ACCOUNT_DELTA_INVALID`. When more than one funding defect is present, persist unique codes in that fixed order, then `FUNDING_AMBIGUOUS`, then `MARK_ROLE_INVALID` for mark-stream defects that are not funding-boundary mark mismatches. A generic `FUNDING_DOUBLE_COUNT` or `FUNDING_AMBIGUOUS` MUST NOT replace a more specific diagnosis.
 
 #### 4.5.1 Official source reconciliation
 
@@ -2375,14 +2387,22 @@ After a value passes boundary validation, use typed internal values. Do not scat
 Keep one source of truth for each material decision.
 
 Every `LabRunRequest` and `OfficialLabRunRequest` MUST carry an explicit,
-typed `repository_root`. Runtime Lock, dependency lock, Source Revision,
-Dataset/catalog, bootstrap authority, and evidence paths MUST resolve from
-that caller-bound root. Product Code MUST NOT infer repository authority from
-`__file__`, the installed Wheel or `site-packages` location, the current
-working directory, `sys.path`, or an environment fallback. A fresh-Wheel
-qualification fixture MUST execute the installed `crypto_lab` payload while
-using only its explicit repository root for external authority bytes, and a
-mutated package-location root MUST have no effect.
+typed `repository_root`. `verify_official_seal` and every Official or
+authority-sensitive checker path MUST take the same mandatory argument.
+Runtime Lock, dependency lock, Source Revision, Dataset/catalog, bootstrap
+authority, and evidence paths MUST resolve from that caller-bound root.
+Product Code MUST NOT infer repository authority from `__file__`, the
+installed Wheel or `site-packages` location, the current working directory,
+`sys.path`, or an environment fallback. The bound root MUST be an existing
+absolute directory that is not a symlink, whose Git toplevel equals that
+path, that contains `SSOT.md` as a regular file, and that matches the bound
+Source Revision commit when current-HEAD verification is required. `None`, a
+relative path, a missing path, a symlink root, a copied `crypto_lab` package
+tree outside the repository, and a root that does not match the expected
+authority or commit MUST fail closed. A fresh-Wheel qualification fixture
+MUST execute the installed `crypto_lab` payload while using only its explicit
+repository root for external authority bytes, and a mutated package-location
+root MUST have no effect.
 
 ### 11.4 Illegal states
 
@@ -2781,6 +2801,15 @@ FEE_DOUBLE_COUNT
 FUNDING_MISSING
 FUNDING_AMBIGUOUS
 FUNDING_DOUBLE_COUNT
+FUNDING_UNEXPECTED_SETTLEMENT
+FUNDING_SIGN_INVALID
+FUNDING_RATE_INVALID
+FUNDING_MARK_INVALID
+FUNDING_POSITION_INVALID
+FUNDING_BOUNDARY_INVALID
+FUNDING_CURRENCY_INVALID
+FUNDING_AMOUNT_INVALID
+FUNDING_ACCOUNT_DELTA_INVALID
 MARK_ROLE_INVALID
 DETERMINISM_FAILURE
 DETERMINISTIC_REBUILD_MISMATCH
@@ -2868,7 +2897,31 @@ A research claim is valid only when:
 - `MechanicalIntegrity=PASS`;
 - `ResearchEligibility=ELIGIBLE`.
 
-### 16.4 V1 laboratory completion
+### 16.4 Portable review versus Host Acceptance
+
+GitHub Actions workflow `portable-review-gates` is a portable review gate. It
+proves locked wheels, installed payload identity, and host-portable tests. It
+is not Official acceptance. Host-bound tests that require the exact host
+Runtime Lock, the committed bootstrap authority, or the preserved untracked
+Raw corpus MUST remain executable on the host and MUST NOT be deleted, skipped,
+or rewritten as XFail to produce a portable PASS.
+
+Official host acceptance is a separate cryptographic attestation bound to the
+product source tree, SSOT, locks, schemas, configs, runtime payload, Raw
+inventory identities, DuckDB/Release/catalog identities, and the exact
+acceptance runner and test set executed. A later material edit invalidates
+that attestation. Portable CI MUST verify that the committed attestation still
+matches the current product-source identity; green portable CI alone is never
+Official acceptance.
+
+The current-stage Official execution plan MUST be a committed immutable
+artifact with an explicit ACTIVE pointer. Historical plans, including
+retry-006, remain evidence and MUST NOT be edited. Final validators MUST
+resolve the ACTIVE pointer and MUST fail closed on a missing plan, a wrong
+plan hash, a wrong workflow binding, or a stale ACTIVE pointer. They MUST NOT
+treat a live `/tmp` plan or a historical plan as current.
+
+### 16.5 V1 laboratory completion
 
 The laboratory is complete when all M0-M4 acceptance criteria pass and these end-to-end fixtures pass from a clean process:
 

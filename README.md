@@ -46,6 +46,11 @@ Wheel. All 20 local phases pass, including 568-test Full/Fresh/Reverse runs,
 targeted mutations, Raw/provenance gates, both financial reconciliations,
 Official seals, deterministic replays, and a fresh installed-Wheel process.
 Every published retry-011 result remains Development-only and claim-ineligible.
+The GitHub Actions workflow `portable-review-gates` is a portable review gate
+only. A green portable CI run is not Official host acceptance. Official
+acceptance is the host attestation bound to product-source identity, SSOT,
+locks, Raw/DuckDB/Release/catalog identities, and the executed acceptance
+runner.
 
 ## Merge-history safety
 

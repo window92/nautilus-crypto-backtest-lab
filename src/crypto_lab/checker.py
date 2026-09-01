@@ -42,8 +42,10 @@ from crypto_lab.perpetual_reconciliation import validate_perpetual_native_accoun
 from crypto_lab.perpetual_reconciliation import validate_perpetual_reconciliation
 from crypto_lab.perpetual_reconciliation import replay_perpetual_valuation_states
 from crypto_lab.runtime import validate_persisted_runtime_identity
+from crypto_lab.git_identity import require_repository_root
 from crypto_lab.status import FailureCode
 from crypto_lab.status import canonicalize_evidence_failure_codes
+from crypto_lab.status import ordered_funding_failure_codes
 from crypto_lab.status import validated_failure_codes
 from crypto_lab.timestamps import utc_datetime_to_ns
 from crypto_lab.strategies import RegisteredStrategyIdentity
@@ -1280,9 +1282,10 @@ def validate_official_funding_binding(
         repetitions is None
         or declared_source_count != len(source_events)
         or declared_runtime_count != repetitions * len(source_events)
-        or set(source_by_boundary) != set(checkpoint_by_boundary)
     ):
         failures.append(FailureCode.FUNDING_AMBIGUOUS.value)
+    if set(source_by_boundary) != set(checkpoint_by_boundary):
+        failures.append(FailureCode.FUNDING_BOUNDARY_INVALID.value)
 
     expected_adjustments: list[tuple[int, Decimal]] = []
     applicable = 0
@@ -1299,21 +1302,38 @@ def validate_official_funding_binding(
             if native_binding == FUNDING_NATIVE_BINDING_RC2_EXPLICIT_BOUNDARY_PAIR
             else None
         )
+        runtime_rates = []
+        runtime_boundaries_ok = True
+        for item in runtime_updates:
+            try:
+                runtime_rates.append(Decimal(str(item.get("rate"))))
+                if (
+                    int(item.get("ts_event", -1)) != boundary
+                    or int(item.get("ts_init", -1)) != boundary
+                    or item.get("next_funding_ns") != expected_next_funding_ns
+                ):
+                    runtime_boundaries_ok = False
+            except Exception:
+                runtime_boundaries_ok = False
+        if not runtime_boundaries_ok:
+            failures.append(FailureCode.FUNDING_BOUNDARY_INVALID.value)
+        rate_invalid = bool(runtime_rates) and any(item != rate for item in runtime_rates)
+        if rate_invalid:
+            failures.append(FailureCode.FUNDING_RATE_INVALID.value)
         runtime_pair_ok = bool(
             repetitions is not None
             and len(runtime_updates) == repetitions
             and checkpoint.get("source_event_key") == source_event["event_key"]
+            and runtime_boundaries_ok
+            and runtime_rates
+            and not rate_invalid
             and all(
-                Decimal(str(item.get("rate"))) == rate
-                and int(item.get("interval", -1))
+                int(item.get("interval", -1))
                 == int(source_event["funding_interval_hours"]) * 60
-                and int(item.get("ts_event", -1)) == boundary
-                and int(item.get("ts_init", -1)) == boundary
-                and item.get("next_funding_ns") == expected_next_funding_ns
                 for item in runtime_updates
             )
         )
-        if not runtime_pair_ok:
+        if not runtime_pair_ok and not rate_invalid and runtime_boundaries_ok:
             failures.append(FailureCode.FUNDING_AMBIGUOUS.value)
 
         positions = checkpoint.get("open_positions", [])
@@ -1355,13 +1375,13 @@ def validate_official_funding_binding(
         else:
             applicable += 1
         if not checkpoint_position_ok:
-            failures.append(FailureCode.FUNDING_AMBIGUOUS.value)
+            failures.append(FailureCode.FUNDING_POSITION_INVALID.value)
             continue
         if expected_signed_qty == 0:
             if positions or native:
-                failures.append(FailureCode.FUNDING_DOUBLE_COUNT.value)
+                failures.append(FailureCode.FUNDING_UNEXPECTED_SETTLEMENT.value)
             if checkpoint.get("account_events_at_boundary"):
-                failures.append(FailureCode.FUNDING_DOUBLE_COUNT.value)
+                failures.append(FailureCode.FUNDING_UNEXPECTED_SETTLEMENT.value)
             before_totals = _account_balance_totals(
                 checkpoint.get("account_balances_before_boundary"),
             )
@@ -1381,7 +1401,7 @@ def validate_official_funding_binding(
                 or after_totals is None
                 or (not lazy_initialization and before_totals != after_totals)
             ):
-                failures.append(FailureCode.FUNDING_AMBIGUOUS.value)
+                failures.append(FailureCode.FUNDING_UNEXPECTED_SETTLEMENT.value)
             continue
 
         mark = checkpoint.get("native_mark_price")
@@ -1395,7 +1415,7 @@ def validate_official_funding_binding(
             or int(mark.get("ts_init", -1)) != int(expected_mark["ts_init"])
             or Decimal(str(mark.get("value"))) != Decimal(str(expected_mark["value"]))
         ):
-            failures.append(FailureCode.MARK_ROLE_INVALID.value)
+            failures.append(FailureCode.FUNDING_MARK_INVALID.value)
             continue
         mark_ts = int(mark.get("ts_event", -1))
         age = boundary - mark_ts
@@ -1408,12 +1428,15 @@ def validate_official_funding_binding(
             != "LATEST_CAUSAL_AT_OR_BEFORE_FUNDING_TIMESTAMP"
             or int(checkpoint.get("native_mark_age_ns", -1)) != age
         ):
-            failures.append(FailureCode.MARK_ROLE_INVALID.value)
+            failures.append(FailureCode.FUNDING_MARK_INVALID.value)
             continue
 
         expected = (
             -expected_signed_qty * Decimal(str(mark["value"])) * rate
         ).quantize(Decimal("0.00000001"))
+        if len(native) == 0:
+            failures.append(FailureCode.FUNDING_MISSING.value)
+            continue
         if len(native) != 1:
             failures.append(FailureCode.FUNDING_DOUBLE_COUNT.value)
             continue
@@ -1426,19 +1449,33 @@ def validate_official_funding_binding(
         )
         adjustment_money = str(adjustment.get("pnl_change", "")).split(" ", maxsplit=1)
         account_events = checkpoint.get("account_events_at_boundary")
+        try:
+            actual_amount = _commission_amount(str(adjustment.get("pnl_change")))
+        except Exception:
+            actual_amount = None
+        settlement_defects: list[str] = []
+        if int(adjustment.get("ts_event", -1)) != boundary or any(
+            int(event.get("ts_event", -1)) != boundary
+            for event in account_events or ()
+        ):
+            settlement_defects.append(FailureCode.FUNDING_BOUNDARY_INVALID.value)
+        if len(adjustment_money) != 2 or adjustment_money[1] != settlement_currency:
+            settlement_defects.append(FailureCode.FUNDING_CURRENCY_INVALID.value)
+        if actual_amount is not None and actual_amount == -expected and expected != 0:
+            settlement_defects.append(FailureCode.FUNDING_SIGN_INVALID.value)
+        elif actual_amount != expected:
+            settlement_defects.append(FailureCode.FUNDING_AMOUNT_INVALID.value)
         if not (
             adjustment.get("adjustment_type") == "FUNDING"
             and adjustment.get("instrument_id") == instrument_id
-            and int(adjustment.get("ts_event", -1)) == boundary
-            and _commission_amount(str(adjustment.get("pnl_change"))) == expected
-            and len(adjustment_money) == 2
-            and adjustment_money[1] == settlement_currency
             and str(adjustment.get("reason", "")).startswith("funding_settlement:")
             and isinstance(account_events, list)
             and bool(account_events)
-            and all(int(event.get("ts_event", -1)) == boundary for event in account_events)
         ):
-            failures.append(FailureCode.FUNDING_DOUBLE_COUNT.value)
+            settlement_defects.append(FailureCode.FUNDING_AMBIGUOUS.value)
+        failures.extend(settlement_defects)
+        if settlement_defects:
+            expected_adjustments.append((boundary, expected))
             continue
 
         before_totals = _account_balance_totals(
@@ -1463,8 +1500,7 @@ def validate_official_funding_binding(
             )
         )
         if not account_delta_ok:
-            failures.append(FailureCode.FUNDING_DOUBLE_COUNT.value)
-            continue
+            failures.append(FailureCode.FUNDING_ACCOUNT_DELTA_INVALID.value)
         expected_adjustments.append((boundary, expected))
 
     actual_adjustments: list[tuple[int, Decimal]] = []
@@ -1482,10 +1518,37 @@ def validate_official_funding_binding(
         except Exception:
             failures.append(FailureCode.FUNDING_AMBIGUOUS.value)
     actual_adjustments.sort()
-    if actual_adjustments != sorted(expected_adjustments):
-        failures.append(FailureCode.FUNDING_DOUBLE_COUNT.value)
+    expected_sorted = sorted(expected_adjustments)
+    if actual_adjustments != expected_sorted:
+        actual_ts = {item[0] for item in actual_adjustments}
+        expected_ts = {item[0] for item in expected_sorted}
+        missing_ts = expected_ts - actual_ts
+        extra_ts = actual_ts - expected_ts
+        if missing_ts:
+            failures.append(FailureCode.FUNDING_MISSING.value)
+        if extra_ts:
+            unknown = extra_ts - set(source_by_boundary)
+            if unknown:
+                failures.append(FailureCode.FUNDING_UNEXPECTED_SETTLEMENT.value)
+            elif expected_ts:
+                failures.append(FailureCode.FUNDING_DOUBLE_COUNT.value)
+        if not missing_ts and not extra_ts:
+            amount_mismatch = False
+            sign_mismatch = False
+            for timestamp, expected_amount in expected_sorted:
+                actual_amount = next(
+                    amount for ts, amount in actual_adjustments if ts == timestamp
+                )
+                if actual_amount == -expected_amount and expected_amount != 0:
+                    sign_mismatch = True
+                elif actual_amount != expected_amount:
+                    amount_mismatch = True
+            if sign_mismatch:
+                failures.append(FailureCode.FUNDING_SIGN_INVALID.value)
+            if amount_mismatch:
+                failures.append(FailureCode.FUNDING_AMOUNT_INVALID.value)
 
-    unique_failures = tuple(dict.fromkeys(failures))
+    unique_failures = ordered_funding_failure_codes(failures)
     return (
         not unique_failures,
         unique_failures,
@@ -1513,12 +1576,13 @@ validate_owner_smoke_funding_binding = validate_official_funding_binding
 def check_evidence_directory(
     run_dir: Path,
     *,
-    repository_root: Path = ROOT,
+    repository_root: Path,
     official_source_required: bool | None = None,
     source_revision_current_head_required: bool = True,
 ) -> CheckerReport:
     """Check immutable files without writing to the directory or engine state."""
 
+    repository_root = require_repository_root(repository_root)
     checks: list[dict[str, Any]] = []
     failures: list[str] = []
     blocked: list[str] = []

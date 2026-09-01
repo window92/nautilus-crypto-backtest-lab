@@ -28,6 +28,8 @@ from tests.m1_helpers import a4_bars
 from tests.m1_helpers import make_request
 from tests.m1_helpers import plan
 
+ROOT = Path(__file__).resolve().parents[2]
+
 
 class R2FailureCodeVocabularyTests(unittest.TestCase):
     def test_product_output_rejects_unknown_codes_but_evidence_maps_them_closed(self) -> None:
@@ -134,7 +136,10 @@ class R2FailureCodeVocabularyTests(unittest.TestCase):
                     else:
                         tampered[field] = mutation
                     result_path.write_bytes(canonical_json_bytes(tampered) + b"\n")
-                    report = check_evidence_directory(result.evidence_dir)
+                    report = check_evidence_directory(
+                        result.evidence_dir,
+                        repository_root=ROOT,
+                    )
                     self.assertEqual(
                         report.outcome,
                         CheckerOutcome.COMPONENT_CHECK_BLOCKED,

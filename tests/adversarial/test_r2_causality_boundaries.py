@@ -37,6 +37,7 @@ from tests.m1_helpers import make_request
 from tests.m1_helpers import plan
 from tests.m1_helpers import source_revision
 
+ROOT = Path(__file__).resolve().parents[2]
 
 MINUTE_NS = 60_000_000_000
 DAY_NS = 86_400_000_000_000
@@ -285,6 +286,7 @@ class R2CausalityBoundaryTests(unittest.TestCase):
                 )
                 report = check_evidence_directory(
                     result.evidence_dir,
+                    repository_root=ROOT,
                     official_source_required=False,
                     source_revision_current_head_required=False,
                 )
@@ -321,6 +323,7 @@ class R2CausalityBoundaryTests(unittest.TestCase):
                 )
                 report = check_evidence_directory(
                     result.evidence_dir,
+                    repository_root=ROOT,
                     official_source_required=False,
                     source_revision_current_head_required=False,
                 )

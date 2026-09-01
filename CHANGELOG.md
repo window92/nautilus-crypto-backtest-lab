@@ -5,6 +5,26 @@ remains `SSOT.md`; this file does not change normative behavior.
 
 ## [Unreleased] - 1.0.1.dev0
 
+### Owner sign-off residual closure
+
+- Required an explicit `repository_root` for `verify_official_seal` and the
+  Official checker path, and removed the `__file__` fallback from that
+  authority boundary.
+- Added precise Perpetual funding FailureCodes so missing, duplicate, sign,
+  rate, mark, position, boundary, currency, amount, account-delta, and
+  unexpected-settlement defects fail with the matching code.
+- Required Official DuckDB active `raw_objects` to equal the DatasetRelease
+  inventories exactly (Spot 774, Perpetual 1,457, union 2,231) and documented
+  the twelve retry-009 leftovers as historical/inactive.
+- Split portable GitHub CI from Host Acceptance: CI verifies a committed
+  cryptographic attestation against current product-source identity and is
+  not Official acceptance.
+- Added a committed ACTIVE execution-plan pointer so historical retry-006
+  and deleted `/tmp` plans cannot be treated as current.
+- Classified the complete retry-011 Primary/Replay set as additive
+  `SUPERSEDED` after the Official active-Raw-inventory repair. The
+  classification does not claim a financial defect in those bytes.
+
 ### Adversarial audit remediation R2
 
 - Corrected the claim gate's Holdout state model: Development/Validation/OOS

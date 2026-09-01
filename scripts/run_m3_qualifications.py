@@ -158,7 +158,7 @@ def _duplicate_funding_control(staging: Path, perpetual: dict[str, Any]) -> dict
     funding = target / "funding.csv"
     rows = funding.read_text(encoding="utf-8").splitlines()
     funding.write_text("\n".join([*rows, rows[1]]) + "\n", encoding="utf-8")
-    report = check_evidence_directory(target)
+    report = check_evidence_directory(target, repository_root=ROOT)
     result = {
         "schema": "m3-checker-tamper-control-v1",
         "control": "DUPLICATE_FUNDING_SETTLEMENT",

@@ -20,6 +20,7 @@ import duckdb
 from crypto_lab.config import MarketProfile
 from crypto_lab.data import DatasetRawInventory
 from crypto_lab.data import DatasetRelease
+from crypto_lab.data import assert_official_active_raw_inventory
 from crypto_lab.hashing import canonical_json_bytes
 from crypto_lab.hashing import canonical_sha256
 
@@ -227,6 +228,7 @@ def validate_full_raw_inventories(connection: duckdb.DuckDBPyConnection) -> list
         ).fetchall()
     }
     results: list[dict[str, Any]] = []
+    union_declared: set[str] = set()
     for row in connection.execute(
         """
         SELECT dataset_release_id, market_profile, raw_inventory_identity,
@@ -278,8 +280,11 @@ def validate_full_raw_inventories(connection: duckdb.DuckDBPyConnection) -> list
         if not declared == members == projected == verified:
             raise RuntimeError(
                 "DATASET_RAW_INVENTORY_MISMATCH: "
-                "release/member/participation/blob inventory differs",
+                "release/member/participation/blob inventory differs "
+                f"declared={len(declared)} members={len(members)} "
+                f"projected={len(projected)} verified={len(verified)}",
             )
+        union_declared.update(declared)
         inventory_by_hash = {item.raw_object_sha256: item for item in inventory.raw_objects}
         if any(
             item.byte_size != raw_rows[digest][0]
@@ -344,6 +349,17 @@ def validate_full_raw_inventories(connection: duckdb.DuckDBPyConnection) -> list
                 "four_way_equality": True,
             },
         )
+    extra_checksums = [
+        row
+        for row in connection.execute(
+            """
+            SELECT archive_raw_object_sha256, checksum_raw_object_sha256
+            FROM publisher_checksums
+            """,
+        ).fetchall()
+        if row[0] not in union_declared or row[1] not in union_declared
+    ]
+    assert_official_active_raw_inventory(set(raw_rows), union_declared, extra_checksums)
     return results
 
 
