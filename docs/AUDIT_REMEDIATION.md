@@ -107,6 +107,22 @@ pre-final qualification history; their otherwise valid v2 record IDs cannot
 authorize a new Owner workflow. Re-running a current validator over legacy
 bytes does not upgrade them.
 
+After the data-builder SSOT binding was repaired, a fresh two-build
+Raw-to-DuckDB-and-catalog verification was executed from clean local/remote
+commit `e79f70a63aa03154522d961a35f1d84a8059b45a`. The additive canonical proof
+is `data-rebuild-reverification-retry-007.json` (SHA-256
+`ebbf5fee5d4bf4ec4195a18aaa08da123866f70d4b82cc99233155a8d31bbb49`).
+The Primary and independent physical DuckDB hashes differ, as permitted, but
+the validator reports the same semantic database identity
+`df7aeddd2f8cd2274cc6ccb5e568c98ffd896fd69e608067442b0182f0332c7b`,
+the same two DatasetRelease identities, the same two catalog identities, and
+exact four-way inventory equality for all 774 Spot and 1457 Perpetual Raw
+objects. A recursive comparison with the prior committed proof differs only
+in the two physical database hashes and sizes; no release, catalog, Raw
+inventory, table, row-count, disposition, funding, Mark, or market-state
+semantic changed. The large retry databases are temporary rebuild products,
+not replacement historical Evidence.
+
 The following older registries remain preserved as historical records; they
 do not override the v2 result status:
 
