@@ -7,6 +7,12 @@ remains `SSOT.md`; this file does not change normative behavior.
 
 ### Adversarial audit remediation R2
 
+- Made `repository_root` a mandatory typed field of Qualification as well as
+  Official run requests. Runtime, source, Dataset/catalog, bootstrap, and
+  evidence authorities can no longer be inferred from the Product module's
+  source-tree or installed-Wheel location; fresh-Wheel tests mutate that
+  location and execute the installed Product payload against the explicit
+  root.
 - Enforced the unchanged full signal-interval scoring rule at execution,
   daily/weekly aggregation, low-level strategy, checker, diagnostic, and replay
   boundaries; `decision_timestamp` no longer makes a warmup interval eligible.

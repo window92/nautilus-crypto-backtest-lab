@@ -2362,6 +2362,16 @@ After a value passes boundary validation, use typed internal values. Do not scat
 
 Keep one source of truth for each material decision.
 
+Every `LabRunRequest` and `OfficialLabRunRequest` MUST carry an explicit,
+typed `repository_root`. Runtime Lock, dependency lock, Source Revision,
+Dataset/catalog, bootstrap authority, and evidence paths MUST resolve from
+that caller-bound root. Product Code MUST NOT infer repository authority from
+`__file__`, the installed Wheel or `site-packages` location, the current
+working directory, `sys.path`, or an environment fallback. A fresh-Wheel
+qualification fixture MUST execute the installed `crypto_lab` payload while
+using only its explicit repository root for external authority bytes, and a
+mutated package-location root MUST have no effect.
+
 ### 11.4 Illegal states
 
 Prefer types and closed enums that make these states impossible:

@@ -19,6 +19,7 @@ to make it conform to the new contract.
 | Audited base at `b5c865c28b83526ffab38152e7e6821f39b77014` | `9232ebca20e3933b8b36538991001880ae54dbbe37b2da322dca2ac6608d0917` | Immutable historical contract bytes |
 | R2 remediated contract | `c55f73ef591926081dbdaecb59002c60dad62fa13045fa393ab035353b196142` | New contract bytes; new Runs additionally bind their final committed Git Source Revision |
 | R2 pinned-native-precision addendum | `cc71cccda50e5905cfa3d4fbba12062df739c871538944f4c32c686d128d006d` | Strengthens Perpetual fixed/binary64 reconciliation after the retained retry-007 Candidate A negative control; the preceding R2 identity remains historical |
+| R2 explicit repository-authority addendum | `9dbf82fee879a7ae0865b77619e2966cc9b9e1cea86cf8b85674e3a20983d256` | Requires Qualification and Official requests to resolve all external authority from a caller-bound repository root; package/install location inference is forbidden |
 
 ## Authority model
 

@@ -174,6 +174,14 @@ PY
 The expected output is `2.0.0rc2` followed by
 `716169aca15bfb615a27610a9230e670dec5be3d4606fea591fe64eca145a5ac`.
 
+Both Qualification and Official run requests bind an explicit
+`repository_root`. The installed `crypto_lab` Wheel location is never treated
+as the repository authority: Runtime/Dependency Locks, Source Revision,
+Dataset/catalog inputs, bootstrap authority, and Evidence resolve only below
+the caller-bound root. This is required for the same Product Wheel to execute
+from an isolated environment without silently looking for authority files in
+`site-packages`.
+
 That interactive command is a runtime diagnostic, not an Official startup.
 An Official child starts through the standard-library bootstrap with
 `-I -P -S -B -X pycache_prefix=/dev/null`, an exact environment allowlist,

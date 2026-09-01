@@ -249,7 +249,10 @@ def main() -> int:
         profile.value: {
             "strategy_spec": qualification_strategy_inputs(profile).strategy_spec.to_builtins(),
             "strategy_plan": qualification_strategy_inputs(profile).strategy_plan.material_payload(),
-            "dataset_release_id": qualification_dataset_release(profile).dataset_release_id,
+            "dataset_release_id": qualification_dataset_release(
+                profile,
+                repository_root=ROOT,
+            ).dataset_release_id,
         }
         for profile in MarketProfile
     }
@@ -426,7 +429,10 @@ def main() -> int:
             runtime_lock_sha256=sha256_file(ROOT / "runtime.lock.json"),
             source_revision=source,
             base_dataset_release_id=base_id,
-            dataset_release_id=qualification_dataset_release(profile).dataset_release_id,
+            dataset_release_id=qualification_dataset_release(
+                profile,
+                repository_root=ROOT,
+            ).dataset_release_id,
             strategy_spec_id=canonical_sha256(
                 {key: value for key, value in strategy_spec.items() if key != "strategy_id"},
             ),

@@ -91,7 +91,7 @@ class R2OfficialRebuildPlanTests(unittest.TestCase):
 
     def test_m3_qualification_release_cannot_authorize_official_research(self) -> None:
         for profile in PROFILE_ORDER:
-            release = qualification_dataset_release(profile)
+            release = qualification_dataset_release(profile, repository_root=ROOT)
             self.assertTrue(release.has_full_raw_inventory)
             with self.subTest(profile=profile.value), self.assertRaisesRegex(
                 RuntimeError,

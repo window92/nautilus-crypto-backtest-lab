@@ -15,6 +15,9 @@ from crypto_lab.m3 import qualification_dataset_release
 from crypto_lab.m3 import validate_m3_dataset_release
 
 
+ROOT = Path(__file__).resolve().parents[2]
+
+
 def source_revision() -> SourceRevision:
     return SourceRevision(
         repository="https://github.com/window92/nautilus-crypto-backtest-lab.git",
@@ -35,7 +38,7 @@ class M3DatasetInterfaceTests(unittest.TestCase):
             ).read_bytes(),
         )
         with self.assertRaisesRegex(ValueError, "schema-v2.*full Raw inventory"):
-            validate_m3_dataset_release(legacy)
+            validate_m3_dataset_release(legacy, repository_root=ROOT)
 
     def test_public_run_request_receives_strict_dataset_release_without_conversion(self) -> None:
         for profile, base_id in (
@@ -45,12 +48,13 @@ class M3DatasetInterfaceTests(unittest.TestCase):
                 PERPETUAL_BASE_RELEASE_ID,
             ),
         ):
-            release = qualification_dataset_release(profile)
+            release = qualification_dataset_release(profile, repository_root=ROOT)
             with tempfile.TemporaryDirectory() as temporary:
                 request = build_m3_request(
                     release,
                     source_revision=source_revision(),
                     evidence_root=Path(temporary),
+                    repository_root=ROOT,
                     run_id=f"m3-interface-{profile.value.lower()}",
                 )
             self.assertIs(request.dataset_release, release)
@@ -64,21 +68,27 @@ class M3DatasetInterfaceTests(unittest.TestCase):
             self.assertEqual(request.data, ())
 
     def test_profile_configs_bind_runtime_fee_mark_funding_and_limits_explicitly(self) -> None:
-        spot = qualification_dataset_release(MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY)
+        spot = qualification_dataset_release(
+            MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY,
+            repository_root=ROOT,
+        )
         perp = qualification_dataset_release(
             MarketProfile.BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING,
+            repository_root=ROOT,
         )
         with tempfile.TemporaryDirectory() as temporary:
             spot_request = build_m3_request(
                 spot,
                 source_revision=source_revision(),
                 evidence_root=Path(temporary),
+                repository_root=ROOT,
                 run_id="m3-spot-contract",
             )
             perp_request = build_m3_request(
                 perp,
                 source_revision=source_revision(),
                 evidence_root=Path(temporary),
+                repository_root=ROOT,
                 run_id="m3-perp-contract",
             )
         self.assertEqual(spot_request.lab_run_config.nautilus_venue_config.account_type, "CASH")

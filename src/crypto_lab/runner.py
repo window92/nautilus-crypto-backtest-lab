@@ -103,6 +103,7 @@ class LabRunRequest:
     data: tuple[Any, ...]
     strategy_plan: StrategyPlan
     evidence_root: Path
+    repository_root: Path
     qualification_control: QualificationControl
 
     def __post_init__(self) -> None:
@@ -114,8 +115,11 @@ class LabRunRequest:
             raise TypeError("strategy_spec must be StrategySpec")
         if not isinstance(self.strategy_plan, StrategyPlan):
             raise TypeError("strategy_plan must be StrategyPlan")
-        if not isinstance(self.evidence_root, Path):
-            raise TypeError("evidence_root must be pathlib.Path")
+        if not isinstance(self.evidence_root, Path) or not isinstance(
+            self.repository_root,
+            Path,
+        ):
+            raise TypeError("evidence_root and repository_root must be pathlib.Path")
         if not isinstance(self.qualification_control, QualificationControl):
             raise TypeError("qualification_control must be QualificationControl")
         if not isinstance(
@@ -438,7 +442,7 @@ def _preflight_identity(
     runtime_identity: dict[str, Any] | None = None
     lock: RuntimeLock | None = None
     qualification_authority: dict[str, Any] | None = None
-    repository_root = config.repository_root if isinstance(config, OfficialLabRunRequest) else ROOT
+    repository_root = config.repository_root
     observed_runtime_lock_sha256 = sha256_file(repository_root / "runtime.lock.json")
     if observed_runtime_lock_sha256 != run.runtime_lock_sha256:
         failures.append(FailureCode.RUNTIME_LOCK_MISMATCH.value)
@@ -736,7 +740,7 @@ def _preflight_identity(
         try:
             verify_source_revision(
                 config.source_revision,
-                repository=ROOT,
+                repository=repository_root,
                 require_current_head=True,
                 require_clean=True,
             )
@@ -1863,7 +1867,7 @@ def _run_bound(
     """Execute a request after its qualification/Official boundary is fixed."""
 
     run = config.lab_run_config
-    repository_root = config.repository_root if isinstance(config, OfficialLabRunRequest) else ROOT
+    repository_root = config.repository_root
     (
         preflight,
         preflight_diagnostics,

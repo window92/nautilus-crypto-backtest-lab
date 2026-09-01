@@ -45,7 +45,6 @@ M3_FEE_RATE = Decimal("0.001")
 COMPONENT_CHECK_PASS = "COMPONENT_CHECK_PASS"
 LEGACY_CHECK_PASS = "CHECK_PASS"
 ROOT = Path(__file__).resolve().parents[2]
-QUALIFICATION_TEMPLATE = ROOT / "configs/m3/qualification-run-template.json"
 
 
 class ProfileQualificationState(StrEnum):
@@ -477,35 +476,54 @@ def _iso(value: Any) -> str:
     return value.isoformat().replace("+00:00", "Z")
 
 
-def _base_release(profile: MarketProfile) -> DatasetRelease:
+def _repository_root(value: Path) -> Path:
+    if not isinstance(value, Path):
+        raise TypeError("repository_root must be pathlib.Path")
+    root = value.resolve(strict=True)
+    if not root.is_dir():
+        raise ValueError("repository_root must be a directory")
+    return root
+
+
+def _base_release(profile: MarketProfile, *, repository_root: Path) -> DatasetRelease:
     identity = (
         SPOT_BASE_RELEASE_ID
         if profile is MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY
         else PERPETUAL_BASE_RELEASE_ID
     )
     return DatasetRelease.from_json_bytes(
-        (ROOT / "data/releases" / f"{identity}.json").read_bytes(),
+        (repository_root / "data/releases" / f"{identity}.json").read_bytes(),
     )
 
 
-def qualification_dataset_release(profile: MarketProfile) -> DatasetRelease:
+def qualification_dataset_release(
+    profile: MarketProfile,
+    *,
+    repository_root: Path,
+) -> DatasetRelease:
     """Load the immutable additive qualification release through the M2 contract."""
 
+    repository = _repository_root(repository_root)
     identity = (
         SPOT_QUALIFICATION_RELEASE_ID
         if profile is MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY
         else PERPETUAL_QUALIFICATION_RELEASE_ID
     )
     release = DatasetRelease.from_json_bytes(
-        (ROOT / "data/releases" / f"{identity}.json").read_bytes(),
+        (repository / "data/releases" / f"{identity}.json").read_bytes(),
     )
-    validate_m3_dataset_release(release)
+    validate_m3_dataset_release(release, repository_root=repository)
     return release
 
 
-def validate_m3_dataset_release(release: DatasetRelease) -> None:
+def validate_m3_dataset_release(
+    release: DatasetRelease,
+    *,
+    repository_root: Path,
+) -> None:
     """Require the repaired M2 provenance while permitting an additive fee binding."""
 
+    repository = _repository_root(repository_root)
     if (
         not isinstance(release, DatasetRelease)
         or release.schema_version != 2
@@ -516,7 +534,7 @@ def validate_m3_dataset_release(release: DatasetRelease) -> None:
         raise ValueError(
             "M3 requires a schema-v2 qualification DatasetRelease with full Raw inventory",
         )
-    base = _base_release(release.market_profile)
+    base = _base_release(release.market_profile, repository_root=repository)
     immutable_equal = (
         release.market_profile is base.market_profile
         and release.instrument_id == base.instrument_id
@@ -530,7 +548,7 @@ def validate_m3_dataset_release(release: DatasetRelease) -> None:
     )
     if not immutable_equal:
         raise ValueError("M3 qualification release diverges from repaired frozen market data")
-    resolved = release.resolve_runtime_data(ROOT / "data")
+    resolved = release.resolve_runtime_data(repository / "data")
     if (
         Decimal(str(resolved.instrument.maker_fee)) != M3_FEE_RATE
         or Decimal(str(resolved.instrument.taker_fee)) != M3_FEE_RATE
@@ -543,13 +561,15 @@ def build_m3_request(
     *,
     source_revision: SourceRevision,
     evidence_root: Path,
+    repository_root: Path,
     run_id: str,
     strategy_inputs: QualificationStrategyInputs | None = None,
     qualification_control: QualificationControl = QualificationControl.STANDARD,
 ) -> LabRunRequest:
     """Bind a strict DatasetRelease directly to the public M1 ``run_lab`` call."""
 
-    validate_m3_dataset_release(release)
+    repository = _repository_root(repository_root)
+    validate_m3_dataset_release(release, repository_root=repository)
     if not source_revision.clean_worktree:
         raise ValueError("accepted M3 qualification requires a clean SourceRevision")
     inputs = strategy_inputs or qualification_strategy_inputs(release.market_profile)
@@ -563,7 +583,8 @@ def build_m3_request(
     ):
         raise ValueError("M3 StrategySpec does not bind the exact StrategyPlan")
 
-    raw = copy.deepcopy(json.loads(QUALIFICATION_TEMPLATE.read_text(encoding="utf-8")))
+    template = repository / "configs/m3/qualification-run-template.json"
+    raw = copy.deepcopy(json.loads(template.read_text(encoding="utf-8")))
     scoring_start = (
         release.normalized_time_range.start_inclusive + timedelta(minutes=1)
         if release.market_profile is MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY
@@ -612,7 +633,7 @@ def build_m3_request(
     )
     raw["nautilus_data_config"] = [
         {
-            "catalog_path": str(ROOT / "data/catalog" / release.catalog_identity),
+            "catalog_path": str(repository / "data/catalog" / release.catalog_identity),
             "catalog_fs_protocol": "file",
             "catalog_fs_storage_options": {},
             "catalog_fs_rust_storage_options": {},
@@ -641,6 +662,7 @@ def build_m3_request(
         data=(),
         strategy_plan=inputs.strategy_plan,
         evidence_root=Path(evidence_root),
+        repository_root=repository,
         qualification_control=qualification_control,
     )
 

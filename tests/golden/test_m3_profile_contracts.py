@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import unittest
 from decimal import Decimal
+from pathlib import Path
 
 from crypto_lab.config import MarketProfile
 from crypto_lab.data import FUNDING_NATIVE_BINDING_RC2_INTERVAL_BOUNDARY
@@ -12,9 +13,15 @@ from crypto_lab.m3 import SPOT_QUALIFICATION_RELEASE_ID
 from crypto_lab.m3 import qualification_dataset_release
 
 
+ROOT = Path(__file__).resolve().parents[2]
+
+
 class M3ProfileGoldenTests(unittest.TestCase):
     def test_spot_repaired_release_and_native_market_limits_are_exact(self) -> None:
-        release = qualification_dataset_release(MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY)
+        release = qualification_dataset_release(
+            MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY,
+            repository_root=ROOT,
+        )
         resolved = release.resolve_runtime_data(__import__("pathlib").Path("data"))
         self.assertEqual(release.dataset_release_id, SPOT_QUALIFICATION_RELEASE_ID)
         self.assertEqual(release.schema_version, 2)
@@ -35,6 +42,7 @@ class M3ProfileGoldenTests(unittest.TestCase):
     def test_perpetual_repaired_release_funding_and_native_limits_are_exact(self) -> None:
         release = qualification_dataset_release(
             MarketProfile.BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING,
+            repository_root=ROOT,
         )
         resolved = release.resolve_runtime_data(__import__("pathlib").Path("data"))
         self.assertEqual(release.dataset_release_id, PERPETUAL_QUALIFICATION_RELEASE_ID)

@@ -51,9 +51,10 @@ def main() -> int:
     parser.add_argument("--network-attempt", action="store_true")
     parser.add_argument("--invalid-mark-binding", action="store_true")
     args = parser.parse_args()
+    repository = Path(__file__).resolve().parents[1]
 
     profile = profile_for(args.profile)
-    release = qualification_dataset_release(profile)
+    release = qualification_dataset_release(profile, repository_root=repository)
     inputs = (
         negative_qualification_inputs(M3NegativeControl(args.negative_control))
         if args.negative_control
@@ -66,8 +67,9 @@ def main() -> int:
     )
     request = build_m3_request(
         release,
-        source_revision=capture_source_revision(),
+        source_revision=capture_source_revision(repository),
         evidence_root=args.evidence_root,
+        repository_root=repository,
         run_id=args.run_id,
         strategy_inputs=inputs,
         qualification_control=control,
@@ -83,6 +85,7 @@ def main() -> int:
             data=request.data,
             strategy_plan=request.strategy_plan,
             evidence_root=request.evidence_root,
+            repository_root=request.repository_root,
             qualification_control=request.qualification_control,
         )
     result = run_lab(request)
