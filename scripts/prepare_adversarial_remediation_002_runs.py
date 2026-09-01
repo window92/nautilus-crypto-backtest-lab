@@ -36,6 +36,7 @@ from crypto_lab.m3 import QualifiedProfileRegistry
 from crypto_lab.owner import OwnerWorkflowInput
 from crypto_lab.owner import OwnerWorkflowPurpose
 from crypto_lab.paths import validate_safe_component
+from crypto_lab.reporting import REQUIRED_SCIENTIFIC_LIMITATIONS
 from crypto_lab.research import BenchmarkSpec
 from crypto_lab.research import CandidateSpec
 from crypto_lab.research import ClaimScope
@@ -79,6 +80,17 @@ FEE = FeeAssumption(
 PROFILE_ORDER = (
     MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY,
     MarketProfile.BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING,
+)
+DEVELOPMENT_CLAIM_BASIS = "; ".join(
+    (
+        "EXPLORATORY_OPERATIONAL_VALIDATION",
+        "EXPOSED_DEVELOPMENT_DATA",
+        "DATA_QUALITY_INSPECTED_NOT_FINAL_HOLDOUT",
+        *REQUIRED_SCIENTIFIC_LIMITATIONS,
+        "FINAL_HOLDOUT_USED_FALSE",
+        "REAL_PROFITABILITY_CLAIM_FALSE",
+        "LIVE_TRADING_AUTHORIZATION_FALSE",
+    ),
 )
 
 
@@ -534,11 +546,7 @@ def _build_protocol_and_workflows(
             ),
         ),
         intended_claim_scope=ClaimScope.INSTRUMENT_ONLY,
-        claim_basis=(
-            "EXPLORATORY_OPERATIONAL_VALIDATION; EXPOSED_DEVELOPMENT_DATA; "
-            "DATA_QUALITY_INSPECTED_NOT_FINAL_HOLDOUT; FINAL_HOLDOUT_USED_FALSE; "
-            "REAL_PROFITABILITY_CLAIM_FALSE; LIVE_TRADING_AUTHORIZATION_FALSE"
-        ),
+        claim_basis=DEVELOPMENT_CLAIM_BASIS,
         kill_criteria=(
             "DATASET_OR_CATALOG_IDENTITY_MISMATCH",
             "COMPONENT_VALIDATION_NOT_PASS",

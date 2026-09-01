@@ -727,6 +727,17 @@ def _validate_plan_files(
             _reject(FailureCode.RESEARCH_PROTOCOL_INVALID, stage, "workflow hash differs from plan")
         workflow = OwnerWorkflowInput.from_json_bytes(path.read_bytes())
         profile = workflow.protocol.market_profile
+        claim_tokens = {
+            token.strip()
+            for token in workflow.protocol.claim_basis.split(";")
+            if token.strip()
+        }
+        required_claim_tokens = {
+            *REQUIRED_SCIENTIFIC_LIMITATIONS,
+            "FINAL_HOLDOUT_USED_FALSE",
+            "REAL_PROFITABILITY_CLAIM_FALSE",
+            "LIVE_TRADING_AUTHORIZATION_FALSE",
+        }
         if (
             workflow.trial_id != trial_id
             or workflow.run_id != item["run_id"]
@@ -737,9 +748,7 @@ def _validate_plan_files(
             != records[profile].qualified_profile_record_id
             or workflow.protocol.protocol_id not in plan["protocol_ids"]
             or workflow.protocol.research_family_id != plan["research_family_id"]
-            or "DEVELOPMENT_ONLY_DATA" not in workflow.protocol.claim_basis
-            or "FINAL_HOLDOUT_USED_FALSE" not in workflow.protocol.claim_basis
-            or "REAL_PROFITABILITY_CLAIM_FALSE" not in workflow.protocol.claim_basis
+            or not required_claim_tokens.issubset(claim_tokens)
         ):
             _reject(FailureCode.RESEARCH_PROTOCOL_INVALID, stage, "workflow differs from R2 plan")
         workflows.append(workflow)

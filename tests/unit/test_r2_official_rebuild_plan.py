@@ -16,10 +16,13 @@ from crypto_lab.m3 import qualification_dataset_release
 from crypto_lab.owner import _qualified_profile
 from crypto_lab.owner import _qualified_profile_registry_candidates
 from crypto_lab.owner import _release
+from crypto_lab.owner import _require_scientific_claim_contract
+from crypto_lab.owner import DEVELOPMENT_CLAIM_CONTROL_TOKENS
 from crypto_lab.owner import OwnerWorkflowPurpose
 from crypto_lab.research import PartitionRole
 from crypto_lab.research import ResearchError
 from scripts.prepare_adversarial_remediation_002_runs import DEVELOPMENT
+from scripts.prepare_adversarial_remediation_002_runs import DEVELOPMENT_CLAIM_BASIS
 from scripts.prepare_adversarial_remediation_002_runs import EPOCH_FRAGMENT
 from scripts.prepare_adversarial_remediation_002_runs import PROFILE_ORDER
 from scripts.prepare_adversarial_remediation_002_runs import RESEARCH_FAMILY
@@ -123,30 +126,35 @@ class R2OfficialRebuildPlanTests(unittest.TestCase):
         self.assertEqual(
             candidates[0],
             ROOT
-            / "evidence/audit/adversarial-remediation-002/qualification-retry-011/qualified-profile-registry.json",
+            / "evidence/audit/adversarial-remediation-002/qualification-retry-012/qualified-profile-registry.json",
         )
         self.assertEqual(
             candidates[1],
             ROOT
-            / "evidence/audit/adversarial-remediation-002/qualification-retry-010/qualified-profile-registry.json",
+            / "evidence/audit/adversarial-remediation-002/qualification-retry-011/qualified-profile-registry.json",
         )
         self.assertEqual(
             candidates[2],
             ROOT
-            / "evidence/audit/adversarial-remediation-002/qualification-retry-009/qualified-profile-registry.json",
+            / "evidence/audit/adversarial-remediation-002/qualification-retry-010/qualified-profile-registry.json",
         )
         self.assertEqual(
             candidates[3],
             ROOT
-            / "evidence/audit/adversarial-remediation-002/qualification-retry-008/qualified-profile-registry.json",
+            / "evidence/audit/adversarial-remediation-002/qualification-retry-009/qualified-profile-registry.json",
         )
         self.assertEqual(
             candidates[4],
             ROOT
-            / "evidence/audit/adversarial-remediation-002/qualification-retry-007/qualified-profile-registry.json",
+            / "evidence/audit/adversarial-remediation-002/qualification-retry-008/qualified-profile-registry.json",
         )
         self.assertEqual(
             candidates[5],
+            ROOT
+            / "evidence/audit/adversarial-remediation-002/qualification-retry-007/qualified-profile-registry.json",
+        )
+        self.assertEqual(
+            candidates[6],
             ROOT
             / "evidence/audit/adversarial-remediation-002/qualification/qualified-profile-registry.json",
         )
@@ -266,6 +274,12 @@ class R2OfficialRebuildPlanTests(unittest.TestCase):
                 workflow.protocol.development_interval,
             )
             self.assertIn("FINAL_HOLDOUT_USED_FALSE", workflow.protocol.claim_basis)
+            claim_tokens = {
+                token.strip()
+                for token in workflow.protocol.claim_basis.split(";")
+                if token.strip()
+            }
+            self.assertTrue(set(DEVELOPMENT_CLAIM_CONTROL_TOKENS).issubset(claim_tokens))
 
         self.assertEqual(
             protocols[0].required_benchmark.benchmark_id,
@@ -308,6 +322,25 @@ class R2OfficialRebuildPlanTests(unittest.TestCase):
             self.assertIn(str(ROOT / "scripts/isolated_runtime_bootstrap.py"), command)
             self.assertIn(str(ROOT / "runtime-bootstrap-authority.json"), command)
             self.assertIn("crypto_lab.owner:main", command)
+
+    def test_owner_rejects_missing_or_prefixed_development_claim_token(self) -> None:
+        for replacement in ("", "NOT_DEVELOPMENT_ONLY_DATA"):
+            with self.subTest(replacement=replacement):
+                value = SimpleNamespace(
+                    workflow_purpose=OwnerWorkflowPurpose.OWNER_STUDY,
+                    partition_role=PartitionRole.DEVELOPMENT,
+                    protocol=SimpleNamespace(
+                        claim_basis=DEVELOPMENT_CLAIM_BASIS.replace(
+                            "DEVELOPMENT_ONLY_DATA",
+                            replacement,
+                        ),
+                    ),
+                )
+                with self.assertRaisesRegex(
+                    ResearchError,
+                    "DEVELOPMENT_ONLY_DATA",
+                ):
+                    _require_scientific_claim_contract(value)
 
     def test_new_epoch_never_overwrites_prior_benchmark_evidence(self) -> None:
         retry_epoch = "adversarial-remediation-002-planner-regression-control"

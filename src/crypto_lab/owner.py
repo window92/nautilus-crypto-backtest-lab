@@ -66,6 +66,7 @@ from crypto_lab.official import OfficialEvidenceLocator
 from crypto_lab.official import OfficialEvidenceResolver
 from crypto_lab.paths import validate_safe_component
 from crypto_lab.reporting import ReportOutput
+from crypto_lab.reporting import REQUIRED_SCIENTIFIC_LIMITATIONS
 from crypto_lab.research import PartitionRole
 from crypto_lab.research import BenchmarkSpec
 from crypto_lab.research import CandidateSpec
@@ -98,6 +99,35 @@ class OwnerWorkflowPurpose(StrEnum):
     OWNER_STUDY = "OWNER_STUDY"
     BENCHMARK_STUDY = "BENCHMARK_STUDY"
     QUALIFICATION_INTERFACE_FIXTURE = "QUALIFICATION_INTERFACE_FIXTURE"
+
+
+DEVELOPMENT_CLAIM_CONTROL_TOKENS = (
+    *REQUIRED_SCIENTIFIC_LIMITATIONS,
+    "FINAL_HOLDOUT_USED_FALSE",
+    "REAL_PROFITABILITY_CLAIM_FALSE",
+    "LIVE_TRADING_AUTHORIZATION_FALSE",
+)
+
+
+def _require_scientific_claim_contract(value: OwnerWorkflowInput) -> None:
+    """Fail before Official construction when Development claims omit locked limits."""
+
+    if (
+        value.workflow_purpose is OwnerWorkflowPurpose.QUALIFICATION_INTERFACE_FIXTURE
+        or value.partition_role is not PartitionRole.DEVELOPMENT
+    ):
+        return
+    tokens = {
+        token.strip()
+        for token in value.protocol.claim_basis.split(";")
+        if token.strip()
+    }
+    missing = tuple(token for token in DEVELOPMENT_CLAIM_CONTROL_TOKENS if token not in tokens)
+    if missing:
+        raise ResearchError(
+            FailureCode.RESEARCH_PROTOCOL_INVALID,
+            "Development claim basis omits mandatory exact tokens: " + ",".join(missing),
+        )
 
 
 def _startup_state_to_builtins(value: Any) -> Any:
@@ -865,6 +895,8 @@ def _qualified_profile_registry_candidates(repository: Path) -> tuple[Path, ...]
 
     return (
         repository
+        / "evidence/audit/adversarial-remediation-002/qualification-retry-012/qualified-profile-registry.json",
+        repository
         / "evidence/audit/adversarial-remediation-002/qualification-retry-011/qualified-profile-registry.json",
         repository
         / "evidence/audit/adversarial-remediation-002/qualification-retry-010/qualified-profile-registry.json",
@@ -1022,6 +1054,7 @@ def build_official_request(
 ) -> OfficialLabRunRequest:
     """Resolve Profile and Dataset identities into one immutable Official request."""
 
+    _require_scientific_claim_contract(value)
     repository = Path(repository_root).resolve(strict=True)
     profile, registry_path = _qualified_profile(repository, value)
     release = _release(repository, value)
