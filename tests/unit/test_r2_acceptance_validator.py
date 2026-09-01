@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -13,6 +14,7 @@ from crypto_lab.reporting import OFFICIAL_RISK_MINIMUM_SAMPLE_COUNT
 from crypto_lab.reporting import REQUIRED_SCIENTIFIC_LIMITATIONS
 from crypto_lab.reporting import ReportOutput
 from crypto_lab.status import FailureCode
+from scripts.run_adversarial_remediation_002_acceptance import _plan_epoch
 from scripts.validate_adversarial_remediation_002_runs import COMPONENT_PASS
 from scripts.validate_adversarial_remediation_002_runs import EXPECTED_BRANCH
 from scripts.validate_adversarial_remediation_002_runs import EXPECTED_EPOCH
@@ -159,6 +161,30 @@ def replay_payload() -> dict[str, object]:
 
 
 class R2AcceptanceValidatorTests(unittest.TestCase):
+    def test_master_acceptance_binds_the_exact_plan_epoch(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "execution-plan.json"
+            path.write_text(
+                '{"epoch":"adversarial-remediation-002-retry-009"}\n',
+                encoding="utf-8",
+            )
+            self.assertEqual(
+                _plan_epoch(path),
+                "adversarial-remediation-002-retry-009",
+            )
+            for invalid in (
+                {},
+                {"epoch": None},
+                {"epoch": "retry-009"},
+                {"epoch": "adversarial-remediation-002/escape"},
+            ):
+                with self.subTest(invalid=invalid), self.assertRaisesRegex(
+                    ValueError,
+                    "in-scope explicit epoch",
+                ):
+                    path.write_text(json.dumps(invalid), encoding="utf-8")
+                    _plan_epoch(path)
+
     def assert_code(self, expected: FailureCode, operation) -> None:
         with self.assertRaises(R2ValidationFailure) as raised:
             operation()

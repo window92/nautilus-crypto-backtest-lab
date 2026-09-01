@@ -122,6 +122,23 @@ def _regular_input(path: Path, *, label: str) -> Path:
     return resolved
 
 
+def _plan_epoch(path: Path) -> str:
+    """Return the exact R2 plan epoch without silently selecting a default."""
+
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise ValueError("R2 execution plan is not readable strict JSON") from exc
+    epoch = payload.get("epoch") if isinstance(payload, dict) else None
+    if (
+        not isinstance(epoch, str)
+        or re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}", epoch) is None
+        or (epoch != EXPECTED_EPOCH and not epoch.startswith(f"{EXPECTED_EPOCH}-"))
+    ):
+        raise ValueError("R2 execution plan has no in-scope explicit epoch")
+    return epoch
+
+
 def _environment(*, pycache: Path, data_tool: bool = False) -> dict[str, str]:
     pythonpath = [str(ROOT / "src"), str(ROOT)]
     if data_tool:
@@ -427,6 +444,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     nautilus_wheel = _regular_input(arguments.nautilus_wheel, label="Nautilus Wheel")
     project_wheel = _regular_input(arguments.project_wheel, label="project Wheel")
+    plan_epoch = _plan_epoch(plan)
     runtime = json.loads((ROOT / "runtime.lock.json").read_text(encoding="utf-8"))
     if (
         nautilus_wheel.name != runtime["nautilus_wheel_filename"]
@@ -529,6 +547,8 @@ def main(argv: list[str] | None = None) -> int:
                 str(ROOT / "scripts/validate_adversarial_remediation_002_runs.py"),
                 "--plan",
                 str(plan),
+                "--epoch",
+                plan_epoch,
                 "--output",
                 str(output / "r2-runs-validation.json"),
             ),
@@ -613,7 +633,7 @@ def main(argv: list[str] | None = None) -> int:
     ]
     result = {
         "schema": "adversarial-remediation-002-acceptance-v1",
-        "epoch": EXPECTED_EPOCH,
+        "epoch": plan_epoch,
         "status": "PASS" if passed else "FAIL",
         "started_at_utc": started_at,
         "finished_at_utc": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
