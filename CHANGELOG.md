@@ -87,6 +87,11 @@ remains `SSOT.md`; this file does not change normative behavior.
   Perpetual accounting/funding, post-boundary events, full Raw inventory,
   final Evidence inventory, validator identity, runtime startup injection,
   missing/duplicate Fills, and altered Instrument identity.
+- Published a fresh additive schema-v2 qualification at
+  `qualification-retry-007`, bound to the post-repair Product/runtime
+  authority. Both exposed profiles have independent Primary/Replay evidence;
+  all eight qualification negative controls pass, with no Final Holdout or
+  profitability authorization.
 - Extended the closed `FailureCode` vocabulary with
   `RUNTIME_STARTUP_MISMATCH`, `DATASET_RAW_INVENTORY_MISMATCH`,
   `WARMUP_SCORING_ELIGIBILITY_VIOLATION`,

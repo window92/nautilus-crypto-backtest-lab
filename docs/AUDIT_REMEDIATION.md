@@ -90,10 +90,18 @@ contract and cannot authorize a new Official Run:
 - `evidence/audit/comprehensive-remediation-001/qualification/qualified-profile-registry.json`
 - `evidence/audit/comprehensive-remediation-001/qualification-runtime-proof/qualified-profile-registry.json`
 
-Current authority must be regenerated as schema v2 from the remediated source,
-Runtime/startup authority, full-inventory Dataset Releases, component
-validators, and fresh primary/replay qualification. Re-running a current
-validator over the legacy bytes does not upgrade them.
+The current schema-v2 qualification authority is
+`evidence/audit/adversarial-remediation-002/qualification-retry-007`. It was
+generated from clean local/remote commit
+`4d3c512b807388bc821ee205a05ed211ce7b48d3`, after the final Product repair and
+Runtime/startup authority were committed. Its exact Manifest SHA-256 is
+`7496fad2ceacccf8f63888d36b788ae05c211e3d7af16f898f2ee2fa8b363558`;
+the Qualified Profile Registry file SHA-256 is
+`2fe064b881c203090e1481ae861fb07b8ccb47b0c608413362a5f8824504b28f`.
+Both profiles' fresh Primary and Replay component checks pass, all eight
+qualification negative controls are bound, and the validators record
+`final_holdout_used=false` and `profitability_claim_authorized=false`.
+Re-running a current validator over legacy bytes does not upgrade them.
 
 The following older registries remain preserved as historical records; they
 do not override the v2 result status:

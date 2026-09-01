@@ -334,6 +334,12 @@ registries are parse-only and cannot authorize replacement Runs. See
 [docs/AUDIT_REMEDIATION.md](docs/AUDIT_REMEDIATION.md) for the exact historical
 identities and additive status policy.
 
+The current replacement qualification is the additive schema-v2 package at
+`evidence/audit/adversarial-remediation-002/qualification-retry-007`, generated
+from clean local/remote commit `4d3c512b807388bc821ee205a05ed211ce7b48d3`.
+It authorizes only the two exposed Development profiles; it does not authorize
+Final Holdout use, a profitability claim, or live trading.
+
 New Development Runs are publishable only after full Raw inventory equality,
 isolated startup verification, independent Spot/Perpetual reconciliation,
 causal component validation, deterministic fresh-process replay, and
