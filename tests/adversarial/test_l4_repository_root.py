@@ -280,7 +280,7 @@ class RepositoryRootAuthorityTests(unittest.TestCase):
                 "/tmp/l4-reverse-missing-repository",
             ],
             cwd=ROOT,
-            env=BOOTSTRAP_ENVIRONMENT,
+            env={**BOOTSTRAP_ENVIRONMENT, "PYTHONPATH": str(ROOT / "src")},
             check=False,
             capture_output=True,
             text=True,
