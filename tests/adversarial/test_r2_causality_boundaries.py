@@ -5,7 +5,6 @@ import tempfile
 import unittest
 from decimal import Decimal
 from pathlib import Path
-from unittest.mock import patch
 
 from nautilus_trader.backtest import BacktestEngine
 from nautilus_trader.model import Bar
@@ -13,6 +12,7 @@ from nautilus_trader.model import BarType
 from nautilus_trader.model import MarkPriceUpdate
 from nautilus_trader.model import Price
 
+import crypto_lab.runner as runner_module
 from crypto_lab.checker import CheckerOutcome
 from crypto_lab.checker import check_evidence_directory
 from crypto_lab.config import MarketProfile
@@ -190,12 +190,12 @@ class R2CausalityBoundaryTests(unittest.TestCase):
     def test_qualification_request_never_infers_authority_from_package_location(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            with patch("crypto_lab.runner.ROOT", root / "missing-installed-package-root"):
-                result = _small_scored_run(
-                    root,
-                    MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY,
-                    suffix="explicit-repository-root",
-                )
+            self.assertFalse(hasattr(runner_module, "ROOT"))
+            result = _small_scored_run(
+                root,
+                MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY,
+                suffix="explicit-repository-root",
+            )
         self.assertEqual(result.checker_outcome, CheckerOutcome.CHECK_PASS)
 
     def test_full_signal_interval_not_decision_timestamp_controls_eligibility(self) -> None:

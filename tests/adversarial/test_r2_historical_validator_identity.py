@@ -45,6 +45,7 @@ class HistoricalAuthorityFixture:
             "origin",
             "https://example.invalid/r2-historical-product.git",
         )
+        _write(self.repository / "SSOT.md", "synthetic historical Product authority\n")
         _write(self.repository / ".gitignore", "external/\ndata/\n")
         _write(self.repository / "src/crypto_lab/__init__.py", "\"\"\"Pinned package.\"\"\"\n")
         _write(
@@ -450,7 +451,9 @@ class HistoricalValidatorIdentityTests(unittest.TestCase):
         _git(self.fixture.repository, "switch", "--orphan", "rewritten-history")
         _git(self.fixture.repository, "rm", "-rf", "--ignore-unmatch", ".")
         (self.fixture.repository / "README.md").write_text("rewritten\n", encoding="utf-8")
-        _git(self.fixture.repository, "add", "README.md")
+        _write(self.fixture.repository / "SSOT.md", "rewritten Product authority\n")
+        _write(self.fixture.repository / "src/crypto_lab/__init__.py", '"""rewritten"""\n')
+        _git(self.fixture.repository, "add", "README.md", "SSOT.md", "src")
         _git(self.fixture.repository, "commit", "-m", "rewritten root")
         validation = validate_historical_validator_authority(
             authority,

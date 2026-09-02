@@ -19,6 +19,7 @@ from crypto_lab.status import FailureCode
 from tests.adversarial.test_aud003_004_authoritative_history import HistoryAttackFixture
 from tests.m4_helpers import candidate
 from tests.m4_helpers import instant
+from tests.helpers import initialize_product_repository
 
 
 def _definition(fixture: HistoryAttackFixture, trial_id: str) -> TrialDefinition:
@@ -83,6 +84,7 @@ class R2LockingAndDurabilityTests(unittest.TestCase):
     def test_journal_holdout_and_anchor_symlinks_fail_closed(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
+            initialize_product_repository(root)
             target = root / "redirect-target"
             target.write_bytes(b"sentinel")
 
