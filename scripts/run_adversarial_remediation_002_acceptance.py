@@ -508,6 +508,8 @@ def main(argv: list[str] | None = None) -> int:
             (
                 str(project_python),
                 str(repository / "scripts/run_reverse_test_order.py"),
+                "--repository",
+                str(repository),
                 "--output-dir",
                 str(output / "reverse-order"),
             ),

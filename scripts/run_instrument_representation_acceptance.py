@@ -91,7 +91,14 @@ def main() -> int:
     reverse_root = output / "reverse"
     reverse_command = command(
         "REVERSE_DETERMINISTIC_ORDER",
-        [PROJECT_PYTHON, ROOT / "scripts/run_reverse_test_order.py", "--output-dir", reverse_root],
+        [
+            PROJECT_PYTHON,
+            ROOT / "scripts/run_reverse_test_order.py",
+            "--repository",
+            ROOT,
+            "--output-dir",
+            reverse_root,
+        ],
     )
     reverse = (
         json.loads((reverse_root / "result.json").read_text(encoding="utf-8"))

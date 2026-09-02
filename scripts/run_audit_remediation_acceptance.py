@@ -176,6 +176,8 @@ def main() -> int:
             (
                 str(PROJECT_PYTHON),
                 str(ROOT / "scripts/run_reverse_test_order.py"),
+                "--repository",
+                str(ROOT),
                 "--output-dir",
                 str(output / "reverse-order"),
             ),

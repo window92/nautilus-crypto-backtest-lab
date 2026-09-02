@@ -49,6 +49,7 @@ AUTHORITY_SENSITIVE_SOURCES = (
     "scripts/run_historical_evidence_acceptance.py",
     "scripts/run_m3_child.py",
     "scripts/run_m3_qualifications.py",
+    "scripts/run_reverse_test_order.py",
     "scripts/validate_adversarial_remediation_002_runs.py",
     "scripts/validate_audit_qualification.py",
     "scripts/validate_free_official_binance_rebuild.py",
@@ -270,6 +271,22 @@ class RepositoryRootAuthorityTests(unittest.TestCase):
         )
         self.assertEqual(m3.returncode, 2, m3.stderr)
         self.assertIn("--repository", m3.stderr)
+
+        reverse = subprocess.run(
+            [
+                str(ROOT / ".venv/bin/python"),
+                str(ROOT / "scripts/run_reverse_test_order.py"),
+                "--output-dir",
+                "/tmp/l4-reverse-missing-repository",
+            ],
+            cwd=ROOT,
+            env=BOOTSTRAP_ENVIRONMENT,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(reverse.returncode, 2, reverse.stderr)
+        self.assertIn("--repository", reverse.stderr)
 
     def test_owner_bootstrap_binds_positive_and_negative_repository_paths(self) -> None:
         with tempfile.TemporaryDirectory(dir="/tmp") as temporary:

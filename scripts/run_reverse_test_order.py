@@ -12,8 +12,7 @@ import time
 import unittest
 from pathlib import Path
 
-
-ROOT = Path(__file__).resolve().parents[1]
+from crypto_lab.git_identity import require_repository_root
 
 
 def _ids(suite: unittest.TestSuite) -> list[str]:
@@ -26,10 +25,12 @@ def _ids(suite: unittest.TestSuite) -> list[str]:
     return result
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
+    parser.add_argument("--repository", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
+    repository = require_repository_root(args.repository)
     os.environ.update(
         {
             "TZ": "UTC",
@@ -46,7 +47,12 @@ def main() -> int:
             raise FileExistsError(f"refusing to overwrite reverse-order evidence: {output / name}")
 
     loader = unittest.defaultTestLoader
-    discovered = _ids(loader.discover(str(ROOT / "tests"), top_level_dir=str(ROOT)))
+    discovered = _ids(
+        loader.discover(
+            str(repository / "tests"),
+            top_level_dir=str(repository),
+        ),
+    )
     ordered = tuple(sorted(discovered, reverse=True))
     stream = io.StringIO()
     result = unittest.TextTestRunner(stream=stream, verbosity=2).run(
