@@ -10,6 +10,7 @@ import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
+from crypto_lab.git_identity import require_repository_root
 from crypto_lab.result_status import (
     HistoricalCopyRole,
     HistoricalResultClass,
@@ -385,9 +386,12 @@ def build_registry(
     source_commit: str,
     recorded_at_utc: str,
 ) -> bytes:
-    root = Path(repository_root).resolve(strict=True)
-    if root.is_symlink() or not root.is_dir():
-        raise RuntimeSupersessionBuildError("repository root must be an exact directory")
+    try:
+        root = require_repository_root(repository_root)
+    except (TypeError, ValueError) as exc:
+        raise RuntimeSupersessionBuildError(
+            f"repository authority is invalid: {exc}",
+        ) from exc
     if _GIT_SHA.fullmatch(source_commit) is None:
         raise RuntimeSupersessionBuildError("source_commit must be explicit lowercase 40-hex")
     expected_paths = {

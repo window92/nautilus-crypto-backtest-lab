@@ -43,6 +43,7 @@ from crypto_lab.hashing import canonical_sha256
 from crypto_lab.hashing import sha256_file
 from crypto_lab.git_identity import GitIdentityError
 from crypto_lab.git_identity import capture_actual_source_revision
+from crypto_lab.git_identity import require_repository_root
 from crypto_lab.git_identity import verify_source_revision
 from crypto_lab.nautilus_config import add_venue_from_config
 from crypto_lab.nautilus_config import to_nautilus_engine_config
@@ -75,7 +76,6 @@ from crypto_lab.strategies import create_registered_strategy
 from crypto_lab.strategies import resolve_registered_strategy_identity
 
 
-ROOT = Path(__file__).resolve().parents[2]
 ONE_MINUTE_NS = 60_000_000_000
 DAY_NS = 86_400_000_000_000
 OFFICIAL_DAILY_METRIC_FAMILIES = {
@@ -131,6 +131,11 @@ class LabRunRequest:
             raise ValueError(
                 "CONFIG_INVALID: StrategyPlan and QualificationControl are forbidden outside QUALIFICATION",
             )
+        object.__setattr__(
+            self,
+            "repository_root",
+            require_repository_root(self.repository_root),
+        )
         object.__setattr__(self, "data", tuple(self.data))
 
 
@@ -173,6 +178,11 @@ class OfficialLabRunRequest:
             raise TypeError("dataset_rebuild_validation_ref must be a string")
         if not isinstance(self.evidence_root, Path) or not isinstance(self.repository_root, Path):
             raise TypeError("evidence_root and repository_root must be pathlib.Path")
+        object.__setattr__(
+            self,
+            "repository_root",
+            require_repository_root(self.repository_root),
+        )
         # Reject an unregistered or incomplete material identity before an
         # Official request can reach preflight or evidence creation.
         self.strategy_identity
@@ -246,10 +256,10 @@ class RunResult:
         }
 
 
-def capture_source_revision(repository: Path = ROOT) -> SourceRevision:
+def capture_source_revision(repository: Path) -> SourceRevision:
     """Capture Git commit/tree provenance separately from Runtime Lock identity."""
 
-    return capture_actual_source_revision(repository)
+    return capture_actual_source_revision(require_repository_root(repository))
 
 
 def _timestamp_ns(value: datetime) -> int:

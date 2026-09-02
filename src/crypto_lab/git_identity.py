@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
@@ -39,7 +40,9 @@ def _git(repository: Path, *args: str, check: bool = True) -> str:
 def require_repository_root(
     repository_root: Path | None,
     *,
+    expected_repository_identity: str | None = None,
     expected_git_commit: str | None = None,
+    expected_git_tree: str | None = None,
     require_current_head: bool = False,
 ) -> Path:
     """Reject any attempt to infer repository authority from location heuristics.
@@ -56,8 +59,14 @@ def require_repository_root(
         raise TypeError("repository_root must be pathlib.Path")
     if not repository_root.is_absolute():
         raise ValueError("repository_root must be an absolute path")
-    if repository_root.is_symlink():
-        raise ValueError("repository_root must not be a symlink")
+    lexical = Path(os.path.abspath(repository_root))
+    if lexical != repository_root:
+        raise ValueError("repository_root must be an exact normalized absolute path")
+    cursor = Path(lexical.anchor)
+    for component in lexical.parts[1:]:
+        cursor /= component
+        if cursor.is_symlink():
+            raise ValueError("repository_root must not contain a symlink")
     if not repository_root.exists():
         raise ValueError("repository_root does not exist")
     if not repository_root.is_dir():
@@ -80,6 +89,11 @@ def require_repository_root(
         raise ValueError(
             f"repository_root is not the Git repository root {actual}",
         )
+    if expected_repository_identity is not None:
+        if not isinstance(expected_repository_identity, str) or not expected_repository_identity:
+            raise ValueError("expected_repository_identity must be a non-empty string")
+        if _git(requested, "remote", "get-url", "origin") != expected_repository_identity:
+            raise ValueError("repository_root origin does not match the expected authority")
     if expected_git_commit is not None:
         if (
             not isinstance(expected_git_commit, str)
@@ -97,29 +111,40 @@ def require_repository_root(
             raise ValueError(
                 "repository_root does not contain the expected commit",
             ) from exc
+        ancestor = subprocess.run(
+            ["git", "merge-base", "--is-ancestor", expected_git_commit, "HEAD"],
+            cwd=requested,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        if ancestor.returncode != 0:
+            raise ValueError(
+                "repository_root HEAD does not descend from the expected commit",
+            )
+        if expected_git_tree is not None:
+            if not isinstance(expected_git_tree, str) or len(expected_git_tree) != 40:
+                raise ValueError("expected_git_tree is not a 40-character SHA")
+            if _git(requested, "rev-parse", f"{expected_git_commit}^{{tree}}") != expected_git_tree:
+                raise ValueError("repository_root tree does not match the expected authority")
         if require_current_head:
             head = _git(requested, "rev-parse", "HEAD")
             if head != expected_git_commit or resolved != expected_git_commit:
                 raise ValueError(
                     "repository_root HEAD does not match the expected commit",
                 )
+    elif expected_git_tree is not None:
+        raise ValueError("expected_git_tree requires expected_git_commit")
     return requested
 
 
 def _repository_root(repository: Path) -> Path:
-    if not isinstance(repository, Path):
-        raise TypeError("repository_root must be pathlib.Path")
-    if not repository.is_absolute():
-        raise GitIdentityError("EVIDENCE_INCOMPLETE: repository locator must be absolute")
-    if repository.is_symlink():
-        raise GitIdentityError("EVIDENCE_INCOMPLETE: repository locator must not be a symlink")
-    requested = Path(repository).resolve(strict=True)
-    actual = Path(_git(requested, "rev-parse", "--show-toplevel")).resolve(strict=True)
-    if actual != requested:
+    try:
+        return require_repository_root(repository)
+    except (TypeError, ValueError) as exc:
         raise GitIdentityError(
-            f"EVIDENCE_INCOMPLETE: repository locator {requested} is not exact Git root {actual}",
-        )
-    return actual
+            f"EVIDENCE_INCOMPLETE: repository authority is invalid: {exc}",
+        ) from exc
 
 
 def _dirty_paths(repository: Path) -> tuple[str, ...]:

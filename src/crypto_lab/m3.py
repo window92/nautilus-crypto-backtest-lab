@@ -25,6 +25,7 @@ from crypto_lab.config import _freeze_field
 from crypto_lab.config import _require_equal
 from crypto_lab.config import _require_sha256
 from crypto_lab.hashing import canonical_sha256
+from crypto_lab.git_identity import require_repository_root
 from crypto_lab.data import DatasetRelease
 from crypto_lab.data import M3_QUALIFICATION_FULL_RAW_INVENTORY_NORMALIZER_VERSION
 from crypto_lab.runner import LabRunRequest
@@ -44,7 +45,6 @@ EXPOSED_QUALIFICATION_LIMITATION = "QUALIFICATION_INTERVAL_EXPOSED_NOT_FRESH_HOL
 M3_FEE_RATE = Decimal("0.001")
 COMPONENT_CHECK_PASS = "COMPONENT_CHECK_PASS"
 LEGACY_CHECK_PASS = "CHECK_PASS"
-ROOT = Path(__file__).resolve().parents[2]
 
 
 class ProfileQualificationState(StrEnum):
@@ -477,12 +477,7 @@ def _iso(value: Any) -> str:
 
 
 def _repository_root(value: Path) -> Path:
-    if not isinstance(value, Path):
-        raise TypeError("repository_root must be pathlib.Path")
-    root = value.resolve(strict=True)
-    if not root.is_dir():
-        raise ValueError("repository_root must be a directory")
-    return root
+    return require_repository_root(value)
 
 
 def _base_release(profile: MarketProfile, *, repository_root: Path) -> DatasetRelease:

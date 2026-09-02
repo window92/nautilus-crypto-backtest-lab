@@ -19,6 +19,7 @@ from crypto_lab.diagnostics import DiagnosticResolution
 from crypto_lab.diagnostics import derive_performance_diagnostics
 from crypto_lab.diagnostics import reconcile_diagnostic_resolution
 from crypto_lab.exposure import AuthoritativeExposureResolver
+from crypto_lab.git_identity import require_repository_root
 from crypto_lab.git_identity import verify_source_revision
 from crypto_lab.hashing import canonical_sha256
 from crypto_lab.hashing import sha256_file
@@ -277,7 +278,7 @@ class OfficialEvidenceResolver:
     """Read and recompute every eligibility fact from authoritative evidence."""
 
     def __init__(self, *, repository_root: Path, require_remote_tip: bool = True) -> None:
-        self.repository_root = Path(repository_root).resolve(strict=True)
+        self.repository_root = require_repository_root(repository_root)
         self.history = AuthoritativeResearchHistory(
             HistoryAnchorStore(
                 repository_root=self.repository_root,

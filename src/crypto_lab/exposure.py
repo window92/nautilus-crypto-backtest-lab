@@ -11,6 +11,7 @@ from crypto_lab.config import LabRunConfig
 from crypto_lab.config import MarketProfile
 from crypto_lab.config import SourceRevision
 from crypto_lab.data import DatasetRelease
+from crypto_lab.git_identity import require_repository_root
 from crypto_lab.hashing import canonical_sha256
 from crypto_lab.hashing import sha256_file
 from crypto_lab.history import AuthoritativeResearchHistory
@@ -50,7 +51,7 @@ class AuthoritativeExposureResolver:
         repository_root: Path,
         m3_registry_path: Path | None = None,
     ) -> None:
-        self.repository_root = Path(repository_root).resolve(strict=True)
+        self.repository_root = require_repository_root(repository_root)
         self.m3_root = self.repository_root / "evidence/m3/m3-acceptance-001"
         self.m3_registry_path = (
             self.m3_root / "qualified-profile-registry.json"

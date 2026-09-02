@@ -43,7 +43,7 @@ class AuditQualificationValidatorTests(unittest.TestCase):
         )
 
     def test_r2_current_qualification_uses_current_component_contract(self) -> None:
-        result = validate_m3(self.r2_evidence)
+        result = validate_m3(self.r2_evidence, repository_root=self.repository)
         self.assertEqual(result["status"], "PASS")
         self.assertEqual(result["contract_mode"], "R2_CURRENT")
         self.assertTrue(result["checks"]["current_checker_revalidation"])
@@ -62,7 +62,7 @@ class AuditQualificationValidatorTests(unittest.TestCase):
                 encoding="utf-8",
             )
             self._rebind_manifest(copied, relative)
-            result = validate_m3(copied)
+            result = validate_m3(copied, repository_root=self.repository)
             self.assertEqual(result["status"], "FAIL")
             self.assertFalse(result["checks"]["downstream_v2_bindings"])
 
@@ -79,7 +79,7 @@ class AuditQualificationValidatorTests(unittest.TestCase):
                 encoding="utf-8",
             )
             self._rebind_manifest(copied, relative)
-            result = validate_m3(copied)
+            result = validate_m3(copied, repository_root=self.repository)
             self.assertEqual(result["status"], "FAIL")
             self.assertFalse(result["checks"]["negative_controls"])
 
@@ -96,7 +96,7 @@ class AuditQualificationValidatorTests(unittest.TestCase):
                 encoding="utf-8",
             )
             self._rebind_manifest(copied, relative)
-            result = validate_m3(copied)
+            result = validate_m3(copied, repository_root=self.repository)
             self.assertEqual(result["status"], "FAIL")
             self.assertFalse(result["checks"]["source_revision_bindings"])
 
@@ -105,12 +105,12 @@ class AuditQualificationValidatorTests(unittest.TestCase):
             copied = Path(temporary) / "qualification"
             shutil.copytree(self.r2_evidence, copied)
             (copied / "undeclared-link").symlink_to("acceptance-summary.json")
-            result = validate_m3(copied)
+            result = validate_m3(copied, repository_root=self.repository)
             self.assertEqual(result["status"], "FAIL")
             self.assertFalse(result["checks"]["complete_content_addressed_inventory"])
 
     def test_legacy_runtime_proof_is_preserved_but_warmup_affected_qualification_fails(self) -> None:
-        result = validate(self.evidence)
+        result = validate(self.evidence, repository_root=self.repository)
         self.assertEqual(result["status"], "FAIL")
         self.assertFalse(result["checks"]["current_checker_revalidation"])
         self.assertTrue(result["checks"]["persisted_runtime_payload_proof"])
@@ -132,7 +132,7 @@ class AuditQualificationValidatorTests(unittest.TestCase):
             payload = json.loads(identity.read_text(encoding="utf-8"))
             payload["installed_payload_sha256"] = "0" * 64
             identity.write_text(json.dumps(payload, sort_keys=True) + "\n", encoding="utf-8")
-            result = validate(copied)
+            result = validate(copied, repository_root=self.repository)
             self.assertEqual(result["status"], "FAIL")
             self.assertFalse(result["checks"]["complete_content_addressed_inventory"])
             self.assertFalse(result["checks"]["persisted_runtime_payload_proof"])

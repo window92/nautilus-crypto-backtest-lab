@@ -21,6 +21,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from crypto_lab.git_identity import require_repository_root
 from crypto_lab.result_status import (
     HistoricalCopyRole,
     HistoricalResultClass,
@@ -112,14 +113,12 @@ class HistoricalResultStatusBuildError(ValueError):
 
 
 def _repository_root(value: Path) -> Path:
-    lexical = Path(os.path.abspath(value))
     try:
-        resolved = lexical.resolve(strict=True)
-    except OSError as exc:
-        raise HistoricalResultStatusBuildError("repository root is missing") from exc
-    if lexical != resolved or lexical.is_symlink() or not lexical.is_dir():
-        raise HistoricalResultStatusBuildError("repository root must be an exact directory")
-    return lexical
+        return require_repository_root(value)
+    except (TypeError, ValueError) as exc:
+        raise HistoricalResultStatusBuildError(
+            f"repository authority is invalid: {exc}",
+        ) from exc
 
 
 def _source_commit(value: str) -> str:

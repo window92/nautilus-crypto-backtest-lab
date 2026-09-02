@@ -15,6 +15,7 @@ from typing import Iterator
 from crypto_lab.config import StrictModel
 from crypto_lab.config import _require_sha256
 from crypto_lab.config import _require_utc
+from crypto_lab.git_identity import require_repository_root
 from crypto_lab.hashing import canonical_sha256
 from crypto_lab.locking import interprocess_file_lock
 from crypto_lab.locking import safe_append_bytes
@@ -107,7 +108,7 @@ class HistoryAnchorStore:
         anchor_path: Path,
         require_remote_tip: bool = True,
     ) -> None:
-        self.repository_root = Path(repository_root).resolve(strict=True)
+        self.repository_root = require_repository_root(repository_root)
         self.journal_path = self._contained(journal_path)
         self.holdout_path = self._contained(holdout_path)
         self.anchor_path = self._contained(anchor_path)

@@ -20,7 +20,6 @@ from scripts.validate_adversarial_remediation_002_runs import EXPECTED_BRANCH
 from scripts.validate_adversarial_remediation_002_runs import EXPECTED_EPOCH
 from scripts.validate_adversarial_remediation_002_runs import EXPECTED_PLAN_SCHEMA
 from scripts.validate_adversarial_remediation_002_runs import EXPECTED_RESEARCH_FAMILY
-from scripts.validate_adversarial_remediation_002_runs import ROOT as VALIDATOR_ROOT
 from scripts.validate_adversarial_remediation_002_runs import R2ValidationFailure
 from scripts.validate_adversarial_remediation_002_runs import SEAL_PASS
 from scripts.validate_adversarial_remediation_002_runs import validate
@@ -31,6 +30,9 @@ from scripts.validate_adversarial_remediation_002_runs import validate_plan_payl
 from scripts.validate_adversarial_remediation_002_runs import validate_rebuild_payload
 from scripts.validate_adversarial_remediation_002_runs import validate_report_claim_projection
 from scripts.validate_adversarial_remediation_002_runs import validate_replay_payload
+
+
+VALIDATOR_ROOT = Path(__file__).resolve().parents[2]
 
 
 def plan_payload() -> dict[str, object]:
@@ -194,7 +196,7 @@ class R2AcceptanceValidatorTests(unittest.TestCase):
 
     def test_plan_is_exactly_r2_development_only(self) -> None:
         valid = plan_payload()
-        validate_plan_payload(valid)
+        validate_plan_payload(valid, repository_root=VALIDATOR_ROOT)
 
         holdout = plan_payload()
         holdout["final_holdout_used"] = True
@@ -203,7 +205,10 @@ class R2AcceptanceValidatorTests(unittest.TestCase):
         holdout["plan_identity"] = canonical_sha256(material)
         self.assert_code(
             FailureCode.RESEARCH_PROTOCOL_INVALID,
-            lambda: validate_plan_payload(holdout),
+            lambda: validate_plan_payload(
+                holdout,
+                repository_root=VALIDATOR_ROOT,
+            ),
         )
 
         stale_epoch = plan_payload()
@@ -213,7 +218,10 @@ class R2AcceptanceValidatorTests(unittest.TestCase):
         stale_epoch["plan_identity"] = canonical_sha256(material)
         self.assert_code(
             FailureCode.RESEARCH_PROTOCOL_INVALID,
-            lambda: validate_plan_payload(stale_epoch),
+            lambda: validate_plan_payload(
+                stale_epoch,
+                repository_root=VALIDATOR_ROOT,
+            ),
         )
 
         direct_import = plan_payload()
@@ -224,7 +232,10 @@ class R2AcceptanceValidatorTests(unittest.TestCase):
         direct_import["plan_identity"] = canonical_sha256(material)
         self.assert_code(
             FailureCode.RESEARCH_PROTOCOL_INVALID,
-            lambda: validate_plan_payload(direct_import),
+            lambda: validate_plan_payload(
+                direct_import,
+                repository_root=VALIDATOR_ROOT,
+            ),
         )
 
     def test_component_cannot_promote_a_legacy_or_partial_outcome(self) -> None:

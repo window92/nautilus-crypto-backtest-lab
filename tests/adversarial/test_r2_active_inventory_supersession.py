@@ -31,6 +31,7 @@ from scripts.build_r2_active_inventory_supersession_status import (
     build_registry,
     main,
 )
+from tests.helpers import initialize_product_repository
 
 
 REPOSITORY = Path(__file__).resolve().parents[2]
@@ -56,6 +57,7 @@ def _make_run(root: Path, relative: str) -> Path:
 
 
 def _synthetic_fixture(root: Path) -> tuple[Path, dict[str, Path], bytes]:
+    initialize_product_repository(root)
     runs: dict[str, Path] = {}
     records: list[dict[str, object]] = []
     for logical_id, expected in R2_ACTIVE_INVENTORY_SUPERSEDED_RESULTS.items():
@@ -186,6 +188,7 @@ class R2ActiveInventorySupersessionTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
+            initialize_product_repository(root)
             for relative in EXPECTED_ACTIVE_INVENTORY_EVIDENCE_IDENTITIES:
                 target_dir = root / relative
                 target_dir.mkdir(parents=True)

@@ -13,6 +13,7 @@ from pathlib import Path
 from crypto_lab.git_identity import GitIdentityError
 from crypto_lab.git_identity import capture_actual_source_revision
 from crypto_lab.git_identity import verify_source_revision
+from tests.helpers import initialize_product_repository
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -20,11 +21,9 @@ ROOT = Path(__file__).resolve().parents[2]
 
 class Aud006SourceRevisionTests(unittest.TestCase):
     def _repository(self, root: Path) -> Path:
-        subprocess.run(["git", "init", "-b", "main", str(root)], check=True, capture_output=True)
-        subprocess.run(["git", "-C", str(root), "config", "user.name", "Repair Test"], check=True)
-        subprocess.run(["git", "-C", str(root), "config", "user.email", "repair@example.invalid"], check=True)
+        initialize_product_repository(root)
         subprocess.run(
-            ["git", "-C", str(root), "remote", "add", "origin", "https://example.invalid/exact.git"],
+            ["git", "-C", str(root), "remote", "set-url", "origin", "https://example.invalid/exact.git"],
             check=True,
         )
         (root / "tracked.txt").write_text("source\n", encoding="utf-8")

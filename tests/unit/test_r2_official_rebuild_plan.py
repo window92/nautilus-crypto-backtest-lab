@@ -31,7 +31,6 @@ from scripts.prepare_adversarial_remediation_002_runs import EPOCH_FRAGMENT
 from scripts.prepare_adversarial_remediation_002_runs import PROFILE_ORDER
 from scripts.prepare_adversarial_remediation_002_runs import RESEARCH_FAMILY
 from scripts.prepare_adversarial_remediation_002_runs import STRATEGY_FAMILY
-from scripts.prepare_adversarial_remediation_002_runs import ROOT
 from scripts.prepare_adversarial_remediation_002_runs import WARMUP_START
 from scripts.prepare_adversarial_remediation_002_runs import _benchmark_id
 from scripts.prepare_adversarial_remediation_002_runs import _build_protocol_and_workflows
@@ -44,6 +43,7 @@ from scripts.prepare_adversarial_remediation_002_runs import _require_new_workfl
 from scripts.prepare_adversarial_remediation_002_runs import _require_rebuild_validation
 
 
+ROOT = Path(__file__).resolve().parents[2]
 SPOT_RELEASE = ROOT / (
     "data/releases/fd8542c109cfbf7d6b19d5b7bbb7705c6a161efc807695f3671978c381e34eca.json"
 )
@@ -248,9 +248,9 @@ class R2OfficialRebuildPlanTests(unittest.TestCase):
             if path.is_file()
             and QualifiedProfileRegistry.from_json_bytes(path.read_bytes()).schema_version == 2
         )
-        _require_current_registry_locator(current_path)
+        _require_current_registry_locator(ROOT, current_path)
         with self.assertRaisesRegex(RuntimeError, "current Git-committed authority"):
-            _require_current_registry_locator(older_path)
+            _require_current_registry_locator(ROOT, older_path)
 
     def test_qualification_executable_closure_rejects_stale_product_bytes(self) -> None:
         candidates = _qualified_profile_registry_candidates(ROOT)
@@ -382,6 +382,7 @@ class R2OfficialRebuildPlanTests(unittest.TestCase):
             root = Path(temporary)
             execution = [
                 _execution_item(
+                    ROOT,
                     workflow,
                     input_path=root / f"{workflow.trial_id}.json",
                     result_path=root / "results" / f"{workflow.trial_id}.json",
@@ -465,7 +466,7 @@ class R2OfficialRebuildPlanTests(unittest.TestCase):
                 for benchmark_id in benchmark_ids
             ),
         )
-        _require_new_workflow_identities(workflows)
+        _require_new_workflow_identities(ROOT, workflows)
 
     def test_rebuild_validation_must_bind_both_release_inventory_and_catalogs(self) -> None:
         inventories = {
@@ -523,15 +524,21 @@ class R2OfficialRebuildPlanTests(unittest.TestCase):
 
     def test_preparation_output_is_fresh_external_and_under_tmp(self) -> None:
         with self.assertRaisesRegex(ValueError, "outside the repository"):
-            _require_external_fresh_output(ROOT / "r2-plan-must-not-be-created")
+            _require_external_fresh_output(
+                ROOT,
+                ROOT / "r2-plan-must-not-be-created",
+            )
         with self.assertRaisesRegex(ValueError, "under /tmp"):
-            _require_external_fresh_output(Path("/var/tmp/r2-plan-must-not-be-created"))
+            _require_external_fresh_output(
+                ROOT,
+                Path("/var/tmp/r2-plan-must-not-be-created"),
+            )
         with tempfile.TemporaryDirectory(dir="/tmp") as temporary:
             existing = Path(temporary)
             with self.assertRaisesRegex(FileExistsError, "refusing to overwrite"):
-                _require_external_fresh_output(existing)
+                _require_external_fresh_output(ROOT, existing)
             accepted = existing.parent / f"{existing.name}-fresh"
-            self.assertEqual(_require_external_fresh_output(accepted), accepted)
+            self.assertEqual(_require_external_fresh_output(ROOT, accepted), accepted)
             self.assertFalse(accepted.exists())
 
 

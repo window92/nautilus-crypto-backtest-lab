@@ -247,6 +247,42 @@ def _git(repository: Path, *arguments: str, check: bool = True) -> bytes:
     return process.stdout
 
 
+def _require_repository_root(repository: Path) -> Path:
+    if not isinstance(repository, Path):
+        raise HistoricalAuthorityBuildError("repository must be pathlib.Path")
+    if not repository.is_absolute():
+        raise HistoricalAuthorityBuildError("repository must be absolute")
+    lexical = Path(os.path.abspath(repository))
+    if lexical != repository:
+        raise HistoricalAuthorityBuildError(
+            "repository must be an exact normalized absolute path",
+        )
+    cursor = Path(lexical.anchor)
+    for component in lexical.parts[1:]:
+        cursor /= component
+        if cursor.is_symlink():
+            raise HistoricalAuthorityBuildError(
+                "repository path must not contain a symlink",
+            )
+    if not lexical.is_dir():
+        raise HistoricalAuthorityBuildError("repository does not exist")
+    ssot = lexical / "SSOT.md"
+    package = lexical / "src/crypto_lab/__init__.py"
+    if (
+        ssot.is_symlink()
+        or not ssot.is_file()
+        or package.is_symlink()
+        or not package.is_file()
+    ):
+        raise HistoricalAuthorityBuildError("repository is not the Product repository")
+    root = Path(
+        _git(lexical, "rev-parse", "--show-toplevel").decode().strip(),
+    )
+    if root != lexical:
+        raise HistoricalAuthorityBuildError("repository is not the exact Git root")
+    return lexical
+
+
 def _read_regular_with_identity(path: Path, *, collect: bool) -> tuple[bytes, str, int]:
     flags = os.O_RDONLY | os.O_CLOEXEC
     if hasattr(os, "O_NOFOLLOW"):
@@ -673,7 +709,7 @@ def derive_current_product_build_spec(
     project_runtime_authority_path: Path,
     data_runtime_authority_path: Path,
     expected_results_path: Path,
-    builder_path: Path | None = None,
+    builder_path: Path,
 ) -> dict[str, Any]:
     """Derive v2 authorities for the validators which judged historical bytes.
 
@@ -684,15 +720,12 @@ def derive_current_product_build_spec(
     for it, while v1 by itself remains diagnostic and non-executable.
     """
 
-    repository_input = Path(repository)
-    if repository_input.is_symlink():
-        raise HistoricalAuthorityBuildError("repository is a symlink")
-    repository = repository_input.resolve(strict=True)
+    repository = _require_repository_root(repository)
     product_commit = _exact_commit(repository, product_commit, label="product_commit")
     head = _git(repository, "rev-parse", "HEAD^{commit}").decode().strip()
     if head != product_commit:
         raise HistoricalAuthorityBuildError("Product commit must be the exact repository HEAD")
-    _assert_builder_identity(repository, product_commit, Path(builder_path or __file__))
+    _assert_builder_identity(repository, product_commit, builder_path)
     product_tree = _git(repository, "rev-parse", f"{product_commit}^{{tree}}").decode().strip()
     historical_commits = _legacy_validator_commits(repository, legacy_manifest_path)
     plan = sorted(historical_commits)
@@ -855,8 +888,17 @@ def _exact_commit(repository: Path, value: object, *, label: str) -> str:
 
 def _assert_builder_identity(repository: Path, product_commit: str, builder_path: Path) -> None:
     expected_path = repository / BUILDER_RELATIVE_PATH
-    if builder_path.is_symlink() or builder_path.resolve(strict=True) != expected_path:
+    if (
+        not builder_path.is_absolute()
+        or Path(os.path.abspath(builder_path)) != builder_path
+        or builder_path != expected_path
+    ):
         raise HistoricalAuthorityBuildError("builder must execute from its canonical repository path")
+    cursor = Path(builder_path.anchor)
+    for component in builder_path.parts[1:]:
+        cursor /= component
+        if cursor.is_symlink():
+            raise HistoricalAuthorityBuildError("builder path contains a symlink")
     expected = _git_file_identity(
         repository,
         product_commit,
@@ -1129,17 +1171,11 @@ def build_manifest(
     repository: Path,
     build_spec_path: Path,
     legacy_manifest_path: Path,
-    builder_path: Path | None = None,
+    builder_path: Path,
 ) -> dict[str, Any]:
     """Build a canonical manifest without writing it to disk."""
 
-    repository_input = Path(repository)
-    if repository_input.is_symlink():
-        raise HistoricalAuthorityBuildError("repository is a symlink")
-    repository = repository_input.resolve(strict=True)
-    root = Path(_git(repository, "rev-parse", "--show-toplevel").decode().strip()).resolve()
-    if root != repository:
-        raise HistoricalAuthorityBuildError("repository argument is not the exact Git root")
+    repository = _require_repository_root(repository)
     spec = _strict_object(
         _load_json(build_spec_path),
         {"execution_plan", "product_commit", "runtime_profiles", "schema", "validators"},
@@ -1154,7 +1190,7 @@ def build_manifest(
     _assert_builder_identity(
         repository,
         product_commit,
-        Path(builder_path or __file__),
+        builder_path,
     )
     expected_plan = _declared_plan(repository, legacy_manifest_path)
     plan = spec["execution_plan"]
@@ -1226,6 +1262,7 @@ def main(argv: list[str] | None = None) -> int:
         help="derive historical validator authorities under an explicit Product commit",
     )
     derive.add_argument("--repository", type=Path, required=True)
+    derive.add_argument("--builder-path", type=Path, required=True)
     derive.add_argument("--product-commit", required=True)
     derive.add_argument("--legacy-manifest", type=Path, required=True)
     derive.add_argument("--project-runtime-authority", type=Path, required=True)
@@ -1234,6 +1271,7 @@ def main(argv: list[str] | None = None) -> int:
     derive.add_argument("--output", type=Path, required=True)
     build = commands.add_parser("build", help="build v2 authorities from a committed spec")
     build.add_argument("--repository", type=Path, required=True)
+    build.add_argument("--builder-path", type=Path, required=True)
     build.add_argument("--build-spec", type=Path, required=True)
     build.add_argument("--legacy-manifest", type=Path, required=True)
     build.add_argument("--output", type=Path, required=True)
@@ -1246,6 +1284,7 @@ def main(argv: list[str] | None = None) -> int:
             project_runtime_authority_path=arguments.project_runtime_authority,
             data_runtime_authority_path=arguments.data_runtime_authority,
             expected_results_path=arguments.expected_results,
+            builder_path=arguments.builder_path,
         )
         payload = _canonical_bytes(spec) + b"\n"
         _atomic_write(arguments.output, payload)
@@ -1272,6 +1311,7 @@ def main(argv: list[str] | None = None) -> int:
         repository=arguments.repository,
         build_spec_path=arguments.build_spec,
         legacy_manifest_path=arguments.legacy_manifest,
+        builder_path=arguments.builder_path,
     )
     payload = _canonical_bytes(manifest) + b"\n"
     _atomic_write(arguments.output, payload)

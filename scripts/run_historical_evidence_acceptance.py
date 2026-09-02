@@ -9,15 +9,10 @@ from pathlib import Path
 from typing import Any
 
 from crypto_lab.hashing import canonical_json_bytes
+from crypto_lab.git_identity import require_repository_root
 from crypto_lab.historical_contracts import HistoricalAuthorityError
 from crypto_lab.historical_contracts import load_historical_authority_manifest
 from crypto_lab.historical_executor import execute_historical_validator
-
-
-ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_AUTHORITY = ROOT / "contracts/historical-validator-authorities-v2.json"
-DEFAULT_BOOTSTRAP = ROOT / "scripts/isolated_runtime_bootstrap.py"
-LEGACY_MANIFEST = ROOT / "contracts/historical-contract-snapshots.json"
 
 
 def _legacy_declared_validators(repository_root: Path) -> set[str]:
@@ -39,12 +34,23 @@ def _legacy_declared_validators(repository_root: Path) -> set[str]:
 
 def run_acceptance(
     *,
-    authority_path: Path = DEFAULT_AUTHORITY,
-    bootstrap_path: Path = DEFAULT_BOOTSTRAP,
-    repository_root: Path = ROOT,
+    repository_root: Path,
+    authority_path: Path | None = None,
+    bootstrap_path: Path | None = None,
 ) -> dict[str, Any]:
     """Run only pinned validator bytes; current-root validators are never called."""
 
+    repository_root = require_repository_root(repository_root)
+    authority_path = (
+        repository_root / "contracts/historical-validator-authorities-v2.json"
+        if authority_path is None
+        else authority_path
+    )
+    bootstrap_path = (
+        repository_root / "scripts/isolated_runtime_bootstrap.py"
+        if bootstrap_path is None
+        else bootstrap_path
+    )
     manifest = load_historical_authority_manifest(authority_path)
     plan = tuple(manifest["execution_plan"])
     declared = _legacy_declared_validators(repository_root)
@@ -100,16 +106,24 @@ def run_acceptance(
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--authority", type=Path, default=DEFAULT_AUTHORITY)
-    parser.add_argument("--bootstrap", type=Path, default=DEFAULT_BOOTSTRAP)
-    parser.add_argument("--repository", type=Path, default=ROOT)
+    parser.add_argument("--authority", type=Path)
+    parser.add_argument("--bootstrap", type=Path)
+    parser.add_argument("--repository", type=Path, required=True)
     parser.add_argument("--output", type=Path)
     arguments = parser.parse_args()
     try:
         result = run_acceptance(
-            authority_path=arguments.authority.resolve(strict=True),
-            bootstrap_path=arguments.bootstrap.resolve(strict=True),
-            repository_root=arguments.repository.resolve(strict=True),
+            authority_path=(
+                None
+                if arguments.authority is None
+                else arguments.authority.resolve(strict=True)
+            ),
+            bootstrap_path=(
+                None
+                if arguments.bootstrap is None
+                else arguments.bootstrap.resolve(strict=True)
+            ),
+            repository_root=arguments.repository,
         )
         exit_code = 0 if result["status"] == "PASS" else 1
     except (HistoricalAuthorityError, FileNotFoundError, ValueError) as exc:

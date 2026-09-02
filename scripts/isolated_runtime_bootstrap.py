@@ -231,6 +231,36 @@ def _load_authority(path: Path) -> tuple[dict[str, Any], str]:
     return authority, hashlib.sha256(payload).hexdigest()
 
 
+def _explicit_repository_root(value: Path) -> Path:
+    """Reject repository authority inferred through cwd or path resolution."""
+
+    if not value.is_absolute():
+        _fail("PRODUCT_SOURCE_IDENTITY_MISMATCH", "repository must be absolute")
+    lexical = Path(os.path.abspath(value))
+    if lexical != value:
+        _fail(
+            "PRODUCT_SOURCE_IDENTITY_MISMATCH",
+            "repository must be an exact normalized absolute path",
+        )
+    cursor = Path(lexical.anchor)
+    for component in lexical.parts[1:]:
+        cursor /= component
+        if cursor.is_symlink():
+            _fail(
+                "PRODUCT_SOURCE_IDENTITY_MISMATCH",
+                "repository path must not contain a symlink",
+            )
+    if not lexical.is_dir():
+        _fail("PRODUCT_SOURCE_IDENTITY_MISMATCH", "repository is missing")
+    ssot = lexical / "SSOT.md"
+    if ssot.is_symlink() or not ssot.is_file():
+        _fail(
+            "PRODUCT_SOURCE_IDENTITY_MISMATCH",
+            "repository is not the Product repository",
+        )
+    return lexical
+
+
 def _verify_bootstrap_identity(authority: dict[str, Any]) -> None:
     source = Path(__file__)
     if source.is_symlink() or not source.is_file():
@@ -1144,10 +1174,10 @@ def run(arguments: argparse.Namespace) -> int:
     _verify_process_boundary()
     authority_input = Path(arguments.authority)
     repository_input = Path(arguments.repository)
-    if authority_input.is_symlink() or repository_input.is_symlink():
+    if authority_input.is_symlink():
         _fail("FILE_IDENTITY_MISMATCH", "authority/repository argument is a symlink")
     authority_path = authority_input.resolve(strict=True)
-    repository = repository_input.resolve(strict=True)
+    repository = _explicit_repository_root(repository_input)
     authority, authority_sha256 = _load_authority(authority_path)
     _verify_bootstrap_identity(authority)
     _verify_target(authority, arguments.entrypoint, arguments.script)
@@ -1181,6 +1211,7 @@ def run(arguments: argparse.Namespace) -> int:
         "bytecode_cache_policy": "IGNORE_PYC_PYO_AND_VERIFY_RECORD_AT_IMPORT",
         "distributions": distributions,
         "product": product,
+        "repository_root": str(repository),
         "target": arguments.entrypoint or arguments.script,
     }
     attestation["attestation_identity"] = _canonical_sha256(attestation)

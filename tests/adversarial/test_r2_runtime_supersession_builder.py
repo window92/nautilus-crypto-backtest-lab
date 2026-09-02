@@ -16,6 +16,7 @@ from scripts.build_r2_runtime_supersession_status import (
     build_registry,
     main,
 )
+from tests.helpers import initialize_product_repository
 
 
 REPOSITORY = Path(__file__).resolve().parents[2]
@@ -24,6 +25,7 @@ RECORDED_AT = "2026-08-31T20:00:00Z"
 
 
 def _copy_fixture(root: Path) -> None:
+    initialize_product_repository(root)
     for relative, hashes in EXPECTED_RUNTIME_SUPERSESSION_EVIDENCE_HASHES.items():
         target = root / relative
         target.mkdir(parents=True)

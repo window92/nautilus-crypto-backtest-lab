@@ -19,6 +19,7 @@ from scripts.build_adversarial_remediation_002_result_status import (
     main,
     write_fresh_registry,
 )
+from tests.helpers import initialize_product_repository
 
 
 REPOSITORY = Path(__file__).resolve().parents[2]
@@ -87,6 +88,7 @@ def frozen_inventory_identity() -> str:
 
 
 def copy_historical_fixture(destination: Path) -> None:
+    initialize_product_repository(destination)
     for relative in EXPECTED_PATHS:
         target = destination / relative
         target.mkdir(parents=True)
@@ -224,7 +226,7 @@ class R2HistoricalResultStatusBuilderTests(unittest.TestCase):
         payload = b"canonical-registry-bytes\n"
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary) / "target-link"
-            root.mkdir()
+            initialize_product_repository(root)
             parent = root / OUTPUT_RELATIVE_PATH.parent
             parent.mkdir(parents=True)
             outside = Path(temporary) / "outside.json"
@@ -238,7 +240,7 @@ class R2HistoricalResultStatusBuilderTests(unittest.TestCase):
             self.assertEqual(outside.read_bytes(), b"outside\n")
 
             parent_link_root = Path(temporary) / "parent-link"
-            parent_link_root.mkdir()
+            initialize_product_repository(parent_link_root)
             (parent_link_root / "evidence").symlink_to(Path(temporary))
             with self.assertRaisesRegex(
                 HistoricalResultStatusBuildError,

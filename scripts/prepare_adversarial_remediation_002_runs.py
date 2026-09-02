@@ -30,6 +30,7 @@ from crypto_lab.data import FULL_RAW_INVENTORY_NORMALIZER_VERSION
 from crypto_lab.hashing import canonical_json_bytes
 from crypto_lab.hashing import canonical_sha256
 from crypto_lab.hashing import sha256_file
+from crypto_lab.git_identity import require_repository_root
 from crypto_lab.m3 import ProfileQualificationState
 from crypto_lab.m3 import QualifiedProfileRecord
 from crypto_lab.m3 import QualifiedProfileRegistry
@@ -60,7 +61,6 @@ from crypto_lab.strategies import locked_buy_and_hold_strategy_spec
 from crypto_lab.strategies import locked_weekly_tsmom_strategy_spec
 
 
-ROOT = Path(__file__).resolve().parents[1]
 EXPECTED_BRANCH = "fix/adversarial-audit-remediation-002"
 EPOCH_FRAGMENT = "adversarial-remediation-002"
 DEFAULT_EPOCH = "adversarial-remediation-002"
@@ -95,10 +95,10 @@ DEVELOPMENT_CLAIM_BASIS = "; ".join(
 )
 
 
-def _git(*arguments: str, check: bool = True) -> str:
+def _git(repository: Path, *arguments: str, check: bool = True) -> str:
     process = subprocess.run(
         ["git", "--no-replace-objects", *arguments],
-        cwd=ROOT,
+        cwd=repository,
         env={
             "PATH": "/usr/bin:/bin",
             "LANG": "C.UTF-8",
@@ -124,8 +124,8 @@ def _future(day: int) -> UtcInterval:
     )
 
 
-def _contained_committed_file(path: Path, *, label: str) -> Path:
-    candidate = path if path.is_absolute() else ROOT / path
+def _contained_committed_file(repository: Path, path: Path, *, label: str) -> Path:
+    candidate = path if path.is_absolute() else repository / path
     lexical = Path(os.path.abspath(candidate))
     cursor = Path(lexical.anchor)
     for component in lexical.parts[1:]:
@@ -134,14 +134,14 @@ def _contained_committed_file(path: Path, *, label: str) -> Path:
             raise ValueError(f"{label} path must not contain a symlink")
     resolved = candidate.resolve(strict=True)
     try:
-        relative = resolved.relative_to(ROOT).as_posix()
+        relative = resolved.relative_to(repository).as_posix()
     except ValueError as exc:
         raise ValueError(f"{label} must be inside the repository") from exc
     if not resolved.is_file():
         raise ValueError(f"{label} must be a regular file")
     committed = subprocess.run(
         ["git", "--no-replace-objects", "show", f"HEAD:{relative}"],
-        cwd=ROOT,
+        cwd=repository,
         env={
             "PATH": "/usr/bin:/bin",
             "LANG": "C.UTF-8",
@@ -158,27 +158,31 @@ def _contained_committed_file(path: Path, *, label: str) -> Path:
     return resolved
 
 
-def _require_clean_published_source(branch: str, remote_ref: str) -> dict[str, str]:
-    actual_branch = _git("symbolic-ref", "--quiet", "--short", "HEAD")
+def _require_clean_published_source(
+    repository: Path,
+    branch: str,
+    remote_ref: str,
+) -> dict[str, str]:
+    actual_branch = _git(repository, "symbolic-ref", "--quiet", "--short", "HEAD")
     if actual_branch != branch:
         raise RuntimeError(f"branch mismatch: expected={branch} actual={actual_branch}")
-    if _git("status", "--porcelain=v1", "--untracked-files=all"):
+    if _git(repository, "status", "--porcelain=v1", "--untracked-files=all"):
         raise RuntimeError("workflow preparation requires a clean committed worktree")
-    head = _git("rev-parse", "HEAD")
-    remote = _git("rev-parse", remote_ref)
+    head = _git(repository, "rev-parse", "HEAD")
+    remote = _git(repository, "rev-parse", remote_ref)
     if head != remote:
         raise RuntimeError(f"workflow preparation requires HEAD == {remote_ref}")
     return {
         "branch": actual_branch,
         "head": head,
-        "source_tree": _git("rev-parse", "HEAD^{tree}"),
+        "source_tree": _git(repository, "rev-parse", "HEAD^{tree}"),
         "remote_ref": remote_ref,
         "remote_tip": remote,
     }
 
 
-def _require_no_active_trial() -> None:
-    records = TrialJournal(ROOT / "research/trials.jsonl").read_records()
+def _require_no_active_trial(repository: Path) -> None:
+    records = TrialJournal(repository / "research/trials.jsonl").read_records()
     latest = {record.trial_id: record for record in records}
     active = sorted(
         trial_id
@@ -189,10 +193,10 @@ def _require_no_active_trial() -> None:
         raise RuntimeError("active or incomplete Official trial exists: " + ",".join(active))
 
 
-def _require_external_fresh_output(path: Path) -> Path:
+def _require_external_fresh_output(repository: Path, path: Path) -> Path:
     lexical = Path(os.path.abspath(path))
     try:
-        lexical.relative_to(ROOT)
+        lexical.relative_to(repository)
     except ValueError:
         pass
     else:
@@ -254,10 +258,10 @@ def _require_current_registry(
     return records
 
 
-def _require_current_registry_locator(registry_path: Path) -> None:
+def _require_current_registry_locator(repository: Path, registry_path: Path) -> None:
     """Reject an otherwise valid older Registry at plan-preparation time."""
 
-    candidates = _qualified_profile_registry_candidates(ROOT)
+    candidates = _qualified_profile_registry_candidates(repository)
     if not candidates or registry_path != candidates[0]:
         raise RuntimeError(
             "qualification registry is not the current Git-committed authority",
@@ -265,11 +269,13 @@ def _require_current_registry_locator(registry_path: Path) -> None:
 
 
 def _require_qualification_evidence(
+    repository: Path,
     registry_path: Path,
     records: dict[MarketProfile, QualifiedProfileRecord],
 ) -> dict[str, Any]:
     root = registry_path.parent
     manifest_path = _contained_committed_file(
+        repository,
         root / "qualification-manifest.json",
         label="qualification manifest",
     )
@@ -327,7 +333,11 @@ def _require_qualification_evidence(
                 required_files.add(relative)
                 if relative not in declared:
                     raise RuntimeError(f"qualification evidence is outside its manifest: {relative}")
-                path = _contained_committed_file(root / relative, label="qualification Run evidence")
+                path = _contained_committed_file(
+                    repository,
+                    root / relative,
+                    label="qualification Run evidence",
+                )
                 size, digest = declared[relative]
                 if path.stat().st_size != size or sha256_file(path) != digest:
                     raise RuntimeError(f"qualification manifest binding differs: {relative}")
@@ -392,38 +402,44 @@ def _require_rebuild_validation(
             raise RuntimeError(f"Dataset rebuild proof differs for {profile.value}")
 
 
-def _require_new_workflow_identities(workflows: list[OwnerWorkflowInput]) -> None:
+def _require_new_workflow_identities(
+    repository: Path,
+    workflows: list[OwnerWorkflowInput],
+) -> None:
     existing_trials = {
-        record.trial_id for record in TrialJournal(ROOT / "research/trials.jsonl").read_records()
+        record.trial_id
+        for record in TrialJournal(repository / "research/trials.jsonl").read_records()
     }
     collisions: list[str] = []
     for workflow in workflows:
         if workflow.trial_id in existing_trials:
             collisions.append(f"journal:{workflow.trial_id}")
         exact_paths = (
-            ROOT / "research/workflows" / f"{workflow.trial_id}.json",
-            ROOT / "research/replays" / f"{workflow.trial_id}.json",
-            ROOT / "research/reports" / f"{workflow.trial_id}.json",
-            ROOT / "research/reports" / f"{workflow.trial_id}.md",
-            ROOT / "research/performance" / f"{workflow.run_id}.json",
-            ROOT / "research/diagnostics" / f"{workflow.run_id}.json",
+            repository / "research/workflows" / f"{workflow.trial_id}.json",
+            repository / "research/replays" / f"{workflow.trial_id}.json",
+            repository / "research/reports" / f"{workflow.trial_id}.json",
+            repository / "research/reports" / f"{workflow.trial_id}.md",
+            repository / "research/performance" / f"{workflow.run_id}.json",
+            repository / "research/diagnostics" / f"{workflow.run_id}.json",
         )
-        collisions.extend(str(path.relative_to(ROOT)) for path in exact_paths if path.exists())
         collisions.extend(
-            str(path.relative_to(ROOT))
-            for path in (ROOT / "runs").glob(f"{workflow.run_id}-*")
+            str(path.relative_to(repository)) for path in exact_paths if path.exists()
         )
-        replay_root = ROOT / "runs/replays" / workflow.trial_id
+        collisions.extend(
+            str(path.relative_to(repository))
+            for path in (repository / "runs").glob(f"{workflow.run_id}-*")
+        )
+        replay_root = repository / "runs/replays" / workflow.trial_id
         if replay_root.exists():
-            collisions.append(str(replay_root.relative_to(ROOT)))
+            collisions.append(str(replay_root.relative_to(repository)))
         if workflow.workflow_purpose is OwnerWorkflowPurpose.BENCHMARK_STUDY:
             benchmark = (
-                ROOT
+                repository
                 / "research/benchmarks"
                 / f"{workflow.protocol.required_benchmark.benchmark_id}.json"
             )
             if benchmark.exists():
-                collisions.append(str(benchmark.relative_to(ROOT)))
+                collisions.append(str(benchmark.relative_to(repository)))
     if collisions:
         raise RuntimeError("R2 workflow identity collision: " + ",".join(sorted(collisions)))
 
@@ -613,6 +629,7 @@ def _build_protocol_and_workflows(
 
 
 def _execution_item(
+    repository: Path,
     workflow: OwnerWorkflowInput,
     *,
     input_path: Path,
@@ -626,25 +643,25 @@ def _execution_item(
         "LANG=C.UTF-8",
         "LC_ALL=C.UTF-8",
         "TZ=UTC",
-        str(ROOT / ".venv/bin/python"),
+        str(repository / ".venv/bin/python"),
         "-I",
         "-P",
         "-S",
         "-B",
         "-X",
         "pycache_prefix=/dev/null",
-        str(ROOT / "scripts/isolated_runtime_bootstrap.py"),
+        str(repository / "scripts/isolated_runtime_bootstrap.py"),
         "--authority",
-        str(ROOT / "runtime-bootstrap-authority.json"),
+        str(repository / "runtime-bootstrap-authority.json"),
         "--repository",
-        str(ROOT),
+        str(repository),
         "--entrypoint",
         "crypto_lab.owner:main",
         "--",
         "--input",
         str(input_path),
         "--repository",
-        str(ROOT),
+        str(repository),
         "--output",
         str(result_path),
     ]
@@ -682,6 +699,7 @@ def _parse_utc(value: str) -> datetime:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--repository", type=Path, required=True)
     parser.add_argument("--frozen-at-utc", required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--qualification-registry", type=Path, required=True)
@@ -693,6 +711,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--required-branch", default=EXPECTED_BRANCH)
     parser.add_argument("--required-remote-ref")
     arguments = parser.parse_args(argv)
+    repository = require_repository_root(arguments.repository)
 
     epoch = validate_safe_component(arguments.epoch, field="epoch")
     if EPOCH_FRAGMENT not in epoch:
@@ -702,36 +721,52 @@ def main(argv: list[str] | None = None) -> int:
         field="research_family_id",
     )
     frozen = _parse_utc(arguments.frozen_at_utc)
-    output = _require_external_fresh_output(arguments.output_dir)
+    output = _require_external_fresh_output(repository, arguments.output_dir)
     remote_ref = arguments.required_remote_ref or f"origin/{arguments.required_branch}"
-    source = _require_clean_published_source(arguments.required_branch, remote_ref)
-    _require_no_active_trial()
+    source = _require_clean_published_source(
+        repository,
+        arguments.required_branch,
+        remote_ref,
+    )
+    _require_no_active_trial(repository)
 
     registry_path = _contained_committed_file(
+        repository,
         arguments.qualification_registry,
         label="qualification registry",
     )
-    _require_current_registry_locator(registry_path)
+    _require_current_registry_locator(repository, registry_path)
     rebuild_validation_path = _contained_committed_file(
+        repository,
         arguments.data_rebuild_validation,
         label="Dataset rebuild validation",
     )
-    spot_path = _contained_committed_file(arguments.spot_release, label="Spot DatasetRelease")
+    spot_path = _contained_committed_file(
+        repository,
+        arguments.spot_release,
+        label="Spot DatasetRelease",
+    )
     perpetual_path = _contained_committed_file(
+        repository,
         arguments.perpetual_release,
         label="Perpetual DatasetRelease",
     )
     runtime_bootstrap_authority_path = _contained_committed_file(
-        ROOT / "runtime-bootstrap-authority.json",
+        repository,
+        repository / "runtime-bootstrap-authority.json",
         label="Runtime bootstrap authority",
     )
-    runtime_lock_sha256 = sha256_file(ROOT / "runtime.lock.json")
+    runtime_lock_sha256 = sha256_file(repository / "runtime.lock.json")
     registry = QualifiedProfileRegistry.from_json_bytes(registry_path.read_bytes())
     profiles = _require_current_registry(
         registry,
         runtime_lock_sha256=runtime_lock_sha256,
     )
-    qualification_evidence = _require_qualification_evidence(registry_path, profiles)
+    qualification_evidence = _require_qualification_evidence(
+        repository,
+        registry_path,
+        profiles,
+    )
     releases = {
         MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY: DatasetRelease.from_json_bytes(
             spot_path.read_bytes(),
@@ -779,7 +814,7 @@ def main(argv: list[str] | None = None) -> int:
         for workflow in workflows
     ):
         raise RuntimeError("R2 workflow identity lacks the remediation epoch")
-    _require_new_workflow_identities(workflows)
+    _require_new_workflow_identities(repository, workflows)
 
     output.mkdir(mode=0o700)
     input_directory = output / "workflow-inputs"
@@ -793,6 +828,7 @@ def main(argv: list[str] | None = None) -> int:
         path.write_bytes(workflow.to_json_bytes() + b"\n")
         execution.append(
             _execution_item(
+                repository,
                 workflow,
                 input_path=path,
                 result_path=result_directory / f"{workflow.trial_id}.json",
@@ -814,21 +850,21 @@ def main(argv: list[str] | None = None) -> int:
             runtime_bootstrap_authority_path,
         ),
         "qualification_registry": {
-            "path": registry_path.relative_to(ROOT).as_posix(),
+            "path": registry_path.relative_to(repository).as_posix(),
             "sha256": sha256_file(registry_path),
             "schema_version": registry.schema_version,
             "registry_content_sha256": registry.registry_content_sha256,
             **qualification_evidence,
         },
         "data_rebuild_validation": {
-            "path": rebuild_validation_path.relative_to(ROOT).as_posix(),
+            "path": rebuild_validation_path.relative_to(repository).as_posix(),
             "sha256": sha256_file(rebuild_validation_path),
             "schema": rebuild_validation["schema"],
             "status": rebuild_validation["status"],
         },
         "dataset_releases": {
             profile.value: {
-                "path": release_paths[profile].relative_to(ROOT).as_posix(),
+                "path": release_paths[profile].relative_to(repository).as_posix(),
                 "sha256": sha256_file(release_paths[profile]),
                 "dataset_release_id": releases[profile].dataset_release_id,
                 "catalog_identity": releases[profile].catalog_identity,

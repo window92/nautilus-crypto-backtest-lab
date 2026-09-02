@@ -31,6 +31,7 @@ from scripts.build_r2_repository_authority_supersession_status import (
     build_registry,
     main,
 )
+from tests.helpers import initialize_product_repository
 
 
 REPOSITORY = Path(__file__).resolve().parents[2]
@@ -56,6 +57,7 @@ def _make_run(root: Path, relative: str) -> Path:
 
 
 def _synthetic_fixture(root: Path) -> tuple[Path, dict[str, Path], bytes]:
+    root = initialize_product_repository(root)
     runs: dict[str, Path] = {}
     records: list[dict[str, object]] = []
     for logical_id, expected in R2_REPOSITORY_AUTHORITY_SUPERSEDED_RESULTS.items():
@@ -99,6 +101,7 @@ def _recompute(value: dict[str, object]) -> bytes:
 
 
 def _copy_real_fixture(root: Path) -> None:
+    initialize_product_repository(root)
     for relative in EXPECTED_REPOSITORY_AUTHORITY_EVIDENCE_IDENTITIES:
         target = root / relative
         target.mkdir(parents=True)
@@ -192,7 +195,7 @@ class R2RepositoryAuthoritySupersessionTests(unittest.TestCase):
         self.assertEqual(first, canonical_json_bytes(json.loads(first)) + b"\n")
 
         with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
+            root = initialize_product_repository(Path(temporary))
             _copy_real_fixture(root)
             relative = next(iter(EXPECTED_REPOSITORY_AUTHORITY_EVIDENCE_IDENTITIES))
             target = root / relative / "runtime_identity.json"

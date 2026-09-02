@@ -21,12 +21,11 @@ from crypto_lab.config import MarketProfile
 from crypto_lab.data import DatasetRawInventory
 from crypto_lab.data import DatasetRelease
 from crypto_lab.data import assert_official_active_raw_inventory
+from crypto_lab.git_identity import require_repository_root
 from crypto_lab.hashing import canonical_json_bytes
 from crypto_lab.hashing import canonical_sha256
 
 
-ROOT = Path(__file__).resolve().parents[1]
-DATA_ROOT = ROOT / "data"
 EXPECTED_DUCKDB_VERSION = "1.4.5"
 SPOT_PROFILE = MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY.value
 PERP_PROFILE = MarketProfile.BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING.value
@@ -218,7 +217,11 @@ def independent_participation_projection(
     return hashes
 
 
-def validate_full_raw_inventories(connection: duckdb.DuckDBPyConnection) -> list[dict[str, Any]]:
+def validate_full_raw_inventories(
+    connection: duckdb.DuckDBPyConnection,
+    *,
+    repository_root: Path,
+) -> list[dict[str, Any]]:
     """Independently validate release/member/semantic/blob four-way equality."""
 
     raw_rows = {
@@ -268,7 +271,7 @@ def validate_full_raw_inventories(connection: duckdb.DuckDBPyConnection) -> list
             expected_size, local_path, content_verified = database_binding
             source = Path(local_path)
             if not source.is_absolute():
-                source = ROOT / source
+                source = repository_root / source
             if (
                 content_verified
                 and source.is_file()
@@ -363,7 +366,7 @@ def validate_full_raw_inventories(connection: duckdb.DuckDBPyConnection) -> list
     return results
 
 
-def database_gate(path: Path) -> dict[str, Any]:
+def database_gate(path: Path, *, repository_root: Path) -> dict[str, Any]:
     connection = configure_database(path)
     try:
         table_count = int(
@@ -471,7 +474,10 @@ def database_gate(path: Path) -> dict[str, Any]:
                 "SELECT count(*) FROM instrument_metadata_source_bindings",
             ).fetchone()[0],
         )
-        full_raw_inventory_results = validate_full_raw_inventories(connection)
+        full_raw_inventory_results = validate_full_raw_inventories(
+            connection,
+            repository_root=repository_root,
+        )
     finally:
         connection.close()
     expected_dispositions = {
@@ -619,7 +625,12 @@ def preserve_raw_independent_copy(source: Path, target: Path) -> None:
         raise RuntimeError(f"independent Raw materialization failed: {target}")
 
 
-def materialize_catalog(source: Path, target: Path) -> dict[str, Any]:
+def materialize_catalog(
+    source: Path,
+    target: Path,
+    *,
+    repository_root: Path,
+) -> dict[str, Any]:
     source_inventory = directory_inventory(source)
     if target.exists():
         if directory_inventory(target) != source_inventory:
@@ -629,7 +640,7 @@ def materialize_catalog(source: Path, target: Path) -> dict[str, Any]:
         for item in source_inventory:
             preserve_file(source / item["path"], target / item["path"])
     return {
-        "path": str(target.relative_to(ROOT)),
+        "path": str(target.relative_to(repository_root)),
         "physical_inventory_identity": canonical_sha256(source_inventory),
         "file_count": len(source_inventory),
         "size_bytes": sum(item["size_bytes"] for item in source_inventory),
@@ -642,11 +653,13 @@ def materialize_releases(
     database_path: Path,
     primary_catalog_root: Path,
     artifact_root: Path,
+    repository_root: Path,
 ) -> dict[str, Any]:
+    data_root = repository_root / "data"
     connection = configure_database(database_path)
     try:
         raw_paths = {
-            digest: ROOT / local_path
+            digest: repository_root / local_path
             for digest, local_path in connection.execute(
                 "SELECT raw_object_sha256, local_path FROM raw_objects",
             ).fetchall()
@@ -659,29 +672,30 @@ def materialize_releases(
         profile_dir = "spot" if profile == SPOT_PROFILE else "perpetual"
         catalog = materialize_catalog(
             primary_catalog_root / profile_dir,
-            DATA_ROOT / "catalog" / release.catalog_identity,
+            data_root / "catalog" / release.catalog_identity,
+            repository_root=repository_root,
         )
         for suffix in (
             f"{release.dataset_release_id}.json",
             f"{release.instrument_metadata_identity}.metadata.json",
             f"{release.derived_validation_identity}.market-state.json",
         ):
-            preserve_file(artifact_root / suffix, DATA_ROOT / "releases" / suffix)
+            preserve_file(artifact_root / suffix, data_root / "releases" / suffix)
         if profile == PERP_PROFILE:
             suffix = f"{release.funding_data_identity}.funding.json"
-            preserve_file(artifact_root / suffix, DATA_ROOT / "releases" / suffix)
+            preserve_file(artifact_root / suffix, data_root / "releases" / suffix)
         if not isinstance(release.raw_inventory, DatasetRawInventory):
             raise RuntimeError("typed full Raw inventory is required for materialization")
         for raw_object in release.raw_inventory.raw_objects:
             preserve_raw_independent_copy(
                 raw_paths[raw_object.raw_object_sha256],
-                DATA_ROOT
+                data_root
                 / "raw/sha256"
                 / raw_object.raw_object_sha256[:2]
                 / f"{raw_object.raw_object_sha256}.blob",
             )
         frozen = DatasetRelease.from_json_bytes(
-            (DATA_ROOT / "releases" / f"{release.dataset_release_id}.json").read_bytes(),
+            (data_root / "releases" / f"{release.dataset_release_id}.json").read_bytes(),
         )
         if frozen != release:
             raise RuntimeError("frozen DatasetRelease bytes differ from rebuilt release")
@@ -794,13 +808,16 @@ def compare_funding_rows(
 def resolve_and_compare_catalogs(
     primary: dict[str, Any],
     database_path: Path,
+    *,
+    repository_root: Path,
 ) -> dict[str, Any]:
+    data_root = repository_root / "data"
     connection = configure_database(database_path)
     result: dict[str, Any] = {}
     try:
         for profile, release_material in sorted(primary["releases"].items()):
             release = DatasetRelease.from_json_bytes(canonical_json_bytes(release_material))
-            resolved = release.resolve_runtime_data(DATA_ROOT)
+            resolved = release.resolve_runtime_data(data_root)
             actual_identity = canonical_sha256(resolved.semantic_inventory)
             if actual_identity != release.catalog_identity:
                 raise RuntimeError("fresh-process catalog identity mismatch")
@@ -836,6 +853,7 @@ def resolve_and_compare_catalogs(
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
+    parser.add_argument("--repository", type=Path, required=True)
     parser.add_argument("--primary-result", type=Path, required=True)
     parser.add_argument("--independent-result", type=Path, required=True)
     parser.add_argument("--primary-catalog-root", type=Path, required=True)
@@ -845,31 +863,32 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def rooted(path: Path) -> Path:
-    return path if path.is_absolute() else ROOT / path
+def rooted(repository: Path, path: Path) -> Path:
+    return path if path.is_absolute() else repository / path
 
 
 def main() -> int:
     arguments = parse_args()
-    primary_result_path = rooted(arguments.primary_result)
-    independent_result_path = rooted(arguments.independent_result)
-    primary_catalog_root = rooted(arguments.primary_catalog_root)
-    independent_catalog_root = rooted(arguments.independent_catalog_root)
-    artifact_root = rooted(arguments.artifact_root)
-    output = rooted(arguments.output)
+    repository = require_repository_root(arguments.repository)
+    primary_result_path = rooted(repository, arguments.primary_result)
+    independent_result_path = rooted(repository, arguments.independent_result)
+    primary_catalog_root = rooted(repository, arguments.primary_catalog_root)
+    independent_catalog_root = rooted(repository, arguments.independent_catalog_root)
+    artifact_root = rooted(repository, arguments.artifact_root)
+    output = rooted(repository, arguments.output)
     if duckdb.__version__ != EXPECTED_DUCKDB_VERSION:
         raise RuntimeError("DuckDB identity mismatch")
     primary = load_json(primary_result_path)
     rebuilt = load_json(independent_result_path)
     comparison = compare_build_results(primary, rebuilt)
-    primary_database = ROOT / primary["database_path"]
-    rebuilt_database = ROOT / rebuilt["database_path"]
+    primary_database = repository / primary["database_path"]
+    rebuilt_database = repository / rebuilt["database_path"]
     if hash_file(primary_database) != primary["database_file_sha256"]:
         raise RuntimeError("primary physical database identity changed")
     if hash_file(rebuilt_database) != rebuilt["database_file_sha256"]:
         raise RuntimeError("independent physical database identity changed")
-    primary_gate = database_gate(primary_database)
-    independent_gate = database_gate(rebuilt_database)
+    primary_gate = database_gate(primary_database, repository_root=repository)
+    independent_gate = database_gate(rebuilt_database, repository_root=repository)
     if primary_gate != independent_gate:
         raise RuntimeError("independent read-only validation result mismatch")
 
@@ -890,8 +909,13 @@ def main() -> int:
         database_path=primary_database,
         primary_catalog_root=primary_catalog_root,
         artifact_root=artifact_root,
+        repository_root=repository,
     )
-    catalog_validation = resolve_and_compare_catalogs(primary, primary_database)
+    catalog_validation = resolve_and_compare_catalogs(
+        primary,
+        primary_database,
+        repository_root=repository,
+    )
     result = {
         "schema": "free-official-binance-deterministic-rebuild-validation-v2-full-raw-inventory",
         "status": "PASS",

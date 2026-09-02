@@ -122,6 +122,32 @@ def _git(repository: Path, *arguments: str) -> bytes:
     )
 
 
+def _require_repository_root(repository: Path) -> Path:
+    if not isinstance(repository, Path):
+        raise TypeError("repository must be pathlib.Path")
+    if not repository.is_absolute():
+        raise ValueError("repository must be absolute")
+    lexical = Path(os.path.abspath(repository))
+    if lexical != repository:
+        raise ValueError("repository must be an exact normalized absolute path")
+    cursor = Path(lexical.anchor)
+    for component in lexical.parts[1:]:
+        cursor /= component
+        if cursor.is_symlink():
+            raise ValueError("repository path must not contain a symlink")
+    if not lexical.is_dir():
+        raise ValueError("repository does not exist")
+    ssot = lexical / "SSOT.md"
+    if ssot.is_symlink() or not ssot.is_file():
+        raise ValueError("repository is not the Product repository")
+    actual = Path(
+        _git(lexical, "rev-parse", "--show-toplevel").decode().strip(),
+    )
+    if actual != lexical:
+        raise ValueError("repository is not the exact Git root")
+    return lexical
+
+
 def _decode_record_hash(value: str) -> bytes:
     algorithm, separator, encoded = value.partition("=")
     if separator != "=" or algorithm != "sha256" or not encoded:
@@ -283,7 +309,7 @@ def build_authority(
     dependency_lock_path: Path | None = None,
     additional_runtimes: tuple[tuple[Path, Path], ...] = (),
 ) -> dict[str, Any]:
-    repository = repository.resolve(strict=True)
+    repository = _require_repository_root(repository)
     source_commit = _git(
         repository,
         "rev-parse",

@@ -26,6 +26,7 @@ def main() -> int:
     # bootstrap state check.
     from crypto_lab.config import MarketProfile
     from crypto_lab.hashing import canonical_json_bytes
+    from crypto_lab.git_identity import require_repository_root
     from crypto_lab.m3 import M3NegativeControl
     from crypto_lab.m3 import build_m3_request
     from crypto_lab.m3 import negative_qualification_inputs
@@ -45,13 +46,26 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--profile", choices=("spot", "perpetual"), required=True)
     parser.add_argument("--run-id", required=True)
+    parser.add_argument("--repository", type=Path, required=True)
     parser.add_argument("--evidence-root", type=Path, required=True)
     parser.add_argument("--summary", type=Path, required=True)
     parser.add_argument("--negative-control", choices=tuple(item.value for item in M3NegativeControl))
     parser.add_argument("--network-attempt", action="store_true")
     parser.add_argument("--invalid-mark-binding", action="store_true")
     args = parser.parse_args()
-    repository = Path(__file__).resolve().parents[1]
+    product = attestation.get("product")
+    if not isinstance(product, Mapping):
+        raise RuntimeError("RUNTIME_STARTUP_MISMATCH: M3 child product authority is absent")
+    repository = require_repository_root(
+        args.repository,
+        expected_repository_identity=product.get("repository_identity"),
+        expected_git_commit=product.get("source_commit"),
+        expected_git_tree=product.get("source_tree"),
+    )
+    if str(repository) != attestation.get("repository_root"):
+        raise RuntimeError(
+            "RUNTIME_STARTUP_MISMATCH: M3 child repository differs from bootstrap root",
+        )
 
     profile = profile_for(args.profile)
     release = qualification_dataset_release(profile, repository_root=repository)

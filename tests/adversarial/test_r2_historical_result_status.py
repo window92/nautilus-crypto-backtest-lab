@@ -24,6 +24,7 @@ from crypto_lab.result_status import (
     resolve_result_status,
     revoked_result_for_directory,
 )
+from tests.helpers import initialize_product_repository
 
 
 SOURCE = "1" * 40
@@ -50,7 +51,8 @@ def recompute(value: dict[str, object]) -> bytes:
 
 class ResultStatusFixture:
     def __init__(self, root: Path) -> None:
-        self.root = root
+        self.root = initialize_product_repository(root)
+        root = self.root
         self.runs: dict[tuple[str, HistoricalCopyRole], Path] = {}
         records: list[dict[str, object]] = []
         for logical_result_id, expected in R2_EXPECTED_HISTORICAL_RESULTS.items():

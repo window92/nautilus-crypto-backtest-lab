@@ -513,6 +513,7 @@ class IsolatedRuntimeBootstrapTests(unittest.TestCase):
         with mock.patch.object(qualification.subprocess, "run", side_effect=fake_run):
             self.assertEqual(
                 qualification._run_child(
+                    ROOT,
                     staging,
                     label="spot-primary",
                     profile="spot",
@@ -537,6 +538,11 @@ class IsolatedRuntimeBootstrapTests(unittest.TestCase):
         )
         self.assertIn("--script", command)
         self.assertEqual(command[command.index("--script") + 1], "scripts/run_m3_child.py")
+        target_separator = command.index("--")
+        self.assertEqual(
+            command[command.index("--repository", target_separator) + 1],
+            str(ROOT),
+        )
         self.assertEqual(observed["environment"], CHILD_ENVIRONMENT)
 
     def test_m3_positive_qualification_requires_persisted_startup_attestation(self) -> None:

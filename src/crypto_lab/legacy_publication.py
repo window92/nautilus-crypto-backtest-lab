@@ -12,6 +12,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from crypto_lab.git_identity import require_repository_root
 from crypto_lab.result_status import ResultStatusResolution
 from crypto_lab.result_status import resolve_result_status
 
@@ -59,7 +60,7 @@ def require_historical_only_replay(
     reference = replay_evidence.get("replay_run_ref")
     if not isinstance(reference, str) or not reference:
         raise RuntimeError("legacy replay evidence has no replay_run_ref")
-    root = Path(repository_root).resolve(strict=True)
+    root = require_repository_root(repository_root)
     candidate = root / reference
     if candidate.is_symlink():
         raise RuntimeError("legacy replay Run must not be a symlink")

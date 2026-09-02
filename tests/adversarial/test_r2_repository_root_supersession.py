@@ -9,39 +9,37 @@ import unittest
 from datetime import UTC, datetime
 from pathlib import Path
 
-from crypto_lab.hashing import canonical_json_bytes
-from crypto_lab.hashing import canonical_sha256
+from crypto_lab.hashing import canonical_json_bytes, canonical_sha256
 from crypto_lab.result_status import FinancialResultStatus
 from crypto_lab.result_status import HistoricalCopyRole
 from crypto_lab.result_status import HistoricalResultClass
 from crypto_lab.result_status import HistoricalRunStatus
 from crypto_lab.result_status import HistoricalStatusReason
 from crypto_lab.result_status import R2_AUDITED_BASELINE_COMMIT
-from crypto_lab.result_status import R2_CLAIM_SCHEMA_SUPERSEDED_RESULTS
-from crypto_lab.result_status import R2_CLAIM_SCHEMA_SUPERSESSION_AUTHORITY
+from crypto_lab.result_status import R2_REPOSITORY_ROOT_SUPERSEDED_RESULTS
+from crypto_lab.result_status import R2_REPOSITORY_ROOT_SUPERSESSION_AUTHORITY
 from crypto_lab.result_status import ReplacementRequirement
 from crypto_lab.result_status import ResultNotActiveError
-from crypto_lab.result_status import build_claim_schema_supersession_record_v4
-from crypto_lab.result_status import build_claim_schema_supersession_registry_v4
+from crypto_lab.result_status import build_repository_root_supersession_record_v8
+from crypto_lab.result_status import build_repository_root_supersession_registry_v8
 from crypto_lab.result_status import load_historical_result_registry
 from crypto_lab.result_status import require_active_result
 from crypto_lab.result_status import resolve_result_status
-from scripts.build_r2_claim_schema_supersession_status import (
-    ClaimSchemaSupersessionBuildError,
+from scripts.build_r2_repository_root_supersession_status import (
+    EXPECTED_REPOSITORY_ROOT_EVIDENCE_IDENTITIES,
 )
-from scripts.build_r2_claim_schema_supersession_status import (
-    EXPECTED_CLAIM_SCHEMA_EVIDENCE_IDENTITIES,
+from scripts.build_r2_repository_root_supersession_status import (
+    RepositoryRootSupersessionBuildError,
 )
-from scripts.build_r2_claim_schema_supersession_status import build_registry
-from scripts.build_r2_claim_schema_supersession_status import main
+from scripts.build_r2_repository_root_supersession_status import build_registry, main
 from tests.helpers import initialize_product_repository
 
 
 REPOSITORY = Path(__file__).resolve().parents[2]
-SOURCE = "2" * 40
-RECORDED = datetime(2026, 9, 1, 6, 0, tzinfo=UTC)
-RECORDED_TEXT = "2026-09-01T06:00:00Z"
-V4_LEAVES = (
+SOURCE = "6" * 40
+RECORDED_TEXT = "2026-09-02T12:00:00Z"
+RECORDED = datetime(2026, 9, 2, 12, tzinfo=UTC)
+V8_LEAVES = (
     "component_validation.json",
     "evidence_manifest.json",
     "official_seal.json",
@@ -54,16 +52,16 @@ V4_LEAVES = (
 def _make_run(root: Path, relative: str) -> Path:
     run = root / relative
     run.mkdir(parents=True)
-    for name in V4_LEAVES:
+    for name in V8_LEAVES:
         (run / name).write_bytes(f"{relative}:{name}\n".encode())
     return run
 
 
-def _synthetic_fixture(root: Path) -> tuple[Path, dict[str, Path], bytes]:
+def _fixture(root: Path) -> tuple[Path, dict[str, Path], bytes]:
     initialize_product_repository(root)
     runs: dict[str, Path] = {}
     records: list[dict[str, object]] = []
-    for logical_id, expected in R2_CLAIM_SCHEMA_SUPERSEDED_RESULTS.items():
+    for logical_id, expected in R2_REPOSITORY_ROOT_SUPERSEDED_RESULTS.items():
         result_class = HistoricalResultClass(expected["result_class"])
         for copy_role, key in (
             (HistoricalCopyRole.PRIMARY, "primary_path"),
@@ -72,7 +70,7 @@ def _synthetic_fixture(root: Path) -> tuple[Path, dict[str, Path], bytes]:
             run = _make_run(root, expected[key])
             runs[f"{logical_id}:{copy_role.value}"] = run
             records.append(
-                build_claim_schema_supersession_record_v4(
+                build_repository_root_supersession_record_v8(
                     run,
                     repository_root=root,
                     logical_result_id=logical_id,
@@ -81,14 +79,14 @@ def _synthetic_fixture(root: Path) -> tuple[Path, dict[str, Path], bytes]:
                     copy_role=copy_role,
                 ),
             )
-    payload = build_claim_schema_supersession_registry_v4(
+    payload = build_repository_root_supersession_registry_v8(
         reversed(records),
-        authority_id=R2_CLAIM_SCHEMA_SUPERSESSION_AUTHORITY,
+        authority_id=R2_REPOSITORY_ROOT_SUPERSESSION_AUTHORITY,
         audited_baseline_commit=R2_AUDITED_BASELINE_COMMIT,
         source_commit=SOURCE,
         recorded_at_utc=RECORDED,
     )
-    registry = root / "claim-schema-supersession.json"
+    registry = root / "repository-root-supersession.json"
     registry.write_bytes(payload)
     return registry, runs, payload
 
@@ -103,28 +101,18 @@ def _recompute(value: dict[str, object]) -> bytes:
     return canonical_json_bytes(value) + b"\n"
 
 
-def _copy_real_fixture(root: Path) -> None:
-    initialize_product_repository(root)
-    for relative in EXPECTED_CLAIM_SCHEMA_EVIDENCE_IDENTITIES:
-        target = root / relative
-        target.mkdir(parents=True)
-        for name in V4_LEAVES:
-            shutil.copyfile(REPOSITORY / relative / name, target / name)
-
-
-class R2ClaimSchemaSupersessionTests(unittest.TestCase):
-    def test_exact_retry_008_scope_is_canonical_and_only_superseded(self) -> None:
+class R2RepositoryRootSupersessionTests(unittest.TestCase):
+    def test_exact_retry_012_scope_is_canonical_and_only_superseded(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
-            registry_path, _runs, payload = _synthetic_fixture(Path(temporary))
+            registry_path, _runs, payload = _fixture(Path(temporary))
             registry = load_historical_result_registry(registry_path)
-            rebuilt = build_claim_schema_supersession_registry_v4(
+            rebuilt = build_repository_root_supersession_registry_v8(
                 reversed(json.loads(payload)["records"]),
-                authority_id=R2_CLAIM_SCHEMA_SUPERSESSION_AUTHORITY,
+                authority_id=R2_REPOSITORY_ROOT_SUPERSESSION_AUTHORITY,
                 audited_baseline_commit=R2_AUDITED_BASELINE_COMMIT,
                 source_commit=SOURCE,
                 recorded_at_utc=RECORDED,
             )
-
         self.assertEqual(rebuilt, payload)
         self.assertEqual(len(registry.records), 12)
         self.assertTrue(
@@ -132,17 +120,18 @@ class R2ClaimSchemaSupersessionTests(unittest.TestCase):
                 record.historical_run_status is HistoricalRunStatus.SUPERSEDED
                 and record.financial_result_status is FinancialResultStatus.SUPERSEDED
                 and record.reason_code
-                is HistoricalStatusReason.SCIENTIFIC_LIMITATION_SCHEMA_SUPERSESSION
+                is HistoricalStatusReason.EXPLICIT_REPOSITORY_ROOT_SUPERSESSION
                 and record.replacement_requirement
-                is ReplacementRequirement.SCIENTIFIC_LIMITATION_SCHEMA_FIX_AND_REBUILD
+                is ReplacementRequirement.EXPLICIT_REPOSITORY_ROOT_FIX_AND_REBUILD
+                and record.historical_bytes_preserved
                 for record in registry.records
             ),
         )
 
-    def test_every_retry_008_primary_and_replay_is_ineligible(self) -> None:
+    def test_every_retry_012_primary_and_replay_is_ineligible(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            registry, runs, _payload = _synthetic_fixture(root)
+            registry, runs, _payload = _fixture(root)
             for run in runs.values():
                 with self.assertRaises(ResultNotActiveError):
                     require_active_result(
@@ -151,26 +140,26 @@ class R2ClaimSchemaSupersessionTests(unittest.TestCase):
                         registry_paths=(registry,),
                     )
 
-    def test_missing_pair_or_rehashed_semantic_mutation_fails_closed(self) -> None:
+    def test_missing_pair_wrong_reason_and_evidence_tamper_fail_closed(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            registry, runs, payload = _synthetic_fixture(root)
+            registry, runs, payload = _fixture(root)
             raw = json.loads(payload)
             raw["records"].pop()
-            missing_pair = root / "missing-pair.json"
-            missing_pair.write_bytes(_recompute(raw))
-            with self.assertRaisesRegex(ValueError, "exact claim-schema supersession scope"):
-                load_historical_result_registry(missing_pair)
+            missing = root / "missing.json"
+            missing.write_bytes(_recompute(raw))
+            with self.assertRaisesRegex(ValueError, "exact explicit-repository-root"):
+                load_historical_result_registry(missing)
 
             raw = json.loads(payload)
             raw["records"][0]["reason_code"] = "RUNTIME_AUTHORITY_SUPERSESSION"
-            wrong_reason = root / "wrong-reason.json"
-            wrong_reason.write_bytes(_recompute(raw))
-            with self.assertRaisesRegex(ValueError, "claim-schema supersession contract"):
-                load_historical_result_registry(wrong_reason)
+            wrong = root / "wrong.json"
+            wrong.write_bytes(_recompute(raw))
+            with self.assertRaisesRegex(ValueError, "explicit-repository-root"):
+                load_historical_result_registry(wrong)
 
             run = next(iter(runs.values()))
-            (run / "status.json").write_bytes(b"tampered but rehashed elsewhere\n")
+            (run / "status.json").write_bytes(b"tampered without registry mutation\n")
             with self.assertRaisesRegex(ValueError, "evidence binding failed"):
                 resolve_result_status(
                     run,
@@ -178,13 +167,13 @@ class R2ClaimSchemaSupersessionTests(unittest.TestCase):
                     registry_paths=(registry,),
                 )
 
-    def test_real_builder_is_deterministic_and_does_not_rebless_tamper(self) -> None:
+    def test_real_builder_binds_existing_bytes_and_refuses_tamper(self) -> None:
         declared = {
             item[key]
-            for item in R2_CLAIM_SCHEMA_SUPERSEDED_RESULTS.values()
+            for item in R2_REPOSITORY_ROOT_SUPERSEDED_RESULTS.values()
             for key in ("primary_path", "replay_path")
         }
-        self.assertEqual(declared, set(EXPECTED_CLAIM_SCHEMA_EVIDENCE_IDENTITIES))
+        self.assertEqual(declared, set(EXPECTED_REPOSITORY_ROOT_EVIDENCE_IDENTITIES))
         first = build_registry(
             repository_root=REPOSITORY,
             source_commit=SOURCE,
@@ -199,13 +188,17 @@ class R2ClaimSchemaSupersessionTests(unittest.TestCase):
         self.assertEqual(first, canonical_json_bytes(json.loads(first)) + b"\n")
 
         with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            _copy_real_fixture(root)
-            relative = next(iter(EXPECTED_CLAIM_SCHEMA_EVIDENCE_IDENTITIES))
+            root = initialize_product_repository(Path(temporary))
+            for relative in EXPECTED_REPOSITORY_ROOT_EVIDENCE_IDENTITIES:
+                target = root / relative
+                target.mkdir(parents=True)
+                for name in V8_LEAVES:
+                    shutil.copyfile(REPOSITORY / relative / name, target / name)
+            relative = next(iter(EXPECTED_REPOSITORY_ROOT_EVIDENCE_IDENTITIES))
             target = root / relative / "runtime_identity.json"
             target.write_bytes(target.read_bytes() + b"tamper\n")
             with self.assertRaisesRegex(
-                ClaimSchemaSupersessionBuildError,
+                RepositoryRootSupersessionBuildError,
                 "evidence identity mismatch",
             ):
                 build_registry(

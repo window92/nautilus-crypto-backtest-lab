@@ -13,6 +13,7 @@ from crypto_lab.m3 import QualifiedProfileRegistry
 from crypto_lab.profile_authority import ProfileAuthorityError
 from crypto_lab.profile_authority import resolve_profile_authority
 from crypto_lab.profile_authority import validate_persisted_profile_authority
+from tests.helpers import initialize_product_repository
 from tests.unit.test_m3_contracts import qualified_record
 
 
@@ -68,7 +69,7 @@ class QualifiedProfileAuthorityTests(unittest.TestCase):
 
     def test_exact_v2_component_registry_and_record_are_bound(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
+            root = initialize_product_repository(Path(temporary))
             path, registry = self._write_v2_registry(root)
             spot = registry.records[0]
             resolved = resolve_profile_authority(
@@ -101,7 +102,7 @@ class QualifiedProfileAuthorityTests(unittest.TestCase):
 
     def test_registry_tamper_wrong_record_and_unsafe_path_fail_closed(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
+            root = initialize_product_repository(Path(temporary))
             copied, registry = self._write_v2_registry(root)
             spot = registry.records[0]
             document = json.loads(copied.read_text(encoding="utf-8"))

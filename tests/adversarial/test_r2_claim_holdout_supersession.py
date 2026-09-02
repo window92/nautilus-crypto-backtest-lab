@@ -23,6 +23,7 @@ from scripts.build_r2_claim_holdout_supersession_status import (
     EXPECTED_CLAIM_HOLDOUT_EVIDENCE_IDENTITIES,
 )
 from scripts.build_r2_claim_holdout_supersession_status import build_registry
+from tests.helpers import initialize_product_repository
 
 
 REPOSITORY = Path(__file__).resolve().parents[2]
@@ -39,6 +40,7 @@ LEAVES = (
 
 
 def _copy_fixture(root: Path) -> None:
+    initialize_product_repository(root)
     for relative in EXPECTED_CLAIM_HOLDOUT_EVIDENCE_IDENTITIES:
         target = root / relative
         target.mkdir(parents=True)

@@ -16,6 +16,7 @@ from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
+from crypto_lab.git_identity import require_repository_root
 from crypto_lab.status import FailureCode
 
 
@@ -219,6 +220,7 @@ def snapshot_for_validator(
     repository_root: Path,
     manifest_path: Path | None = None,
 ) -> str:
+    repository_root = require_repository_root(repository_root)
     manifest = _load_v1_manifest(
         manifest_path
         or repository_root / "contracts/historical-contract-snapshots.json",
@@ -240,7 +242,7 @@ def validate_historical_contract(
 ) -> HistoricalContractValidation:
     """Validate v1 inputs while refusing to treat them as executable proof."""
 
-    repository_root = Path(repository_root).resolve()
+    repository_root = require_repository_root(repository_root)
     manifest = _load_v1_manifest(
         manifest_path
         or repository_root / "contracts/historical-contract-snapshots.json",
@@ -538,13 +540,13 @@ def validate_historical_validator_authority(
     *,
     repository_root: Path,
 ) -> HistoricalExecutableValidation:
-    repository_input = Path(repository_root)
-    if repository_input.is_symlink():
+    try:
+        repository = require_repository_root(repository_root)
+    except (TypeError, ValueError) as exc:
         raise HistoricalAuthorityError(
             "EXECUTABLE_CLOSURE_MISMATCH",
-            "repository is a symlink",
-        )
-    repository = repository_input.resolve(strict=True)
+            f"repository authority is invalid: {exc}",
+        ) from exc
     ancestor = subprocess.run(
         [
             "git",

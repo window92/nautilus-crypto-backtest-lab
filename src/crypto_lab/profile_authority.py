@@ -8,6 +8,7 @@ import re
 from pathlib import Path
 from typing import Any
 
+from crypto_lab.git_identity import require_repository_root
 from crypto_lab.hashing import canonical_sha256
 from crypto_lab.hashing import sha256_file
 
@@ -25,7 +26,7 @@ def _require_sha256(value: str, *, field: str) -> None:
 
 
 def _contained_registry(repository_root: Path, registry_ref: str) -> Path:
-    root = Path(repository_root).resolve(strict=True)
+    root = require_repository_root(repository_root)
     if not isinstance(registry_ref, str) or not registry_ref:
         raise ProfileAuthorityError("qualified profile registry reference is unsafe")
     relative = Path(registry_ref)

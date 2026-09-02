@@ -23,10 +23,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from crypto_lab.git_identity import require_repository_root
 
-ROOT = Path(__file__).resolve().parents[1]
-PROJECT_PYTHON = ROOT / ".venv/bin/python"
-DATA_PYTHON = ROOT / ".data-venv/bin/python"
 EXPECTED_EPOCH = "adversarial-remediation-002"
 R2_MODULES = (
     "tests.adversarial.test_r2_causality_boundaries",
@@ -105,12 +103,12 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def _fresh_output(path: Path) -> Path:
+def _fresh_output(repository: Path, path: Path) -> Path:
     lexical = Path(os.path.abspath(path))
     if lexical.exists() or lexical.is_symlink():
         raise FileExistsError(f"fresh acceptance output required: {lexical}")
     try:
-        lexical.relative_to(ROOT)
+        lexical.relative_to(repository)
     except ValueError:
         pass
     else:
@@ -153,10 +151,15 @@ def _plan_epoch(path: Path) -> str:
     return epoch
 
 
-def _environment(*, pycache: Path, data_tool: bool = False) -> dict[str, str]:
-    pythonpath = [str(ROOT / "src"), str(ROOT)]
+def _environment(
+    repository: Path,
+    *,
+    pycache: Path,
+    data_tool: bool = False,
+) -> dict[str, str]:
+    pythonpath = [str(repository / "src"), str(repository)]
     if data_tool:
-        pythonpath.append(str(ROOT / ".venv/lib/python3.12/site-packages"))
+        pythonpath.append(str(repository / ".venv/lib/python3.12/site-packages"))
     isolated_home = pycache.parent / "home"
     isolated_home.mkdir(mode=0o700, exist_ok=True)
     return {
@@ -211,6 +214,7 @@ def _write_log(path: Path, *, command: list[str], returncode: int, duration: flo
 
 def _run(
     *,
+    repository: Path,
     ordinal: int,
     label: str,
     command: tuple[str, ...],
@@ -221,8 +225,8 @@ def _run(
     started = time.monotonic()
     completed = subprocess.run(
         command,
-        cwd=ROOT,
-        env=_environment(pycache=pycache, data_tool=data_tool),
+        cwd=repository,
+        env=_environment(repository, pycache=pycache, data_tool=data_tool),
         check=False,
         capture_output=True,
         text=True,
@@ -253,11 +257,11 @@ def _run(
     }
 
 
-def _unittest(*modules: str) -> tuple[str, ...]:
+def _unittest(project_python: Path, *modules: str) -> tuple[str, ...]:
     if modules:
-        return (str(PROJECT_PYTHON), "-m", "unittest", "-v", *modules)
+        return (str(project_python), "-m", "unittest", "-v", *modules)
     return (
-        str(PROJECT_PYTHON),
+        str(project_python),
         "-m",
         "unittest",
         "discover",
@@ -269,7 +273,12 @@ def _unittest(*modules: str) -> tuple[str, ...]:
     )
 
 
-def _database_semantic_gate(database: Path, plan: Path) -> tuple[str, ...]:
+def _database_semantic_gate(
+    data_python: Path,
+    repository: Path,
+    database: Path,
+    plan: Path,
+) -> tuple[str, ...]:
     code = """
 import hashlib
 import json
@@ -278,10 +287,11 @@ from pathlib import Path
 from scripts.validate_free_official_binance_rebuild import configure_database
 from scripts.validate_free_official_binance_rebuild import database_gate
 from scripts.validate_free_official_binance_rebuild import resolve_and_compare_catalogs
+from crypto_lab.git_identity import require_repository_root
 
 database = Path(sys.argv[1]).resolve(strict=True)
 plan = json.loads(Path(sys.argv[2]).read_text(encoding="utf-8"))
-repository = Path.cwd().resolve(strict=True)
+repository = require_repository_root(Path(sys.argv[3]))
 bindings = plan["dataset_releases"]
 declared = {}
 for profile, binding in bindings.items():
@@ -299,8 +309,12 @@ finally:
     connection.close()
 database_releases = {str(profile): json.loads(str(payload)) for profile, payload in rows}
 assert database_releases == declared
-readonly_gate = database_gate(database)
-catalogs = resolve_and_compare_catalogs({"releases": database_releases}, database)
+readonly_gate = database_gate(database, repository_root=repository)
+catalogs = resolve_and_compare_catalogs(
+    {"releases": database_releases},
+    database,
+    repository_root=repository,
+)
 assert set(catalogs) == set(database_releases)
 assert all(item.get("status") == "PASS" for item in catalogs.values())
 print(json.dumps({
@@ -312,16 +326,23 @@ print(json.dumps({
     "catalogs": catalogs,
 }, sort_keys=True))
 """.strip()
-    return (str(DATA_PYTHON), "-c", code, str(database), str(plan))
+    return (
+        str(data_python),
+        "-c",
+        code,
+        str(database),
+        str(plan),
+        str(repository),
+    )
 
 
-def _qualification_evidence_directory(plan: Path) -> Path:
+def _qualification_evidence_directory(repository: Path, plan: Path) -> Path:
     payload = json.loads(plan.read_text(encoding="utf-8"))
     binding = payload.get("qualification_registry")
     if not isinstance(binding, dict) or not isinstance(binding.get("path"), str):
         raise ValueError("R2 plan lacks a qualification registry binding")
-    registry = (ROOT / binding["path"]).resolve(strict=True)
-    registry.relative_to(ROOT)
+    registry = (repository / binding["path"]).resolve(strict=True)
+    registry.relative_to(repository)
     if registry.name != "qualified-profile-registry.json" or not registry.is_file():
         raise ValueError("R2 qualification binding is not a regular registry file")
     return registry.parent
@@ -329,6 +350,7 @@ def _qualification_evidence_directory(plan: Path) -> Path:
 
 def _fresh_wheel_phase(
     *,
+    repository: Path,
     ordinal: int,
     logs: Path,
     nautilus_wheel: Path,
@@ -363,7 +385,7 @@ def _fresh_wheel_phase(
                     "from pathlib import Path; import crypto_lab, importlib.metadata as m; "
                     "from crypto_lab.config import RuntimeLock; "
                     "from crypto_lab.runtime import verify_runtime_lock; "
-                    f"r=Path({str(ROOT)!r}); "
+                    f"r=Path({str(repository)!r}); "
                     "o=Path(crypto_lab.__file__).resolve(); "
                     f"assert o.is_relative_to(Path({str(fresh)!r}).resolve()); "
                     "assert m.version('nautilus-crypto-backtest-lab') == '1.0.1.dev0'; "
@@ -399,7 +421,7 @@ def _fresh_wheel_phase(
         for command in commands:
             completed = subprocess.run(
                 command,
-                cwd=ROOT,
+                cwd=repository,
                 env=environment,
                 check=False,
                 capture_output=True,
@@ -441,32 +463,36 @@ def _fresh_wheel_phase(
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--repository", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--plan", type=Path, required=True)
     parser.add_argument("--data-database", type=Path, required=True)
     parser.add_argument("--nautilus-wheel", type=Path, required=True)
     parser.add_argument("--project-wheel", type=Path, required=True)
     arguments = parser.parse_args(argv)
+    repository = require_repository_root(arguments.repository)
+    project_python = repository / ".venv/bin/python"
+    data_python = repository / ".data-venv/bin/python"
 
-    output = _fresh_output(arguments.output_dir)
+    output = _fresh_output(repository, arguments.output_dir)
     plan = _regular_input(arguments.plan, label="R2 execution plan")
     database = _regular_input(
         arguments.data_database
         if arguments.data_database.is_absolute()
-        else ROOT / arguments.data_database,
+        else repository / arguments.data_database,
         label="DuckDB database",
     )
     nautilus_wheel = _regular_input(arguments.nautilus_wheel, label="Nautilus Wheel")
     project_wheel = _regular_input(arguments.project_wheel, label="project Wheel")
     plan_epoch = _plan_epoch(plan)
-    runtime = json.loads((ROOT / "runtime.lock.json").read_text(encoding="utf-8"))
+    runtime = json.loads((repository / "runtime.lock.json").read_text(encoding="utf-8"))
     if (
         nautilus_wheel.name != runtime["nautilus_wheel_filename"]
         or _sha256(nautilus_wheel) != runtime["nautilus_wheel_sha256"]
         or project_wheel.suffix != ".whl"
     ):
         raise ValueError("locked Nautilus or project Wheel identity differs")
-    qualification_evidence = _qualification_evidence_directory(plan)
+    qualification_evidence = _qualification_evidence_directory(repository, plan)
 
     output.mkdir(mode=0o700)
     logs = output / "logs"
@@ -475,31 +501,39 @@ def main(argv: list[str] | None = None) -> int:
     started_at = datetime.now(UTC).isoformat().replace("+00:00", "Z")
     phases: list[dict[str, Any]] = []
     commands: list[tuple[str, tuple[str, ...], bool]] = [
-        ("FULL_TEST_DISCOVERY", _unittest(), False),
-        ("INDEPENDENT_FRESH_PROCESS_DISCOVERY", _unittest(), False),
+        ("FULL_TEST_DISCOVERY", _unittest(project_python), False),
+        ("INDEPENDENT_FRESH_PROCESS_DISCOVERY", _unittest(project_python), False),
         (
             "REVERSE_TEST_ORDER",
             (
-                str(PROJECT_PYTHON),
-                str(ROOT / "scripts/run_reverse_test_order.py"),
+                str(project_python),
+                str(repository / "scripts/run_reverse_test_order.py"),
                 "--output-dir",
                 str(output / "reverse-order"),
             ),
             False,
         ),
-        ("R2_TARGETED_REGRESSIONS", _unittest(*R2_MODULES), False),
-        ("R2_MUTATION_NEGATIVE_CONTROLS", _unittest(*MUTATION_MODULES), False),
-        ("LEGACY_CONTRACT_REGRESSIONS", _unittest(*LEGACY_REGRESSION_MODULES), False),
+        ("R2_TARGETED_REGRESSIONS", _unittest(project_python, *R2_MODULES), False),
+        (
+            "R2_MUTATION_NEGATIVE_CONTROLS",
+            _unittest(project_python, *MUTATION_MODULES),
+            False,
+        ),
+        (
+            "LEGACY_CONTRACT_REGRESSIONS",
+            _unittest(project_python, *LEGACY_REGRESSION_MODULES),
+            False,
+        ),
         (
             "RUNTIME_INSTALLED_PAYLOAD_VERIFIER",
             (
-                str(PROJECT_PYTHON),
+                str(project_python),
                 "-c",
                 (
                     "from pathlib import Path; "
                     "from crypto_lab.config import RuntimeLock; "
                     "from crypto_lab.runtime import verify_runtime_lock; "
-                    "r=Path.cwd(); print(verify_runtime_lock(RuntimeLock.from_json_bytes("
+                    f"r=Path({str(repository)!r}); print(verify_runtime_lock(RuntimeLock.from_json_bytes("
                     "(r/'runtime.lock.json').read_bytes()), "
                     "dependency_lock_path=r/'requirements.lock.txt')['installed_files_verified'])"
                 ),
@@ -508,14 +542,16 @@ def main(argv: list[str] | None = None) -> int:
         ),
         (
             "RUNTIME_STARTUP_INJECTION_NEGATIVES",
-            _unittest("tests.adversarial.test_r2_runtime_bootstrap"),
+            _unittest(project_python, "tests.adversarial.test_r2_runtime_bootstrap"),
             False,
         ),
         (
             "HISTORICAL_EXECUTABLE_VALIDATORS",
             (
-                str(PROJECT_PYTHON),
-                str(ROOT / "scripts/run_historical_evidence_acceptance.py"),
+                str(project_python),
+                str(repository / "scripts/run_historical_evidence_acceptance.py"),
+                "--repository",
+                str(repository),
                 "--output",
                 str(output / "historical-evidence.json"),
             ),
@@ -524,8 +560,10 @@ def main(argv: list[str] | None = None) -> int:
         (
             "CURRENT_M3_QUALIFICATION_VALIDATION",
             (
-                str(PROJECT_PYTHON),
-                str(ROOT / "scripts/validate_m3_evidence.py"),
+                str(project_python),
+                str(repository / "scripts/validate_m3_evidence.py"),
+                "--repository",
+                str(repository),
                 "--evidence",
                 str(qualification_evidence),
             ),
@@ -534,6 +572,7 @@ def main(argv: list[str] | None = None) -> int:
         (
             "JOURNAL_HOLDOUT_MULTIPROCESS_DURABILITY",
             _unittest(
+                project_python,
                 "tests.unit.test_m4_multiprocess_locking",
                 "tests.adversarial.test_r2_locking_durability",
             ),
@@ -542,8 +581,10 @@ def main(argv: list[str] | None = None) -> int:
         (
             "RAW_OBJECT_AND_PUBLISHER_CHECKSUM_VALIDATION",
             (
-                str(DATA_PYTHON),
-                str(ROOT / "scripts/validate_free_official_raw_objects.py"),
+                str(data_python),
+                str(repository / "scripts/validate_free_official_raw_objects.py"),
+                "--repository",
+                str(repository),
                 "--database",
                 str(database),
             ),
@@ -551,14 +592,16 @@ def main(argv: list[str] | None = None) -> int:
         ),
         (
             "DATASET_RELEASE_DATABASE_CATALOG_SEMANTIC_IDENTITY",
-            _database_semantic_gate(database, plan),
+            _database_semantic_gate(data_python, repository, database, plan),
             True,
         ),
         (
             "R2_SIX_RUNS_AND_REPLAYS",
             (
-                str(PROJECT_PYTHON),
-                str(ROOT / "scripts/validate_adversarial_remediation_002_runs.py"),
+                str(project_python),
+                str(repository / "scripts/validate_adversarial_remediation_002_runs.py"),
+                "--repository",
+                str(repository),
                 "--plan",
                 str(plan),
                 "--epoch",
@@ -570,16 +613,16 @@ def main(argv: list[str] | None = None) -> int:
         ),
         (
             "COMPILEALL",
-            (str(PROJECT_PYTHON), "-m", "compileall", "-q", "src", "scripts", "tests"),
+            (str(project_python), "-m", "compileall", "-q", "src", "scripts", "tests"),
             False,
         ),
-        ("PROJECT_PIP_CHECK", (str(PROJECT_PYTHON), "-m", "pip", "check"), False),
-        ("DATA_PIP_CHECK", (str(DATA_PYTHON), "-m", "pip", "check"), True),
+        ("PROJECT_PIP_CHECK", (str(project_python), "-m", "pip", "check"), False),
+        ("DATA_PIP_CHECK", (str(data_python), "-m", "pip", "check"), True),
         ("GIT_DIFF_CHECK", ("git", "diff", "--check"), False),
         (
             "GIT_WORKTREE_CLEAN",
             (
-                str(PROJECT_PYTHON),
+                str(project_python),
                 "-c",
                 (
                     "import subprocess; p=subprocess.run(('git','status','--porcelain=v1',"
@@ -592,6 +635,7 @@ def main(argv: list[str] | None = None) -> int:
     ]
     for ordinal, (label, command, data_tool) in enumerate(commands, start=1):
         phase = _run(
+            repository=repository,
             ordinal=ordinal,
             label=label,
             command=command,
@@ -608,6 +652,7 @@ def main(argv: list[str] | None = None) -> int:
             flush=True,
         )
     fresh = _fresh_wheel_phase(
+        repository=repository,
         ordinal=len(phases) + 1,
         logs=logs,
         nautilus_wheel=nautilus_wheel,
@@ -653,7 +698,7 @@ def main(argv: list[str] | None = None) -> int:
         "finished_at_utc": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
         "source_commit": subprocess.run(
             ("git", "rev-parse", "HEAD"),
-            cwd=ROOT,
+            cwd=repository,
             check=True,
             capture_output=True,
             text=True,
@@ -665,9 +710,9 @@ def main(argv: list[str] | None = None) -> int:
         "nautilus_wheel_sha256": _sha256(nautilus_wheel),
         "project_wheel_filename": project_wheel.name,
         "project_wheel_sha256": _sha256(project_wheel),
-        "ssot_sha256": _sha256(ROOT / "SSOT.md"),
-        "runtime_lock_sha256": _sha256(ROOT / "runtime.lock.json"),
-        "dependency_lock_sha256": _sha256(ROOT / "requirements.lock.txt"),
+        "ssot_sha256": _sha256(repository / "SSOT.md"),
+        "runtime_lock_sha256": _sha256(repository / "runtime.lock.json"),
+        "dependency_lock_sha256": _sha256(repository / "requirements.lock.txt"),
         "phase_count": len(phases),
         "passed_phase_count": sum(phase["status"] == "PASS" for phase in phases),
         "failed_phase_count": sum(phase["status"] != "PASS" for phase in phases),

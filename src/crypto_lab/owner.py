@@ -55,6 +55,7 @@ from crypto_lab.status import FailureCode
 from crypto_lab.diagnostics import write_performance_diagnostics
 from crypto_lab.exposure import AuthoritativeExposureResolver
 from crypto_lab.git_identity import capture_actual_source_revision
+from crypto_lab.git_identity import require_repository_root
 from crypto_lab.git_identity import worktree_is_clean
 from crypto_lab.hashing import canonical_json_bytes
 from crypto_lab.hashing import canonical_sha256
@@ -179,6 +180,8 @@ def _require_verified_startup() -> dict[str, Any]:
             and len(product["source_commit"]) == 40
             and isinstance(product["source_tree"], str)
             and len(product["source_tree"]) == 40
+            and isinstance(parsed["repository_root"], str)
+            and Path(parsed["repository_root"]).is_absolute()
             and isinstance(attestation_identity, str)
             and attestation_identity == hashlib.sha256(identity_bytes).hexdigest()
             and encoded.encode("utf-8") == canonical
@@ -194,6 +197,33 @@ def _require_verified_startup() -> dict[str, Any]:
             "Owner workflow requires the verified isolated bootstrap entrypoint",
         )
     return parsed
+
+
+def _require_startup_repository(
+    repository_root: Path,
+    startup: dict[str, Any],
+) -> Path:
+    """Bind the target argument to the exact root verified by the bootstrap."""
+
+    product = startup["product"]
+    try:
+        repository = require_repository_root(
+            repository_root,
+            expected_repository_identity=product["repository_identity"],
+            expected_git_commit=product["source_commit"],
+            expected_git_tree=product["source_tree"],
+        )
+    except (TypeError, ValueError) as exc:
+        raise ResearchError(
+            FailureCode.RUNTIME_STARTUP_MISMATCH,
+            f"Owner repository authority differs: {exc}",
+        ) from exc
+    if str(repository) != startup["repository_root"]:
+        raise ResearchError(
+            FailureCode.RUNTIME_STARTUP_MISMATCH,
+            "Owner repository argument differs from the bootstrap-bound root",
+        )
+    return repository
 
 
 class OwnerWorkflowInput(StrictModel):
@@ -1244,7 +1274,7 @@ def build_official_request(
     """Resolve Profile and Dataset identities into one immutable Official request."""
 
     _require_scientific_claim_contract(value)
-    repository = Path(repository_root).resolve(strict=True)
+    repository = require_repository_root(repository_root)
     profile, registry_path = _qualified_profile(repository, value)
     release = _release(repository, value)
     template_dir = registry_path.parent / profile.evidence_references[0]
@@ -1519,7 +1549,7 @@ def qualification_workflow_fixture_input(
 ) -> OwnerWorkflowInput:
     """Build the fixed exposed-data interface fixture, never an Owner study."""
 
-    repository = Path(repository_root).resolve(strict=True)
+    repository = require_repository_root(repository_root)
     registry_path = next(
         path
         for path in _qualified_profile_registry_candidates(repository)
@@ -2028,8 +2058,8 @@ def execute_owner_workflow(
 ) -> OwnerWorkflowResult:
     """Execute a complete checkpointed workflow using public identities only."""
 
-    _require_verified_startup()
-    repository = Path(repository_root).resolve(strict=True)
+    startup = _require_verified_startup()
+    repository = _require_startup_repository(repository_root, startup)
     history = _history(repository)
     recovered = _recover_started(repository, history)
     if recovered:
@@ -2380,16 +2410,16 @@ def execute_owner_workflow(
 
 
 def main(argv: list[str] | None = None) -> int:
-    _require_verified_startup()
+    startup = _require_verified_startup()
     parser = argparse.ArgumentParser(description="Run one strict checkpointed Owner workflow")
     parser.add_argument("--input", type=Path, required=True)
-    parser.add_argument("--repository", type=Path, default=Path.cwd())
+    parser.add_argument("--repository", type=Path, required=True)
     parser.add_argument("--output", type=Path)
     parser.add_argument("--child", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--child-evidence-root", type=Path, help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
-    repository = args.repository.resolve(strict=True)
     try:
+        repository = _require_startup_repository(args.repository, startup)
         if args.child:
             return _child_run(
                 args.input,

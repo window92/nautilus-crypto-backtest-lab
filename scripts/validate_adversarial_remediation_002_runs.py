@@ -57,12 +57,12 @@ from crypto_lab.result_status import require_active_result
 from crypto_lab.result_status import resolve_result_status
 from crypto_lab.execution_plan import ExecutionPlanError
 from crypto_lab.execution_plan import load_active_execution_plan
+from crypto_lab.git_identity import require_repository_root
 from crypto_lab.sealing import OfficialSealOutcome
 from crypto_lab.sealing import verify_official_seal
 from crypto_lab.status import FailureCode
 
 
-ROOT = Path(__file__).resolve().parents[1]
 EXPECTED_EPOCH = "adversarial-remediation-002"
 EXPECTED_BRANCH = "fix/adversarial-audit-remediation-002"
 EXPECTED_PLAN_SCHEMA = "adversarial-remediation-002-official-run-plan-v1"
@@ -215,7 +215,13 @@ def _require_committed(
     return relative
 
 
-def _plan_execution_shape(item: Any, *, sequence: int, epoch: str) -> None:
+def _plan_execution_shape(
+    repository: Path,
+    item: Any,
+    *,
+    sequence: int,
+    epoch: str,
+) -> None:
     stage = f"plan.execution[{sequence}]"
     expected_fields = {
         "command_argv",
@@ -277,25 +283,25 @@ def _plan_execution_shape(item: Any, *, sequence: int, epoch: str) -> None:
         "LANG=C.UTF-8",
         "LC_ALL=C.UTF-8",
         "TZ=UTC",
-        str(ROOT / ".venv/bin/python"),
+        str(repository / ".venv/bin/python"),
         "-I",
         "-P",
         "-S",
         "-B",
         "-X",
         "pycache_prefix=/dev/null",
-        str(ROOT / "scripts/isolated_runtime_bootstrap.py"),
+        str(repository / "scripts/isolated_runtime_bootstrap.py"),
         "--authority",
-        str(ROOT / "runtime-bootstrap-authority.json"),
+        str(repository / "runtime-bootstrap-authority.json"),
         "--repository",
-        str(ROOT),
+        str(repository),
         "--entrypoint",
         "crypto_lab.owner:main",
         "--",
         "--input",
         str(item.get("workflow_input")),
         "--repository",
-        str(ROOT),
+        str(repository),
         "--output",
         str(item.get("result_summary")),
     ]
@@ -312,9 +318,15 @@ def _plan_execution_shape(item: Any, *, sequence: int, epoch: str) -> None:
         _reject(FailureCode.RESEARCH_PROTOCOL_INVALID, stage, "execution command is unsafe")
 
 
-def validate_plan_payload(value: dict[str, Any], *, epoch: str = EXPECTED_EPOCH) -> None:
+def validate_plan_payload(
+    value: dict[str, Any],
+    *,
+    repository_root: Path,
+    epoch: str = EXPECTED_EPOCH,
+) -> None:
     """Validate the immutable plan without resolving any filesystem reference."""
 
+    repository_root = require_repository_root(repository_root)
     stage = "plan"
     expected_fields = {
         "data_rebuild_validation",
@@ -376,7 +388,12 @@ def validate_plan_payload(value: dict[str, Any], *, epoch: str = EXPECTED_EPOCH)
     ):
         _reject(FailureCode.RESEARCH_PROTOCOL_INVALID, stage, "plan root contract differs")
     for sequence, item in enumerate(execution, start=1):
-        _plan_execution_shape(item, sequence=sequence, epoch=epoch)
+        _plan_execution_shape(
+            repository_root,
+            item,
+            sequence=sequence,
+            epoch=epoch,
+        )
     if len({item["trial_id"] for item in execution}) != 6 or len(
         {item["run_id"] for item in execution},
     ) != 6:
@@ -1115,13 +1132,13 @@ def _resolve_plan(
 def validate(
     *,
     plan_path: Path | None,
-    repository_root: Path = ROOT,
+    repository_root: Path,
     epoch: str = EXPECTED_EPOCH,
     plan_root: Path | None = None,
     require_remote_tip: bool = True,
     result_status_path: Path | None = None,
 ) -> dict[str, Any]:
-    repository = repository_root.resolve(strict=True)
+    repository = require_repository_root(repository_root)
     failures: list[R2ValidationFailure] = []
     runs: list[dict[str, Any]] = []
     plan_identity = "UNAVAILABLE"
@@ -1139,7 +1156,7 @@ def validate(
         plan = _strict_json(plan_bytes, stage="plan")
         if plan_bytes != canonical_json_bytes(plan) + b"\n":
             _reject(FailureCode.RESEARCH_PROTOCOL_INVALID, "plan", "plan JSON is not canonical")
-        validate_plan_payload(plan, epoch=epoch)
+        validate_plan_payload(plan, repository_root=repository, epoch=epoch)
         plan_identity = str(plan["plan_identity"])
 
         branch = _git_text(repository, "symbolic-ref", "--quiet", "--short", "HEAD")
@@ -1328,7 +1345,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--plan", type=Path)
     parser.add_argument("--plan-root", type=Path)
     parser.add_argument("--epoch", default=EXPECTED_EPOCH)
-    parser.add_argument("--repository", type=Path, default=ROOT)
+    parser.add_argument("--repository", type=Path, required=True)
     parser.add_argument("--result-status", type=Path)
     parser.add_argument("--output", type=Path)
     parser.add_argument("--allow-unpublished-tip", action="store_true", help=argparse.SUPPRESS)

@@ -15,17 +15,14 @@ from crypto_lab.config import RuntimeLock
 from crypto_lab.hashing import canonical_json_bytes
 from crypto_lab.hashing import canonical_sha256
 from crypto_lab.hashing import sha256_file
+from crypto_lab.git_identity import require_repository_root
 from crypto_lab.m3 import QualifiedProfileRegistry
 from crypto_lab.m3 import QualificationDownstreamBundle
 from crypto_lab.runtime import validate_persisted_runtime_identity
 
 
-ROOT = Path(__file__).resolve().parents[1]
 COMPONENT_PASS = "COMPONENT_CHECK_PASS"
 COMPONENT_FAIL = "COMPONENT_CHECK_FAIL"
-DEFAULT_EVIDENCE = (
-    ROOT / "evidence/audit/comprehensive-remediation-001/qualification-runtime-proof"
-)
 
 
 def _json(path: Path) -> dict[str, Any]:
@@ -46,10 +43,10 @@ def _json(path: Path) -> dict[str, Any]:
     return value
 
 
-def _git(*arguments: str) -> subprocess.CompletedProcess[bytes]:
+def _git(repository: Path, *arguments: str) -> subprocess.CompletedProcess[bytes]:
     return subprocess.run(
         ("git", "--no-replace-objects", *arguments),
-        cwd=ROOT,
+        cwd=repository,
         check=False,
         capture_output=True,
         env={
@@ -63,12 +60,13 @@ def _git(*arguments: str) -> subprocess.CompletedProcess[bytes]:
     )
 
 
-def _git_file_sha256(commit: str, path: str) -> str | None:
-    completed = _git("show", f"{commit}:{path}")
+def _git_file_sha256(repository: Path, commit: str, path: str) -> str | None:
+    completed = _git(repository, "show", f"{commit}:{path}")
     return hashlib.sha256(completed.stdout).hexdigest() if completed.returncode == 0 else None
 
 
-def validate(evidence: Path) -> dict[str, Any]:
+def validate(evidence: Path, *, repository_root: Path) -> dict[str, Any]:
+    repository = require_repository_root(repository_root)
     root = evidence.resolve(strict=True)
     checks: dict[str, bool] = {}
     manifest = _json(root / "qualification-manifest.json")
@@ -126,9 +124,20 @@ def validate(evidence: Path) -> dict[str, Any]:
     baseline = _json(root / "baseline.json")
     source_commit = str(baseline.get("head"))
     remote_ref = str(baseline.get("required_remote_ref"))
-    published_ancestor = _git("merge-base", "--is-ancestor", source_commit, remote_ref)
-    commit_exists = _git("cat-file", "-e", f"{source_commit}^{{commit}}").returncode == 0
-    resolved_tree = _git("rev-parse", f"{source_commit}^{{tree}}")
+    published_ancestor = _git(
+        repository,
+        "merge-base",
+        "--is-ancestor",
+        source_commit,
+        remote_ref,
+    )
+    commit_exists = _git(
+        repository,
+        "cat-file",
+        "-e",
+        f"{source_commit}^{{commit}}",
+    ).returncode == 0
+    resolved_tree = _git(repository, "rev-parse", f"{source_commit}^{{tree}}")
     source_tree = resolved_tree.stdout.decode("ascii", errors="replace").strip()
     checks["clean_published_source"] = bool(
         baseline.get("schema") == "m3-baseline-v1"
@@ -140,11 +149,12 @@ def validate(evidence: Path) -> dict[str, Any]:
         and commit_exists
         and baseline.get("remote_tip") == source_commit
         and baseline.get("git_tree") == source_tree
-        and baseline.get("ssot_sha256") == _git_file_sha256(source_commit, "SSOT.md")
+        and baseline.get("ssot_sha256")
+        == _git_file_sha256(repository, source_commit, "SSOT.md")
         and baseline.get("runtime_lock_sha256")
-        == _git_file_sha256(source_commit, "runtime.lock.json")
+        == _git_file_sha256(repository, source_commit, "runtime.lock.json")
         and baseline.get("dependency_lock_sha256")
-        == _git_file_sha256(source_commit, "requirements.lock.txt")
+        == _git_file_sha256(repository, source_commit, "requirements.lock.txt")
         and published_ancestor.returncode == 0
     )
 
@@ -160,7 +170,7 @@ def validate(evidence: Path) -> dict[str, Any]:
             for record in registry.records
         )
     )
-    active_runtime = sha256_file(ROOT / "runtime.lock.json")
+    active_runtime = sha256_file(repository / "runtime.lock.json")
     checks["active_runtime_qualified"] = bool(
         len(registry.records) == 2
         and all(record.runtime_lock_sha256 == active_runtime for record in registry.records)
@@ -264,7 +274,10 @@ def validate(evidence: Path) -> dict[str, Any]:
             relative = Path(reference)
             run_dir = root / relative
             persisted = _json(run_dir / "checker.json")
-            regenerated = check_evidence_directory(run_dir, repository_root=ROOT)
+            regenerated = check_evidence_directory(
+                run_dir,
+                repository_root=repository,
+            )
             persisted_source = _json(run_dir / "source_revision.json")
             source_pass = bool(
                 record.source_revision.git_commit == source_commit
@@ -378,10 +391,11 @@ def validate(evidence: Path) -> dict[str, Any]:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--evidence", type=Path, default=DEFAULT_EVIDENCE)
+    parser.add_argument("--repository", type=Path, required=True)
+    parser.add_argument("--evidence", type=Path, required=True)
     parser.add_argument("--output", type=Path)
     arguments = parser.parse_args()
-    result = validate(arguments.evidence)
+    result = validate(arguments.evidence, repository_root=arguments.repository)
     payload = canonical_json_bytes(result) + b"\n"
     if arguments.output is not None:
         output = arguments.output.resolve()

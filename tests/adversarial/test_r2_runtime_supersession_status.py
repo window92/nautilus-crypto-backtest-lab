@@ -24,6 +24,7 @@ from crypto_lab.result_status import (
     require_active_result,
     resolve_result_status,
 )
+from tests.helpers import initialize_product_repository
 
 
 SOURCE = "2" * 40
@@ -47,6 +48,7 @@ def _make_run(root: Path, relative: str) -> Path:
 
 
 def _fixture(root: Path) -> tuple[Path, dict[str, Path], bytes]:
+    initialize_product_repository(root)
     runs: dict[str, Path] = {}
     records: list[dict[str, object]] = []
     for logical_id, expected in R2_RUNTIME_SUPERSEDED_RESULTS.items():

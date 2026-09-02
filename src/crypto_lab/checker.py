@@ -113,7 +113,6 @@ _REQUIRED_COMMON = {
     "nautilus_result.json",
 }
 
-ROOT = Path(__file__).resolve().parents[2]
 ONE_MINUTE_NS = 60_000_000_000
 DAY_NS = 86_400_000_000_000
 OWNER_SMOKE_STRATEGY_FAMILY = "BTCUSDT_DAILY_PRICE_VS_SMA20_TREND"
