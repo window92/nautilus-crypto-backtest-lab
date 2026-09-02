@@ -101,6 +101,10 @@ class IsolatedRuntimeFixture:
             "origin",
             "https://example.invalid/r2-runtime-product.git",
         )
+        (self.repository / "SSOT.md").write_text(
+            "synthetic runtime Product authority\n",
+            encoding="utf-8",
+        )
         package = self.repository / "src/crypto_lab"
         package.mkdir(parents=True)
         (package / "__init__.py").write_text("\"\"\"Pinned test product.\"\"\"\n", encoding="utf-8")
