@@ -1,10 +1,8 @@
 from __future__ import annotations
 
 import json
-import os
 import shutil
 import subprocess
-import sys
 import tempfile
 import unittest
 from dataclasses import replace
@@ -24,9 +22,17 @@ from crypto_lab.research import PartitionRole
 from crypto_lab.research import ResearchError
 from crypto_lab.research import TrialDefinition
 from crypto_lab.research import TrialJournal
+from scripts.build_runtime_bootstrap_authority import build_authority
 
 
 ROOT = Path(__file__).resolve().parents[2]
+PROJECT_PYTHON = ROOT / ".venv/bin/python"
+OWNER_ENVIRONMENT = {
+    "PATH": "/usr/bin:/bin",
+    "LANG": "C.UTF-8",
+    "LC_ALL": "C.UTF-8",
+    "TZ": "UTC",
+}
 
 
 def _run(*command: str, cwd: Path) -> subprocess.CompletedProcess[str]:
@@ -37,6 +43,93 @@ def _run(*command: str, cwd: Path) -> subprocess.CompletedProcess[str]:
         capture_output=True,
         text=True,
     )
+
+
+def _commit_runtime_authority(repository: Path) -> None:
+    source_commit = _run("git", "rev-parse", "HEAD", cwd=repository).stdout.strip()
+    authority = build_authority(
+        repository=repository,
+        python=PROJECT_PYTHON,
+        source_commit=source_commit,
+        dependency_lock_path=repository / "requirements.lock.txt",
+    )
+    path = repository / "runtime-bootstrap-authority.json"
+    path.write_text(
+        json.dumps(
+            authority,
+            ensure_ascii=False,
+            allow_nan=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    _run("git", "add", "runtime-bootstrap-authority.json", cwd=repository)
+    _run("git", "commit", "-m", "fixture runtime bootstrap authority", cwd=repository)
+    _run("git", "push", "origin", "main", cwd=repository)
+
+
+def _owner_process(
+    repository: Path,
+    *,
+    input_path: Path,
+    output_path: Path,
+) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        [
+            str(PROJECT_PYTHON),
+            "-I",
+            "-P",
+            "-S",
+            "-B",
+            "-X",
+            "pycache_prefix=/dev/null",
+            str(repository / "scripts/isolated_runtime_bootstrap.py"),
+            "--authority",
+            str(repository / "runtime-bootstrap-authority.json"),
+            "--repository",
+            str(repository),
+            "--entrypoint",
+            "crypto_lab.owner:main",
+            "--",
+            "--input",
+            str(input_path),
+            "--repository",
+            str(repository),
+            "--output",
+            str(output_path),
+        ],
+        cwd=repository,
+        check=False,
+        capture_output=True,
+        text=True,
+        env=OWNER_ENVIRONMENT,
+    )
+
+
+def _copy_run_external_dataset_state(
+    *,
+    run_directory: Path,
+    source_repository: Path,
+    target_repository: Path,
+) -> None:
+    """Recreate only the Run-bound ignored Raw/catalog view in a recovery clone."""
+
+    release = json.loads((run_directory / "dataset_release.json").read_text(encoding="utf-8"))
+    raw_inventory = release["raw_inventory"]
+    raw_objects = raw_inventory["raw_objects"]
+    for item in raw_objects:
+        identity = item["raw_object_sha256"]
+        relative = Path("data/raw/sha256") / identity[:2] / f"{identity}.blob"
+        source = source_repository / relative
+        target = target_repository / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, target)
+    catalog_identity = release["catalog_identity"]
+    source_catalog = source_repository / "data/catalog" / catalog_identity
+    target_catalog = target_repository / "data/catalog" / catalog_identity
+    shutil.copytree(source_catalog, target_catalog)
 
 
 class Aud009OwnerWorkflowTests(unittest.TestCase):
@@ -111,6 +204,7 @@ class Aud009OwnerWorkflowTests(unittest.TestCase):
             _run("git", "add", "research/history_anchors.jsonl", cwd=repository)
             _run("git", "commit", "-m", "initialize history authority", cwd=repository)
             _run("git", "push", "origin", "main", cwd=repository)
+            _commit_runtime_authority(repository)
 
             value = qualification_workflow_fixture_input(
                 repository_root=repository,
@@ -121,33 +215,10 @@ class Aud009OwnerWorkflowTests(unittest.TestCase):
             input_path = base / "strict-input.json"
             output_path = base / "workflow-result.json"
             input_path.write_bytes(value.to_json_bytes() + b"\n")
-            environment = dict(os.environ)
-            environment.update(
-                {
-                    "LC_ALL": "C.UTF-8",
-                    "PYTHONDONTWRITEBYTECODE": "1",
-                    "PYTHONPATH": str(repository / "src"),
-                    # The public Owner workflow, not its caller, must bind the
-                    # Official child to the adopted UTC Runtime Lock.
-                    "TZ": "Europe/Berlin",
-                },
-            )
-            process = subprocess.run(
-                [
-                    sys.executable,
-                    str(repository / "scripts/run_owner_workflow.py"),
-                    "--input",
-                    str(input_path),
-                    "--repository",
-                    str(repository),
-                    "--output",
-                    str(output_path),
-                ],
-                cwd=repository,
-                check=False,
-                capture_output=True,
-                text=True,
-                env=environment,
+            process = _owner_process(
+                repository,
+                input_path=input_path,
+                output_path=output_path,
             )
             retained_statuses = {
                 str(path.relative_to(repository)): json.loads(path.read_text(encoding="utf-8"))
@@ -164,7 +235,8 @@ class Aud009OwnerWorkflowTests(unittest.TestCase):
             result = json.loads(output_path.read_text(encoding="utf-8"))
             self.assertEqual(result["status"], "PASS")
             self.assertEqual(result["run_state"], "COMPLETED")
-            self.assertEqual(result["checker_outcome"], "CHECK_PASS")
+            self.assertEqual(result["checker_outcome"], "COMPONENT_CHECK_PASS")
+            self.assertEqual(result["official_seal_outcome"], "OFFICIAL_SEAL_PASS")
             self.assertEqual(result["claim_eligibility"], "INELIGIBLE")
             self.assertFalse(result["real_profitability_claim"])
             self.assertFalse(result["final_holdout_used"])
@@ -207,8 +279,19 @@ class Aud009OwnerWorkflowTests(unittest.TestCase):
             remote = _run("git", "rev-parse", "origin/main", cwd=repository).stdout.strip()
             self.assertEqual(head, remote)
             cli_source = (repository / "scripts/run_owner_workflow.py").read_text(encoding="utf-8")
-            self.assertIn("from crypto_lab.owner import main", cli_source)
-            self.assertNotIn("crypto_lab._", cli_source)
+            self.assertNotIn("from crypto_lab", cli_source)
+            self.assertNotIn("import crypto_lab", cli_source)
+            direct = subprocess.run(
+                [str(PROJECT_PYTHON), str(repository / "scripts/run_owner_workflow.py")],
+                cwd=repository,
+                check=False,
+                capture_output=True,
+                text=True,
+                env=OWNER_ENVIRONMENT,
+            )
+            self.assertEqual(direct.returncode, 120, direct.stderr)
+            direct_failure = json.loads(direct.stderr)
+            self.assertEqual(direct_failure["failure_code"], "RUNTIME_STARTUP_MISMATCH")
 
             # A self-consistent uncommitted journal+anchor extension without a
             # workflow authorization committed at HEAD must not be laundered
@@ -260,22 +343,10 @@ class Aud009OwnerWorkflowTests(unittest.TestCase):
             unauthorized_input = base / "unauthorized-recovery-input.json"
             unauthorized_output = base / "unauthorized-recovery-output.json"
             unauthorized_input.write_bytes(unauthorized.to_json_bytes() + b"\n")
-            unauthorized_recovery = subprocess.run(
-                [
-                    sys.executable,
-                    str(repository / "scripts/run_owner_workflow.py"),
-                    "--input",
-                    str(unauthorized_input),
-                    "--repository",
-                    str(repository),
-                    "--output",
-                    str(unauthorized_output),
-                ],
-                cwd=repository,
-                check=False,
-                capture_output=True,
-                text=True,
-                env=environment,
+            unauthorized_recovery = _owner_process(
+                repository,
+                input_path=unauthorized_input,
+                output_path=unauthorized_output,
             )
             self.assertEqual(unauthorized_recovery.returncode, 2)
             unauthorized_result = json.loads(
@@ -363,22 +434,10 @@ class Aud009OwnerWorkflowTests(unittest.TestCase):
             recovery_input = base / "recovery-input.json"
             recovery_output = base / "recovery-output.json"
             recovery_input.write_bytes(next_value.to_json_bytes() + b"\n")
-            recovery = subprocess.run(
-                [
-                    sys.executable,
-                    str(repository / "scripts/run_owner_workflow.py"),
-                    "--input",
-                    str(recovery_input),
-                    "--repository",
-                    str(repository),
-                    "--output",
-                    str(recovery_output),
-                ],
-                cwd=repository,
-                check=False,
-                capture_output=True,
-                text=True,
-                env=environment,
+            recovery = _owner_process(
+                repository,
+                input_path=recovery_input,
+                output_path=recovery_output,
             )
             self.assertEqual(recovery.returncode, 2)
             recovery_result = json.loads(recovery_output.read_text(encoding="utf-8"))
@@ -429,22 +488,10 @@ class Aud009OwnerWorkflowTests(unittest.TestCase):
             pending_input = base / "pending-recovery-input.json"
             pending_output = base / "pending-recovery-output.json"
             pending_input.write_bytes(after_pending.to_json_bytes() + b"\n")
-            pending_recovery = subprocess.run(
-                [
-                    sys.executable,
-                    str(repository / "scripts/run_owner_workflow.py"),
-                    "--input",
-                    str(pending_input),
-                    "--repository",
-                    str(repository),
-                    "--output",
-                    str(pending_output),
-                ],
-                cwd=repository,
-                check=False,
-                capture_output=True,
-                text=True,
-                env=environment,
+            pending_recovery = _owner_process(
+                repository,
+                input_path=pending_input,
+                output_path=pending_output,
             )
             self.assertEqual(pending_recovery.returncode, 2)
             pending_result = json.loads(pending_output.read_text(encoding="utf-8"))
@@ -490,27 +537,22 @@ class Aud009OwnerWorkflowTests(unittest.TestCase):
                 "owner-recovery@example.invalid",
                 cwd=recovery_repository,
             )
-            resume_output = base / "terminal-resume-output.json"
-            resume_environment = dict(environment)
-            resume_environment["PYTHONPATH"] = str(recovery_repository / "src")
-            resumed = subprocess.run(
-                [
-                    sys.executable,
-                    str(recovery_repository / "scripts/run_owner_workflow.py"),
-                    "--input",
-                    str(input_path),
-                    "--repository",
-                    str(recovery_repository),
-                    "--output",
-                    str(resume_output),
-                ],
-                cwd=recovery_repository,
-                check=False,
-                capture_output=True,
-                text=True,
-                env=resume_environment,
+            _copy_run_external_dataset_state(
+                run_directory=run_dir,
+                source_repository=repository,
+                target_repository=recovery_repository,
             )
-            self.assertEqual(resumed.returncode, 0, resumed.stderr + resumed.stdout)
+            resume_output = base / "terminal-resume-output.json"
+            resumed = _owner_process(
+                recovery_repository,
+                input_path=input_path,
+                output_path=resume_output,
+            )
+            self.assertEqual(
+                resumed.returncode,
+                0,
+                resumed.stderr + resumed.stdout + resume_output.read_text(encoding="utf-8"),
+            )
             resumed_result = json.loads(resume_output.read_text(encoding="utf-8"))
             self.assertEqual(resumed_result["status"], "PASS")
             self.assertEqual(resumed_result["run_id"], value.run_id)

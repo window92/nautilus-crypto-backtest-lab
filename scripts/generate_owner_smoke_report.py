@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Create the Arabic read-only OWNER_SMOKE presentation from authoritative evidence."""
+"""Create the retained historical-only OWNER_SMOKE presentation.
+
+This legacy presentation path cannot publish a current Official Result.
+"""
 
 from __future__ import annotations
 
@@ -23,6 +26,9 @@ from crypto_lab.hashing import canonical_sha256
 from crypto_lab.hashing import sha256_file
 from crypto_lab.history import AuthoritativeResearchHistory
 from crypto_lab.history import HistoryAnchorStore
+from crypto_lab.legacy_publication import LEGACY_HISTORICAL_ONLY_PUBLICATION
+from crypto_lab.legacy_publication import require_historical_only_replay
+from crypto_lab.legacy_publication import require_historical_only_result
 from crypto_lab.owner import OwnerWorkflowInput
 from crypto_lab.research import PartitionRole
 from crypto_lab.research import ResearchError
@@ -37,6 +43,7 @@ from crypto_lab.timestamps import utc_datetime_to_ns
 ROOT = Path(__file__).resolve().parents[1]
 EVIDENCE_ROOT = ROOT / "evidence/research/owner-smoke-001"
 REPORT_ROOT = EVIDENCE_ROOT / "owner-report"
+PUBLICATION_CLASSIFICATION = LEGACY_HISTORICAL_ONLY_PUBLICATION
 TRIALS = {
     "spot": "owner-smoke-001-spot-sma20-development",
     "perpetual": "owner-smoke-001-perpetual-sma20-development",
@@ -117,12 +124,14 @@ def _trial_view(
         raise RuntimeError(f"{trial_id} is not terminally COMPLETED")
     run_dir = (ROOT / record.result_ref).resolve(strict=True)
     run_dir.relative_to(ROOT)
+    require_historical_only_result(run_dir, repository_root=ROOT)
     workflow_path = ROOT / "research/workflows" / f"{trial_id}.json"
     workflow = OwnerWorkflowInput.from_json_bytes(workflow_path.read_bytes())
     protocol_path = ROOT / "research/protocols" / f"{record.protocol_id}.json"
     protocol = ResearchProtocol.from_json_bytes(protocol_path.read_bytes())
     replay_path = ROOT / "research/replays" / f"{trial_id}.json"
     replay = _json(replay_path)
+    require_historical_only_replay(replay, repository_root=ROOT)
     native_path = run_dir / "nautilus_result.json"
     native = _json(native_path)
     checker_path = run_dir / "checker.json"

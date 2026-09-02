@@ -15,7 +15,9 @@ from unittest.mock import patch
 from crypto_lab.config import MarketProfile
 from crypto_lab.config import NOT_APPLICABLE
 from crypto_lab.config import SourceRevision
+from crypto_lab.checker import CheckerOutcome
 from crypto_lab.checker import check_evidence_directory
+from crypto_lab.historical_contracts import HistoricalValidationState
 from crypto_lab.historical_contracts import validate_validator_contract
 from crypto_lab.owner import OwnerWorkflowPurpose
 from crypto_lab.owner import _validate_candidate_order
@@ -141,7 +143,7 @@ class OwnerStrategyResearch001Tests(unittest.TestCase):
                 source_revision_current_head_required=False,
             )
         self.assertEqual(persisted["outcome"], "CHECK_PASS")
-        self.assertEqual(regenerated.outcome.value, "CHECK_FAIL")
+        self.assertEqual(regenerated.outcome, CheckerOutcome.COMPONENT_CHECK_FAIL)
         self.assertIn(
             FailureCode.SPOT_SHORT_OR_BORROW_DETECTED.value,
             regenerated.failure_codes,
@@ -151,7 +153,9 @@ class OwnerStrategyResearch001Tests(unittest.TestCase):
             "validate_owner_strategy_research_001_evidence.py",
             repository_root=root,
         )
-        self.assertTrue(snapshot.acceptable, snapshot.to_builtins())
+        self.assertEqual(snapshot.state, HistoricalValidationState.LEGACY_CONTRACT_ONLY)
+        self.assertTrue(snapshot.legacy_snapshot_integrity_valid, snapshot.to_builtins())
+        self.assertFalse(snapshot.acceptable, snapshot.to_builtins())
 
     def test_exact_momentum_golden_and_29_close_requirement(self) -> None:
         closes = tuple(Decimal(100 + index) for index in range(29))

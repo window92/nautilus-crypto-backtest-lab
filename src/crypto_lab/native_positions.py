@@ -22,6 +22,9 @@ from crypto_lab.hashing import canonical_sha256
 NATIVE_COMPLETED_SEQUENCE_SOURCE = (
     "NAUTILUS_2_0_0RC2_CACHE_POSITION_SNAPSHOTS_AND_CLOSED_POSITIONS"
 )
+NATIVE_COMPLETED_DIRECT_SEQUENCE_SOURCE = (
+    "NAUTILUS_2_0_0RC2_DIRECT_POSITION_CLOSED_CALLBACK_SNAPSHOTS"
+)
 
 
 class NativePositionSequenceError(ValueError):
@@ -70,7 +73,11 @@ class NativeCompletedPositionUnit(StrictModel):
     def __post_init__(self) -> None:
         if self.sequence_index < 0:
             raise NativePositionSequenceError("sequence index cannot be negative")
-        if self.source_kind not in {"CACHE_POSITION_SNAPSHOT", "CACHE_CLOSED_POSITION"}:
+        if self.source_kind not in {
+            "CACHE_POSITION_SNAPSHOT",
+            "CACHE_CLOSED_POSITION",
+            "DIRECT_POSITION_CLOSED_SNAPSHOT",
+        }:
             raise NativePositionSequenceError("unknown native completed-position source")
         for name in (
             "source_run_id",
@@ -150,7 +157,10 @@ class NativeCompletedPositionSequence(StrictModel):
             self.semantic_sequence_sha256,
             "native_completed_sequence.semantic_sequence_sha256",
         )
-        if self.source != NATIVE_COMPLETED_SEQUENCE_SOURCE:
+        if self.source not in {
+            NATIVE_COMPLETED_SEQUENCE_SOURCE,
+            NATIVE_COMPLETED_DIRECT_SEQUENCE_SOURCE,
+        }:
             raise NativePositionSequenceError("completed sequence is not the qualified native source")
         for name in ("source_run_id", "instrument_id", "settlement_currency"):
             _require_nonempty(getattr(self, name), f"native_completed_sequence.{name}")
@@ -314,6 +324,105 @@ def _unit_from_position(
     )
 
 
+def _native_money_text(value: Any, field_name: str) -> tuple[Decimal, str]:
+    parts = str(value).split(" ", maxsplit=1)
+    if len(parts) != 2 or not parts[1]:
+        raise NativePositionSequenceError(f"{field_name} is not native Money text")
+    amount = _decimal_from_native(parts[0], field_name)
+    return amount, parts[1]
+
+
+def _unit_from_native_payload(
+    payload: dict[str, Any],
+    *,
+    sequence_index: int,
+    source_run_id: str,
+    expected_instrument_id: str,
+) -> NativeCompletedPositionUnit:
+    """Type a directly copied public ``Position.to_dict`` close snapshot."""
+
+    required = {
+        "type",
+        "events",
+        "adjustments",
+        "position_id",
+        "instrument_id",
+        "opening_order_id",
+        "closing_order_id",
+        "entry",
+        "side",
+        "peak_qty",
+        "ts_opened",
+        "ts_closed",
+        "duration_ns",
+        "avg_px_open",
+        "avg_px_close",
+        "realized_return",
+        "realized_pnl",
+        "commissions",
+    }
+    if (
+        not required.issubset(payload)
+        or payload.get("type") != "Position"
+        or payload.get("side") != "FLAT"
+        or payload.get("instrument_id") != expected_instrument_id
+        or not isinstance(payload.get("events"), list)
+        or not isinstance(payload.get("adjustments"), list)
+        or not isinstance(payload.get("commissions"), list)
+    ):
+        raise NativePositionSequenceError("direct native Position payload is invalid")
+    realized_pnl, realized_currency = _native_money_text(
+        payload["realized_pnl"],
+        "position.realized_pnl",
+    )
+    commissions: list[NativeCommission] = []
+    settlement_only = True
+    for value in payload["commissions"]:
+        amount, currency = _native_money_text(value, "position.commission")
+        commissions.append(NativeCommission(amount=amount, currency=currency))
+        settlement_only = settlement_only and currency == realized_currency
+    commissions.sort(key=lambda item: (item.currency, item.amount))
+    funding_adjustments = [
+        item
+        for item in payload["adjustments"]
+        if isinstance(item, dict) and item.get("adjustment_type") == "FUNDING"
+    ]
+    funding_complete = all(item.get("pnl_change") is not None for item in funding_adjustments)
+    return NativeCompletedPositionUnit(
+        sequence_index=sequence_index,
+        source_kind="DIRECT_POSITION_CLOSED_SNAPSHOT",
+        source_run_id=source_run_id,
+        native_position_id=str(payload["position_id"]),
+        parent_position_id=str(payload["position_id"]),
+        native_payload_sha256=canonical_sha256(payload),
+        instrument_id=str(payload["instrument_id"]),
+        entry_side=str(payload["entry"]),
+        opened_ns=int(payload["ts_opened"]),
+        closed_ns=int(payload["ts_closed"]),
+        opening_order_id=str(payload["opening_order_id"]),
+        closing_order_id=str(payload["closing_order_id"]),
+        average_open_price=_decimal_from_native(
+            payload["avg_px_open"],
+            "position.avg_px_open",
+        ),
+        average_close_price=_decimal_from_native(
+            payload["avg_px_close"],
+            "position.avg_px_close",
+        ),
+        peak_quantity=_decimal_from_native(payload["peak_qty"], "position.peak_qty"),
+        realized_pnl=realized_pnl,
+        realized_pnl_currency=realized_currency,
+        realized_return=_decimal_from_native(
+            payload["realized_return"],
+            "position.realized_return",
+        ),
+        commissions=tuple(commissions),
+        duration_ns=int(payload["duration_ns"]),
+        funding_adjustment_count=len(funding_adjustments),
+        native_net_after_cost_unambiguous=settlement_only and funding_complete,
+    )
+
+
 def capture_native_completed_position_sequence(
     cache: Any,
     *,
@@ -321,6 +430,7 @@ def capture_native_completed_position_sequence(
     source_run_id: str,
     expected_settlement_currency: str,
     expected_closed_cycle_count: int,
+    closed_event_snapshots: tuple[dict[str, Any], ...] | None = None,
 ) -> NativeCompletedPositionSequence:
     """Capture native closed units without accepting Fills or pairing instructions."""
 
@@ -362,35 +472,84 @@ def capture_native_completed_position_sequence(
     if open_ids | closed_ids != current_ids:
         raise NativePositionSequenceError("native current position has no open/closed disposition")
 
-    snapshots: list[tuple[Any, str]] = []
-    for current in current_positions:
-        parent_id = str(current.id)
-        snapshots.extend(
-            (snapshot, parent_id)
-            for snapshot in cache.position_snapshots(position_id=current.id)
-        )
-    if len(snapshots) != len(global_snapshots):
-        raise NativePositionSequenceError("orphan or foreign native position snapshot detected")
+    if closed_event_snapshots is None:
+        snapshots: list[tuple[Any, str]] = []
+        for current in current_positions:
+            parent_id = str(current.id)
+            snapshots.extend(
+                (snapshot, parent_id)
+                for snapshot in cache.position_snapshots(position_id=current.id)
+            )
+        if len(snapshots) != len(global_snapshots):
+            raise NativePositionSequenceError(
+                "orphan or foreign native position snapshot detected",
+            )
 
-    candidates: list[tuple[Any, str, str]] = [
-        (snapshot, "CACHE_POSITION_SNAPSHOT", parent_id)
-        for snapshot, parent_id in snapshots
-    ]
-    candidates.extend(
-        (position, "CACHE_CLOSED_POSITION", str(position.id))
-        for position in closed_positions
-    )
+        candidates: list[tuple[Any, str, str]] = [
+            (snapshot, "CACHE_POSITION_SNAPSHOT", parent_id)
+            for snapshot, parent_id in snapshots
+        ]
+        candidates.extend(
+            (position, "CACHE_CLOSED_POSITION", str(position.id))
+            for position in closed_positions
+        )
+        sequence_source = NATIVE_COMPLETED_SEQUENCE_SOURCE
+    else:
+        if any(not isinstance(payload, dict) for payload in closed_event_snapshots):
+            raise NativePositionSequenceError(
+                "direct PositionClosed snapshot is not an object",
+            )
+        candidates = [
+            (
+                payload,
+                "DIRECT_POSITION_CLOSED_SNAPSHOT",
+                str(payload.get("position_id", "")),
+            )
+            for payload in closed_event_snapshots
+        ]
+        sequence_source = NATIVE_COMPLETED_DIRECT_SEQUENCE_SOURCE
     candidates.sort(
         key=lambda item: (
-            -1 if item[0].ts_closed is None else int(item[0].ts_closed),
-            int(item[0].ts_opened),
+            -1
+            if (
+                item[0].get("ts_closed")
+                if isinstance(item[0], dict)
+                else item[0].ts_closed
+            )
+            is None
+            else int(
+                item[0].get("ts_closed")
+                if isinstance(item[0], dict)
+                else item[0].ts_closed
+            ),
+            int(
+                item[0].get("ts_opened")
+                if isinstance(item[0], dict)
+                else item[0].ts_opened
+            ),
             item[1],
-            str(item[0].id),
+            str(
+                item[0].get("position_id")
+                if isinstance(item[0], dict)
+                else item[0].id
+            ),
         ),
     )
 
-    native_ids = [str(item[0].id) for item in candidates]
-    if len(native_ids) != len(set(native_ids)):
+    native_identities = [
+        (
+            str(
+                item[0].get("position_id")
+                if isinstance(item[0], dict)
+                else item[0].id
+            ),
+            canonical_sha256(
+                item[0] if isinstance(item[0], dict) else item[0].to_dict(),
+            ),
+        )
+        for item in candidates
+    ]
+    if len(native_identities) != len(set(native_identities)):
         raise NativePositionSequenceError("duplicate native completed-position identity")
     if len(candidates) != expected_closed_cycle_count:
         raise NativePositionSequenceError(
@@ -398,13 +557,22 @@ def capture_native_completed_position_sequence(
         )
 
     units = tuple(
-        _unit_from_position(
-            position,
-            sequence_index=index,
-            source_kind=source_kind,
-            source_run_id=source_run_id,
-            parent_position_id=parent_id,
-            expected_instrument_id=instrument_text,
+        (
+            _unit_from_native_payload(
+                position,
+                sequence_index=index,
+                source_run_id=source_run_id,
+                expected_instrument_id=instrument_text,
+            )
+            if isinstance(position, dict)
+            else _unit_from_position(
+                position,
+                sequence_index=index,
+                source_kind=source_kind,
+                source_run_id=source_run_id,
+                parent_position_id=parent_id,
+                expected_instrument_id=instrument_text,
+            )
         )
         for index, (position, source_kind, parent_id) in enumerate(candidates)
     )
@@ -424,7 +592,7 @@ def capture_native_completed_position_sequence(
     semantic_sha = canonical_sha256(tuple(unit.semantic_payload() for unit in units))
     return NativeCompletedPositionSequence.create(
         semantic_sequence_sha256=semantic_sha,
-        source=NATIVE_COMPLETED_SEQUENCE_SOURCE,
+        source=sequence_source,
         source_run_id=source_run_id,
         instrument_id=instrument_text,
         settlement_currency=settlement_currency,
@@ -441,6 +609,7 @@ def capture_native_completed_position_sequence(
 
 
 __all__ = [
+    "NATIVE_COMPLETED_DIRECT_SEQUENCE_SOURCE",
     "NATIVE_COMPLETED_SEQUENCE_SOURCE",
     "NativeCommission",
     "NativeCompletedPositionSequence",

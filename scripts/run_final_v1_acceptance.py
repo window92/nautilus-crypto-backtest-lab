@@ -263,7 +263,7 @@ def _run_real_profile(staging: Path, *, label: str, profile: str) -> dict[str, A
     summary = json.loads(summary_path.read_text(encoding="utf-8"))
     if not (
         summary["state"] == "COMPLETED"
-        and summary["checker_outcome"] == "CHECK_PASS"
+        and summary["component_validation_outcome"] == "COMPONENT_CHECK_PASS"
         and not summary["failure_codes"]
         and summary["fills_count"] > 0
     ):
@@ -471,13 +471,15 @@ def _research_lifecycle(staging: Path, *, head: str) -> dict[str, Any]:
     claim_base = ClaimEvaluationInput(
         protocol=protocol,
         mechanical_integrity=MechanicalIntegrity.PASS,
-        checker_result="CHECK_PASS",
+        checker_result="COMPONENT_CHECK_PASS",
+        official_seal_result="OFFICIAL_SEAL_PASS",
         underlying_official_runs_valid=True,
         qualification_only=False,
         protocol_frozen_before_results=True,
         supporting_trial_protocol_ids=(protocol.protocol_id,),
         complete_trial_history=True,
         partitions_valid=True,
+        selected_partition_role=PartitionRole.FINAL_HOLDOUT,
         holdout_valid=True,
         benchmark_valid=True,
         multiple_testing_valid=True,

@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import os
 import random
-import tempfile
+from contextlib import contextmanager
 from dataclasses import fields
 from datetime import datetime
 from decimal import Decimal
@@ -17,6 +17,7 @@ from decimal import ROUND_HALF_EVEN
 from enum import StrEnum
 from pathlib import Path
 from typing import Any
+from typing import Iterator
 
 from crypto_lab.config import MarketProfile
 from crypto_lab.config import NOT_APPLICABLE
@@ -27,11 +28,15 @@ from crypto_lab.config import _require_sha256
 from crypto_lab.config import _require_utc
 from crypto_lab.hashing import canonical_sha256
 from crypto_lab.locking import interprocess_file_lock
+from crypto_lab.locking import safe_append_bytes
+from crypto_lab.locking import safe_atomic_write_bytes
+from crypto_lab.locking import safe_read_bytes
 from crypto_lab.m3 import MechanicalIntegrity
 from crypto_lab.m3 import QualificationDownstreamBundle
 from crypto_lab.m3 import QualifiedProfileRecord
 from crypto_lab.m3 import QualifiedProfileRegistry
 from crypto_lab.status import FailureCode
+from crypto_lab.status import validated_failure_codes
 
 
 class ResearchError(ValueError):
@@ -44,6 +49,22 @@ class ResearchError(ValueError):
             raise ValueError(f"unknown SSOT failure code: {code!r}") from exc
         self.message = message
         super().__init__(f"{self.code}: {message}")
+
+
+@contextmanager
+def _research_file_lock(
+    path: Path,
+    *,
+    code: FailureCode,
+    shared: bool = False,
+) -> Iterator[None]:
+    """Translate filesystem hardening failures into closed contract codes."""
+
+    try:
+        with interprocess_file_lock(path, shared=shared):
+            yield
+    except OSError as exc:
+        raise ResearchError(code, f"unsafe persistence path: {exc}") from exc
 
 
 class ResearchIntent(StrEnum):
@@ -756,13 +777,23 @@ class TrialJournal:
         self.lock_path = self.path.parent / f".{self.path.name}.lock"
 
     def read_records(self) -> tuple[TrialRecord, ...]:
-        with interprocess_file_lock(self.lock_path, shared=True):
+        with _research_file_lock(
+            self.lock_path,
+            code=FailureCode.JOURNAL_DURABILITY_FAILURE,
+            shared=True,
+        ):
             return self._read_records_unlocked()
 
     def _read_records_unlocked(self) -> tuple[TrialRecord, ...]:
-        if not self.path.exists():
+        try:
+            payload = safe_read_bytes(self.path, missing_ok=True)
+        except OSError as exc:
+            raise ResearchError(
+                FailureCode.JOURNAL_DURABILITY_FAILURE,
+                f"unsafe Trial Journal path: {exc}",
+            ) from exc
+        if payload is None:
             return ()
-        payload = self.path.read_bytes()
         if payload and not payload.endswith(b"\n"):
             raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE, "truncated trial journal line")
         records: list[TrialRecord] = []
@@ -817,6 +848,18 @@ class TrialJournal:
             },
         )
 
+    def _persist_records_unlocked(self, records: tuple[TrialRecord, ...]) -> None:
+        """Publish one logical transition batch with one append and one fsync."""
+
+        payload = b"".join(record.to_json_bytes() + b"\n" for record in records)
+        try:
+            safe_append_bytes(self.path, payload)
+        except OSError as exc:
+            raise ResearchError(
+                FailureCode.JOURNAL_DURABILITY_FAILURE,
+                f"unsafe Trial Journal append path: {exc}",
+            ) from exc
+
     def _append_unlocked(
         self,
         definition: TrialDefinition,
@@ -854,48 +897,44 @@ class TrialJournal:
             failure_or_block_reason=reason,
             result_exposed=result_exposed,
         )
-        self.path.parent.mkdir(parents=True, exist_ok=True)
-        fd = os.open(self.path, os.O_APPEND | os.O_CREAT | os.O_WRONLY, 0o600)
-        try:
-            data = record.to_json_bytes() + b"\n"
-            offset = 0
-            while offset < len(data):
-                offset += os.write(fd, data[offset:])
-            os.fsync(fd)
-        finally:
-            os.close(fd)
-        directory_fd = os.open(self.path.parent, os.O_RDONLY | os.O_CLOEXEC)
-        try:
-            os.fsync(directory_fd)
-        finally:
-            os.close(directory_fd)
+        self._persist_records_unlocked((record,))
         return record
 
     def start(self, definition: TrialDefinition, *, at_utc: datetime) -> tuple[TrialRecord, TrialRecord]:
         _require_utc(at_utc, "trial.start")
-        with interprocess_file_lock(self.lock_path):
-            if any(item.trial_id == definition.trial_id for item in self._read_records_unlocked()):
+        with _research_file_lock(
+            self.lock_path,
+            code=FailureCode.JOURNAL_DURABILITY_FAILURE,
+        ):
+            records = list(self._read_records_unlocked())
+            if any(item.trial_id == definition.trial_id for item in records):
                 raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE, "retry requires a new trial_id")
-            planned = self._append_unlocked(
-                definition,
+            previous = "GENESIS" if not records else records[-1].journal_entry_sha256
+            planned = TrialRecord.create(
+                definition=definition,
+                journal_sequence=len(records) + 1,
+                previous_entry_sha256=previous,
                 state=TrialState.PLANNED,
                 started_at_utc=at_utc,
                 recorded_at_utc=at_utc,
                 finished_at_utc=NOT_APPLICABLE,
                 result_ref=NOT_APPLICABLE,
-                reason=NOT_APPLICABLE,
+                failure_or_block_reason=NOT_APPLICABLE,
                 result_exposed=False,
             )
-            started = self._append_unlocked(
-                definition,
+            started = TrialRecord.create(
+                definition=definition,
+                journal_sequence=len(records) + 2,
+                previous_entry_sha256=planned.journal_entry_sha256,
                 state=TrialState.STARTED,
                 started_at_utc=at_utc,
                 recorded_at_utc=at_utc,
                 finished_at_utc=NOT_APPLICABLE,
                 result_ref=NOT_APPLICABLE,
-                reason=NOT_APPLICABLE,
+                failure_or_block_reason=NOT_APPLICABLE,
                 result_exposed=False,
             )
+            self._persist_records_unlocked((planned, started))
             return planned, started
 
     def finish(
@@ -910,7 +949,10 @@ class TrialJournal:
     ) -> TrialRecord:
         if state not in TERMINAL_TRIAL_STATES:
             raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE, "finish requires a terminal state")
-        with interprocess_file_lock(self.lock_path):
+        with _research_file_lock(
+            self.lock_path,
+            code=FailureCode.JOURNAL_DURABILITY_FAILURE,
+        ):
             records = [
                 item for item in self._read_records_unlocked() if item.trial_id == trial_id
             ]
@@ -928,7 +970,10 @@ class TrialJournal:
             )
 
     def transition(self, trial_id: str, *, state: TrialState, at_utc: datetime) -> TrialRecord:
-        with interprocess_file_lock(self.lock_path):
+        with _research_file_lock(
+            self.lock_path,
+            code=FailureCode.JOURNAL_DURABILITY_FAILURE,
+        ):
             records = [
                 item for item in self._read_records_unlocked() if item.trial_id == trial_id
             ]
@@ -1096,46 +1141,48 @@ class HoldoutLockStore:
         self.lock_path = self.path.parent / f".{self.path.name}.lock"
 
     def read(self) -> HoldoutLockSnapshot:
-        with interprocess_file_lock(self.lock_path, shared=True):
+        with _research_file_lock(
+            self.lock_path,
+            code=FailureCode.JOURNAL_DURABILITY_FAILURE,
+            shared=True,
+        ):
             return self._read_unlocked()
 
     def _read_unlocked(self) -> HoldoutLockSnapshot:
-        if not self.path.exists() or self.path.read_bytes().strip() in {b"", b"{}"}:
+        try:
+            payload = safe_read_bytes(self.path, missing_ok=True)
+        except OSError as exc:
+            raise ResearchError(
+                FailureCode.JOURNAL_DURABILITY_FAILURE,
+                f"unsafe Holdout Lock path: {exc}",
+            ) from exc
+        if payload is None or payload.strip() in {b"", b"{}"}:
             return HoldoutLockSnapshot.create(())
         try:
-            return HoldoutLockSnapshot.from_json_bytes(self.path.read_bytes())
+            return HoldoutLockSnapshot.from_json_bytes(payload)
         except Exception as exc:
             raise ResearchError(FailureCode.HOLDOUT_HISTORY_VIOLATION, str(exc)) from exc
 
     def _write_unlocked(self, snapshot: HoldoutLockSnapshot) -> None:
-        self.path.parent.mkdir(parents=True, exist_ok=True)
-        handle = tempfile.NamedTemporaryFile(
-            mode="wb",
-            prefix=f".{self.path.name}.",
-            dir=self.path.parent,
-            delete=False,
-        )
-        temporary = Path(handle.name)
         try:
-            handle.write(snapshot.to_json_bytes() + b"\n")
-            handle.flush()
-            os.fsync(handle.fileno())
-            handle.close()
-            os.replace(temporary, self.path)
-            directory_fd = os.open(self.path.parent, os.O_RDONLY)
-            try:
-                os.fsync(directory_fd)
-            finally:
-                os.close(directory_fd)
-        finally:
-            if not handle.closed:
-                handle.close()
-            temporary.unlink(missing_ok=True)
+            safe_atomic_write_bytes(
+                self.path,
+                snapshot.to_json_bytes() + b"\n",
+                replace_function=os.replace,
+            )
+        except OSError as exc:
+            raise ResearchError(
+                FailureCode.JOURNAL_DURABILITY_FAILURE,
+                f"unsafe Holdout Lock write path: {exc}",
+            ) from exc
 
     def _write(self, snapshot: HoldoutLockSnapshot) -> None:
         """Test/support boundary which preserves the same interprocess serialization."""
 
-        with interprocess_file_lock(self.lock_path):
+        with _research_file_lock(
+            self.lock_path,
+            code=FailureCode.JOURNAL_DURABILITY_FAILURE,
+        ):
             self._write_unlocked(snapshot)
 
     def consume(
@@ -1147,7 +1194,10 @@ class HoldoutLockStore:
     ) -> HoldoutEntry:
         if not exposure.result_bearing:
             raise ResearchError(FailureCode.HOLDOUT_HISTORY_VIOLATION, "non-result cannot consume Holdout")
-        with interprocess_file_lock(self.lock_path):
+        with _research_file_lock(
+            self.lock_path,
+            code=FailureCode.JOURNAL_DURABILITY_FAILURE,
+        ):
             snapshot = self._read_unlocked()
             self._require_fresh_against_snapshot(
                 exposure,
@@ -1175,7 +1225,11 @@ class HoldoutLockStore:
         exposure_resolver: dict[str, ResultExposure],
         consuming_trial_id: str | None = None,
     ) -> None:
-        with interprocess_file_lock(self.lock_path, shared=True):
+        with _research_file_lock(
+            self.lock_path,
+            code=FailureCode.JOURNAL_DURABILITY_FAILURE,
+            shared=True,
+        ):
             snapshot = self._read_unlocked()
         self._require_fresh_against_snapshot(
             candidate,
@@ -1502,12 +1556,14 @@ class ClaimEvaluationInput(StrictModel):
     protocol: ResearchProtocol
     mechanical_integrity: MechanicalIntegrity
     checker_result: str
+    official_seal_result: str
     underlying_official_runs_valid: bool
     qualification_only: bool
     protocol_frozen_before_results: bool
     supporting_trial_protocol_ids: tuple[str, ...]
     complete_trial_history: bool
     partitions_valid: bool
+    selected_partition_role: PartitionRole
     holdout_valid: bool
     benchmark_valid: bool
     multiple_testing_valid: bool
@@ -1520,6 +1576,19 @@ class ClaimEvaluationInput(StrictModel):
     synthetic_contract_fixture: bool
 
     def __post_init__(self) -> None:
+        if not isinstance(self.selected_partition_role, PartitionRole):
+            raise ResearchError(
+                FailureCode.RESEARCH_PROTOCOL_INVALID,
+                "claim.selected_partition_role must use the closed PartitionRole vocabulary",
+            )
+        if (
+            self.selected_partition_role is not PartitionRole.FINAL_HOLDOUT
+            and self.holdout_valid
+        ):
+            raise ResearchError(
+                FailureCode.RESEARCH_PROTOCOL_INVALID,
+                "a non-FINAL_HOLDOUT selection cannot assert holdout validity",
+            )
         for identity in self.supporting_trial_protocol_ids:
             _require_sha256(identity, "claim.supporting_trial_protocol_ids")
         _freeze_field(self, "sample_adequacy_by_instrument")
@@ -1547,6 +1616,18 @@ class ClaimEvaluation(StrictModel):
             _require_sha256(self.protocol_id, "claim.protocol_id")
         if self.eligible_confirmatory_profitability_claim and self.research_eligibility is not ResearchEligibility.ELIGIBLE:
             raise ResearchError(FailureCode.CLAIM_INELIGIBLE, "claim cannot override eligibility")
+        try:
+            codes = validated_failure_codes(
+                self.failure_codes,
+                field="claim.failure_codes",
+            )
+        except ValueError as exc:
+            raise ResearchError(FailureCode.CLAIM_INELIGIBLE, str(exc)) from exc
+        if codes != self.failure_codes:
+            raise ResearchError(
+                FailureCode.CLAIM_INELIGIBLE,
+                "claim.failure_codes must be unique and canonical",
+            )
         if canonical_sha256(self.material_payload()) != self.claim_evaluation_id:
             raise ResearchError(FailureCode.CLAIM_INELIGIBLE, "claim result identity mismatch")
 
@@ -1559,17 +1640,25 @@ class ClaimEvaluation(StrictModel):
 
     @classmethod
     def create(cls, **values: Any) -> ClaimEvaluation:
+        values["failure_codes"] = validated_failure_codes(
+            values.get("failure_codes", ()),
+            field="claim.failure_codes",
+        )
         material = {"schema_version": 1, **values}
         return cls(claim_evaluation_id=canonical_sha256(material), **material)
 
     def force_ineligible(self, code: str, reason: str) -> ClaimEvaluation:
+        canonical_code = validated_failure_codes(
+            (code,),
+            field="claim.force_ineligible.code",
+        )[0]
         return ClaimEvaluation.create(
             protocol_id=self.protocol_id,
             mechanical_integrity=self.mechanical_integrity,
             research_intent=self.research_intent,
             research_eligibility=ResearchEligibility.INELIGIBLE,
             eligible_confirmatory_profitability_claim=False,
-            failure_codes=tuple(dict.fromkeys((*self.failure_codes, code))),
+            failure_codes=tuple(dict.fromkeys((*self.failure_codes, canonical_code))),
             reasons=tuple(dict.fromkeys((*self.reasons, reason))),
             limitations=self.limitations,
         )
@@ -1586,9 +1675,12 @@ def _evaluate_claim_from_resolved_evidence(value: ClaimEvaluationInput) -> Claim
     elif value.mechanical_integrity is not MechanicalIntegrity.PASS:
         hard_reasons.append("MECHANICAL_INTEGRITY_NOT_PASS")
         codes.append("CLAIM_INELIGIBLE")
-    if value.checker_result != "CHECK_PASS":
-        hard_reasons.append("CHECKER_NOT_PASS")
+    if value.checker_result != "COMPONENT_CHECK_PASS":
+        hard_reasons.append("COMPONENT_VALIDATION_NOT_PASS")
         codes.append("CHECKER_FAILURE")
+    if value.official_seal_result != "OFFICIAL_SEAL_PASS":
+        hard_reasons.append("OFFICIAL_SEAL_NOT_PASS")
+        codes.append("OFFICIAL_SEAL_FAILURE")
     if not value.underlying_official_runs_valid:
         hard_reasons.append("UNDERLYING_OFFICIAL_RUN_INVALID")
         codes.append("CLAIM_INELIGIBLE")
@@ -1609,7 +1701,10 @@ def _evaluate_claim_from_resolved_evidence(value: ClaimEvaluationInput) -> Claim
     if not value.partitions_valid:
         hard_reasons.append("PARTITION_LEAKAGE")
         codes.append("PARTITION_LEAKAGE")
-    if not value.holdout_valid:
+    if value.selected_partition_role is not PartitionRole.FINAL_HOLDOUT:
+        hard_reasons.append("FINAL_HOLDOUT_NOT_USED")
+        codes.append("CLAIM_INELIGIBLE")
+    elif not value.holdout_valid:
         hard_reasons.append("HOLDOUT_INVALID_OR_CONSUMED")
         codes.append("HOLDOUT_ALREADY_CONSUMED")
     if not value.benchmark_valid:

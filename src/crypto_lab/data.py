@@ -57,6 +57,7 @@ from crypto_lab.config import MarketProfile
 from crypto_lab.config import StrictModel
 from crypto_lab.config import _decode_json
 from crypto_lab.config import _decode_typed
+from crypto_lab.hashing import canonical_json_bytes
 from crypto_lab.hashing import canonical_sha256
 from crypto_lab.status import FailureCode
 from crypto_lab.timestamps import unix_ns_to_utc_datetime
@@ -69,6 +70,16 @@ NOT_APPLICABLE = "NOT_APPLICABLE"
 NOT_AVAILABLE = "NOT_AVAILABLE"
 NORMALIZER_VERSION = "binance-public-data-v1-m2.3"
 INSTRUMENT_REPAIR_NORMALIZER_VERSION = "binance-public-data-v1-m2.4"
+FULL_RAW_INVENTORY_NORMALIZER_VERSION = "binance-public-data-v1-m2.5"
+M3_QUALIFICATION_FULL_RAW_INVENTORY_NORMALIZER_VERSION = (
+    "binance-public-data-v1-m2.5-qualification"
+)
+FULL_RAW_INVENTORY_NORMALIZER_VERSIONS = frozenset(
+    {
+        FULL_RAW_INVENTORY_NORMALIZER_VERSION,
+        M3_QUALIFICATION_FULL_RAW_INVENTORY_NORMALIZER_VERSION,
+    },
+)
 FUNDING_NATIVE_BINDING_SINGLE = "SINGLE_SOURCE_EVENT"
 FUNDING_NATIVE_BINDING_RC2_INTERVAL_BOUNDARY = (
     "NAUTILUS_2_0_0RC2_INTERVAL_BOUNDARY_REPEAT_ONCE"
@@ -82,6 +93,7 @@ ACTIVE_NORMALIZER_VERSIONS = frozenset(
         "binance-public-data-v1-m2.2",
         NORMALIZER_VERSION,
         INSTRUMENT_REPAIR_NORMALIZER_VERSION,
+        *FULL_RAW_INVENTORY_NORMALIZER_VERSIONS,
     },
 )
 LEGACY_RELEASE_SCHEMA_VERSIONS = frozenset(
@@ -90,6 +102,20 @@ LEGACY_RELEASE_SCHEMA_VERSIONS = frozenset(
 
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 _INTEGER = re.compile(r"0|[1-9][0-9]*\Z")
+_PROVENANCE_ROLE = re.compile(r"[A-Z][A-Z0-9_]*\Z")
+_FULL_RAW_INVENTORY_HOSTS = {
+    MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY: frozenset(
+        {
+            "api.binance.com",
+            "data.binance.vision",
+            "data-api.binance.vision",
+            "www.binance.com",
+        },
+    ),
+    MarketProfile.BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING: frozenset(
+        {"data.binance.vision", "fapi.binance.com", "www.binance.com"},
+    ),
+}
 _SPOT_ARCHIVE = re.compile(
     r"/data/spot/(daily|monthly)/klines/[A-Z0-9]+/1m/[A-Za-z0-9._-]+\.zip\Z",
 )
@@ -267,6 +293,187 @@ class SourceObjectBinding(StrictModel):
             requested_interval=record.requested_interval,
             requested_time_range=record.requested_time_range,
             conflicts_with_sha256=record.conflicts_with_sha256,
+        )
+
+
+class RawInventoryOrigin(StrictModel):
+    """One exact acquisition-level origin for a release Raw object."""
+
+    observation_id: str
+    source_role: str
+    exact_locator: str
+    exact_query_json: str
+    http_status: int
+    validation_status: str
+    delivery_classification: str
+
+    def __post_init__(self) -> None:
+        _require_sha256(self.observation_id, "raw_inventory.origin.observation_id")
+        if _PROVENANCE_ROLE.fullmatch(self.source_role) is None:
+            raise ConfigError("raw_inventory.origin.source_role: invalid provenance role")
+        parsed = urlparse(self.exact_locator)
+        if (
+            parsed.scheme != "https"
+            or not parsed.hostname
+            or parsed.username is not None
+            or parsed.password is not None
+            or parsed.fragment
+        ):
+            raise ConfigError("raw_inventory.origin.exact_locator: exact HTTPS locator required")
+        try:
+            query = _decode_json(self.exact_query_json.encode("utf-8"))
+        except ConfigError as exc:
+            raise ConfigError("raw_inventory.origin.exact_query_json: invalid canonical JSON") from exc
+        if canonical_json_bytes(query).decode("utf-8") != self.exact_query_json:
+            raise ConfigError("raw_inventory.origin.exact_query_json: canonical JSON required")
+        if not 100 <= self.http_status <= 599:
+            raise ConfigError("raw_inventory.origin.http_status: invalid HTTP status")
+        if self.validation_status == "RAW_PRESERVED":
+            if not 200 <= self.http_status <= 299 or self.delivery_classification != NOT_APPLICABLE:
+                raise ConfigError("raw_inventory.origin: preserved response status is inconsistent")
+        elif self.validation_status == "UNAVAILABLE":
+            if (
+                self.http_status != 404
+                or self.delivery_classification
+                != "REDUNDANT_OFFICIAL_DELIVERY_ROLE_UNAVAILABLE"
+                or "MARK" not in self.source_role
+            ):
+                raise ConfigError("raw_inventory.origin: unavailable proof is not the locked Mark 404")
+        else:
+            raise ConfigError("raw_inventory.origin.validation_status: unsupported value")
+
+
+class PublisherChecksumBinding(StrictModel):
+    """Publisher checksum bytes binding one official archive filename and hash."""
+
+    checksum_raw_object_sha256: str
+    exact_filename: str
+    publisher_sha256: str
+
+    def __post_init__(self) -> None:
+        _require_sha256(
+            self.checksum_raw_object_sha256,
+            "raw_inventory.publisher_checksum.checksum_raw_object_sha256",
+        )
+        _require_sha256(
+            self.publisher_sha256,
+            "raw_inventory.publisher_checksum.publisher_sha256",
+        )
+        if not self.exact_filename or Path(self.exact_filename).name != self.exact_filename:
+            raise ConfigError("raw_inventory.publisher_checksum.exact_filename: basename required")
+
+
+class RawInventoryObject(StrictModel):
+    """One unique content-addressed Raw object in a complete release inventory."""
+
+    raw_object_sha256: str
+    byte_size: int
+    instrument: str
+    market_profile: MarketProfile
+    origins: tuple[RawInventoryOrigin, ...]
+    publisher_checksum_bindings: tuple[PublisherChecksumBinding, ...]
+
+    def __post_init__(self) -> None:
+        _require_sha256(self.raw_object_sha256, "raw_inventory.object.raw_object_sha256")
+        if self.byte_size <= 0:
+            raise ConfigError("raw_inventory.object.byte_size: accepted Raw object must be non-empty")
+        if self.instrument != "BTCUSDT":
+            raise ConfigError("raw_inventory.object.instrument: V1 requires BTCUSDT")
+        if not self.origins:
+            raise ConfigError("raw_inventory.object.origins: acquisition origin required")
+        origin_order = tuple(
+            sorted(
+                self.origins,
+                key=lambda item: (
+                    item.source_role,
+                    item.exact_locator,
+                    item.exact_query_json,
+                    item.observation_id,
+                ),
+            ),
+        )
+        if origin_order != self.origins or len(set(self.origins)) != len(self.origins):
+            raise ConfigError("raw_inventory.object.origins: canonical unique ordering required")
+        allowed_hosts = _FULL_RAW_INVENTORY_HOSTS[self.market_profile]
+        if any(urlparse(item.exact_locator).hostname not in allowed_hosts for item in self.origins):
+            raise ConfigError("raw_inventory.object.origins: locator host is not allowed for profile")
+        checksum_order = tuple(
+            sorted(
+                self.publisher_checksum_bindings,
+                key=lambda item: (
+                    item.exact_filename,
+                    item.publisher_sha256,
+                    item.checksum_raw_object_sha256,
+                ),
+            ),
+        )
+        if (
+            checksum_order != self.publisher_checksum_bindings
+            or len(set(self.publisher_checksum_bindings)) != len(self.publisher_checksum_bindings)
+        ):
+            raise ConfigError(
+                "raw_inventory.object.publisher_checksum_bindings: canonical unique ordering required",
+            )
+        if any(
+            item.publisher_sha256 != self.raw_object_sha256
+            for item in self.publisher_checksum_bindings
+        ):
+            raise ConfigError("raw_inventory.object: publisher checksum does not bind archive hash")
+
+
+class DatasetRawInventory(StrictModel):
+    """Complete direct and indirect Raw provenance for one DatasetRelease."""
+
+    schema_version: int
+    raw_inventory_identity: str
+    market_profile: MarketProfile
+    instrument_id: str
+    data_window_identity: str
+    source_reconciliation_identity: str
+    raw_object_count: int
+    raw_objects: tuple[RawInventoryObject, ...]
+
+    def __post_init__(self) -> None:
+        if self.schema_version != 1:
+            raise ConfigError("raw_inventory.schema_version: only version 1 is supported")
+        for name in (
+            "raw_inventory_identity",
+            "data_window_identity",
+            "source_reconciliation_identity",
+        ):
+            _require_sha256(getattr(self, name), f"raw_inventory.{name}")
+        if self.instrument_id not in {"BTCUSDT.BINANCE", "BTCUSDT-PERP.BINANCE"}:
+            raise ConfigError("raw_inventory.instrument_id: unsupported V1 Instrument")
+        if self.raw_object_count <= 0 or self.raw_object_count != len(self.raw_objects):
+            raise ConfigError("raw_inventory.raw_object_count: exact positive count required")
+        object_order = tuple(sorted(self.raw_objects, key=lambda item: item.raw_object_sha256))
+        hashes = tuple(item.raw_object_sha256 for item in self.raw_objects)
+        if object_order != self.raw_objects or len(set(hashes)) != len(hashes):
+            raise ConfigError("raw_inventory.raw_objects: canonical unique ordering required")
+        if any(item.market_profile is not self.market_profile for item in self.raw_objects):
+            raise ConfigError("raw_inventory.raw_objects: Market Profile mismatch")
+        object_hashes = set(hashes)
+        if any(
+            binding.checksum_raw_object_sha256 not in object_hashes
+            for item in self.raw_objects
+            for binding in item.publisher_checksum_bindings
+        ):
+            raise ConfigError("raw_inventory: publisher checksum Raw object is absent")
+        if canonical_sha256(self.material_payload()) != self.raw_inventory_identity:
+            raise ConfigError("raw_inventory_identity does not match canonical material payload")
+
+    def material_payload(self) -> dict[str, Any]:
+        payload = self.to_builtins()
+        payload.pop("raw_inventory_identity", None)
+        return payload
+
+    @classmethod
+    def create(cls, **values: Any) -> DatasetRawInventory:
+        material = {"schema_version": 1, **values}
+        material.pop("raw_inventory_identity", None)
+        return cls(
+            raw_inventory_identity=canonical_sha256(material),
+            **material,
         )
 
 
@@ -606,10 +813,11 @@ class DatasetRelease(StrictModel):
     derived_validation_identity: str = NOT_APPLICABLE
     data_tool_lock_identity: str = NOT_APPLICABLE
     data_quality_exposure_identity: str = NOT_APPLICABLE
+    raw_inventory: DatasetRawInventory | str = NOT_APPLICABLE
 
     def __post_init__(self) -> None:
-        if self.schema_version != 1:
-            raise ConfigError("dataset_release.schema_version: only version 1 is supported")
+        if self.schema_version not in {1, 2}:
+            raise ConfigError("dataset_release.schema_version: only versions 1 and 2 are supported")
         for name in (
             "dataset_release_id",
             "instrument_metadata_identity",
@@ -626,7 +834,10 @@ class DatasetRelease(StrictModel):
             *HISTORICAL_NORMALIZER_VERSIONS,
         }:
             raise ConfigError("dataset_release.normalizer_version: unsupported version")
-        if self.normalizer_version == INSTRUMENT_REPAIR_NORMALIZER_VERSION:
+        if self.normalizer_version in {
+            INSTRUMENT_REPAIR_NORMALIZER_VERSION,
+            *FULL_RAW_INVENTORY_NORMALIZER_VERSIONS,
+        }:
             for name in (
                 "data_window_identity",
                 "partition_geometry_identity",
@@ -635,6 +846,10 @@ class DatasetRelease(StrictModel):
                 "data_quality_exposure_identity",
             ):
                 _require_sha256(getattr(self, name), f"dataset_release.{name}")
+        if self.normalizer_version in {
+            INSTRUMENT_REPAIR_NORMALIZER_VERSION,
+            FULL_RAW_INVENTORY_NORMALIZER_VERSION,
+        }:
             for name in ("derived_validation_identity", "data_tool_lock_identity"):
                 _require_sha256(getattr(self, name), f"dataset_release.{name}")
         if not self.source_objects or not self.available_signal_bar_intervals:
@@ -657,7 +872,10 @@ class DatasetRelease(StrictModel):
         roles = {item.source_role for item in self.source_objects}
         if self.market_profile is MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY:
             required = {SourceRole.SPOT_EXECUTION_1M, SourceRole.SPOT_INSTRUMENT_METADATA}
-            if self.normalizer_version == INSTRUMENT_REPAIR_NORMALIZER_VERSION:
+            if self.normalizer_version in {
+                INSTRUMENT_REPAIR_NORMALIZER_VERSION,
+                FULL_RAW_INVENTORY_NORMALIZER_VERSION,
+            }:
                 required.add(SourceRole.SPOT_HISTORICAL_ORDER_GRID)
             forbidden = {
                 SourceRole.USDM_PERPETUAL_EXECUTION_1M,
@@ -676,13 +894,56 @@ class DatasetRelease(StrictModel):
                 SourceRole.USDM_PERPETUAL_FUNDING,
                 SourceRole.USDM_PERPETUAL_INSTRUMENT_METADATA,
             }
-            if self.normalizer_version == INSTRUMENT_REPAIR_NORMALIZER_VERSION:
+            if self.normalizer_version in {
+                INSTRUMENT_REPAIR_NORMALIZER_VERSION,
+                FULL_RAW_INVENTORY_NORMALIZER_VERSION,
+            }:
                 required.add(SourceRole.USDM_PERPETUAL_HISTORICAL_ORDER_GRID)
             forbidden = {SourceRole.SPOT_EXECUTION_1M, SourceRole.SPOT_INSTRUMENT_METADATA}
             if not required.issubset(roles) or roles & forbidden:
                 raise ConfigError("dataset_release: Perpetual source roles are invalid")
             _require_sha256(self.funding_data_identity, "dataset_release.funding_data_identity")
             _require_sha256(self.mark_data_identity, "dataset_release.mark_data_identity")
+        if self.normalizer_version in FULL_RAW_INVENTORY_NORMALIZER_VERSIONS:
+            if self.schema_version != 2 or not isinstance(self.raw_inventory, DatasetRawInventory):
+                raise ConfigError(
+                    "dataset_release.raw_inventory: schema v2 typed full inventory required",
+                )
+            inventory = self.raw_inventory
+            if (
+                inventory.market_profile is not self.market_profile
+                or inventory.instrument_id != self.instrument_id
+                or inventory.data_window_identity != self.data_window_identity
+                or inventory.source_reconciliation_identity
+                != self.source_reconciliation_identity
+            ):
+                raise ConfigError("dataset_release.raw_inventory: release binding mismatch")
+            inventory_by_hash = {
+                item.raw_object_sha256: item for item in inventory.raw_objects
+            }
+            for source in self.source_objects:
+                item = inventory_by_hash.get(source.sha256)
+                if (
+                    item is None
+                    or item.byte_size != source.byte_size
+                    or item.instrument != source.instrument
+                    or item.market_profile.value != source.market_profile
+                ):
+                    raise ConfigError(
+                        "dataset_release.raw_inventory: direct source object is absent or mismatched",
+                    )
+                if source.publisher_checksum != NOT_AVAILABLE and not any(
+                    checksum.exact_filename == source.exact_filename
+                    and checksum.publisher_sha256 == source.publisher_checksum
+                    for checksum in item.publisher_checksum_bindings
+                ):
+                    raise ConfigError(
+                        "dataset_release.raw_inventory: direct publisher checksum is unbound",
+                    )
+        elif self.schema_version != 1 or self.raw_inventory != NOT_APPLICABLE:
+            raise ConfigError(
+                "dataset_release.raw_inventory: only the v2 full-inventory contract may declare it",
+            )
         if canonical_sha256(self.material_payload()) != self.dataset_release_id:
             raise ConfigError("dataset_release_id does not match canonical material payload")
 
@@ -713,6 +974,8 @@ class DatasetRelease(StrictModel):
         payload = self.to_builtins()
         payload.pop("dataset_release_id", None)
         payload.pop("created_at_utc", None)
+        if self.schema_version == 1:
+            payload.pop("raw_inventory", None)
         if self.normalizer_version in LEGACY_RELEASE_SCHEMA_VERSIONS:
             for name in (
                 "data_window_identity",
@@ -729,12 +992,25 @@ class DatasetRelease(StrictModel):
                 source.pop("conflicts_with_sha256", None)
         return payload
 
+    def to_json_bytes(self) -> bytes:
+        payload = self.to_builtins()
+        if self.schema_version == 1:
+            payload.pop("raw_inventory", None)
+        return canonical_json_bytes(payload)
+
     def with_created_at(self, value: datetime) -> DatasetRelease:
         return replace(self, created_at_utc=value)
 
     @property
     def is_current_contract(self) -> bool:
         return self.normalizer_version in ACTIVE_NORMALIZER_VERSIONS
+
+    @property
+    def has_full_raw_inventory(self) -> bool:
+        return (
+            self.normalizer_version in FULL_RAW_INVENTORY_NORMALIZER_VERSIONS
+            and isinstance(self.raw_inventory, DatasetRawInventory)
+        )
 
     def resolve_runtime_data(self, data_root: Path) -> ResolvedDatasetRelease:
         """Resolve physical derived data without putting its path in content identity."""
@@ -781,15 +1057,54 @@ class FundingEvent:
     source_row_number: int
     source_row_sha256: str
     event_key: str
+    raw_rate_text: str = NOT_AVAILABLE
+
+    def __post_init__(self) -> None:
+        if self.raw_rate_text == NOT_AVAILABLE:
+            return
+        if not self.raw_rate_text or self.raw_rate_text.strip() != self.raw_rate_text:
+            raise DataContractError(
+                FailureCode.DATA_SOURCE_INVALID,
+                "funding raw rate lexeme is empty or whitespace-normalized",
+            )
+        try:
+            raw_decimal = Decimal(self.raw_rate_text)
+        except InvalidOperation as exc:
+            raise DataContractError(
+                FailureCode.DATA_SOURCE_INVALID,
+                "funding raw rate lexeme is not Decimal text",
+            ) from exc
+        if not raw_decimal.is_finite() or raw_decimal != self.funding_rate:
+            raise DataContractError(
+                FailureCode.DATA_HASH_MISMATCH,
+                "funding raw rate lexeme does not equal the normalized Decimal",
+            )
+        expected_event_key = canonical_sha256(
+            {
+                "instrument_id": self.instrument_id,
+                "calc_time_ns": self.calc_time_ns,
+                "funding_interval_hours": self.funding_interval_hours,
+                "funding_rate": self.funding_rate,
+                "funding_rate_raw_lexeme": self.raw_rate_text,
+            },
+        )
+        if self.event_key != expected_event_key:
+            raise DataContractError(
+                FailureCode.DATA_HASH_MISMATCH,
+                "funding event key does not bind the original rate lexeme",
+            )
 
     def semantic_payload(self) -> dict[str, Any]:
-        return {
+        payload = {
             "event_key": self.event_key,
             "instrument_id": self.instrument_id,
             "calc_time_ns": self.calc_time_ns,
             "funding_interval_hours": self.funding_interval_hours,
             "funding_rate": self.funding_rate,
         }
+        if self.raw_rate_text != NOT_AVAILABLE:
+            payload["funding_rate_raw_lexeme"] = self.raw_rate_text
+        return payload
 
 
 @dataclass(frozen=True)
@@ -1381,6 +1696,7 @@ def parse_funding_csv(payload: bytes, *, instrument_id: str) -> tuple[FundingEve
                 "calc_time_ns": calc_time_ns,
                 "funding_interval_hours": interval,
                 "funding_rate": rate,
+                "funding_rate_raw_lexeme": row[2],
             },
         )
         if calc_time_ns in seen_times:
@@ -1404,6 +1720,7 @@ def parse_funding_csv(payload: bytes, *, instrument_id: str) -> tuple[FundingEve
                 source_row_number=row_number,
                 source_row_sha256=row_hash,
                 event_key=event_key,
+                raw_rate_text=row[2],
             ),
         )
     if not result:
@@ -2611,14 +2928,7 @@ def _resolve_dataset_release_runtime(
         )
     if canonical_sha256(release.material_payload()) != release.dataset_release_id:
         raise DataContractError(FailureCode.DATA_HASH_MISMATCH, "Dataset Release identity mismatch")
-    raw_root = data_root / "raw" / "sha256"
-    for source in release.source_objects:
-        path = raw_root / source.sha256[:2] / f"{source.sha256}.blob"
-        if not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest() != source.sha256:
-            raise DataContractError(
-                FailureCode.DATA_HASH_MISMATCH,
-                f"source object {source.sha256} does not resolve",
-            )
+    verify_dataset_raw_inventory(release, data_root)
 
     release_root = data_root / "releases"
     metadata_path = release_root / f"{release.instrument_metadata_identity}.metadata.json"
@@ -2693,6 +3003,13 @@ def _resolve_dataset_release_runtime(
                 FailureCode.DATA_ROLE_MISMATCH,
                 "catalog funding Instrument does not match release metadata",
             )
+        if release.normalizer_version in FULL_RAW_INVENTORY_NORMALIZER_VERSIONS and any(
+            "funding_rate_raw_lexeme" not in item for item in events
+        ):
+            raise DataContractError(
+                FailureCode.DATA_SOURCE_INVALID,
+                "full-inventory funding evidence omits the original rate lexeme",
+            )
         funding_native_binding = str(
             funding_payload.get("native_binding", FUNDING_NATIVE_BINDING_SINGLE),
         )
@@ -2719,6 +3036,7 @@ def _resolve_dataset_release_runtime(
                         source_row_number=0,
                         source_row_sha256="0" * 64,
                         event_key=str(item["event_key"]),
+                        raw_rate_text=str(item.get("funding_rate_raw_lexeme", NOT_AVAILABLE)),
                     )
                     for item in events
                 ),
@@ -2729,7 +3047,10 @@ def _resolve_dataset_release_runtime(
             raise DataContractError(FailureCode.FUNDING_AMBIGUOUS, "funding event is malformed") from exc
 
     market_state_acceptance: dict[str, Any] | None = None
-    if release.normalizer_version == INSTRUMENT_REPAIR_NORMALIZER_VERSION:
+    if release.normalizer_version in {
+        INSTRUMENT_REPAIR_NORMALIZER_VERSION,
+        FULL_RAW_INVENTORY_NORMALIZER_VERSION,
+    }:
         acceptance_path = release_root / f"{release.derived_validation_identity}.market-state.json"
         try:
             acceptance_payload = _strict_json(acceptance_path.read_bytes())
@@ -2768,6 +3089,7 @@ def _resolve_dataset_release_runtime(
             if release.normalizer_version in {
                 NORMALIZER_VERSION,
                 INSTRUMENT_REPAIR_NORMALIZER_VERSION,
+                FULL_RAW_INVENTORY_NORMALIZER_VERSION,
             }
             and release.data_tool_lock_identity != NOT_APPLICABLE
             else None
@@ -2792,6 +3114,252 @@ def _resolve_dataset_release_runtime(
         funding_source_events=funding_source_events,
         market_state_acceptance=market_state_acceptance,
     )
+
+
+def _stream_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def verify_dataset_raw_inventory(release: DatasetRelease, data_root: Path) -> None:
+    """Verify every direct/indirect Raw byte claimed by a DatasetRelease.
+
+    The v2 contract verifies the complete content-addressed inventory, including
+    publisher checksum response bytes and unavailable-response proofs. Historical
+    v1 releases retain their direct-source-only behavior so their identities and
+    read-only replay meaning are not rewritten.
+    """
+
+    raw_root = Path(data_root) / "raw" / "sha256"
+    if release.has_full_raw_inventory:
+        assert isinstance(release.raw_inventory, DatasetRawInventory)
+        raw_objects = tuple(
+            (item.raw_object_sha256, item.byte_size)
+            for item in release.raw_inventory.raw_objects
+        )
+    else:
+        raw_objects = tuple((item.sha256, item.byte_size) for item in release.source_objects)
+    verified: dict[str, Path] = {}
+    for raw_sha256, expected_size in raw_objects:
+        path = raw_root / raw_sha256[:2] / f"{raw_sha256}.blob"
+        try:
+            stat_result = path.lstat()
+        except FileNotFoundError as exc:
+            raise DataContractError(
+                FailureCode.DATA_HASH_MISMATCH,
+                f"Raw object {raw_sha256} is missing",
+            ) from exc
+        if path.is_symlink() or not path.is_file() or stat_result.st_size != expected_size:
+            raise DataContractError(
+                FailureCode.DATA_HASH_MISMATCH,
+                f"Raw object {raw_sha256} is not an exact regular-file binding",
+            )
+        if _stream_sha256(path) != raw_sha256:
+            raise DataContractError(
+                FailureCode.DATA_HASH_MISMATCH,
+                f"Raw object {raw_sha256} content hash mismatch",
+            )
+        verified[raw_sha256] = path
+    if not release.has_full_raw_inventory:
+        return
+    assert isinstance(release.raw_inventory, DatasetRawInventory)
+    for raw_object in release.raw_inventory.raw_objects:
+        for binding in raw_object.publisher_checksum_bindings:
+            checksum_path = verified[binding.checksum_raw_object_sha256]
+            try:
+                lines = tuple(
+                    line.strip()
+                    for line in checksum_path.read_text(encoding="ascii").splitlines()
+                    if line.strip()
+                )
+            except (OSError, UnicodeError) as exc:
+                raise DataContractError(
+                    FailureCode.DATA_SOURCE_INVALID,
+                    "publisher checksum Raw object is not canonical ASCII",
+                ) from exc
+            expected = (binding.publisher_sha256, binding.exact_filename)
+            match = (
+                re.fullmatch(r"([0-9a-f]{64})[ \t]+\*?([^\s]+)", lines[0])
+                if len(lines) == 1
+                else None
+            )
+            actual = (match.group(1), match.group(2)) if match is not None else ()
+            if actual != expected:
+                raise DataContractError(
+                    FailureCode.DATA_SOURCE_INVALID,
+                    "publisher checksum bytes do not bind the declared archive",
+                )
+
+
+def assert_official_active_raw_inventory(
+    active: set[str],
+    declared_union: set[str],
+    extra_checksums: list[tuple[str, str]] | tuple[tuple[str, str], ...] = (),
+) -> None:
+    """Fail closed when Official DuckDB active objects are not the release union."""
+
+    extra_active = sorted(active - declared_union)
+    missing_active = sorted(declared_union - active)
+    if extra_active or missing_active or len(active) != len(declared_union):
+        raise RuntimeError(
+            "DATASET_RAW_INVENTORY_MISMATCH: DuckDB active raw_objects differ from "
+            "DatasetRelease inventories extra="
+            f"{len(extra_active)} missing={len(missing_active)} "
+            f"active={len(active)} declared_union={len(declared_union)}",
+        )
+    if extra_checksums:
+        raise RuntimeError(
+            "DATASET_RAW_INVENTORY_MISMATCH: publisher_checksums contain "
+            f"inactive archives count={len(extra_checksums)}",
+        )
+
+
+RESEARCH_REBUILD_VALIDATION_SCHEMA = (
+    "free-official-binance-deterministic-rebuild-validation-v2-full-raw-inventory"
+)
+RESEARCH_REBUILD_VALIDATION_REF = (
+    "evidence/audit/adversarial-remediation-002/data-rebuild-validation.json"
+)
+
+
+def validate_research_dataset_rebuild_proof(
+    release: DatasetRelease,
+    value: dict[str, Any],
+) -> None:
+    """Bind a research DatasetRelease to the independent four-way DB proof.
+
+    This validates a persisted, Git-bound proof.  It deliberately does not
+    replace the independent DuckDB validator which creates that proof.
+    """
+
+    expected_root_fields = {
+        "schema",
+        "status",
+        "duckdb_version",
+        "comparison",
+        "primary_readonly_gate",
+        "independent_readonly_gate",
+        "catalog_physical_comparison",
+        "materialized_release_artifacts",
+        "nautilus_catalog_validation",
+        "strategy_run",
+        "official_trial",
+        "network_used",
+    }
+    if (
+        release.normalizer_version != FULL_RAW_INVENTORY_NORMALIZER_VERSION
+        or not release.has_full_raw_inventory
+        or set(value) != expected_root_fields
+        or value.get("schema") != RESEARCH_REBUILD_VALIDATION_SCHEMA
+        or value.get("status") != "PASS"
+        or value.get("duckdb_version") != "1.4.5"
+        or value.get("strategy_run") is not False
+        or value.get("official_trial") is not False
+        or value.get("network_used") is not False
+        or value.get("primary_readonly_gate") != value.get("independent_readonly_gate")
+    ):
+        raise DataContractError(
+            FailureCode.DATASET_RAW_INVENTORY_MISMATCH,
+            "research DatasetRelease rebuild root proof differs",
+        )
+    comparison = value.get("comparison")
+    materialized = value.get("materialized_release_artifacts")
+    catalogs = value.get("nautilus_catalog_validation")
+    gate = value.get("primary_readonly_gate")
+    if not all(isinstance(item, dict) for item in (comparison, materialized, catalogs, gate)):
+        raise DataContractError(
+            FailureCode.DATASET_RAW_INVENTORY_MISMATCH,
+            "research DatasetRelease rebuild proof is incomplete",
+        )
+    expected_profiles = {
+        MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY.value,
+        MarketProfile.BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING.value,
+    }
+    inventory_results = gate.get("full_raw_inventory_results")
+    if (
+        set(materialized) != expected_profiles
+        or set(catalogs) != expected_profiles
+        or not isinstance(inventory_results, list)
+        or len(inventory_results) != 2
+    ):
+        raise DataContractError(
+            FailureCode.DATASET_RAW_INVENTORY_MISMATCH,
+            "research DatasetRelease rebuild profile set differs",
+        )
+    by_profile: dict[str, dict[str, Any]] = {}
+    for item in inventory_results:
+        if (
+            not isinstance(item, dict)
+            or set(item)
+            != {
+                "market_profile",
+                "dataset_release_id",
+                "raw_inventory_identity",
+                "raw_object_count",
+                "four_way_equality",
+            }
+            or not isinstance(item.get("market_profile"), str)
+        ):
+            raise DataContractError(
+                FailureCode.DATASET_RAW_INVENTORY_MISMATCH,
+                "research DatasetRelease four-way proof shape differs",
+            )
+        by_profile[str(item["market_profile"])] = item
+    if set(by_profile) != expected_profiles:
+        raise DataContractError(
+            FailureCode.DATASET_RAW_INVENTORY_MISMATCH,
+            "research DatasetRelease four-way profile set differs",
+        )
+    release_ids = sorted(
+        str(item.get("dataset_release_id"))
+        for item in materialized.values()
+        if isinstance(item, dict)
+    )
+    catalog_ids = sorted(
+        str(item.get("catalog_identity"))
+        for item in materialized.values()
+        if isinstance(item, dict)
+    )
+    if (
+        len(release_ids) != 2
+        or sorted(comparison.get("dataset_release_ids", [])) != release_ids
+        or sorted(comparison.get("catalog_identities", [])) != catalog_ids
+        or comparison.get("status") != "PASS"
+    ):
+        raise DataContractError(
+            FailureCode.DATASET_RAW_INVENTORY_MISMATCH,
+            "research DatasetRelease comparison identities differ",
+        )
+    inventory = release.raw_inventory
+    assert isinstance(inventory, DatasetRawInventory)
+    profile = release.market_profile.value
+    selected_materialized = materialized.get(profile)
+    selected_catalog = catalogs.get(profile)
+    selected_gate = by_profile.get(profile)
+    if (
+        not isinstance(selected_materialized, dict)
+        or not isinstance(selected_catalog, dict)
+        or not isinstance(selected_gate, dict)
+        or selected_materialized.get("dataset_release_id") != release.dataset_release_id
+        or selected_materialized.get("catalog_identity") != release.catalog_identity
+        or selected_materialized.get("raw_inventory_identity")
+        != inventory.raw_inventory_identity
+        or selected_materialized.get("raw_inventory_object_count")
+        != inventory.raw_object_count
+        or selected_catalog.get("status") != "PASS"
+        or selected_catalog.get("catalog_identity") != release.catalog_identity
+        or selected_gate.get("dataset_release_id") != release.dataset_release_id
+        or selected_gate.get("raw_inventory_identity") != inventory.raw_inventory_identity
+        or selected_gate.get("raw_object_count") != inventory.raw_object_count
+        or selected_gate.get("four_way_equality") is not True
+    ):
+        raise DataContractError(
+            FailureCode.DATASET_RAW_INVENTORY_MISMATCH,
+            "research DatasetRelease does not match its four-way rebuild proof",
+        )
 
 
 def verify_catalog_identity(release: DatasetRelease, semantic_inventory: dict[str, Any]) -> None:
@@ -3040,6 +3608,7 @@ def build_dataset_release(
     data_tool_lock_identity: str = NOT_APPLICABLE,
     data_quality_exposure_identity: str | None = None,
     normalizer_version: str = NORMALIZER_VERSION,
+    raw_inventory: DatasetRawInventory | None = None,
 ) -> DatasetRelease:
     if instrument_metadata.market_profile is not market_profile or instrument_metadata.instrument_id != instrument_id:
         raise DataContractError(
@@ -3139,8 +3708,24 @@ def build_dataset_release(
         no_repairs=True,
         role_results=tuple(role_results),
     )
+    if normalizer_version in FULL_RAW_INVENTORY_NORMALIZER_VERSIONS:
+        if raw_inventory is None:
+            raise DataContractError(
+                FailureCode.DATASET_RAW_INVENTORY_MISMATCH,
+                "full-inventory Dataset Release requires typed Raw inventory",
+            )
+        schema_version = 2
+        raw_inventory_value: DatasetRawInventory | str = raw_inventory
+    else:
+        if raw_inventory is not None:
+            raise DataContractError(
+                FailureCode.DATASET_RAW_INVENTORY_MISMATCH,
+                "typed Raw inventory is restricted to the full-inventory contract",
+            )
+        schema_version = 1
+        raw_inventory_value = NOT_APPLICABLE
     values = {
-        "schema_version": 1,
+        "schema_version": schema_version,
         "market_profile": market_profile,
         "instrument_id": instrument_id,
         "source_objects": bindings,
@@ -3169,9 +3754,27 @@ def build_dataset_release(
         "data_quality_exposure_identity": data_quality_exposure_identity or canonical_sha256(
             {"classification": "NO_ADDITIONAL_DATA_QUALITY_EXPOSURE"},
         ),
+        "raw_inventory": raw_inventory_value,
     }
-    identity = canonical_sha256(values)
+    identity_values = dict(values)
+    if schema_version == 1:
+        identity_values.pop("raw_inventory", None)
+    identity = canonical_sha256(identity_values)
     return DatasetRelease(dataset_release_id=identity, created_at_utc=created_at_utc, **values)
 
 
-__all__ = ["DatasetRelease"]
+__all__ = [
+    "DatasetRawInventory",
+    "DatasetRelease",
+    "FULL_RAW_INVENTORY_NORMALIZER_VERSION",
+    "FULL_RAW_INVENTORY_NORMALIZER_VERSIONS",
+    "M3_QUALIFICATION_FULL_RAW_INVENTORY_NORMALIZER_VERSION",
+    "PublisherChecksumBinding",
+    "RawInventoryObject",
+    "RawInventoryOrigin",
+    "RESEARCH_REBUILD_VALIDATION_SCHEMA",
+    "RESEARCH_REBUILD_VALIDATION_REF",
+    "assert_official_active_raw_inventory",
+    "validate_research_dataset_rebuild_proof",
+    "verify_dataset_raw_inventory",
+]

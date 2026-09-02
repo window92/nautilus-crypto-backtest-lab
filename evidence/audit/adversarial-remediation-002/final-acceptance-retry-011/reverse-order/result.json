@@ -1,0 +1,2852 @@
+{
+  "errors": 0,
+  "execution_occurrences": 568,
+  "failures": 0,
+  "order": "FULL_UNITTEST_ID_DESCENDING",
+  "schema": "v1-repair-reverse-unittest-order-v1",
+  "skipped": 0,
+  "status": "PASS",
+  "tests": [
+    {
+      "ordinal": 1,
+      "status": "PASS",
+      "test_id": "tests.unit.test_timestamps.ExactTimestampTests.test_non_utc_and_unrepresentable_nanoseconds_fail_closed"
+    },
+    {
+      "ordinal": 2,
+      "status": "PASS",
+      "test_id": "tests.unit.test_timestamps.ExactTimestampTests.test_millisecond_conversion_floors_submillisecond_without_float"
+    },
+    {
+      "ordinal": 3,
+      "status": "PASS",
+      "test_id": "tests.unit.test_timestamps.ExactTimestampTests.test_microseconds_and_negative_epoch_use_integer_arithmetic"
+    },
+    {
+      "ordinal": 4,
+      "status": "PASS",
+      "test_id": "tests.unit.test_timestamps.ExactTimestampTests.test_half_open_boundary_preserves_exact_one_microsecond_predecessor"
+    },
+    {
+      "ordinal": 5,
+      "status": "PASS",
+      "test_id": "tests.unit.test_timestamps.ExactTimestampTests.test_far_future_date_does_not_lose_precision"
+    },
+    {
+      "ordinal": 6,
+      "status": "PASS",
+      "test_id": "tests.unit.test_status.StatusContractTests.test_run_terminal_states_match_ssot"
+    },
+    {
+      "ordinal": 7,
+      "status": "PASS",
+      "test_id": "tests.unit.test_status.StatusContractTests.test_material_error_types_store_canonical_failure_code_values"
+    },
+    {
+      "ordinal": 8,
+      "status": "PASS",
+      "test_id": "tests.unit.test_status.StatusContractTests.test_material_error_types_reject_uncontrolled_failure_codes"
+    },
+    {
+      "ordinal": 9,
+      "status": "PASS",
+      "test_id": "tests.unit.test_status.StatusContractTests.test_m0_failure_codes_are_stable"
+    },
+    {
+      "ordinal": 10,
+      "status": "PASS",
+      "test_id": "tests.unit.test_spot_cash_reconciliation.SpotCashReconciliationTests.test_sell_exceeding_available_base_is_rejected_even_if_native_rows_exist"
+    },
+    {
+      "ordinal": 11,
+      "status": "PASS",
+      "test_id": "tests.unit.test_spot_cash_reconciliation.SpotCashReconciliationTests.test_quote_denominated_buy_survives_adverse_gap_without_overspend"
+    },
+    {
+      "ordinal": 12,
+      "status": "PASS",
+      "test_id": "tests.unit.test_spot_cash_reconciliation.SpotCashReconciliationTests.test_partial_fills_fees_and_decimal_rounding_reconcile_exactly"
+    },
+    {
+      "ordinal": 13,
+      "status": "PASS",
+      "test_id": "tests.unit.test_spot_cash_reconciliation.SpotCashReconciliationTests.test_nonfinancial_account_snapshot_before_fill_is_allowed_but_bound_exactly"
+    },
+    {
+      "ordinal": 14,
+      "status": "PASS",
+      "test_id": "tests.unit.test_spot_cash_reconciliation.SpotCashReconciliationTests.test_balance_or_commission_tamper_fails_independent_reconciliation"
+    },
+    {
+      "ordinal": 15,
+      "status": "PASS",
+      "test_id": "tests.unit.test_spot_cash_reconciliation.SpotCashReconciliationTests.test_adverse_next_bar_gap_unfunded_buy_is_rejected_pre_submission"
+    },
+    {
+      "ordinal": 16,
+      "status": "PASS",
+      "test_id": "tests.unit.test_source_revision.SourceRevisionContractTests.test_source_revision_round_trip_has_exact_separate_fields"
+    },
+    {
+      "ordinal": 17,
+      "status": "PASS",
+      "test_id": "tests.unit.test_source_revision.SourceRevisionContractTests.test_source_revision_rejects_unknown_field"
+    },
+    {
+      "ordinal": 18,
+      "status": "PASS",
+      "test_id": "tests.unit.test_source_revision.SourceRevisionContractTests.test_source_revision_rejects_non_utc_capture_time"
+    },
+    {
+      "ordinal": 19,
+      "status": "PASS",
+      "test_id": "tests.unit.test_source_revision.SourceRevisionContractTests.test_source_revision_rejects_missing_field"
+    },
+    {
+      "ordinal": 20,
+      "status": "PASS",
+      "test_id": "tests.unit.test_source_revision.SourceRevisionContractTests.test_source_revision_rejects_invalid_git_object_id"
+    },
+    {
+      "ordinal": 21,
+      "status": "PASS",
+      "test_id": "tests.unit.test_runtime_lock.RuntimeLockSchemaTests.test_runtime_lock_v3_binds_installed_payload_and_excludes_project_source"
+    },
+    {
+      "ordinal": 22,
+      "status": "PASS",
+      "test_id": "tests.unit.test_runtime_lock.RuntimeLockSchemaTests.test_runtime_lock_rejects_unknown_field"
+    },
+    {
+      "ordinal": 23,
+      "status": "PASS",
+      "test_id": "tests.unit.test_runtime_lock.RuntimeLockSchemaTests.test_runtime_lock_rejects_project_git_identity_as_unknown"
+    },
+    {
+      "ordinal": 24,
+      "status": "PASS",
+      "test_id": "tests.unit.test_runtime_lock.RuntimeLockSchemaTests.test_runtime_lock_rejects_obsolete_schema_version"
+    },
+    {
+      "ordinal": 25,
+      "status": "PASS",
+      "test_id": "tests.unit.test_runtime_lock.RuntimeLockSchemaTests.test_runtime_lock_rejects_missing_field"
+    },
+    {
+      "ordinal": 26,
+      "status": "PASS",
+      "test_id": "tests.unit.test_runtime_installed_files.InstalledRuntimeFileTests.test_modify_delete_and_add_payload_files_fail_closed"
+    },
+    {
+      "ordinal": 27,
+      "status": "PASS",
+      "test_id": "tests.unit.test_runtime_installed_files.InstalledRuntimeFileTests.test_legacy_runtime_proof_is_diagnostic_only_and_tamper_fails_closed"
+    },
+    {
+      "ordinal": 28,
+      "status": "PASS",
+      "test_id": "tests.unit.test_runtime_installed_files.InstalledRuntimeFileTests.test_cache_is_the_only_unrecorded_file_exception"
+    },
+    {
+      "ordinal": 29,
+      "status": "PASS",
+      "test_id": "tests.unit.test_result_status.HistoricalResultStatusTests.test_warned_owner_child_run_is_revoked_by_default_lookup"
+    },
+    {
+      "ordinal": 30,
+      "status": "PASS",
+      "test_id": "tests.unit.test_result_status.HistoricalResultStatusTests.test_superseded_remediation_run_is_revoked_by_default_lookup"
+    },
+    {
+      "ordinal": 31,
+      "status": "PASS",
+      "test_id": "tests.unit.test_result_status.HistoricalResultStatusTests.test_registry_exposes_additive_revocation_without_authorizing_claims"
+    },
+    {
+      "ordinal": 32,
+      "status": "PASS",
+      "test_id": "tests.unit.test_result_status.HistoricalResultStatusTests.test_duplicate_unsafe_or_claim_authorizing_registry_fails_closed"
+    },
+    {
+      "ordinal": 33,
+      "status": "PASS",
+      "test_id": "tests.unit.test_r2_official_rebuild_plan.R2OfficialRebuildPlanTests.test_uncommitted_registry_bytes_cannot_become_current_authority"
+    },
+    {
+      "ordinal": 34,
+      "status": "PASS",
+      "test_id": "tests.unit.test_r2_official_rebuild_plan.R2OfficialRebuildPlanTests.test_rebuild_validation_must_bind_both_release_inventory_and_catalogs"
+    },
+    {
+      "ordinal": 35,
+      "status": "PASS",
+      "test_id": "tests.unit.test_r2_official_rebuild_plan.R2OfficialRebuildPlanTests.test_r2_research_family_is_new_but_strategy_lineage_is_preserved"
+    },
+    {
+      "ordinal": 36,
+      "status": "PASS",
+      "test_id": "tests.unit.test_r2_official_rebuild_plan.R2OfficialRebuildPlanTests.test_qualification_executable_closure_rejects_stale_product_bytes"
+    },
+    {
+      "ordinal": 37,
+      "status": "PASS",
+      "test_id": "tests.unit.test_r2_official_rebuild_plan.R2OfficialRebuildPlanTests.test_preparation_output_is_fresh_external_and_under_tmp"
+    },
+    {
+      "ordinal": 38,
+      "status": "PASS",
+      "test_id": "tests.unit.test_r2_official_rebuild_plan.R2OfficialRebuildPlanTests.test_plan_preparation_rejects_an_older_qualification_registry"
+    },
+    {
+      "ordinal": 39,
+      "status": "PASS",
+      "test_id": "tests.unit.test_r2_official_rebuild_plan.R2OfficialRebuildPlanTests.test_owner_resolves_the_r2_qualification_registry_before_legacy_authorities"
+    },
+    {
+      "ordinal": 40,
+      "status": "PASS",
+      "test_id": "tests.unit.test_r2_official_rebuild_plan.R2OfficialRebuildPlanTests.test_owner_rejects_missing_or_prefixed_development_claim_token"
+    },
+    {
+      "ordinal": 41,
+      "status": "PASS",
+      "test_id": "tests.unit.test_r2_official_rebuild_plan.R2OfficialRebuildPlanTests.test_owner_rejects_a_v2_profile_from_an_older_registry"
+    },
+    {
+      "ordinal": 42,
+      "status": "PASS",
+      "test_id": "tests.unit.test_r2_official_rebuild_plan.R2OfficialRebuildPlanTests.test_new_epoch_never_overwrites_prior_benchmark_evidence"
+    },
+    {
+      "ordinal": 43,
+      "status": "PASS",
+      "test_id": "tests.unit.test_r2_official_rebuild_plan.R2OfficialRebuildPlanTests.test_missing_latest_registry_fails_closed_without_older_fallback"
+    },
+    {
+      "ordinal": 44,
+      "status": "PASS",
+      "test_id": "tests.unit.test_r2_official_rebuild_plan.R2OfficialRebuildPlanTests.test_m3_qualification_release_cannot_authorize_official_research"
+    },
+    {
+      "ordinal": 45,
+      "status": "PASS",
+      "test_id": "tests.unit.test_r2_official_rebuild_plan.R2OfficialRebuildPlanTests.test_legacy_dataset_releases_fail_the_r2_full_inventory_gate"
+    },
+    {
+      "ordinal": 46,
+      "status": "PASS",
+      "test_id": "tests.unit.test_r2_official_rebuild_plan.R2OfficialRebuildPlanTests.test_legacy_check_pass_registry_fails_the_component_gate"
+    },
+    {
+      "ordinal": 47,
+      "status": "PASS",
+      "test_id": "tests.unit.test_r2_official_rebuild_plan.R2OfficialRebuildPlanTests.test_current_registry_gate_rejects_wrong_component_or_runtime"
+    },
+    {
+      "ordinal": 48,
+      "status": "PASS",
+      "test_id": "tests.unit.test_r2_official_rebuild_plan.R2OfficialRebuildPlanTests.test_builder_freezes_six_unique_development_only_primary_replay_plans"
+    },
+    {
+      "ordinal": 49,
+      "status": "PASS",
+      "test_id": "tests.unit.test_r2_failure_code_vocabulary.R2FailureCodeVocabularyTests.test_product_output_rejects_unknown_codes_but_evidence_maps_them_closed"
+    },
+    {
+      "ordinal": 50,
+      "status": "PASS",
+      "test_id": "tests.unit.test_r2_failure_code_vocabulary.R2FailureCodeVocabularyTests.test_persisted_report_and_m3_schema_reject_arbitrary_codes"
+    },
+    {
+      "ordinal": 51,
+      "status": "PASS",
+      "test_id": "tests.unit.test_r2_failure_code_vocabulary.R2FailureCodeVocabularyTests.test_legacy_registry_unknown_code_becomes_canonical_incomplete"
+    },
+    {
+      "ordinal": 52,
+      "status": "PASS",
+      "test_id": "tests.unit.test_r2_failure_code_vocabulary.R2FailureCodeVocabularyTests.test_checker_never_propagates_unknown_preflight_or_guard_lexemes"
+    },
+    {
+      "ordinal": 53,
+      "status": "PASS",
+      "test_id": "tests.unit.test_r2_acceptance_validator.R2AcceptanceValidatorTests.test_symlinked_plan_is_rejected_before_any_run_resolution"
+    },
+    {
+      "ordinal": 54,
+      "status": "PASS",
+      "test_id": "tests.unit.test_r2_acceptance_validator.R2AcceptanceValidatorTests.test_report_cannot_authorize_profitability_live_or_holdout"
+    },
+    {
+      "ordinal": 55,
+      "status": "PASS",
+      "test_id": "tests.unit.test_r2_acceptance_validator.R2AcceptanceValidatorTests.test_replay_requires_both_seals_and_exact_semantic_digest"
+    },
+    {
+      "ordinal": 56,
+      "status": "PASS",
+      "test_id": "tests.unit.test_r2_acceptance_validator.R2AcceptanceValidatorTests.test_plan_is_exactly_r2_development_only"
+    },
+    {
+      "ordinal": 57,
+      "status": "PASS",
+      "test_id": "tests.unit.test_r2_acceptance_validator.R2AcceptanceValidatorTests.test_persisted_retry_009_reports_survive_strict_immutable_projection"
+    },
+    {
+      "ordinal": 58,
+      "status": "PASS",
+      "test_id": "tests.unit.test_r2_acceptance_validator.R2AcceptanceValidatorTests.test_partial_retry_010_reports_fail_current_holdout_semantics"
+    },
+    {
+      "ordinal": 59,
+      "status": "PASS",
+      "test_id": "tests.unit.test_r2_acceptance_validator.R2AcceptanceValidatorTests.test_missing_plan_returns_closed_structured_failure"
+    },
+    {
+      "ordinal": 60,
+      "status": "PASS",
+      "test_id": "tests.unit.test_r2_acceptance_validator.R2AcceptanceValidatorTests.test_metrics_reject_non_daily_or_warmup_basis"
+    },
+    {
+      "ordinal": 61,
+      "status": "PASS",
+      "test_id": "tests.unit.test_r2_acceptance_validator.R2AcceptanceValidatorTests.test_master_acceptance_binds_the_exact_plan_epoch"
+    },
+    {
+      "ordinal": 62,
+      "status": "PASS",
+      "test_id": "tests.unit.test_r2_acceptance_validator.R2AcceptanceValidatorTests.test_dataset_rebuild_missing_four_way_proof_is_structured"
+    },
+    {
+      "ordinal": 63,
+      "status": "PASS",
+      "test_id": "tests.unit.test_r2_acceptance_validator.R2AcceptanceValidatorTests.test_component_cannot_promote_a_legacy_or_partial_outcome"
+    },
+    {
+      "ordinal": 64,
+      "status": "PASS",
+      "test_id": "tests.unit.test_profile_authority.QualifiedProfileAuthorityTests.test_registry_tamper_wrong_record_and_unsafe_path_fail_closed"
+    },
+    {
+      "ordinal": 65,
+      "status": "PASS",
+      "test_id": "tests.unit.test_profile_authority.QualifiedProfileAuthorityTests.test_legacy_v1_registry_parses_but_cannot_be_profile_authority"
+    },
+    {
+      "ordinal": 66,
+      "status": "PASS",
+      "test_id": "tests.unit.test_profile_authority.QualifiedProfileAuthorityTests.test_exact_v2_component_registry_and_record_are_bound"
+    },
+    {
+      "ordinal": 67,
+      "status": "PASS",
+      "test_id": "tests.unit.test_owner_strategy_research_001.OwnerStrategyResearch001Tests.test_volatility_formula_matches_independent_locked_golden"
+    },
+    {
+      "ordinal": 68,
+      "status": "PASS",
+      "test_id": "tests.unit.test_owner_strategy_research_001.OwnerStrategyResearch001Tests.test_protocol_binds_two_candidates_holm_and_development_benchmark"
+    },
+    {
+      "ordinal": 69,
+      "status": "PASS",
+      "test_id": "tests.unit.test_owner_strategy_research_001.OwnerStrategyResearch001Tests.test_monday_schedule_and_increment_floor_are_exact"
+    },
+    {
+      "ordinal": 70,
+      "status": "PASS",
+      "test_id": "tests.unit.test_owner_strategy_research_001.OwnerStrategyResearch001Tests.test_historical_registered_identity_is_bound_to_its_own_git_bytes"
+    },
+    {
+      "ordinal": 71,
+      "status": "PASS",
+      "test_id": "tests.unit.test_owner_strategy_research_001.OwnerStrategyResearch001Tests.test_historical_journal_binding_accepts_only_an_immutable_prefix"
+    },
+    {
+      "ordinal": 72,
+      "status": "PASS",
+      "test_id": "tests.unit.test_owner_strategy_research_001.OwnerStrategyResearch001Tests.test_historical_checker_is_preserved_but_current_checker_revokes_invalid_run"
+    },
+    {
+      "ordinal": 73,
+      "status": "PASS",
+      "test_id": "tests.unit.test_owner_strategy_research_001.OwnerStrategyResearch001Tests.test_exact_momentum_golden_and_29_close_requirement"
+    },
+    {
+      "ordinal": 74,
+      "status": "PASS",
+      "test_id": "tests.unit.test_owner_strategy_research_001.OwnerStrategyResearch001Tests.test_both_candidates_have_static_distinct_registered_identities"
+    },
+    {
+      "ordinal": 75,
+      "status": "PASS",
+      "test_id": "tests.unit.test_owner_smoke_002_sparse_preflight.OwnerSmoke002SparsePreflightTests.test_perpetual_execution_grid_still_rejects_a_missing_minute"
+    },
+    {
+      "ordinal": 76,
+      "status": "PASS",
+      "test_id": "tests.unit.test_owner_smoke_002_sparse_preflight.OwnerSmoke002SparsePreflightTests.test_official_zero_volume_perpetual_bar_is_not_treated_as_synthetic"
+    },
+    {
+      "ordinal": 77,
+      "status": "PASS",
+      "test_id": "tests.unit.test_owner_smoke_002_sparse_preflight.OwnerSmoke002SparsePreflightTests.test_legacy_complete_spot_bar_grid_remains_accepted_without_sparse_binding"
+    },
+    {
+      "ordinal": 78,
+      "status": "PASS",
+      "test_id": "tests.unit.test_owner_smoke_002_sparse_preflight.OwnerSmoke002SparsePreflightTests.test_current_spot_release_accepts_sparse_bars_bound_to_complete_minute_dispositions"
+    },
+    {
+      "ordinal": 79,
+      "status": "PASS",
+      "test_id": "tests.unit.test_native_research_metrics_readiness.ResearchReadinessTests.test_terminal_open_is_not_added_to_native_completed_sample"
+    },
+    {
+      "ordinal": 80,
+      "status": "PASS",
+      "test_id": "tests.unit.test_native_research_metrics_readiness.ResearchReadinessTests.test_returns_basis_uses_native_snapshot_gate_then_position_fallback"
+    },
+    {
+      "ordinal": 81,
+      "status": "PASS",
+      "test_id": "tests.unit.test_native_research_metrics_readiness.ResearchReadinessTests.test_returns_basis_disagreement_fails_closed"
+    },
+    {
+      "ordinal": 82,
+      "status": "PASS",
+      "test_id": "tests.unit.test_native_research_metrics_readiness.ResearchReadinessTests.test_native_averages_are_reported_but_gross_pnl_is_not_invented"
+    },
+    {
+      "ordinal": 83,
+      "status": "PASS",
+      "test_id": "tests.unit.test_native_research_metrics_readiness.ResearchReadinessTests.test_conflicting_native_count_is_rejected"
+    },
+    {
+      "ordinal": 84,
+      "status": "PASS",
+      "test_id": "tests.unit.test_native_research_metrics_readiness.ResearchReadinessTests.test_calmar_rejects_position_return_fallback_and_zero_drawdown"
+    },
+    {
+      "ordinal": 85,
+      "status": "PASS",
+      "test_id": "tests.unit.test_native_research_metrics_readiness.NativePositionSequenceTests.test_spot_closed_position_is_one_native_completed_cycle"
+    },
+    {
+      "ordinal": 86,
+      "status": "PASS",
+      "test_id": "tests.unit.test_native_research_metrics_readiness.NativePositionSequenceTests.test_settlement_commissions_and_funding_are_native_position_pnl"
+    },
+    {
+      "ordinal": 87,
+      "status": "PASS",
+      "test_id": "tests.unit.test_native_research_metrics_readiness.NativePositionSequenceTests.test_semantic_sequence_is_deterministic_across_runtime_ids"
+    },
+    {
+      "ordinal": 88,
+      "status": "PASS",
+      "test_id": "tests.unit.test_native_research_metrics_readiness.NativePositionSequenceTests.test_partial_reduction_is_not_a_completed_cycle"
+    },
+    {
+      "ordinal": 89,
+      "status": "PASS",
+      "test_id": "tests.unit.test_native_research_metrics_readiness.NativePositionSequenceTests.test_netting_snapshot_is_counted_once_and_terminal_open_is_excluded"
+    },
+    {
+      "ordinal": 90,
+      "status": "PASS",
+      "test_id": "tests.unit.test_native_research_metrics_readiness.NativePositionSequenceTests.test_missing_or_orphan_snapshot_fails_closed"
+    },
+    {
+      "ordinal": 91,
+      "status": "PASS",
+      "test_id": "tests.unit.test_native_research_metrics_readiness.NativePositionSequenceTests.test_manual_fill_pairing_is_not_an_input_to_native_capture"
+    },
+    {
+      "ordinal": 92,
+      "status": "PASS",
+      "test_id": "tests.unit.test_native_research_metrics_readiness.NativePositionSequenceTests.test_duplicate_and_forged_completed_units_fail_closed"
+    },
+    {
+      "ordinal": 93,
+      "status": "PASS",
+      "test_id": "tests.unit.test_native_research_metrics_readiness.NativePositionSequenceTests.test_diagnostics_consumes_v2_native_sequence_without_fill_pairing"
+    },
+    {
+      "ordinal": 94,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m4_protocol.ResearchProtocolTests.test_scope_is_frozen_and_cannot_silently_expand"
+    },
+    {
+      "ordinal": 95,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m4_protocol.ResearchProtocolTests.test_scheduler_rejects_symbol_window_cost_seed_and_release_expansion"
+    },
+    {
+      "ordinal": 96,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m4_protocol.ResearchProtocolTests.test_scheduler_enforces_candidate_order_budget_and_no_relabel_repeat"
+    },
+    {
+      "ordinal": 97,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m4_protocol.ResearchProtocolTests.test_protocol_is_strict_immutable_and_content_addressed"
+    },
+    {
+      "ordinal": 98,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m4_protocol.ResearchProtocolTests.test_point_in_time_membership_rejects_current_survivor_or_future_information"
+    },
+    {
+      "ordinal": 99,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m4_protocol.ResearchProtocolTests.test_partition_state_resets_capital_and_forbids_warmup_or_financial_carry"
+    },
+    {
+      "ordinal": 100,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m4_protocol.ResearchProtocolTests.test_partition_overlap_and_insufficient_purge_fail_closed"
+    },
+    {
+      "ordinal": 101,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m4_protocol.ResearchProtocolTests.test_material_post_result_change_creates_new_identity"
+    },
+    {
+      "ordinal": 102,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m4_protocol.ResearchProtocolTests.test_decimal_and_timestamp_shape_rejects_noncanonical_material"
+    },
+    {
+      "ordinal": 103,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m4_protocol.ResearchProtocolTests.test_benchmark_must_be_frozen_on_same_interval_with_explicit_cost_basis"
+    },
+    {
+      "ordinal": 104,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m4_multiprocess_locking.MultiprocessHistoryLockTests.test_trial_start_sequence_and_hash_chain_are_atomic_across_processes"
+    },
+    {
+      "ordinal": 105,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m4_multiprocess_locking.MultiprocessHistoryLockTests.test_process_crash_releases_lock_but_partial_state_remains_fail_closed"
+    },
+    {
+      "ordinal": 106,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m4_multiprocess_locking.MultiprocessHistoryLockTests.test_overlapping_holdout_consumers_have_exactly_one_winner"
+    },
+    {
+      "ordinal": 107,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m4_multiprocess_locking.MultiprocessHistoryLockTests.test_nonoverlapping_holdout_updates_are_not_lost"
+    },
+    {
+      "ordinal": 108,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m4_multiprocess_locking.MultiprocessHistoryLockTests.test_holdout_crash_before_atomic_replace_preserves_head_and_recovers"
+    },
+    {
+      "ordinal": 109,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m4_journal_holdout.TrialJournalTests.test_truncated_or_malformed_journal_blocks_eligibility"
+    },
+    {
+      "ordinal": 110,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m4_journal_holdout.TrialJournalTests.test_terminal_transition_cannot_return_to_started_and_retry_is_new_attempt"
+    },
+    {
+      "ordinal": 111,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m4_journal_holdout.TrialJournalTests.test_g15_failed_blocked_and_aborted_trials_remain_append_only"
+    },
+    {
+      "ordinal": 112,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m4_journal_holdout.HoldoutTests.test_unknown_result_exposure_blocks_as_history_violation"
+    },
+    {
+      "ordinal": 113,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m4_journal_holdout.HoldoutTests.test_partial_aborted_exposure_consumes_holdout"
+    },
+    {
+      "ordinal": 114,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m4_journal_holdout.HoldoutTests.test_holdout_history_is_hash_chained_and_cannot_be_shortened_in_place"
+    },
+    {
+      "ordinal": 115,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m4_journal_holdout.HoldoutTests.test_g16_first_exposure_consumes_and_overlap_cannot_be_relabelled"
+    },
+    {
+      "ordinal": 116,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m3_contracts.M3ContractTests.test_registry_is_strict_content_addressed_and_has_exactly_two_profiles"
+    },
+    {
+      "ordinal": 117,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m3_contracts.M3ContractTests.test_qualification_strategy_schedule_is_frozen_before_execution"
+    },
+    {
+      "ordinal": 118,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m3_contracts.M3ContractTests.test_offline_guard_blocks_and_records_connection_attempt"
+    },
+    {
+      "ordinal": 119,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m3_contracts.M3ContractTests.test_negative_control_plans_are_frozen_pre_submit_contracts"
+    },
+    {
+      "ordinal": 120,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m3_contracts.M3ContractTests.test_mechanical_integrity_shape_cannot_report_pass_without_checker_and_replay"
+    },
+    {
+      "ordinal": 121,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m3_contracts.M3ContractTests.test_historical_v1_registry_is_parse_only_not_current_component_authority"
+    },
+    {
+      "ordinal": 122,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_repair_contracts.F05AcceptanceCountTests.test_reconciliation_deduplicates_shared_g09_and_discloses_occurrences"
+    },
+    {
+      "ordinal": 123,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_repair_contracts.F04MarketOrderMetadataTests.test_quantity_precision_is_not_used_as_step_size"
+    },
+    {
+      "ordinal": 124,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_repair_contracts.F04MarketOrderMetadataTests.test_market_quantity_max_above_max_and_grid_are_checked_before_fill"
+    },
+    {
+      "ordinal": 125,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_repair_contracts.F04MarketOrderMetadataTests.test_frozen_filters_resolve_exact_market_intersections_and_native_limits"
+    },
+    {
+      "ordinal": 126,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_repair_contracts.F03StrictSourceBindingTests.test_target_release_rejects_mismatched_symbol_profile_interval_range_and_filename"
+    },
+    {
+      "ordinal": 127,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_repair_contracts.F03StrictSourceBindingTests.test_second_symbol_pipeline_has_no_btc_product_default"
+    },
+    {
+      "ordinal": 128,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_repair_contracts.F03StrictSourceBindingTests.test_conflict_provenance_survives_binding_and_blocks_release"
+    },
+    {
+      "ordinal": 129,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_repair_contracts.F02PreserveBeforeParseTests.test_malformed_checksum_preserves_both_responses_and_retry_history"
+    },
+    {
+      "ordinal": 130,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_repair_contracts.F01DatasetReleaseBoundaryTests.test_lab_run_request_accepts_the_typed_release_without_dict_conversion"
+    },
+    {
+      "ordinal": 131,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_release_contract.MetadataTests.test_metadata_identity_observation_and_current_not_historical"
+    },
+    {
+      "ordinal": 132,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_release_contract.MetadataTests.test_material_metadata_change_changes_identity_but_observation_time_does_not"
+    },
+    {
+      "ordinal": 133,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_release_contract.MetadataTests.test_invalid_or_incomplete_metadata_blocks"
+    },
+    {
+      "ordinal": 134,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_release_contract.FundingContractTests.test_unproven_schedule_is_funding_ambiguous"
+    },
+    {
+      "ordinal": 135,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_release_contract.FundingContractTests.test_schedule_uses_official_explicit_interval_and_validates"
+    },
+    {
+      "ordinal": 136,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_release_contract.FundingContractTests.test_removed_required_event_is_funding_missing"
+    },
+    {
+      "ordinal": 137,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_release_contract.FundingContractTests.test_multi_month_schedule_binds_every_official_source_object"
+    },
+    {
+      "ordinal": 138,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_release_contract.FundingContractTests.test_conflicting_funding_duplicate_blocks"
+    },
+    {
+      "ordinal": 139,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_release_contract.DatasetReleaseTests.test_spot_forbids_mark_and_funding_roles"
+    },
+    {
+      "ordinal": 140,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_release_contract.DatasetReleaseTests.test_release_schema_rejects_unknown_missing_and_duplicate_fields"
+    },
+    {
+      "ordinal": 141,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_release_contract.DatasetReleaseTests.test_perpetual_requires_mark_and_funding_roles"
+    },
+    {
+      "ordinal": 142,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_release_contract.DatasetReleaseTests.test_perpetual_mark_grid_and_release_pass"
+    },
+    {
+      "ordinal": 143,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_release_contract.DatasetReleaseTests.test_material_source_change_changes_release_id"
+    },
+    {
+      "ordinal": 144,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_release_contract.DatasetReleaseTests.test_catalog_rebuild_semantic_stability_and_mutation_staleness"
+    },
+    {
+      "ordinal": 145,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_release_contract.DatasetReleaseTests.test_canonical_release_identity_round_trip_and_created_at_exclusion"
+    },
+    {
+      "ordinal": 146,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_raw_and_parsing.TimestampAndParsingTests.test_usdm_does_not_inherit_spot_transition"
+    },
+    {
+      "ordinal": 147,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_raw_and_parsing.TimestampAndParsingTests.test_source_role_mismatch_blocks"
+    },
+    {
+      "ordinal": 148,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_raw_and_parsing.TimestampAndParsingTests.test_one_minute_completeness_passes_and_missing_minute_blocks"
+    },
+    {
+      "ordinal": 149,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_raw_and_parsing.TimestampAndParsingTests.test_malformed_nonmonotonic_invalid_ohlc_and_negative_volume_block_without_repair"
+    },
+    {
+      "ordinal": 150,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_raw_and_parsing.TimestampAndParsingTests.test_conflicting_duplicate_blocks"
+    },
+    {
+      "ordinal": 151,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_raw_and_parsing.RawObjectTests.test_raw_schema_rejects_unknown_missing_and_duplicate_fields"
+    },
+    {
+      "ordinal": 152,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_raw_and_parsing.RawObjectTests.test_raw_byte_hash_stability_and_read_verification"
+    },
+    {
+      "ordinal": 153,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_raw_and_parsing.RawObjectTests.test_publisher_checksum_verification_and_corruption_failure"
+    },
+    {
+      "ordinal": 154,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_raw_and_parsing.RawObjectTests.test_prohibited_archive_role_substitution_is_rejected"
+    },
+    {
+      "ordinal": 155,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_raw_and_parsing.RawObjectTests.test_locator_replay_with_different_bytes_preserves_both_and_links_conflict"
+    },
+    {
+      "ordinal": 156,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m2_raw_and_parsing.RawObjectTests.test_acquirer_stores_corrupted_download_before_failing_checksum"
+    },
+    {
+      "ordinal": 157,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m1_contracts.M1StrictContractTests.test_strategy_spec_rejects_unknown_and_missing_material_fields"
+    },
+    {
+      "ordinal": 158,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m1_contracts.M1StrictContractTests.test_strategy_spec_locks_market_order_tif_and_terminal_policy"
+    },
+    {
+      "ordinal": 159,
+      "status": "PASS",
+      "test_id": "tests.unit.test_m1_contracts.M1StrictContractTests.test_strategy_spec_identity_ignores_only_human_strategy_id"
+    },
+    {
+      "ordinal": 160,
+      "status": "PASS",
+      "test_id": "tests.unit.test_instrument_representation_funding_checker_repair.ReplacementWorkflowInputTests.test_replacement_retry_lists_every_retained_predecessor"
+    },
+    {
+      "ordinal": 161,
+      "status": "PASS",
+      "test_id": "tests.unit.test_instrument_representation_funding_checker_repair.ReplacementWorkflowInputTests.test_replacement_inputs_lock_new_releases_and_supersession"
+    },
+    {
+      "ordinal": 162,
+      "status": "PASS",
+      "test_id": "tests.unit.test_instrument_representation_funding_checker_repair.ReplacementWorkflowInputTests.test_owner_workflow_pins_official_child_runtime_environment"
+    },
+    {
+      "ordinal": 163,
+      "status": "PASS",
+      "test_id": "tests.unit.test_instrument_representation_funding_checker_repair.LosslessRepresentationTests.test_zero_padding_is_lossless_and_rounding_is_rejected"
+    },
+    {
+      "ordinal": 164,
+      "status": "PASS",
+      "test_id": "tests.unit.test_instrument_representation_funding_checker_repair.LosslessRepresentationTests.test_spot_and_perpetual_runtime_precision_is_instrument_bound"
+    },
+    {
+      "ordinal": 165,
+      "status": "PASS",
+      "test_id": "tests.unit.test_instrument_representation_funding_checker_repair.LosslessRepresentationTests.test_representation_precision_does_not_weaken_order_grid"
+    },
+    {
+      "ordinal": 166,
+      "status": "PASS",
+      "test_id": "tests.unit.test_instrument_representation_funding_checker_repair.LosslessRepresentationTests.test_explicit_boundary_pair_maps_one_source_event_to_two_updates"
+    },
+    {
+      "ordinal": 167,
+      "status": "PASS",
+      "test_id": "tests.unit.test_instrument_representation_funding_checker_repair.HistoricalCheckerRegressionTests.test_sparse_spot_acceptance_does_not_require_a_bar_for_no_trade_minutes"
+    },
+    {
+      "ordinal": 168,
+      "status": "PASS",
+      "test_id": "tests.unit.test_instrument_representation_funding_checker_repair.HistoricalCheckerRegressionTests.test_raw_rehash_accepts_only_the_added_official_binance_cms_host"
+    },
+    {
+      "ordinal": 169,
+      "status": "PASS",
+      "test_id": "tests.unit.test_instrument_representation_funding_checker_repair.HistoricalCheckerRegressionTests.test_old_spot_false_pass_is_now_check_fail_without_evidence_mutation"
+    },
+    {
+      "ordinal": 170,
+      "status": "PASS",
+      "test_id": "tests.unit.test_instrument_representation_funding_checker_repair.FundingCheckerRepairTests.test_wrong_mark_position_and_boundary_fail_closed"
+    },
+    {
+      "ordinal": 171,
+      "status": "PASS",
+      "test_id": "tests.unit.test_instrument_representation_funding_checker_repair.FundingCheckerRepairTests.test_wrong_account_delta_and_no_position_settlement_fail_closed"
+    },
+    {
+      "ordinal": 172,
+      "status": "PASS",
+      "test_id": "tests.unit.test_instrument_representation_funding_checker_repair.FundingCheckerRepairTests.test_position_opened_after_boundary_is_a_no_position_boundary"
+    },
+    {
+      "ordinal": 173,
+      "status": "PASS",
+      "test_id": "tests.unit.test_instrument_representation_funding_checker_repair.FundingCheckerRepairTests.test_missing_settlement_and_wrong_rate_fail_closed"
+    },
+    {
+      "ordinal": 174,
+      "status": "PASS",
+      "test_id": "tests.unit.test_instrument_representation_funding_checker_repair.FundingCheckerRepairTests.test_missing_future_and_stale_mark_fail_closed"
+    },
+    {
+      "ordinal": 175,
+      "status": "PASS",
+      "test_id": "tests.unit.test_instrument_representation_funding_checker_repair.FundingCheckerRepairTests.test_millisecond_offset_exact_boundary_long_short_and_no_position"
+    },
+    {
+      "ordinal": 176,
+      "status": "PASS",
+      "test_id": "tests.unit.test_instrument_representation_funding_checker_repair.FundingCheckerRepairTests.test_duplicate_source_pair_and_genuine_second_settlement_fail"
+    },
+    {
+      "ordinal": 177,
+      "status": "PASS",
+      "test_id": "tests.unit.test_historical_contracts.HistoricalContractTests.test_matching_current_file_remains_legacy_diagnostic_only"
+    },
+    {
+      "ordinal": 178,
+      "status": "PASS",
+      "test_id": "tests.unit.test_historical_contracts.HistoricalContractTests.test_current_root_match_or_delta_never_upgrades_v1_to_execution_authority"
+    },
+    {
+      "ordinal": 179,
+      "status": "PASS",
+      "test_id": "tests.unit.test_historical_contracts.HistoricalContractTests.test_bad_historical_hash_is_evidence_corrupt_not_a_root_delta"
+    },
+    {
+      "ordinal": 180,
+      "status": "PASS",
+      "test_id": "tests.unit.test_historical_contracts.HistoricalContractTests.test_all_declared_v1_snapshots_are_integrity_diagnostics_not_authority"
+    },
+    {
+      "ordinal": 181,
+      "status": "PASS",
+      "test_id": "tests.unit.test_hashing.CanonicalJSONTests.test_non_utc_or_naive_datetime_is_rejected"
+    },
+    {
+      "ordinal": 182,
+      "status": "PASS",
+      "test_id": "tests.unit.test_hashing.CanonicalJSONTests.test_nan_and_infinity_are_rejected"
+    },
+    {
+      "ordinal": 183,
+      "status": "PASS",
+      "test_id": "tests.unit.test_hashing.CanonicalJSONTests.test_decimal_timestamp_and_key_order_match_independent_golden"
+    },
+    {
+      "ordinal": 184,
+      "status": "PASS",
+      "test_id": "tests.unit.test_free_official_binance_repair.SparseOfficialGridTests.test_verified_no_trade_is_coverage_without_a_bar"
+    },
+    {
+      "ordinal": 185,
+      "status": "PASS",
+      "test_id": "tests.unit.test_free_official_binance_repair.SparseOfficialGridTests.test_nautilus_export_rejects_value_outside_bound_instrument_precision"
+    },
+    {
+      "ordinal": 186,
+      "status": "PASS",
+      "test_id": "tests.unit.test_free_official_binance_repair.SparseOfficialGridTests.test_missing_mark_minute_and_execution_price_substitution_are_rejected"
+    },
+    {
+      "ordinal": 187,
+      "status": "PASS",
+      "test_id": "tests.unit.test_free_official_binance_repair.SparseOfficialGridTests.test_disposition_shape_cannot_attach_ohlc_to_no_trade"
+    },
+    {
+      "ordinal": 188,
+      "status": "PASS",
+      "test_id": "tests.unit.test_free_official_binance_repair.SparseOfficialGridTests.test_blocking_or_duplicate_minute_disposition_fails_closed"
+    },
+    {
+      "ordinal": 189,
+      "status": "PASS",
+      "test_id": "tests.unit.test_free_official_binance_repair.SparseOfficialGridTests.test_bar_during_verified_no_trade_is_rejected_as_synthetic_inventory"
+    },
+    {
+      "ordinal": 190,
+      "status": "PASS",
+      "test_id": "tests.unit.test_free_official_binance_repair.NewDuckDBContractTests.test_nondeterministic_rebuild_and_catalog_mutation_are_rejected"
+    },
+    {
+      "ordinal": 191,
+      "status": "PASS",
+      "test_id": "tests.unit.test_free_official_binance_repair.NewDuckDBContractTests.test_constraints_rollback_readonly_and_exact_types"
+    },
+    {
+      "ordinal": 192,
+      "status": "PASS",
+      "test_id": "tests.unit.test_free_official_binance_repair.NewDuckDBContractTests.test_builder_prohibits_duckdb_extensions_and_network"
+    },
+    {
+      "ordinal": 193,
+      "status": "PASS",
+      "test_id": "tests.unit.test_free_official_binance_repair.NewDuckDBContractTests.test_builder_pins_the_current_authorized_ssot_bytes"
+    },
+    {
+      "ordinal": 194,
+      "status": "PASS",
+      "test_id": "tests.unit.test_engine_data_window.EngineDataWindowTests.test_spot_release_larger_than_run_is_filtered_before_engine_boundary"
+    },
+    {
+      "ordinal": 195,
+      "status": "PASS",
+      "test_id": "tests.unit.test_engine_data_window.EngineDataWindowTests.test_spot_engine_callbacks_never_receive_post_boundary_release_data"
+    },
+    {
+      "ordinal": 196,
+      "status": "PASS",
+      "test_id": "tests.unit.test_engine_data_window.EngineDataWindowTests.test_perpetual_callbacks_exclude_boundary_funding_and_all_future_data"
+    },
+    {
+      "ordinal": 197,
+      "status": "PASS",
+      "test_id": "tests.unit.test_engine_data_window.EngineDataWindowTests.test_perpetual_boundary_keeps_final_mark_but_excludes_funding_at_end"
+    },
+    {
+      "ordinal": 198,
+      "status": "PASS",
+      "test_id": "tests.unit.test_data_provenance_repair.DataProvenanceContractTests.test_verified_no_trade_positive_case_has_no_price"
+    },
+    {
+      "ordinal": 199,
+      "status": "PASS",
+      "test_id": "tests.unit.test_data_provenance_repair.DataProvenanceContractTests.test_unofficial_and_cross_venue_urls_are_rejected"
+    },
+    {
+      "ordinal": 200,
+      "status": "PASS",
+      "test_id": "tests.unit.test_data_provenance_repair.DataProvenanceContractTests.test_trade_order_duplicate_overlap_and_gap_fail_closed"
+    },
+    {
+      "ordinal": 201,
+      "status": "PASS",
+      "test_id": "tests.unit.test_data_provenance_repair.DataProvenanceContractTests.test_three_way_official_kline_agreement"
+    },
+    {
+      "ordinal": 202,
+      "status": "PASS",
+      "test_id": "tests.unit.test_data_provenance_repair.DataProvenanceContractTests.test_stale_monthly_is_superseded_only_with_trade_consensus"
+    },
+    {
+      "ordinal": 203,
+      "status": "PASS",
+      "test_id": "tests.unit.test_data_provenance_repair.DataProvenanceContractTests.test_publisher_checksum_mismatch_preserves_failure"
+    },
+    {
+      "ordinal": 204,
+      "status": "PASS",
+      "test_id": "tests.unit.test_data_provenance_repair.DataProvenanceContractTests.test_no_trade_rejects_aggregate_or_underlying_id_gap"
+    },
+    {
+      "ordinal": 205,
+      "status": "PASS",
+      "test_id": "tests.unit.test_data_provenance_repair.DataProvenanceContractTests.test_monthly_only_impossible_row_blocks_without_complete_proof"
+    },
+    {
+      "ordinal": 206,
+      "status": "PASS",
+      "test_id": "tests.unit.test_data_provenance_repair.DataProvenanceContractTests.test_monthly_conflict_without_event_arbitration_blocks"
+    },
+    {
+      "ordinal": 207,
+      "status": "PASS",
+      "test_id": "tests.unit.test_data_provenance_repair.DataProvenanceContractTests.test_missing_redundant_daily_mark_role_requires_exact_rest_monthly_consensus"
+    },
+    {
+      "ordinal": 208,
+      "status": "PASS",
+      "test_id": "tests.unit.test_data_provenance_repair.DataProvenanceContractTests.test_malformed_http_payload_is_rejected_after_preservation"
+    },
+    {
+      "ordinal": 209,
+      "status": "PASS",
+      "test_id": "tests.unit.test_data_provenance_repair.DataProvenanceContractTests.test_known_aggtrades_derive_exact_decimal_kline"
+    },
+    {
+      "ordinal": 210,
+      "status": "PASS",
+      "test_id": "tests.unit.test_data_provenance_repair.DataProvenanceContractTests.test_forward_filled_or_interpolated_ohlc_cannot_arbitrate_official_conflict"
+    },
+    {
+      "ordinal": 211,
+      "status": "PASS",
+      "test_id": "tests.unit.test_data_provenance_repair.DataProvenanceContractTests.test_candidate_004_historical_bytes_are_preserved_and_r2_contract_is_additive"
+    },
+    {
+      "ordinal": 212,
+      "status": "PASS",
+      "test_id": "tests.unit.test_data_provenance_repair.DataProvenanceContractTests.test_candidate_002_historical_identity_is_preserved"
+    },
+    {
+      "ordinal": 213,
+      "status": "PASS",
+      "test_id": "tests.unit.test_data_provenance_repair.DataProvenanceContractTests.test_aggtrade_rest_pagination_gap_is_rejected"
+    },
+    {
+      "ordinal": 214,
+      "status": "PASS",
+      "test_id": "tests.unit.test_data_provenance_duckdb_tool.DuckDBDataToolContractTests.test_semantic_identity_is_independent_of_insert_order"
+    },
+    {
+      "ordinal": 215,
+      "status": "PASS",
+      "test_id": "tests.unit.test_data_provenance_duckdb_tool.DuckDBDataToolContractTests.test_pk_check_transaction_and_read_only_enforcement"
+    },
+    {
+      "ordinal": 216,
+      "status": "PASS",
+      "test_id": "tests.unit.test_data_provenance_duckdb_tool.DuckDBDataToolContractTests.test_no_binary_float_and_no_extension_autoload"
+    },
+    {
+      "ordinal": 217,
+      "status": "PASS",
+      "test_id": "tests.unit.test_data_provenance_duckdb_tool.DuckDBDataToolContractTests.test_exact_tool_and_schema_identity"
+    },
+    {
+      "ordinal": 218,
+      "status": "PASS",
+      "test_id": "tests.unit.test_config.LabRunConfigTests.test_unknown_top_level_field_fails"
+    },
+    {
+      "ordinal": 219,
+      "status": "PASS",
+      "test_id": "tests.unit.test_config.LabRunConfigTests.test_unknown_or_missing_nested_material_field_fails"
+    },
+    {
+      "ordinal": 220,
+      "status": "PASS",
+      "test_id": "tests.unit.test_config.LabRunConfigTests.test_round_trip_preserves_decimal_strings_and_utc_timestamps"
+    },
+    {
+      "ordinal": 221,
+      "status": "PASS",
+      "test_id": "tests.unit.test_config.LabRunConfigTests.test_required_material_runtime_settings_are_explicit"
+    },
+    {
+      "ordinal": 222,
+      "status": "PASS",
+      "test_id": "tests.unit.test_config.LabRunConfigTests.test_perpetual_profile_requires_mark_prices_funding_and_mark_bindings"
+    },
+    {
+      "ordinal": 223,
+      "status": "PASS",
+      "test_id": "tests.unit.test_config.LabRunConfigTests.test_missing_material_field_fails"
+    },
+    {
+      "ordinal": 224,
+      "status": "PASS",
+      "test_id": "tests.unit.test_config.LabRunConfigTests.test_frozen_config_rejects_nested_material_mutation"
+    },
+    {
+      "ordinal": 225,
+      "status": "PASS",
+      "test_id": "tests.unit.test_config.LabRunConfigTests.test_duplicate_field_fails"
+    },
+    {
+      "ordinal": 226,
+      "status": "PASS",
+      "test_id": "tests.unit.test_comprehensive_audit_regressions.AuditRegressionTests.test_owner_child_enters_only_through_isolated_bootstrap"
+    },
+    {
+      "ordinal": 227,
+      "status": "PASS",
+      "test_id": "tests.unit.test_comprehensive_audit_regressions.AuditRegressionTests.test_f009_failure_code_vocabulary_exactly_matches_ssot_section_15"
+    },
+    {
+      "ordinal": 228,
+      "status": "PASS",
+      "test_id": "tests.unit.test_comprehensive_audit_regressions.AuditRegressionTests.test_f007_utc_conversion_uses_exact_integer_arithmetic"
+    },
+    {
+      "ordinal": 229,
+      "status": "PASS",
+      "test_id": "tests.unit.test_comprehensive_audit_regressions.AuditRegressionTests.test_f005_mark_converter_rejects_cross_instrument_relabel"
+    },
+    {
+      "ordinal": 230,
+      "status": "PASS",
+      "test_id": "tests.unit.test_comprehensive_audit_regressions.AuditRegressionTests.test_f005_funding_converter_rejects_cross_instrument_relabel"
+    },
+    {
+      "ordinal": 231,
+      "status": "PASS",
+      "test_id": "tests.unit.test_comprehensive_audit_regressions.AuditRegressionTests.test_f004_every_real_perpetual_run_gets_exact_funding_binding_check"
+    },
+    {
+      "ordinal": 232,
+      "status": "PASS",
+      "test_id": "tests.unit.test_comprehensive_audit_regressions.AuditRegressionTests.test_f001_historical_impossible_spot_benchmark_is_financially_rejected"
+    },
+    {
+      "ordinal": 233,
+      "status": "PASS",
+      "test_id": "tests.unit.test_comprehensive_audit_regressions.AuditRegressionTests.test_acceptance_empty_output_log_has_no_blank_line_at_eof"
+    },
+    {
+      "ordinal": 234,
+      "status": "PASS",
+      "test_id": "tests.unit.test_audit_research_validator.AuditResearchValidatorTests.test_missing_raw_source_diagnostic_remains_fail_closed"
+    },
+    {
+      "ordinal": 235,
+      "status": "PASS",
+      "test_id": "tests.unit.test_audit_research_validator.AuditResearchValidatorTests.test_legacy_six_development_runs_cannot_revalidate_as_current_results"
+    },
+    {
+      "ordinal": 236,
+      "status": "PASS",
+      "test_id": "tests.unit.test_audit_qualification_validator.AuditQualificationValidatorTests.test_runtime_proof_and_manifest_tamper_fail_closed"
+    },
+    {
+      "ordinal": 237,
+      "status": "PASS",
+      "test_id": "tests.unit.test_audit_qualification_validator.AuditQualificationValidatorTests.test_r2_rehashed_source_branch_mismatch_fails_binding"
+    },
+    {
+      "ordinal": 238,
+      "status": "PASS",
+      "test_id": "tests.unit.test_audit_qualification_validator.AuditQualificationValidatorTests.test_r2_rehashed_negative_control_legacy_outcome_fails"
+    },
+    {
+      "ordinal": 239,
+      "status": "PASS",
+      "test_id": "tests.unit.test_audit_qualification_validator.AuditQualificationValidatorTests.test_r2_rehashed_legacy_vocabulary_and_downstream_tamper_fail"
+    },
+    {
+      "ordinal": 240,
+      "status": "PASS",
+      "test_id": "tests.unit.test_audit_qualification_validator.AuditQualificationValidatorTests.test_r2_extra_symlink_fails_complete_inventory"
+    },
+    {
+      "ordinal": 241,
+      "status": "PASS",
+      "test_id": "tests.unit.test_audit_qualification_validator.AuditQualificationValidatorTests.test_r2_current_qualification_uses_current_component_contract"
+    },
+    {
+      "ordinal": 242,
+      "status": "PASS",
+      "test_id": "tests.unit.test_audit_qualification_validator.AuditQualificationValidatorTests.test_legacy_runtime_proof_is_preserved_but_warmup_affected_qualification_fails"
+    },
+    {
+      "ordinal": 243,
+      "status": "PASS",
+      "test_id": "tests.qualification.test_runtime_identity.RuntimeIdentityQualificationTests.test_current_process_matches_complete_runtime_lock"
+    },
+    {
+      "ordinal": 244,
+      "status": "PASS",
+      "test_id": "tests.qualification.test_owner_smoke_registered_strategy.OwnerSmokeRegisteredStrategyQualificationTests.test_source_revision_mutation_changes_registered_identity"
+    },
+    {
+      "ordinal": 245,
+      "status": "PASS",
+      "test_id": "tests.qualification.test_owner_smoke_registered_strategy.OwnerSmokeRegisteredStrategyQualificationTests.test_material_parameter_mutation_changes_identity_and_cannot_reuse_locked_spec"
+    },
+    {
+      "ordinal": 246,
+      "status": "PASS",
+      "test_id": "tests.qualification.test_owner_smoke_registered_strategy.OwnerSmokeRegisteredStrategyQualificationTests.test_both_locked_profiles_resolve_through_the_public_registry"
+    },
+    {
+      "ordinal": 247,
+      "status": "PASS",
+      "test_id": "tests.qualification.test_m3_real_profiles.M3RealProfileQualifications.test_spot_short_attempt_is_blocked_pre_submit_without_fill"
+    },
+    {
+      "ordinal": 248,
+      "status": "PASS",
+      "test_id": "tests.qualification.test_m3_real_profiles.M3RealProfileQualifications.test_perpetual_negative_controls_fail_for_their_intended_reason"
+    },
+    {
+      "ordinal": 249,
+      "status": "PASS",
+      "test_id": "tests.qualification.test_m3_real_profiles.M3RealProfileQualifications.test_native_funding_sign_boundary_exactly_once_and_mark_binding"
+    },
+    {
+      "ordinal": 250,
+      "status": "PASS",
+      "test_id": "tests.qualification.test_m3_real_profiles.M3RealProfileQualifications.test_legacy_replays_registry_and_manifests_are_intact_but_not_current_authority"
+    },
+    {
+      "ordinal": 251,
+      "status": "PASS",
+      "test_id": "tests.qualification.test_m3_real_profiles.M3RealProfileQualifications.test_historical_v1_spot_path_records_causal_cash_and_fee_diagnostics"
+    },
+    {
+      "ordinal": 252,
+      "status": "PASS",
+      "test_id": "tests.qualification.test_m3_real_profiles.M3RealProfileQualifications.test_historical_v1_runs_are_clean_committed_and_offline_diagnostics"
+    },
+    {
+      "ordinal": 253,
+      "status": "PASS",
+      "test_id": "tests.qualification.test_m3_real_profiles.M3RealProfileQualifications.test_historical_v1_perpetual_path_records_netting_and_limit_diagnostics"
+    },
+    {
+      "ordinal": 254,
+      "status": "PASS",
+      "test_id": "tests.qualification.test_m2_official_samples.M2OfficialSampleQualificationTests.test_spot_and_perpetual_release_evidence_matches_tracked_manifests"
+    },
+    {
+      "ordinal": 255,
+      "status": "PASS",
+      "test_id": "tests.qualification.test_m2_official_samples.M2OfficialSampleQualificationTests.test_official_source_and_timestamp_evidence_are_frozen"
+    },
+    {
+      "ordinal": 256,
+      "status": "PASS",
+      "test_id": "tests.qualification.test_m2_official_samples.M2OfficialSampleQualificationTests.test_official_daily_completeness_and_no_repair"
+    },
+    {
+      "ordinal": 257,
+      "status": "PASS",
+      "test_id": "tests.qualification.test_m2_official_samples.M2OfficialSampleQualificationTests.test_historical_ssot_and_runtime_v1_snapshot_is_diagnostic_only"
+    },
+    {
+      "ordinal": 258,
+      "status": "PASS",
+      "test_id": "tests.qualification.test_m2_official_samples.M2OfficialSampleQualificationTests.test_funding_mark_metadata_and_catalog_qualifications_pass"
+    },
+    {
+      "ordinal": 259,
+      "status": "PASS",
+      "test_id": "tests.qualification.test_m2_official_samples.M2OfficialSampleQualificationTests.test_all_five_official_archives_match_publisher_checksums_and_local_blobs"
+    },
+    {
+      "ordinal": 260,
+      "status": "PASS",
+      "test_id": "tests.qualification.test_m1_native_profiles.M1NativeProfileQualificationTests.test_g11_native_mark_path_and_fallback_negative_control"
+    },
+    {
+      "ordinal": 261,
+      "status": "PASS",
+      "test_id": "tests.qualification.test_m1_native_profiles.M1NativeProfileQualificationTests.test_g07_native_cash_limitation_requires_project_pre_submit_guard"
+    },
+    {
+      "ordinal": 262,
+      "status": "PASS",
+      "test_id": "tests.qualification.test_m1_native_funding.M1NativeFundingQualificationTests.test_g09_positive_funding_debits_long_exactly_once"
+    },
+    {
+      "ordinal": 263,
+      "status": "PASS",
+      "test_id": "tests.qualification.test_latency_contract.LatencyContractQualificationTests.test_pinned_backtest_venue_accepts_exact_constant_latency_contract"
+    },
+    {
+      "ordinal": 264,
+      "status": "PASS",
+      "test_id": "tests.qualification.test_data_provenance_sparse_market.SparseOfficialMarketQualificationTests.test_sparse_market_never_creates_a_price_or_fill_inside_no_trade_interval"
+    },
+    {
+      "ordinal": 265,
+      "status": "PASS",
+      "test_id": "tests.integration.test_weekly_tsmom_strategy.WeeklyTsmomStrategyIntegrationTests.test_weekly_vol20_candidate_uses_locked_fraction_without_leverage"
+    },
+    {
+      "ordinal": 266,
+      "status": "PASS",
+      "test_id": "tests.integration.test_weekly_tsmom_strategy.WeeklyTsmomStrategyIntegrationTests.test_weekly_full_candidate_ignores_warmup_decision_and_uses_first_scored_target"
+    },
+    {
+      "ordinal": 267,
+      "status": "PASS",
+      "test_id": "tests.integration.test_weekly_tsmom_strategy.WeeklyTsmomStrategyIntegrationTests.test_registered_benchmark_enters_once_and_holds"
+    },
+    {
+      "ordinal": 268,
+      "status": "PASS",
+      "test_id": "tests.integration.test_owner_smoke_daily_strategy.OwnerSmokeDailyStrategyIntegrationTests.test_spot_daily_resampling_is_utc_complete_and_causal"
+    },
+    {
+      "ordinal": 269,
+      "status": "PASS",
+      "test_id": "tests.integration.test_owner_smoke_daily_strategy.OwnerSmokeDailyStrategyIntegrationTests.test_perpetual_reversal_closes_flat_then_reopens_separately"
+    },
+    {
+      "ordinal": 270,
+      "status": "PASS",
+      "test_id": "tests.integration.test_owner_smoke_daily_strategy.OwnerSmokeDailyStrategyIntegrationTests.test_deterministic_replay_matches_for_both_profiles"
+    },
+    {
+      "ordinal": 271,
+      "status": "PASS",
+      "test_id": "tests.integration.test_m4_public_contract.M4PublicContractTests.test_public_shapes_parse_without_defaults_or_internal_m3_imports"
+    },
+    {
+      "ordinal": 272,
+      "status": "PASS",
+      "test_id": "tests.integration.test_m4_public_contract.M4PublicContractTests.test_m4_consumes_v2_component_registry_and_bundles_without_mutation"
+    },
+    {
+      "ordinal": 273,
+      "status": "PASS",
+      "test_id": "tests.integration.test_m4_public_contract.M4PublicContractTests.test_legacy_v1_public_input_is_diagnostic_not_current_boundary"
+    },
+    {
+      "ordinal": 274,
+      "status": "PASS",
+      "test_id": "tests.integration.test_m4_public_contract.M4PublicContractTests.test_dependency_direction_has_no_reporting_to_execution_path"
+    },
+    {
+      "ordinal": 275,
+      "status": "PASS",
+      "test_id": "tests.integration.test_m3_m4_downstream_contract.M3M4DownstreamContractTests.test_legacy_v1_registry_parses_but_downstream_is_not_current_authority"
+    },
+    {
+      "ordinal": 276,
+      "status": "PASS",
+      "test_id": "tests.integration.test_m3_m4_downstream_contract.M3M4DownstreamContractTests.test_future_m4_parses_v2_component_bundles_without_internal_imports"
+    },
+    {
+      "ordinal": 277,
+      "status": "PASS",
+      "test_id": "tests.integration.test_m3_m4_downstream_contract.M3M4DownstreamContractTests.test_downstream_bundle_rejects_unknown_or_missing_fields"
+    },
+    {
+      "ordinal": 278,
+      "status": "PASS",
+      "test_id": "tests.integration.test_m3_dataset_interface.M3DatasetInterfaceTests.test_public_run_request_receives_strict_dataset_release_without_conversion"
+    },
+    {
+      "ordinal": 279,
+      "status": "PASS",
+      "test_id": "tests.integration.test_m3_dataset_interface.M3DatasetInterfaceTests.test_profile_configs_bind_runtime_fee_mark_funding_and_limits_explicitly"
+    },
+    {
+      "ordinal": 280,
+      "status": "PASS",
+      "test_id": "tests.integration.test_m3_dataset_interface.M3DatasetInterfaceTests.test_legacy_schema_v1_qualification_release_is_rejected"
+    },
+    {
+      "ordinal": 281,
+      "status": "PASS",
+      "test_id": "tests.integration.test_m2_repair_downstream_contract.M2RepairedDownstreamContractTests.test_strict_datasetrelease_flows_directly_through_public_run_lab"
+    },
+    {
+      "ordinal": 282,
+      "status": "PASS",
+      "test_id": "tests.integration.test_m2_repair_downstream_contract.M2RepairedDownstreamContractTests.test_native_market_limits_are_enforced_before_nautilus_submission"
+    },
+    {
+      "ordinal": 283,
+      "status": "PASS",
+      "test_id": "tests.integration.test_m2_repair_downstream_contract.M2RepairedDownstreamContractTests.test_interface_identity_mutation_blocks_with_downstream_contract_failure"
+    },
+    {
+      "ordinal": 284,
+      "status": "PASS",
+      "test_id": "tests.integration.test_m2_downstream_contract.M2DownstreamContractTests.test_release_rows_are_already_native_catalog_compatible_for_m3"
+    },
+    {
+      "ordinal": 285,
+      "status": "PASS",
+      "test_id": "tests.integration.test_m2_downstream_contract.M2DownstreamContractTests.test_m3_can_parse_dataset_release_without_defaults_or_internal_parser_exports"
+    },
+    {
+      "ordinal": 286,
+      "status": "PASS",
+      "test_id": "tests.integration.test_m1_evidence_contract.M1EvidenceContractTests.test_g09_checker_requires_one_native_funding_settlement"
+    },
+    {
+      "ordinal": 287,
+      "status": "PASS",
+      "test_id": "tests.integration.test_m1_evidence_contract.M1EvidenceContractTests.test_g06_funding_replay_ignores_only_native_instance_ids"
+    },
+    {
+      "ordinal": 288,
+      "status": "PASS",
+      "test_id": "tests.integration.test_m1_evidence_contract.M1EvidenceContractTests.test_downstream_can_read_stable_run_result_and_bundle_without_strategy_edge"
+    },
+    {
+      "ordinal": 289,
+      "status": "PASS",
+      "test_id": "tests.integration.test_m1_evidence_contract.M1EvidenceContractTests.test_checker_detects_native_fill_mutation"
+    },
+    {
+      "ordinal": 290,
+      "status": "PASS",
+      "test_id": "tests.integration.test_m1_evidence_contract.M1EvidenceContractTests.test_checker_blocks_tampered_dataset_binding"
+    },
+    {
+      "ordinal": 291,
+      "status": "PASS",
+      "test_id": "tests.integration.test_m0_downstream_contract.M0DownstreamContractTests.test_m1_can_parse_separate_source_revision_without_defaults"
+    },
+    {
+      "ordinal": 292,
+      "status": "PASS",
+      "test_id": "tests.integration.test_m0_downstream_contract.M0DownstreamContractTests.test_m1_can_parse_and_bind_m0_config_without_defaults"
+    },
+    {
+      "ordinal": 293,
+      "status": "PASS",
+      "test_id": "tests.golden.test_owner_smoke_sma20.OwnerSmokeSma20GoldenTests.test_spot_short_target_is_rejected_before_any_submission"
+    },
+    {
+      "ordinal": 294,
+      "status": "PASS",
+      "test_id": "tests.golden.test_owner_smoke_sma20.OwnerSmokeSma20GoldenTests.test_spot_equality_is_flat_and_never_short"
+    },
+    {
+      "ordinal": 295,
+      "status": "PASS",
+      "test_id": "tests.golden.test_owner_smoke_sma20.OwnerSmokeSma20GoldenTests.test_perpetual_equality_is_flat"
+    },
+    {
+      "ordinal": 296,
+      "status": "PASS",
+      "test_id": "tests.golden.test_owner_smoke_sma20.OwnerSmokeSma20GoldenTests.test_native_sma20_matches_independent_arithmetic_mean"
+    },
+    {
+      "ordinal": 297,
+      "status": "PASS",
+      "test_id": "tests.golden.test_owner_smoke_sma20.OwnerSmokeSma20GoldenTests.test_incomplete_or_non_utc_daily_bar_is_rejected"
+    },
+    {
+      "ordinal": 298,
+      "status": "PASS",
+      "test_id": "tests.golden.test_owner_smoke_sma20.OwnerSmokeSma20GoldenTests.test_first_signal_requires_exactly_twenty_completed_daily_closes"
+    },
+    {
+      "ordinal": 299,
+      "status": "PASS",
+      "test_id": "tests.golden.test_m4_monte_carlo_diagnostics.PerformanceDiagnosticsKnownResultTests.test_stable_native_count_survives_cost_ambiguity"
+    },
+    {
+      "ordinal": 300,
+      "status": "PASS",
+      "test_id": "tests.golden.test_m4_monte_carlo_diagnostics.PerformanceDiagnosticsKnownResultTests.test_native_metric_override_is_not_an_official_metrics_api"
+    },
+    {
+      "ordinal": 301,
+      "status": "PASS",
+      "test_id": "tests.golden.test_m4_monte_carlo_diagnostics.PerformanceDiagnosticsKnownResultTests.test_fallback_equity_diagnostics_include_open_drawdown_and_no_smoothing"
+    },
+    {
+      "ordinal": 302,
+      "status": "PASS",
+      "test_id": "tests.golden.test_m4_monte_carlo_diagnostics.PerformanceDiagnosticsKnownResultTests.test_empty_native_trade_sequence_has_zero_count_but_undefined_win_rate"
+    },
+    {
+      "ordinal": 303,
+      "status": "PASS",
+      "test_id": "tests.golden.test_m4_monte_carlo_diagnostics.MonteCarloKnownResultTests.test_sample_adequacy_uses_native_completed_trades_only"
+    },
+    {
+      "ordinal": 304,
+      "status": "PASS",
+      "test_id": "tests.golden.test_m4_monte_carlo_diagnostics.MonteCarloKnownResultTests.test_moving_block_bootstrap_is_deterministic_and_uses_exact_native_sample_length"
+    },
+    {
+      "ordinal": 305,
+      "status": "PASS",
+      "test_id": "tests.golden.test_m4_monte_carlo_diagnostics.MonteCarloKnownResultTests.test_iid_bootstrap_known_result_and_byte_identical_replay"
+    },
+    {
+      "ordinal": 306,
+      "status": "PASS",
+      "test_id": "tests.golden.test_m4_monte_carlo_diagnostics.MonteCarloKnownResultTests.test_ambiguous_native_trade_sequence_is_low_confidence_not_reconstructed"
+    },
+    {
+      "ordinal": 307,
+      "status": "PASS",
+      "test_id": "tests.golden.test_m4_claim_reporting.ReportTests.test_reporting_does_not_mutate_run_evidence_or_claim_input"
+    },
+    {
+      "ordinal": 308,
+      "status": "PASS",
+      "test_id": "tests.golden.test_m4_claim_reporting.ReportTests.test_json_and_markdown_reports_roundtrip_with_required_disclosures"
+    },
+    {
+      "ordinal": 309,
+      "status": "PASS",
+      "test_id": "tests.golden.test_m4_claim_reporting.ReportTests.test_g17_winner_only_report_is_ineligible_and_all_trials_are_disclosed"
+    },
+    {
+      "ordinal": 310,
+      "status": "PASS",
+      "test_id": "tests.golden.test_m4_claim_reporting.ClaimGateTests.test_unresolved_material_ambiguity_blocks_instead_of_guessing"
+    },
+    {
+      "ordinal": 311,
+      "status": "PASS",
+      "test_id": "tests.golden.test_m4_claim_reporting.ClaimGateTests.test_single_instrument_cannot_support_market_wide_scope"
+    },
+    {
+      "ordinal": 312,
+      "status": "PASS",
+      "test_id": "tests.golden.test_m4_claim_reporting.ClaimGateTests.test_selected_invalid_final_holdout_retains_consumed_failure"
+    },
+    {
+      "ordinal": 313,
+      "status": "PASS",
+      "test_id": "tests.golden.test_m4_claim_reporting.ClaimGateTests.test_qualification_evidence_is_ineligible_for_real_profitability_claim"
+    },
+    {
+      "ordinal": 314,
+      "status": "PASS",
+      "test_id": "tests.golden.test_m4_claim_reporting.ClaimGateTests.test_profitability_never_overrides_failed_mechanical_integrity"
+    },
+    {
+      "ordinal": 315,
+      "status": "PASS",
+      "test_id": "tests.golden.test_m4_claim_reporting.ClaimGateTests.test_positive_synthetic_contract_is_eligible_but_not_a_real_claim"
+    },
+    {
+      "ordinal": 316,
+      "status": "PASS",
+      "test_id": "tests.golden.test_m4_claim_reporting.ClaimGateTests.test_missing_multiplicity_and_low_sample_block_confirmatory_eligibility"
+    },
+    {
+      "ordinal": 317,
+      "status": "PASS",
+      "test_id": "tests.golden.test_m4_claim_reporting.ClaimGateTests.test_missing_benchmark_diagnostics_or_instrument_results_are_ineligible"
+    },
+    {
+      "ordinal": 318,
+      "status": "PASS",
+      "test_id": "tests.golden.test_m4_claim_reporting.ClaimGateTests.test_later_protocol_reanalysis_is_exploratory_only"
+    },
+    {
+      "ordinal": 319,
+      "status": "PASS",
+      "test_id": "tests.golden.test_m4_claim_reporting.ClaimGateTests.test_development_partition_is_ineligible_without_claiming_holdout_consumption"
+    },
+    {
+      "ordinal": 320,
+      "status": "PASS",
+      "test_id": "tests.golden.test_m4_claim_reporting.ClaimGateTests.test_adequate_sample_requires_completed_monte_carlo"
+    },
+    {
+      "ordinal": 321,
+      "status": "PASS",
+      "test_id": "tests.golden.test_m3_real_values.M3RealGoldenValues.test_spot_fill_is_on_later_real_bar_and_native_fee_matches_hand_calculation"
+    },
+    {
+      "ordinal": 322,
+      "status": "PASS",
+      "test_id": "tests.golden.test_m3_real_values.M3RealGoldenValues.test_perpetual_funding_cash_effect_is_independent_decimal_expectation"
+    },
+    {
+      "ordinal": 323,
+      "status": "PASS",
+      "test_id": "tests.golden.test_m3_real_values.M3RealGoldenValues.test_perpetual_fill_lifecycle_matches_frozen_real_data_expectation"
+    },
+    {
+      "ordinal": 324,
+      "status": "PASS",
+      "test_id": "tests.golden.test_m3_profile_contracts.M3ProfileGoldenTests.test_spot_repaired_release_and_native_market_limits_are_exact"
+    },
+    {
+      "ordinal": 325,
+      "status": "PASS",
+      "test_id": "tests.golden.test_m3_profile_contracts.M3ProfileGoldenTests.test_perpetual_repaired_release_funding_and_native_limits_are_exact"
+    },
+    {
+      "ordinal": 326,
+      "status": "PASS",
+      "test_id": "tests.golden.test_m2_data_contract.M2GoldenDataContractTests.test_spot_timestamp_transition_is_explicit_and_bar_is_available_on_completion"
+    },
+    {
+      "ordinal": 327,
+      "status": "PASS",
+      "test_id": "tests.golden.test_m1_contracts.M1GoldenContractTests.test_terminal_shutdown_preserves_open_position_without_synthetic_close"
+    },
+    {
+      "ordinal": 328,
+      "status": "PASS",
+      "test_id": "tests.golden.test_m1_contracts.M1GoldenContractTests.test_profile_files_are_exact_cash_and_netting_contracts"
+    },
+    {
+      "ordinal": 329,
+      "status": "PASS",
+      "test_id": "tests.golden.test_m1_contracts.M1GoldenContractTests.test_market_gtc_partial_fill_remainder_finishes_at_causal_arrival"
+    },
+    {
+      "ordinal": 330,
+      "status": "PASS",
+      "test_id": "tests.golden.test_m1_contracts.M1GoldenContractTests.test_m1_public_runner_contract_exists"
+    },
+    {
+      "ordinal": 331,
+      "status": "PASS",
+      "test_id": "tests.golden.test_m1_contracts.M1GoldenContractTests.test_invalid_price_and_quantity_precision_fail_explicitly"
+    },
+    {
+      "ordinal": 332,
+      "status": "PASS",
+      "test_id": "tests.golden.test_m1_contracts.M1GoldenContractTests.test_g21_terminal_insert_boundary_suppresses_intent"
+    },
+    {
+      "ordinal": 333,
+      "status": "PASS",
+      "test_id": "tests.golden.test_m1_contracts.M1GoldenContractTests.test_g14_excluded_order_type_is_rejected_before_submission"
+    },
+    {
+      "ordinal": 334,
+      "status": "PASS",
+      "test_id": "tests.golden.test_m1_contracts.M1GoldenContractTests.test_g13_warmup_bar_at_scoring_start_cannot_submit"
+    },
+    {
+      "ordinal": 335,
+      "status": "PASS",
+      "test_id": "tests.golden.test_m1_contracts.M1GoldenContractTests.test_g11_perpetual_mark_valuation_and_missing_mark_block"
+    },
+    {
+      "ordinal": 336,
+      "status": "PASS",
+      "test_id": "tests.golden.test_m1_contracts.M1GoldenContractTests.test_g10_maker_taker_fee_is_applied_exactly_once"
+    },
+    {
+      "ordinal": 337,
+      "status": "PASS",
+      "test_id": "tests.golden.test_m1_contracts.M1GoldenContractTests.test_g08_perpetual_netting_lifecycle_and_guards"
+    },
+    {
+      "ordinal": 338,
+      "status": "PASS",
+      "test_id": "tests.golden.test_m1_contracts.M1GoldenContractTests.test_g08_hedging_configuration_is_rejected"
+    },
+    {
+      "ordinal": 339,
+      "status": "PASS",
+      "test_id": "tests.golden.test_m1_contracts.M1GoldenContractTests.test_g07_spot_oversell_is_blocked_before_submission"
+    },
+    {
+      "ordinal": 340,
+      "status": "PASS",
+      "test_id": "tests.golden.test_m1_contracts.M1GoldenContractTests.test_g06_two_fresh_runs_have_identical_semantic_sequence"
+    },
+    {
+      "ordinal": 341,
+      "status": "PASS",
+      "test_id": "tests.golden.test_m1_contracts.M1GoldenContractTests.test_g05_native_fill_bytes_are_immutable"
+    },
+    {
+      "ordinal": 342,
+      "status": "PASS",
+      "test_id": "tests.golden.test_m1_contracts.M1GoldenContractTests.test_g03_zero_latency_negative_control_fails_checker"
+    },
+    {
+      "ordinal": 343,
+      "status": "PASS",
+      "test_id": "tests.golden.test_m1_contracts.M1GoldenContractTests.test_g02_no_same_bar_fill"
+    },
+    {
+      "ordinal": 344,
+      "status": "PASS",
+      "test_id": "tests.golden.test_m1_contracts.M1GoldenContractTests.test_g01_completed_bar_visibility_boundary"
+    },
+    {
+      "ordinal": 345,
+      "status": "PASS",
+      "test_id": "tests.golden.test_g20_runtime_lock_mismatch.G20RuntimeLockMismatchTests.test_wheel_mismatch_blocks_before_data_loading"
+    },
+    {
+      "ordinal": 346,
+      "status": "PASS",
+      "test_id": "tests.golden.test_g20_runtime_lock_mismatch.G20RuntimeLockMismatchTests.test_dependency_lock_mismatch_blocks_before_data_loading"
+    },
+    {
+      "ordinal": 347,
+      "status": "PASS",
+      "test_id": "tests.golden.test_g18_config_hash.G18ConfigHashTests.test_occurrence_id_and_physical_catalog_path_are_not_material"
+    },
+    {
+      "ordinal": 348,
+      "status": "PASS",
+      "test_id": "tests.golden.test_g18_config_hash.G18ConfigHashTests.test_material_change_changes_config_sha256"
+    },
+    {
+      "ordinal": 349,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_spot_affordability_mutation.SpotAffordabilityMutationControls.test_quote_capacity_reserves_fee_and_both_rounding_budgets"
+    },
+    {
+      "ordinal": 350,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_spot_affordability_mutation.SpotAffordabilityMutationControls.test_invalid_affordability_domain_fails_closed"
+    },
+    {
+      "ordinal": 351,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_spot_affordability_mutation.SpotAffordabilityMutationControls.test_dataset_acceptance_sentinel_uses_reserved_quote_sizing"
+    },
+    {
+      "ordinal": 352,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_spot_affordability_mutation.SpotAffordabilityMutationControls.test_base_quantity_cost_adds_not_subtracts_commission"
+    },
+    {
+      "ordinal": 353,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_semantic_position_replay.SemanticPositionReplayTests.test_process_local_ids_are_normalized_without_mutating_native_rows"
+    },
+    {
+      "ordinal": 354,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_semantic_position_replay.SemanticPositionReplayTests.test_checker_rejects_rehashed_forged_semantic_position_projection"
+    },
+    {
+      "ordinal": 355,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_semantic_position_replay.SemanticPositionReplayTests.test_changed_identity_relationship_or_financial_value_remains_semantic"
+    },
+    {
+      "ordinal": 356,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_runtime_supersession_status.R2RuntimeSupersessionStatusTests.test_superseded_candidate_and_benchmark_are_both_ineligible"
+    },
+    {
+      "ordinal": 357,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_runtime_supersession_status.R2RuntimeSupersessionStatusTests.test_missing_pair_or_rehashed_status_mutation_fails_closed"
+    },
+    {
+      "ordinal": 358,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_runtime_supersession_status.R2RuntimeSupersessionStatusTests.test_exact_primary_replay_scope_is_canonical_and_only_superseded"
+    },
+    {
+      "ordinal": 359,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_runtime_supersession_builder.R2RuntimeSupersessionBuilderTests.test_missing_or_tampered_bound_leaf_is_not_reblessed"
+    },
+    {
+      "ordinal": 360,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_runtime_supersession_builder.R2RuntimeSupersessionBuilderTests.test_frozen_inventory_matches_all_actual_terminal_bytes"
+    },
+    {
+      "ordinal": 361,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_runtime_supersession_builder.R2RuntimeSupersessionBuilderTests.test_cli_emits_only_the_canonical_registry"
+    },
+    {
+      "ordinal": 362,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_runtime_bootstrap.IsolatedRuntimeBootstrapTests.test_symlinked_authority_is_rejected_before_read"
+    },
+    {
+      "ordinal": 363,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_runtime_bootstrap.IsolatedRuntimeBootstrapTests.test_stale_dependency_pyc_is_ignored_even_when_header_matches_source"
+    },
+    {
+      "ordinal": 364,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_runtime_bootstrap.IsolatedRuntimeBootstrapTests.test_sitecustomize_usercustomize_and_shadow_dependency_fail_inventory"
+    },
+    {
+      "ordinal": 365,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_runtime_bootstrap.IsolatedRuntimeBootstrapTests.test_runtime_authority_builder_is_deterministic_complete_and_reports_resolved_commit"
+    },
+    {
+      "ordinal": 366,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_runtime_bootstrap.IsolatedRuntimeBootstrapTests.test_record_payload_mutation_fails_before_dependency_import"
+    },
+    {
+      "ordinal": 367,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_runtime_bootstrap.IsolatedRuntimeBootstrapTests.test_real_owner_entrypoint_observes_verified_frozen_attestation"
+    },
+    {
+      "ordinal": 368,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_runtime_bootstrap.IsolatedRuntimeBootstrapTests.test_pythonpath_sitecustomize_and_shadow_product_fail_before_import"
+    },
+    {
+      "ordinal": 369,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_runtime_bootstrap.IsolatedRuntimeBootstrapTests.test_product_change_after_authority_fails_before_target"
+    },
+    {
+      "ordinal": 370,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_runtime_bootstrap.IsolatedRuntimeBootstrapTests.test_owner_child_uses_exact_environment_and_bootstrap_flags"
+    },
+    {
+      "ordinal": 371,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_runtime_bootstrap.IsolatedRuntimeBootstrapTests.test_only_declared_recovery_state_may_be_dirty_and_staging_may_not"
+    },
+    {
+      "ordinal": 372,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_runtime_bootstrap.IsolatedRuntimeBootstrapTests.test_native_extension_payload_mutation_fails_before_product_import"
+    },
+    {
+      "ordinal": 373,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_runtime_bootstrap.IsolatedRuntimeBootstrapTests.test_m3_positive_qualification_requires_persisted_startup_attestation"
+    },
+    {
+      "ordinal": 374,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_runtime_bootstrap.IsolatedRuntimeBootstrapTests.test_m3_child_also_enters_through_the_exact_isolated_bootstrap"
+    },
+    {
+      "ordinal": 375,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_runtime_bootstrap.IsolatedRuntimeBootstrapTests.test_extra_pth_fails_exact_site_inventory"
+    },
+    {
+      "ordinal": 376,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_runtime_bootstrap.IsolatedRuntimeBootstrapTests.test_exact_isolated_runtime_executes_pinned_product_bytes"
+    },
+    {
+      "ordinal": 377,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_runtime_bootstrap.IsolatedRuntimeBootstrapTests.test_direct_owner_api_requires_bootstrap_state_before_side_effects"
+    },
+    {
+      "ordinal": 378,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_runtime_bootstrap.IsolatedRuntimeBootstrapTests.test_different_executable_identity_fails_before_import"
+    },
+    {
+      "ordinal": 379,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_runtime_bootstrap.IsolatedRuntimeBootstrapTests.test_checkpoint_push_rejects_a_symlinked_git_config"
+    },
+    {
+      "ordinal": 380,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_runtime_bootstrap.IsolatedRuntimeBootstrapTests.test_checkpoint_push_gets_a_separate_sanitized_environment"
+    },
+    {
+      "ordinal": 381,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_runtime_bootstrap.IsolatedRuntimeBootstrapTests.test_checkpoint_push_disables_repository_hooks"
+    },
+    {
+      "ordinal": 382,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_runtime_bootstrap.IsolatedRuntimeBootstrapTests.test_authority_builder_cannot_bless_unlocked_distribution"
+    },
+    {
+      "ordinal": 383,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_repository_authority_supersession.R2RepositoryAuthoritySupersessionTests.test_real_builder_is_deterministic_and_does_not_rebless_tamper"
+    },
+    {
+      "ordinal": 384,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_repository_authority_supersession.R2RepositoryAuthoritySupersessionTests.test_missing_pair_or_rehashed_semantic_mutation_fails_closed"
+    },
+    {
+      "ordinal": 385,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_repository_authority_supersession.R2RepositoryAuthoritySupersessionTests.test_exact_retry_009_scope_is_canonical_and_only_superseded"
+    },
+    {
+      "ordinal": 386,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_repository_authority_supersession.R2RepositoryAuthoritySupersessionTests.test_every_retry_009_primary_and_replay_is_ineligible"
+    },
+    {
+      "ordinal": 387,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_repository_authority_supersession.R2RepositoryAuthoritySupersessionTests.test_cli_emits_only_canonical_registry"
+    },
+    {
+      "ordinal": 388,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_perpetual_reconciliation.PerpetualReconciliationAdversarialTests.test_unbound_account_delta_is_rejected"
+    },
+    {
+      "ordinal": 389,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_perpetual_reconciliation.PerpetualReconciliationAdversarialTests.test_retained_native_benchmark_account_shape_reconciles_exactly"
+    },
+    {
+      "ordinal": 390,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_perpetual_reconciliation.PerpetualReconciliationAdversarialTests.test_retained_candidate_a_pinned_f64_reconciles_positions_and_daily_equity"
+    },
+    {
+      "ordinal": 391,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_perpetual_reconciliation.PerpetualReconciliationAdversarialTests.test_realized_unrealized_and_terminal_mark_tamper_are_rejected"
+    },
+    {
+      "ordinal": 392,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_perpetual_reconciliation.PerpetualReconciliationAdversarialTests.test_real_retry_006_tie_replays_native_unrealized_money_exactly"
+    },
+    {
+      "ordinal": 393,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_perpetual_reconciliation.PerpetualReconciliationAdversarialTests.test_position_snapshot_fields_type_and_side_are_mandatory"
+    },
+    {
+      "ordinal": 394,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_perpetual_reconciliation.PerpetualReconciliationAdversarialTests.test_pinned_f64_money_rounding_matches_runtime_and_not_decimal_shortcuts"
+    },
+    {
+      "ordinal": 395,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_perpetual_reconciliation.PerpetualReconciliationAdversarialTests.test_no_fill_no_position_run_reconciles_without_inventing_state"
+    },
+    {
+      "ordinal": 396,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_perpetual_reconciliation.PerpetualReconciliationAdversarialTests.test_native_reported_account_pair_is_bound_without_double_counting"
+    },
+    {
+      "ordinal": 397,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_perpetual_reconciliation.PerpetualReconciliationAdversarialTests.test_native_completed_schema_and_run_identity_are_strict"
+    },
+    {
+      "ordinal": 398,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_perpetual_reconciliation.PerpetualReconciliationAdversarialTests.test_native_account_projection_binds_margin_and_csv_rows"
+    },
+    {
+      "ordinal": 399,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_perpetual_reconciliation.PerpetualReconciliationAdversarialTests.test_locked_free_margin_tamper_is_rejected"
+    },
+    {
+      "ordinal": 400,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_perpetual_reconciliation.PerpetualReconciliationAdversarialTests.test_known_result_reconciles_every_financial_layer"
+    },
+    {
+      "ordinal": 401,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_perpetual_reconciliation.PerpetualReconciliationAdversarialTests.test_final_position_tamper_is_rejected"
+    },
+    {
+      "ordinal": 402,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_perpetual_reconciliation.PerpetualReconciliationAdversarialTests.test_deleted_duplicate_fill_and_bad_reversal_are_rejected"
+    },
+    {
+      "ordinal": 403,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_perpetual_reconciliation.PerpetualReconciliationAdversarialTests.test_deleted_duplicate_and_wrong_sign_funding_are_rejected"
+    },
+    {
+      "ordinal": 404,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_perpetual_reconciliation.PerpetualReconciliationAdversarialTests.test_completed_lifecycle_native_values_and_extra_currency_are_bound"
+    },
+    {
+      "ordinal": 405,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_perpetual_reconciliation.PerpetualReconciliationAdversarialTests.test_commission_currency_and_amount_are_rejected"
+    },
+    {
+      "ordinal": 406,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_perpetual_reconciliation.PerpetualReconciliationAdversarialTests.test_account_plus_10000_is_rejected"
+    },
+    {
+      "ordinal": 407,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_official_sealing.OfficialSealingAdversarialTests.test_unknown_root_fields_fail_after_all_downstream_hashes_are_rebuilt"
+    },
+    {
+      "ordinal": 408,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_official_sealing.OfficialSealingAdversarialTests.test_symlink_leaf_is_rejected_before_hash_trust"
+    },
+    {
+      "ordinal": 409,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_official_sealing.OfficialSealingAdversarialTests.test_research_release_requires_rebuild_proof_as_a_sealed_leaf"
+    },
+    {
+      "ordinal": 410,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_official_sealing.OfficialSealingAdversarialTests.test_public_api_rejects_injected_component_pass_oracle"
+    },
+    {
+      "ordinal": 411,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_official_sealing.OfficialSealingAdversarialTests.test_missing_mandatory_funding_is_structured_failure"
+    },
+    {
+      "ordinal": 412,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_official_sealing.OfficialSealingAdversarialTests.test_manifest_status_and_seal_tamper_each_fail"
+    },
+    {
+      "ordinal": 413,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_official_sealing.OfficialSealingAdversarialTests.test_manifest_builder_cannot_authorize_a_preexisting_extra_leaf"
+    },
+    {
+      "ordinal": 414,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_official_sealing.OfficialSealingAdversarialTests.test_extra_modified_and_empty_leaf_are_rejected"
+    },
+    {
+      "ordinal": 415,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_official_sealing.OfficialSealingAdversarialTests.test_complete_exact_package_has_official_seal_pass"
+    },
+    {
+      "ordinal": 416,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_official_sealing.OfficialSealingAdversarialTests.test_canonical_no_fill_stream_may_be_empty_but_funding_csv_may_not"
+    },
+    {
+      "ordinal": 417,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_official_metrics.OfficialDailyMetricsAdversarialTests.test_warmup_or_missing_daily_boundary_is_rejected"
+    },
+    {
+      "ordinal": 418,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_official_metrics.OfficialDailyMetricsAdversarialTests.test_stale_or_wrong_currency_snapshot_money_is_rejected"
+    },
+    {
+      "ordinal": 419,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_official_metrics.OfficialDailyMetricsAdversarialTests.test_spot_daily_equity_is_independently_replayed_from_fills_and_bars"
+    },
+    {
+      "ordinal": 420,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_official_metrics.OfficialDailyMetricsAdversarialTests.test_small_sample_and_zero_variance_are_not_published_as_numbers"
+    },
+    {
+      "ordinal": 421,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_official_metrics.OfficialDailyMetricsAdversarialTests.test_rehashed_official_metric_tamper_fails_the_metric_contract"
+    },
+    {
+      "ordinal": 422,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_official_metrics.OfficialDailyMetricsAdversarialTests.test_rehashed_basis_or_limitation_tamper_fails_the_metric_contract"
+    },
+    {
+      "ordinal": 423,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_official_metrics.OfficialDailyMetricsAdversarialTests.test_nonpositive_daily_equity_makes_risk_metrics_explicitly_undefined"
+    },
+    {
+      "ordinal": 424,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_official_metrics.OfficialDailyMetricsAdversarialTests.test_native_statistics_and_sample_threshold_cannot_override_official_metrics"
+    },
+    {
+      "ordinal": 425,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_official_metrics.OfficialDailyMetricsAdversarialTests.test_known_result_metrics_are_bound_to_independently_calculated_golden_values"
+    },
+    {
+      "ordinal": 426,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_official_metrics.OfficialDailyMetricsAdversarialTests.test_daily_marked_equity_is_the_single_official_metric_basis"
+    },
+    {
+      "ordinal": 427,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_official_metrics.OfficialDailyMetricsAdversarialTests.test_cash_only_or_inconsistent_pnl_cannot_define_total_portfolio_return"
+    },
+    {
+      "ordinal": 428,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_official_active_resolution.R2OfficialActiveResolutionTests.test_selected_inactive_completed_trial_remains_ineligible"
+    },
+    {
+      "ordinal": 429,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_official_active_resolution.R2OfficialActiveResolutionTests.test_replay_is_rejected_as_inactive_before_native_result_is_read"
+    },
+    {
+      "ordinal": 430,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_official_active_resolution.R2OfficialActiveResolutionTests.test_primary_is_rejected_as_inactive_before_run_payload_is_consumed"
+    },
+    {
+      "ordinal": 431,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_official_active_resolution.R2OfficialActiveResolutionTests.test_non_selected_inactive_completed_trial_is_excluded_before_revalidation"
+    },
+    {
+      "ordinal": 432,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_official_active_resolution.R2OfficialActiveResolutionTests.test_missing_status_authority_fails_closed"
+    },
+    {
+      "ordinal": 433,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_official_active_resolution.R2OfficialActiveResolutionTests.test_legacy_classification_accepts_only_registered_non_active_sources"
+    },
+    {
+      "ordinal": 434,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_official_active_resolution.R2OfficialActiveResolutionTests.test_every_legacy_publisher_guards_primary_and_replay_sources"
+    },
+    {
+      "ordinal": 435,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_official_active_resolution.R2OfficialActiveResolutionTests.test_active_primary_reaches_the_normal_seal_and_evidence_boundary"
+    },
+    {
+      "ordinal": 436,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_native_position_snapshots.NativePositionSnapshotAdversarialTests.test_two_close_reopen_lifecycles_use_exact_detached_native_snapshots"
+    },
+    {
+      "ordinal": 437,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_native_daily_snapshot_order.NativeSnapshotEventOrderTests.test_runner_and_independent_checker_close_the_same_research_family_scope"
+    },
+    {
+      "ordinal": 438,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_native_daily_snapshot_order.NativeSnapshotEventOrderTests.test_native_post_event_snapshot_includes_same_timestamp_funding"
+    },
+    {
+      "ordinal": 439,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_native_daily_snapshot_order.DailySnapshotReconciliationTests.test_spot_daily_snapshot_replays_balances_and_open_position_marks"
+    },
+    {
+      "ordinal": 440,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_native_daily_snapshot_order.DailySnapshotReconciliationTests.test_pre_funding_daily_snapshot_tamper_fails_financial_reconciliation"
+    },
+    {
+      "ordinal": 441,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_material_valuation_grid.MaterialValuationGridAdversarialTests.test_spot_forbids_material_mark_rows"
+    },
+    {
+      "ordinal": 442,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_material_valuation_grid.MaterialValuationGridAdversarialTests.test_missing_duplicate_wrong_instrument_and_wrong_bar_each_fail_exact_role"
+    },
+    {
+      "ordinal": 443,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_material_valuation_grid.MaterialValuationGridAdversarialTests.test_jointly_rehashed_mark_and_snapshot_cannot_replace_dataset_mark"
+    },
+    {
+      "ordinal": 444,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_material_valuation_grid.MaterialValuationGridAdversarialTests.test_exact_dataset_projection_passes"
+    },
+    {
+      "ordinal": 445,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_locking_durability.R2LockingAndDurabilityTests.test_symlinked_parent_and_nonregular_authority_are_rejected"
+    },
+    {
+      "ordinal": 446,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_locking_durability.R2LockingAndDurabilityTests.test_recovery_rejects_nonmatching_suffix_with_structured_code"
+    },
+    {
+      "ordinal": 447,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_locking_durability.R2LockingAndDurabilityTests.test_planned_and_started_are_one_durable_append_batch"
+    },
+    {
+      "ordinal": 448,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_locking_durability.R2LockingAndDurabilityTests.test_lock_file_symlink_is_rejected_without_touching_target"
+    },
+    {
+      "ordinal": 449,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_locking_durability.R2LockingAndDurabilityTests.test_journal_holdout_and_anchor_symlinks_fail_closed"
+    },
+    {
+      "ordinal": 450,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_locking_durability.R2LockingAndDurabilityTests.test_exact_terminal_suffix_recovers_missing_anchor"
+    },
+    {
+      "ordinal": 451,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_locking_durability.R2LockingAndDurabilityTests.test_exact_start_suffix_recovers_missing_anchor"
+    },
+    {
+      "ordinal": 452,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_locking_durability.R2LockingAndDurabilityTests.test_concurrent_recovery_appends_at_most_one_anchor"
+    },
+    {
+      "ordinal": 453,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_historical_validator_identity.HistoricalValidatorIdentityTests.test_validator_cannot_mutate_authoritative_external_bytes_through_view"
+    },
+    {
+      "ordinal": 454,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_historical_validator_identity.HistoricalValidatorIdentityTests.test_validator_cannot_modify_tracked_snapshot_after_bootstrap"
+    },
+    {
+      "ordinal": 455,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_historical_validator_identity.HistoricalValidatorIdentityTests.test_v1_snapshot_is_diagnostic_only_and_never_execution_authority"
+    },
+    {
+      "ordinal": 456,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_historical_validator_identity.HistoricalValidatorIdentityTests.test_rewritten_history_without_ancestry_fails_closed"
+    },
+    {
+      "ordinal": 457,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_historical_validator_identity.HistoricalValidatorIdentityTests.test_repo_root_external_view_is_exact_and_does_not_copy_or_modify_source"
+    },
+    {
+      "ordinal": 458,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_historical_validator_identity.HistoricalValidatorIdentityTests.test_pinned_execution_rejects_evidence_current_mutated_wrapper_passes"
+    },
+    {
+      "ordinal": 459,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_historical_validator_identity.HistoricalValidatorIdentityTests.test_matching_status_with_changed_stdout_contract_fails_closed"
+    },
+    {
+      "ordinal": 460,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_historical_validator_identity.HistoricalValidatorIdentityTests.test_external_view_is_an_isolated_regular_copy_not_a_symlink"
+    },
+    {
+      "ordinal": 461,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_historical_validator_identity.HistoricalValidatorIdentityTests.test_execution_plan_must_enumerate_every_authority_once"
+    },
+    {
+      "ordinal": 462,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_historical_validator_identity.HistoricalValidatorIdentityTests.test_deleted_validator_in_selected_commit_fails_closure"
+    },
+    {
+      "ordinal": 463,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_historical_validator_identity.HistoricalValidatorIdentityTests.test_changed_wrapper_identity_cannot_be_rebound_by_manifest_hash_update"
+    },
+    {
+      "ordinal": 464,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_historical_validator_identity.HistoricalValidatorIdentityTests.test_bound_external_input_tamper_fails_before_validator"
+    },
+    {
+      "ordinal": 465,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_historical_validator_identity.HistoricalValidatorIdentityTests.test_authority_cannot_silently_select_a_different_commit"
+    },
+    {
+      "ordinal": 466,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_historical_result_status_builder.R2HistoricalResultStatusBuilderTests.test_source_commit_and_recorded_time_must_be_explicit"
+    },
+    {
+      "ordinal": 467,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_historical_result_status_builder.R2HistoricalResultStatusBuilderTests.test_output_symlink_and_symlinked_parent_are_rejected_without_mutation"
+    },
+    {
+      "ordinal": 468,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_historical_result_status_builder.R2HistoricalResultStatusBuilderTests.test_missing_or_tampered_historical_leaf_fails_before_output"
+    },
+    {
+      "ordinal": 469,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_historical_result_status_builder.R2HistoricalResultStatusBuilderTests.test_exact_twelve_paths_and_all_frozen_hashes_match_historical_bytes"
+    },
+    {
+      "ordinal": 470,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_historical_result_status_builder.R2HistoricalResultStatusBuilderTests.test_cli_creates_fixed_output_once_and_never_overwrites_collision"
+    },
+    {
+      "ordinal": 471,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_historical_result_status_builder.R2HistoricalResultStatusBuilderTests.test_builder_is_canonical_deterministic_and_covers_status_contract"
+    },
+    {
+      "ordinal": 472,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_historical_result_status.R2HistoricalResultStatusTests.test_registry_and_record_tampering_fail_even_when_hashes_are_recomputed"
+    },
+    {
+      "ordinal": 473,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_historical_result_status.R2HistoricalResultStatusTests.test_noncanonical_duplicate_json_and_stale_root_identity_fail"
+    },
+    {
+      "ordinal": 474,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_historical_result_status.R2HistoricalResultStatusTests.test_general_resolver_rejects_every_non_active_result"
+    },
+    {
+      "ordinal": 475,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_historical_result_status.R2HistoricalResultStatusTests.test_evidence_tamper_deletion_and_symlink_fail_closed"
+    },
+    {
+      "ordinal": 476,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_historical_result_status.R2HistoricalResultStatusTests.test_duplicate_incomplete_and_conflicting_pairs_fail_closed"
+    },
+    {
+      "ordinal": 477,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_historical_result_status.R2HistoricalResultStatusTests.test_cross_registry_conflict_and_missing_registry_fail_closed"
+    },
+    {
+      "ordinal": 478,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_historical_result_status.R2HistoricalResultStatusTests.test_candidate_is_invalidated_and_benchmark_is_only_superseded"
+    },
+    {
+      "ordinal": 479,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_historical_result_status.R2HistoricalResultStatusTests.test_builder_is_canonical_deterministic_and_performs_no_write"
+    },
+    {
+      "ordinal": 480,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_historical_authority_builder.HistoricalAuthorityBuilderTests.test_symbolic_commit_name_is_rejected_instead_of_inferred"
+    },
+    {
+      "ordinal": 481,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_historical_authority_builder.HistoricalAuthorityBuilderTests.test_noncanonical_or_incomplete_plan_is_rejected"
+    },
+    {
+      "ordinal": 482,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_historical_authority_builder.HistoricalAuthorityBuilderTests.test_fixture_plan_is_the_current_repository_legacy_plan"
+    },
+    {
+      "ordinal": 483,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_historical_authority_builder.HistoricalAuthorityBuilderTests.test_external_target_cannot_overlay_different_historical_git_bytes"
+    },
+    {
+      "ordinal": 484,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_historical_authority_builder.HistoricalAuthorityBuilderTests.test_external_root_symlink_fails_closed"
+    },
+    {
+      "ordinal": 485,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_historical_authority_builder.HistoricalAuthorityBuilderTests.test_external_root_inventory_addition_fails_closed"
+    },
+    {
+      "ordinal": 486,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_historical_authority_builder.HistoricalAuthorityBuilderTests.test_external_file_hash_mismatch_fails_closed"
+    },
+    {
+      "ordinal": 487,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_historical_authority_builder.HistoricalAuthorityBuilderTests.test_expected_output_digest_is_part_of_bundle_identity"
+    },
+    {
+      "ordinal": 488,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_historical_authority_builder.HistoricalAuthorityBuilderTests.test_executed_builder_must_equal_product_commit"
+    },
+    {
+      "ordinal": 489,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_historical_authority_builder.HistoricalAuthorityBuilderTests.test_exact_fourteen_plan_build_is_byte_deterministic_and_parseable"
+    },
+    {
+      "ordinal": 490,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_historical_authority_builder.HistoricalAuthorityBuilderTests.test_derive_requires_combined_duckdb_and_nautilus_data_runtime"
+    },
+    {
+      "ordinal": 491,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_historical_authority_builder.HistoricalAuthorityBuilderTests.test_derive_rejects_missing_or_cross_commit_expected_results"
+    },
+    {
+      "ordinal": 492,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_historical_authority_builder.HistoricalAuthorityBuilderTests.test_current_product_spec_is_derived_without_fourteen_manual_authorities"
+    },
+    {
+      "ordinal": 493,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_full_raw_inventory.FullRawInventoryContractTests.test_schema_v2_is_typed_canonical_and_round_trips"
+    },
+    {
+      "ordinal": 494,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_full_raw_inventory.FullRawInventoryContractTests.test_runtime_verifier_rejects_missing_and_same_size_tamper"
+    },
+    {
+      "ordinal": 495,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_full_raw_inventory.FullRawInventoryContractTests.test_research_release_requires_exact_independent_four_way_proof"
+    },
+    {
+      "ordinal": 496,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_full_raw_inventory.FullRawInventoryContractTests.test_raw_materialization_is_atomic_copy_not_hardlink"
+    },
+    {
+      "ordinal": 497,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_full_raw_inventory.FullRawInventoryContractTests.test_qualification_full_inventory_is_distinct_and_does_not_weaken_research_grid"
+    },
+    {
+      "ordinal": 498,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_full_raw_inventory.FullRawInventoryContractTests.test_publisher_checksum_lexeme_is_verified_after_rehashing"
+    },
+    {
+      "ordinal": 499,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_full_raw_inventory.FullRawInventoryContractTests.test_order_profile_and_locator_mutations_fail_closed"
+    },
+    {
+      "ordinal": 500,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_full_raw_inventory.FullRawInventoryContractTests.test_missing_direct_source_and_missing_checksum_closure_fail_closed"
+    },
+    {
+      "ordinal": 501,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_full_raw_inventory.FullRawInventoryContractTests.test_independent_projection_includes_indirect_and_checksum_sources"
+    },
+    {
+      "ordinal": 502,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_full_raw_inventory.FullRawInventoryContractTests.test_funding_raw_lexeme_is_material_and_cannot_be_normalized_silently"
+    },
+    {
+      "ordinal": 503,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_full_raw_inventory.FullRawInventoryContractTests.test_four_way_gate_rejects_missing_member_and_changed_role_by_code"
+    },
+    {
+      "ordinal": 504,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_execution_chain.ExecutionChainAdversarialTests.test_rehashed_deleted_native_lifecycle_cannot_pass_semantic_digest"
+    },
+    {
+      "ordinal": 505,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_execution_chain.ExecutionChainAdversarialTests.test_order_quantity_side_status_and_instrument_are_native_bound"
+    },
+    {
+      "ordinal": 506,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_execution_chain.ExecutionChainAdversarialTests.test_native_backtest_totals_cannot_be_rewritten"
+    },
+    {
+      "ordinal": 507,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_execution_chain.ExecutionChainAdversarialTests.test_low_level_strategy_api_rejects_future_decision_before_order_factory"
+    },
+    {
+      "ordinal": 508,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_execution_chain.ExecutionChainAdversarialTests.test_future_decision_and_effective_insert_tamper_fail_lookahead_contract"
+    },
+    {
+      "ordinal": 509,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_execution_chain.ExecutionChainAdversarialTests.test_duplicate_submitted_identifier_is_not_collapsed_by_checker"
+    },
+    {
+      "ordinal": 510,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_execution_chain.ExecutionChainAdversarialTests.test_deleted_order_row_cannot_leave_a_submitted_intent_off_ledger"
+    },
+    {
+      "ordinal": 511,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_claim_schema_supersession.R2ClaimSchemaSupersessionTests.test_real_builder_is_deterministic_and_does_not_rebless_tamper"
+    },
+    {
+      "ordinal": 512,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_claim_schema_supersession.R2ClaimSchemaSupersessionTests.test_missing_pair_or_rehashed_semantic_mutation_fails_closed"
+    },
+    {
+      "ordinal": 513,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_claim_schema_supersession.R2ClaimSchemaSupersessionTests.test_exact_retry_008_scope_is_canonical_and_only_superseded"
+    },
+    {
+      "ordinal": 514,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_claim_schema_supersession.R2ClaimSchemaSupersessionTests.test_every_retry_008_primary_and_replay_is_ineligible"
+    },
+    {
+      "ordinal": 515,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_claim_schema_supersession.R2ClaimSchemaSupersessionTests.test_cli_emits_only_canonical_registry"
+    },
+    {
+      "ordinal": 516,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_claim_holdout_supersession.R2ClaimHoldoutSupersessionTests.test_real_builder_is_deterministic_and_scope_matches_constants"
+    },
+    {
+      "ordinal": 517,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_claim_holdout_supersession.R2ClaimHoldoutSupersessionTests.test_partial_retry_010_scope_is_exact_and_only_superseded"
+    },
+    {
+      "ordinal": 518,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_claim_holdout_supersession.R2ClaimHoldoutSupersessionTests.test_missing_pair_wrong_reason_and_rehashed_evidence_tamper_fail_closed"
+    },
+    {
+      "ordinal": 519,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_causality_boundaries.R2CausalityBoundaryTests.test_weekly_first_eligible_signal_is_one_week_after_scoring_start_for_both_profiles"
+    },
+    {
+      "ordinal": 520,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_causality_boundaries.R2CausalityBoundaryTests.test_qualification_request_never_infers_authority_from_package_location"
+    },
+    {
+      "ordinal": 521,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_causality_boundaries.R2CausalityBoundaryTests.test_post_boundary_flag_is_derived_from_inputs_and_actual_callback_counters"
+    },
+    {
+      "ordinal": 522,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_causality_boundaries.R2CausalityBoundaryTests.test_full_signal_interval_not_decision_timestamp_controls_eligibility"
+    },
+    {
+      "ordinal": 523,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_causality_boundaries.R2CausalityBoundaryTests.test_checker_rejects_submitted_warmup_interval_for_spot_and_perpetual"
+    },
+    {
+      "ordinal": 524,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_r2_causality_boundaries.R2CausalityBoundaryTests.test_checker_rejects_signal_end_after_scoring_boundary"
+    },
+    {
+      "ordinal": 525,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_aud009_owner_workflow.Aud009OwnerWorkflowTests.test_qualification_fixture_cannot_designate_final_holdout"
+    },
+    {
+      "ordinal": 526,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_aud009_owner_workflow.Aud009OwnerWorkflowTests.test_public_cli_executes_complete_claim_ineligible_exposed_data_fixture"
+    },
+    {
+      "ordinal": 527,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_aud008_offline_enforcement.Aud008OfflineEnforcementTests.test_seccomp_boundary_blocks_current_child_python_native_and_dns"
+    },
+    {
+      "ordinal": 528,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_aud008_offline_enforcement.Aud008OfflineEnforcementTests.test_inherited_network_socket_is_closed_before_filter_activation"
+    },
+    {
+      "ordinal": 529,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_aud007_evidence_paths.Aud007EvidencePathTests.test_symlinked_evidence_root_and_outside_root_are_rejected"
+    },
+    {
+      "ordinal": 530,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_aud007_evidence_paths.Aud007EvidencePathTests.test_symlink_escape_is_rejected"
+    },
+    {
+      "ordinal": 531,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_aud007_evidence_paths.Aud007EvidencePathTests.test_invalid_components_are_rejected_before_root_creation"
+    },
+    {
+      "ordinal": 532,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_aud007_evidence_paths.Aud007EvidencePathTests.test_collision_is_rejected_without_overwrite"
+    },
+    {
+      "ordinal": 533,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_aud006_source_revision.Aud006SourceRevisionTests.test_official_runner_rejects_forged_repository_and_ref_before_engine"
+    },
+    {
+      "ordinal": 534,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_aud006_source_revision.Aud006SourceRevisionTests.test_historical_source_revision_accepts_merge_commit_and_rejects_squash"
+    },
+    {
+      "ordinal": 535,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_aud006_source_revision.Aud006SourceRevisionTests.test_forged_repository_is_rejected"
+    },
+    {
+      "ordinal": 536,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_aud006_source_revision.Aud006SourceRevisionTests.test_forged_branch_ref_is_rejected"
+    },
+    {
+      "ordinal": 537,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_aud005_claim_report_resolver.Aud005ClaimReportResolverTests.test_winner_only_official_report_is_rejected_at_public_low_level_boundary"
+    },
+    {
+      "ordinal": 538,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_aud005_claim_report_resolver.Aud005ClaimReportResolverTests.test_stale_authoritative_history_head_blocks_before_protocol_or_report"
+    },
+    {
+      "ordinal": 539,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_aud005_claim_report_resolver.Aud005ClaimReportResolverTests.test_sealed_v2_component_failure_is_retained_without_legacy_checker"
+    },
+    {
+      "ordinal": 540,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_aud005_claim_report_resolver.Aud005ClaimReportResolverTests.test_run_manifest_symlink_escape_is_rejected"
+    },
+    {
+      "ordinal": 541,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_aud005_claim_report_resolver.Aud005ClaimReportResolverTests.test_retained_v2_failure_leaf_tamper_fails_root_integrity"
+    },
+    {
+      "ordinal": 542,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_aud005_claim_report_resolver.Aud005ClaimReportResolverTests.test_real_retained_v2_failure_resolves_without_checker_json"
+    },
+    {
+      "ordinal": 543,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_aud005_claim_report_resolver.Aud005ClaimReportResolverTests.test_official_locator_rejects_assertions_subsets_metrics_and_trades"
+    },
+    {
+      "ordinal": 544,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_aud005_claim_report_resolver.Aud005ClaimReportResolverTests.test_missing_frozen_candidate_schedule_is_not_complete_evidence"
+    },
+    {
+      "ordinal": 545,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_aud005_claim_report_resolver.Aud005ClaimReportResolverTests.test_historical_failed_checker_is_preserved_but_cannot_pose_as_pass"
+    },
+    {
+      "ordinal": 546,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_aud005_claim_report_resolver.Aud005ClaimReportResolverTests.test_forged_metrics_or_native_trades_do_not_match_derived_resolution"
+    },
+    {
+      "ordinal": 547,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_aud005_claim_report_resolver.Aud005ClaimReportResolverTests.test_forged_boolean_claim_cannot_become_an_official_eligible_claim"
+    },
+    {
+      "ordinal": 548,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_aud003_004_authoritative_history.Aud004AuthoritativeHoldoutTests.test_longer_self_consistent_holdout_replacement_with_new_anchor_is_rejected"
+    },
+    {
+      "ordinal": 549,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_aud003_004_authoritative_history.Aud004AuthoritativeHoldoutTests.test_holdout_rollback_is_rejected"
+    },
+    {
+      "ordinal": 550,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_aud003_004_authoritative_history.Aud004AuthoritativeHoldoutTests.test_holdout_genesis_reset_is_rejected"
+    },
+    {
+      "ordinal": 551,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_aud003_004_authoritative_history.Aud004AuthoritativeHoldoutTests.test_empty_holdout_replacement_is_rejected"
+    },
+    {
+      "ordinal": 552,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_aud003_004_authoritative_history.Aud004AuthoritativeHoldoutTests.test_committed_descendant_holdout_and_anchor_reset_is_rejected"
+    },
+    {
+      "ordinal": 553,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_aud003_004_authoritative_history.Aud003AuthoritativeJournalTests.test_simultaneous_journal_and_anchor_replacement_is_rejected"
+    },
+    {
+      "ordinal": 554,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_aud003_004_authoritative_history.Aud003AuthoritativeJournalTests.test_shorter_self_consistent_replacement_is_rejected"
+    },
+    {
+      "ordinal": 555,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_aud003_004_authoritative_history.Aud003AuthoritativeJournalTests.test_rollback_to_old_head_files_is_rejected"
+    },
+    {
+      "ordinal": 556,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_aud003_004_authoritative_history.Aud003AuthoritativeJournalTests.test_reordered_records_are_rejected"
+    },
+    {
+      "ordinal": 557,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_aud003_004_authoritative_history.Aud003AuthoritativeJournalTests.test_prefix_truncation_is_rejected"
+    },
+    {
+      "ordinal": 558,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_aud003_004_authoritative_history.Aud003AuthoritativeJournalTests.test_normal_push_merge_cannot_hide_authority_in_second_parent"
+    },
+    {
+      "ordinal": 559,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_aud003_004_authoritative_history.Aud003AuthoritativeJournalTests.test_longer_self_consistent_journal_replacement_with_new_anchor_is_rejected"
+    },
+    {
+      "ordinal": 560,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_aud003_004_authoritative_history.Aud003AuthoritativeJournalTests.test_genesis_reset_is_rejected"
+    },
+    {
+      "ordinal": 561,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_aud003_004_authoritative_history.Aud003AuthoritativeJournalTests.test_delete_failed_attempt_is_rejected"
+    },
+    {
+      "ordinal": 562,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_aud003_004_authoritative_history.Aud003AuthoritativeJournalTests.test_committed_descendant_journal_and_anchor_genesis_reset_is_rejected"
+    },
+    {
+      "ordinal": 563,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_aud002_m3_holdout_exposure.Aud002M3HoldoutExposureTests.test_committed_m3_authority_replacement_is_rejected"
+    },
+    {
+      "ordinal": 564,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_aud002_m3_holdout_exposure.Aud002M3HoldoutExposureTests.test_all_sixteen_spot_and_perpetual_relabels_are_rejected"
+    },
+    {
+      "ordinal": 565,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_aud001_strategy_identity.Aud001StrategyIdentityTests.test_registered_official_strategy_constructs_without_any_strategy_plan"
+    },
+    {
+      "ordinal": 566,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_aud001_strategy_identity.Aud001StrategyIdentityTests.test_previous_same_identity_different_fill_schedule_exploit_is_rejected"
+    },
+    {
+      "ordinal": 567,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_aud001_strategy_identity.Aud001StrategyIdentityTests.test_parameter_or_source_implementation_change_changes_identity"
+    },
+    {
+      "ordinal": 568,
+      "status": "PASS",
+      "test_id": "tests.adversarial.test_aud001_strategy_identity.Aud001StrategyIdentityTests.test_only_closed_registered_identifiers_are_accepted"
+    }
+  ],
+  "unique_discovered_test_cases": 568
+}

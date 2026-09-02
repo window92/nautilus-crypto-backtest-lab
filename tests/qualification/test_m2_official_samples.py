@@ -100,7 +100,7 @@ class M2OfficialSampleQualificationTests(unittest.TestCase):
         self.assertTrue(catalog["spot"]["semantic_inventory_equal"])
         self.assertTrue(catalog["perpetual"]["semantic_inventory_equal"])
 
-    def test_historical_ssot_and_runtime_are_validated_against_their_snapshot(self) -> None:
+    def test_historical_ssot_and_runtime_v1_snapshot_is_diagnostic_only(self) -> None:
         self.assertNotEqual(
             sha256_file(ROOT / "SSOT.md"),
             "b4deb7048242239234de7eaa353b623b3e45247eb42f1021dbc26ffd910edb99",
@@ -109,11 +109,13 @@ class M2OfficialSampleQualificationTests(unittest.TestCase):
             "validate_m2_evidence.py",
             repository_root=ROOT,
         )
-        self.assertTrue(historical.acceptable, historical.to_builtins())
+        self.assertFalse(historical.acceptable, historical.to_builtins())
         self.assertEqual(
             historical.state,
-            HistoricalValidationState.CURRENT_ROOT_DIFFERS_VALIDLY,
+            HistoricalValidationState.LEGACY_CONTRACT_ONLY,
         )
+        self.assertTrue(historical.legacy_snapshot_integrity_valid)
+        self.assertFalse(historical.to_builtins()["executable_validator_bound"])
         self.assertTrue(historical.files["runtime.lock.json"]["historical_snapshot_match"])
         self.assertFalse(historical.files["runtime.lock.json"]["current_root_match"])
 

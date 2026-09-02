@@ -41,6 +41,12 @@ jobs:
           --require-hashes
           --dest /tmp/nautilus-locked-wheel
           -r requirements.lock.txt
+      - name: Download exact hashed data-tool wheel
+        run: >-
+          python -m pip download
+          --require-hashes
+          --dest /tmp/duckdb-locked-wheel
+          -r requirements.data.lock.txt
       - name: Verify downloaded wheel identity
         run: |
           python - <<'PY'
@@ -55,19 +61,50 @@ jobs:
           assert wheel.name == lock["nautilus_wheel_filename"]
           assert wheel.stat().st_size == lock["nautilus_wheel_size_bytes"]
           assert hashlib.sha256(wheel.read_bytes()).hexdigest() == lock["nautilus_wheel_sha256"]
+
+          data_lock = json.loads(Path("data-tool.lock.json").read_text(encoding="utf-8"))
+          data_wheels = tuple(Path("/tmp/duckdb-locked-wheel").glob("*.whl"))
+          assert len(data_wheels) == 1, data_wheels
+          data_wheel = data_wheels[0]
+          expected = data_lock["complete_dependency_set"][0]
+          assert data_wheel.name == expected["wheel_filename"]
+          assert data_wheel.stat().st_size == expected["wheel_size_bytes"]
+          assert hashlib.sha256(data_wheel.read_bytes()).hexdigest() == expected["wheel_sha256"]
           PY
+      - name: Verify portable system interpreter
+        run: |
+          /usr/bin/python3.12 - <<'PY'
+          import sys
+
+          assert sys.version_info[:3] == (3, 12, 3), sys.version
+          assert sys.implementation.name == "cpython"
+          PY
+      - name: Create isolated project environment
+        run: /usr/bin/python3.12 -m venv --copies .venv
+      - name: Create isolated data-tool environment
+        run: /usr/bin/python3.12 -m venv --copies .data-venv
       - name: Install exact local wheel without network fallback
         run: >-
-          python -m pip install
+          .venv/bin/python -m pip install
           --no-index
           --find-links /tmp/nautilus-locked-wheel
           --require-hashes
           -r requirements.lock.txt
+      - name: Install exact data-tool wheel without network fallback
+        run: >-
+          .data-venv/bin/python -m pip install
+          --no-index
+          --no-deps
+          --find-links /tmp/duckdb-locked-wheel
+          --require-hashes
+          -r requirements.data.lock.txt
       - name: Verify dependency graph
-        run: python -m pip check
+        run: |
+          .venv/bin/python -m pip check
+          .data-venv/bin/python -m pip check
       - name: Verify installed RECORD and payload identity
         run: |
-          python - <<'PY'
+          .venv/bin/python - <<'PY'
           from pathlib import Path
 
           from crypto_lab.config import RuntimeLock
@@ -85,14 +122,14 @@ jobs:
           assert observed["installed_files_verified"] is True
           PY
       - name: Compile tracked Python sources
-        run: python -m compileall -q src scripts tests
+        run: .venv/bin/python -m compileall -q src scripts tests
       - name: Check authored-source whitespace
         run: git diff --check ${{ github.event.pull_request.base.sha || github.event.before }} HEAD
       - name: Run portable audit regressions
         run: >-
-          python -m unittest -v
+          .venv/bin/python -m unittest -v
           tests.unit.test_comprehensive_audit_regressions.AuditRegressionTests.test_acceptance_empty_output_log_has_no_blank_line_at_eof
-          tests.unit.test_comprehensive_audit_regressions.AuditRegressionTests.test_owner_child_uses_single_cli_module_identity
+          tests.unit.test_comprehensive_audit_regressions.AuditRegressionTests.test_owner_child_enters_only_through_isolated_bootstrap
           tests.unit.test_comprehensive_audit_regressions.AuditRegressionTests.test_f009_failure_code_vocabulary_exactly_matches_ssot_section_15
           tests.unit.test_comprehensive_audit_regressions.AuditRegressionTests.test_f007_utc_conversion_uses_exact_integer_arithmetic
           tests.unit.test_comprehensive_audit_regressions.AuditRegressionTests.test_f005_mark_converter_rejects_cross_instrument_relabel
@@ -110,11 +147,81 @@ jobs:
           tests.unit.test_runtime_installed_files
           tests.unit.test_spot_cash_reconciliation.SpotCashReconciliationTests.test_nonfinancial_account_snapshot_before_fill_is_allowed_but_bound_exactly
           tests.unit.test_timestamps
+      - name: Run portable R2 causal financial provenance and runtime controls
+        run: >-
+          .venv/bin/python -m unittest -v
+          tests.adversarial.test_r2_causality_boundaries.R2CausalityBoundaryTests.test_full_signal_interval_not_decision_timestamp_controls_eligibility
+          tests.adversarial.test_r2_causality_boundaries.R2CausalityBoundaryTests.test_post_boundary_flag_is_derived_from_inputs_and_actual_callback_counters
+          tests.adversarial.test_r2_causality_boundaries.R2CausalityBoundaryTests.test_weekly_first_eligible_signal_is_one_week_after_scoring_start_for_both_profiles
+          tests.adversarial.test_r2_execution_chain.ExecutionChainAdversarialTests.test_low_level_strategy_api_rejects_future_decision_before_order_factory
+          tests.adversarial.test_r2_full_raw_inventory
+          tests.adversarial.test_r2_historical_authority_builder
+          tests.adversarial.test_r2_historical_result_status
+          tests.adversarial.test_r2_historical_result_status_builder
+          tests.adversarial.test_r2_historical_validator_identity
+          tests.adversarial.test_r2_locking_durability
+          tests.adversarial.test_r2_material_valuation_grid
+          tests.adversarial.test_r2_official_active_resolution
+          tests.adversarial.test_r2_official_metrics
+          tests.adversarial.test_r2_official_sealing
+          tests.adversarial.test_r2_perpetual_reconciliation
+          tests.adversarial.test_r2_runtime_bootstrap.IsolatedRuntimeBootstrapTests.test_authority_builder_cannot_bless_unlocked_distribution
+          tests.adversarial.test_r2_runtime_bootstrap.IsolatedRuntimeBootstrapTests.test_checkpoint_push_disables_repository_hooks
+          tests.adversarial.test_r2_runtime_bootstrap.IsolatedRuntimeBootstrapTests.test_checkpoint_push_gets_a_separate_sanitized_environment
+          tests.adversarial.test_r2_runtime_bootstrap.IsolatedRuntimeBootstrapTests.test_checkpoint_push_rejects_a_symlinked_git_config
+          tests.adversarial.test_r2_runtime_bootstrap.IsolatedRuntimeBootstrapTests.test_different_executable_identity_fails_before_import
+          tests.adversarial.test_r2_runtime_bootstrap.IsolatedRuntimeBootstrapTests.test_direct_owner_api_requires_bootstrap_state_before_side_effects
+          tests.adversarial.test_r2_runtime_bootstrap.IsolatedRuntimeBootstrapTests.test_exact_isolated_runtime_executes_pinned_product_bytes
+          tests.adversarial.test_r2_runtime_bootstrap.IsolatedRuntimeBootstrapTests.test_extra_pth_fails_exact_site_inventory
+          tests.adversarial.test_r2_runtime_bootstrap.IsolatedRuntimeBootstrapTests.test_m3_child_also_enters_through_the_exact_isolated_bootstrap
+          tests.adversarial.test_r2_runtime_bootstrap.IsolatedRuntimeBootstrapTests.test_m3_positive_qualification_requires_persisted_startup_attestation
+          tests.adversarial.test_r2_runtime_bootstrap.IsolatedRuntimeBootstrapTests.test_native_extension_payload_mutation_fails_before_product_import
+          tests.adversarial.test_r2_runtime_bootstrap.IsolatedRuntimeBootstrapTests.test_only_declared_recovery_state_may_be_dirty_and_staging_may_not
+          tests.adversarial.test_r2_runtime_bootstrap.IsolatedRuntimeBootstrapTests.test_owner_child_uses_exact_environment_and_bootstrap_flags
+          tests.adversarial.test_r2_runtime_bootstrap.IsolatedRuntimeBootstrapTests.test_product_change_after_authority_fails_before_target
+          tests.adversarial.test_r2_runtime_bootstrap.IsolatedRuntimeBootstrapTests.test_pythonpath_sitecustomize_and_shadow_product_fail_before_import
+          tests.adversarial.test_r2_runtime_bootstrap.IsolatedRuntimeBootstrapTests.test_record_payload_mutation_fails_before_dependency_import
+          tests.adversarial.test_r2_runtime_bootstrap.IsolatedRuntimeBootstrapTests.test_runtime_authority_builder_is_deterministic_complete_and_reports_resolved_commit
+          tests.adversarial.test_r2_runtime_bootstrap.IsolatedRuntimeBootstrapTests.test_sitecustomize_usercustomize_and_shadow_dependency_fail_inventory
+          tests.adversarial.test_r2_runtime_bootstrap.IsolatedRuntimeBootstrapTests.test_stale_dependency_pyc_is_ignored_even_when_header_matches_source
+          tests.adversarial.test_r2_runtime_bootstrap.IsolatedRuntimeBootstrapTests.test_symlinked_authority_is_rejected_before_read
+          tests.adversarial.test_r2_spot_affordability_mutation
+          tests.unit.test_r2_acceptance_validator
+          tests.unit.test_r2_failure_code_vocabulary.R2FailureCodeVocabularyTests.test_legacy_registry_unknown_code_becomes_canonical_incomplete
+          tests.unit.test_r2_failure_code_vocabulary.R2FailureCodeVocabularyTests.test_persisted_report_and_m3_schema_reject_arbitrary_codes
+          tests.unit.test_r2_failure_code_vocabulary.R2FailureCodeVocabularyTests.test_product_output_rejects_unknown_codes_but_evidence_maps_them_closed
+          tests.unit.test_r2_official_rebuild_plan.R2OfficialRebuildPlanTests.test_builder_freezes_six_unique_development_only_primary_replay_plans
+          tests.unit.test_r2_official_rebuild_plan.R2OfficialRebuildPlanTests.test_current_registry_gate_rejects_wrong_component_or_runtime
+          tests.unit.test_r2_official_rebuild_plan.R2OfficialRebuildPlanTests.test_legacy_check_pass_registry_fails_the_component_gate
+          tests.unit.test_r2_official_rebuild_plan.R2OfficialRebuildPlanTests.test_legacy_dataset_releases_fail_the_r2_full_inventory_gate
+          tests.unit.test_r2_official_rebuild_plan.R2OfficialRebuildPlanTests.test_missing_latest_registry_fails_closed_without_older_fallback
+          tests.unit.test_r2_official_rebuild_plan.R2OfficialRebuildPlanTests.test_new_epoch_never_overwrites_prior_benchmark_evidence
+          tests.unit.test_r2_official_rebuild_plan.R2OfficialRebuildPlanTests.test_owner_rejects_a_v2_profile_from_an_older_registry
+          tests.unit.test_r2_official_rebuild_plan.R2OfficialRebuildPlanTests.test_owner_rejects_missing_or_prefixed_development_claim_token
+          tests.unit.test_r2_official_rebuild_plan.R2OfficialRebuildPlanTests.test_owner_resolves_the_r2_qualification_registry_before_legacy_authorities
+          tests.unit.test_r2_official_rebuild_plan.R2OfficialRebuildPlanTests.test_plan_preparation_rejects_an_older_qualification_registry
+          tests.unit.test_r2_official_rebuild_plan.R2OfficialRebuildPlanTests.test_preparation_output_is_fresh_external_and_under_tmp
+          tests.unit.test_r2_official_rebuild_plan.R2OfficialRebuildPlanTests.test_qualification_executable_closure_rejects_stale_product_bytes
+          tests.unit.test_r2_official_rebuild_plan.R2OfficialRebuildPlanTests.test_r2_research_family_is_new_but_strategy_lineage_is_preserved
+          tests.unit.test_r2_official_rebuild_plan.R2OfficialRebuildPlanTests.test_rebuild_validation_must_bind_both_release_inventory_and_catalogs
+          tests.unit.test_r2_official_rebuild_plan.R2OfficialRebuildPlanTests.test_uncommitted_registry_bytes_cannot_become_current_authority
+          tests.adversarial.test_l1_active_raw_equality
+          tests.adversarial.test_l2_funding_failure_codes
+          tests.adversarial.test_l3_host_acceptance_attestation
+          tests.adversarial.test_l4_repository_root
+          tests.adversarial.test_execution_plan_active_pointer
+          tests.adversarial.test_r2_active_inventory_supersession
+      - name: Verify committed Host Acceptance attestation still matches product source
+        run: >-
+          .venv/bin/python scripts/verify_host_acceptance_attestation.py
+          --repository "${GITHUB_WORKSPACE}"
+          --portable-only
 
 # This workflow is intentionally not the Official acceptance runner. It proves
 # the locked wheel and installed payload, then runs only host-portable tests.
-# The seven synthetic engine tests which require the exact host-specific
-# Runtime Lock, and evidence checks which reopen the preserved untracked raw-data
-# corpus, remain mandatory in scripts/run_audit_remediation_acceptance.py. CI
-# must not bypass/rewrite that lock or silently omit source objects to look
-# Official.
+# Engine tests which require the exact host-specific Runtime Lock, the real
+# committed bootstrap authority, or the preserved untracked Raw corpus remain
+# mandatory in scripts/run_adversarial_remediation_002_acceptance.py. The
+# explicit method selection above omits only those Host-bound cases; it does
+# not Skip/XFail them or weaken their assertions. CI must not bypass/rewrite
+# the Runtime Lock or silently omit Raw objects to look Official.

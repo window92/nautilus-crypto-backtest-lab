@@ -8,12 +8,14 @@ import json
 import subprocess
 from bisect import bisect_left
 from bisect import bisect_right
+from collections import defaultdict
 from dataclasses import dataclass
 from decimal import Decimal
 from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
+from nautilus_trader.model import Bar
 from nautilus_trader.model import MarkPriceUpdate
 
 from crypto_lab.config import LabRunConfig
@@ -24,15 +26,27 @@ from crypto_lab.data import DatasetRelease
 from crypto_lab.data import FUNDING_NATIVE_BINDING_RC2_INTERVAL_BOUNDARY
 from crypto_lab.data import FUNDING_NATIVE_BINDING_RC2_EXPLICIT_BOUNDARY_PAIR
 from crypto_lab.data import FUNDING_NATIVE_BINDING_SINGLE
+from crypto_lab.data import FULL_RAW_INVENTORY_NORMALIZER_VERSION
 from crypto_lab.data import HISTORICAL_NORMALIZER_VERSIONS
 from crypto_lab.data import INSTRUMENT_REPAIR_NORMALIZER_VERSION
+from crypto_lab.data import M3_QUALIFICATION_FULL_RAW_INVENTORY_NORMALIZER_VERSION
+from crypto_lab.data import RESEARCH_REBUILD_VALIDATION_REF
 from crypto_lab.data import SyntheticQualificationDatasetRelease
+from crypto_lab.data import validate_research_dataset_rebuild_proof
+from crypto_lab.hashing import canonical_json_bytes
 from crypto_lab.hashing import canonical_sha256
 from crypto_lab.hashing import sha256_file
 from crypto_lab.git_identity import verify_source_revision
 from crypto_lab.profile_authority import validate_persisted_profile_authority
+from crypto_lab.perpetual_reconciliation import validate_perpetual_native_account_projection
+from crypto_lab.perpetual_reconciliation import validate_perpetual_reconciliation
+from crypto_lab.perpetual_reconciliation import replay_perpetual_valuation_states
 from crypto_lab.runtime import validate_persisted_runtime_identity
+from crypto_lab.git_identity import require_repository_root
 from crypto_lab.status import FailureCode
+from crypto_lab.status import canonicalize_evidence_failure_codes
+from crypto_lab.status import ordered_funding_failure_codes
+from crypto_lab.status import validated_failure_codes
 from crypto_lab.timestamps import utc_datetime_to_ns
 from crypto_lab.strategies import RegisteredStrategyIdentity
 from crypto_lab.strategies import StrategySpec
@@ -45,9 +59,17 @@ from crypto_lab.strategies import weekly_target
 
 
 class CheckerOutcome(StrEnum):
-    CHECK_PASS = "CHECK_PASS"
-    CHECK_FAIL = "CHECK_FAIL"
-    CHECK_BLOCKED = "CHECK_BLOCKED"
+    COMPONENT_CHECK_PASS = "COMPONENT_CHECK_PASS"
+    COMPONENT_CHECK_FAIL = "COMPONENT_CHECK_FAIL"
+    COMPONENT_CHECK_BLOCKED = "COMPONENT_CHECK_BLOCKED"
+
+    # Source-level aliases keep existing callers concise while ensuring that
+    # newly persisted component results can never be mistaken for an Official
+    # seal.  Historical v1 ``CHECK_*`` bytes remain interpreted only by their
+    # pinned historical validator.
+    CHECK_PASS = "COMPONENT_CHECK_PASS"
+    CHECK_FAIL = "COMPONENT_CHECK_FAIL"
+    CHECK_BLOCKED = "COMPONENT_CHECK_BLOCKED"
 
 
 @dataclass(frozen=True)
@@ -55,6 +77,17 @@ class CheckerReport:
     outcome: CheckerOutcome
     failure_codes: tuple[str, ...]
     checks: tuple[dict[str, Any], ...]
+
+    def __post_init__(self) -> None:
+        codes = validated_failure_codes(
+            self.failure_codes,
+            field="checker_report.failure_codes",
+        )
+        if self.outcome is CheckerOutcome.COMPONENT_CHECK_PASS and codes:
+            raise ValueError("checker_report: PASS cannot contain failure codes")
+        if self.outcome is not CheckerOutcome.COMPONENT_CHECK_PASS and not codes:
+            raise ValueError("checker_report: non-PASS requires a canonical failure code")
+        object.__setattr__(self, "failure_codes", codes)
 
     def to_builtins(self) -> dict[str, Any]:
         return {
@@ -80,7 +113,6 @@ _REQUIRED_COMMON = {
     "nautilus_result.json",
 }
 
-ROOT = Path(__file__).resolve().parents[2]
 ONE_MINUTE_NS = 60_000_000_000
 DAY_NS = 86_400_000_000_000
 OWNER_SMOKE_STRATEGY_FAMILY = "BTCUSDT_DAILY_PRICE_VS_SMA20_TREND"
@@ -109,6 +141,801 @@ def _read_csv(path: Path) -> list[dict[str, str]]:
 def _commission_amount(value: str) -> Decimal:
     amount, _currency = value.split(" ", maxsplit=1)
     return Decimal(amount)
+
+
+_NATIVE_PORTFOLIO_SNAPSHOT_FIELDS = {
+    "snapshot_index",
+    "account_id",
+    "account_type",
+    "base_currency",
+    "base_currency_equity",
+    "total_equity",
+    "realized_pnls",
+    "unrealized_pnls",
+    "is_stale",
+    "stale_instruments",
+    "stale_currencies",
+    "unpriced_instruments",
+    "ts_event",
+    "ts_init",
+}
+
+
+def _snapshot_money_map(items: Any) -> dict[str, Decimal]:
+    if not isinstance(items, list):
+        raise ValueError("native PortfolioSnapshot Money list is invalid")
+    result: dict[str, Decimal] = {}
+    for item in items:
+        if not isinstance(item, dict) or set(item) != {"amount", "currency"}:
+            raise ValueError("native PortfolioSnapshot Money field set is invalid")
+        currency = str(item["currency"])
+        amount = Decimal(str(item["amount"]))
+        if not currency or currency in result or not amount.is_finite():
+            raise ValueError("native PortfolioSnapshot Money value is invalid")
+        result[currency] = amount
+    return result
+
+
+def _snapshot_pnl(items: Any, settlement_currency: str) -> Decimal:
+    values = _snapshot_money_map(items)
+    if set(values) - {settlement_currency}:
+        raise ValueError("native PortfolioSnapshot PnL currency is invalid")
+    return values.get(settlement_currency, Decimal(0))
+
+
+def _validate_official_daily_portfolio_snapshots(
+    *,
+    run_dir: Path,
+    config: LabRunConfig,
+    result: dict[str, Any],
+    observations: dict[str, Any],
+    fills: list[dict[str, str]],
+    funding_rows: list[dict[str, str]],
+    base_currency: str | None,
+) -> tuple[bool, dict[str, Any]]:
+    """Independently reconcile every scoring-day native portfolio snapshot."""
+
+    detail: dict[str, Any] = {
+        "native_financial_state_mutated_by_validator": False,
+    }
+    try:
+        snapshot_path = run_dir / "native_portfolio_snapshots.jsonl"
+        raw_lines = snapshot_path.read_text(encoding="utf-8").splitlines()
+        if not raw_lines or any(not line.strip() for line in raw_lines):
+            raise ValueError("native PortfolioSnapshot JSONL is empty or sparse")
+        rows = [json.loads(line) for line in raw_lines]
+        scoring_start_ns = utc_datetime_to_ns(config.scoring_start)
+        scoring_end_ns = utc_datetime_to_ns(config.scoring_end_exclusive)
+        expected_timestamps = tuple(
+            range(scoring_start_ns, scoring_end_ns + 1, DAY_NS),
+        )
+        if (
+            not expected_timestamps
+            or expected_timestamps[-1] != scoring_end_ns
+        ):
+            raise ValueError("scoring interval has no exact inclusive daily grid")
+
+        capture = result.get("native_daily_portfolio_snapshot_capture")
+        capture_fields = {
+            "schema",
+            "status",
+            "public_api",
+            "capture_phase",
+            "automatic_snapshot_count",
+            "explicit_post_event_snapshot_count",
+            "canonical_snapshot_count",
+            "superseded_pre_event_snapshot_count",
+            "explicit_post_event_timestamps_ns",
+            "financial_state_mutated_by_project",
+        }
+        if not (
+            isinstance(capture, dict)
+            and set(capture) == capture_fields
+            and capture.get("schema")
+            == "native-post-event-portfolio-snapshot-capture-v1"
+            and capture.get("status") == "PASS"
+            and capture.get("public_api")
+            == "nautilus_trader.portfolio.Portfolio.build_snapshot"
+            and capture.get("capture_phase")
+            == "AFTER_ALL_SAME_TIMESTAMP_MARK_FUNDING_BAR_EVENTS"
+            and capture.get("financial_state_mutated_by_project") is False
+            and capture.get("explicit_post_event_timestamps_ns")
+            == list(expected_timestamps)
+            and all(
+                type(capture.get(name)) is int
+                and int(capture[name]) >= 0
+                for name in (
+                    "automatic_snapshot_count",
+                    "explicit_post_event_snapshot_count",
+                    "canonical_snapshot_count",
+                    "superseded_pre_event_snapshot_count",
+                )
+            )
+            and int(capture.get("explicit_post_event_snapshot_count", -1))
+            == len(expected_timestamps)
+            and int(capture.get("canonical_snapshot_count", -1)) == len(rows)
+            and int(capture.get("superseded_pre_event_snapshot_count", -1))
+            <= len(expected_timestamps)
+        ):
+            raise ValueError("post-event native PortfolioSnapshot capture is unbound")
+
+        settlement_currency = config.initial_capital.currency
+        scored: dict[int, dict[str, Any]] = {}
+        all_timestamps: set[int] = set()
+        for index, row in enumerate(rows):
+            if not isinstance(row, dict) or set(row) != _NATIVE_PORTFOLIO_SNAPSHOT_FIELDS:
+                raise ValueError("native PortfolioSnapshot field set is invalid")
+            timestamp = int(row["ts_event"])
+            if (
+                int(row["snapshot_index"]) != index
+                or int(row["ts_init"]) != timestamp
+                or timestamp in all_timestamps
+                or row.get("account_id") in {None, ""}
+                or row.get("account_type")
+                != config.nautilus_venue_config.account_type
+                or row.get("base_currency") is not None
+                or row.get("base_currency_equity") is not None
+                or row.get("is_stale") is not False
+                or row.get("stale_instruments")
+                or row.get("stale_currencies")
+                or row.get("unpriced_instruments")
+            ):
+                raise ValueError("native PortfolioSnapshot identity/state is invalid")
+            all_timestamps.add(timestamp)
+            if scoring_start_ns <= timestamp <= scoring_end_ns:
+                totals = _snapshot_money_map(row["total_equity"])
+                if not totals:
+                    raise ValueError("native PortfolioSnapshot total Equity is empty")
+                realized = _snapshot_pnl(
+                    row["realized_pnls"],
+                    settlement_currency,
+                )
+                unrealized = _snapshot_pnl(
+                    row["unrealized_pnls"],
+                    settlement_currency,
+                )
+                scored[timestamp] = {
+                    "totals": totals,
+                    "realized": realized,
+                    "unrealized": unrealized,
+                    "equity": config.initial_capital.amount + realized + unrealized,
+                }
+        if tuple(sorted(scored)) != expected_timestamps:
+            raise ValueError("native PortfolioSnapshots do not form the scoring grid")
+
+        if (
+            config.market_profile
+            is MarketProfile.BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING
+        ):
+            instrument_contract = result.get("dataset_contract", {}).get("instrument")
+            if not isinstance(instrument_contract, dict):
+                raise ValueError("Perpetual Instrument contract is missing")
+            settlement_precision = int(
+                instrument_contract["settlement_currency_precision"],
+            )
+            if (
+                instrument_contract.get("instrument_id") != config.instrument_id
+                or instrument_contract.get("settlement_currency")
+                != settlement_currency
+                or not 0 <= settlement_precision <= 18
+            ):
+                raise ValueError("Perpetual Instrument/currency identity is invalid")
+            daily_marks = [
+                item
+                for item in observations.get("mark_price_updates", [])
+                if isinstance(item, dict)
+                and int(item.get("ts_init", -1)) in expected_timestamps
+            ]
+            if tuple(int(item["ts_init"]) for item in daily_marks) != expected_timestamps:
+                raise ValueError("causal Perpetual daily Mark grid is invalid")
+            states = replay_perpetual_valuation_states(
+                fills=fills,
+                funding_rows=funding_rows,
+                valuation_marks=daily_marks,
+                instrument_id=config.instrument_id,
+                settlement_currency=settlement_currency,
+                initial_balance=config.initial_capital.amount,
+                taker_fee=config.fee_assumption.taker_fee,
+                quantity_increment=Decimal(str(instrument_contract["size_increment"])),
+                price_precision=int(instrument_contract["price_precision"]),
+                size_precision=int(instrument_contract["size_precision"]),
+                multiplier=Decimal(str(instrument_contract["multiplier"])),
+                money_quantum=Decimal(1).scaleb(-settlement_precision),
+            )
+            for state in states:
+                observed = scored[state.timestamp_ns]
+                if (
+                    observed["totals"] != {settlement_currency: state.equity}
+                    or observed["realized"] != state.realized_pnl
+                    or observed["unrealized"] != state.unrealized_pnl
+                    or observed["equity"] != state.equity
+                ):
+                    raise ValueError(
+                        "Perpetual daily snapshot mismatch at "
+                        f"{state.timestamp_ns}: observed={observed}, "
+                        f"expected_equity={state.equity}, "
+                        f"expected_realized={state.realized_pnl}, "
+                        f"expected_unrealized={state.unrealized_pnl}",
+                    )
+        else:
+            if not base_currency or base_currency == settlement_currency:
+                raise ValueError("Spot base/quote currency identity is invalid")
+            prices: dict[int, Decimal] = {}
+            for row in observations.get("valuation_bars", []):
+                timestamp = int(row.get("ts_init", -1))
+                if timestamp not in expected_timestamps:
+                    continue
+                price = Decimal(str(row["close"]))
+                if (
+                    int(row.get("ts_event", -1)) != timestamp
+                    or int(row.get("callback_clock_ns", -1)) != timestamp
+                    or not str(row.get("bar_type", "")).startswith(
+                        f"{config.instrument_id}-",
+                    )
+                    or timestamp in prices
+                    or not price.is_finite()
+                    or price <= 0
+                ):
+                    raise ValueError("Spot daily valuation Bar is invalid")
+                prices[timestamp] = price
+            if set(prices) != set(expected_timestamps):
+                raise ValueError("Spot daily valuation Bar grid is incomplete")
+
+            ordered_fills: list[tuple[int, Decimal, Decimal, Decimal, str]] = []
+            seen_fill_ids: set[str] = set()
+            previous_fill_timestamp = -1
+            for index, row in enumerate(fills):
+                timestamp = int(row["ts_event"])
+                quantity = Decimal(row["last_qty"])
+                price = Decimal(row["last_px"])
+                commission_text = str(row["commission"]).split(" ", maxsplit=1)
+                if len(commission_text) != 2:
+                    raise ValueError("Spot commission Money is invalid")
+                commission = Decimal(commission_text[0])
+                event_id = row["event_id"]
+                side = row["order_side"]
+                if (
+                    int(row["fill_index"]) != index
+                    or int(row["ts_init"]) != timestamp
+                    or timestamp < previous_fill_timestamp
+                    or not event_id
+                    or event_id in seen_fill_ids
+                    or row["instrument_id"] != config.instrument_id
+                    or row["currency"] != settlement_currency
+                    or commission_text[1] != settlement_currency
+                    or row["order_type"] != "MARKET"
+                    or side not in {"BUY", "SELL"}
+                    or quantity <= 0
+                    or price <= 0
+                    or commission < 0
+                    or not all(
+                        value.is_finite()
+                        for value in (quantity, price, commission)
+                    )
+                ):
+                    raise ValueError("Spot Fill is invalid for daily replay")
+                seen_fill_ids.add(event_id)
+                previous_fill_timestamp = timestamp
+                ordered_fills.append(
+                    (timestamp, quantity, price, commission, side),
+                )
+
+            base_balance = Decimal(0)
+            quote_balance = config.initial_capital.amount
+            fill_cursor = 0
+            for timestamp in expected_timestamps:
+                while (
+                    fill_cursor < len(ordered_fills)
+                    and ordered_fills[fill_cursor][0] <= timestamp
+                ):
+                    _, quantity, price, commission, side = ordered_fills[fill_cursor]
+                    notional = quantity * price
+                    if side == "BUY":
+                        quote_balance -= notional + commission
+                        base_balance += quantity
+                    else:
+                        base_balance -= quantity
+                        quote_balance += notional - commission
+                    if base_balance < 0 or quote_balance < 0:
+                        raise ValueError("Spot daily replay requires borrowing")
+                    fill_cursor += 1
+                expected_totals = {
+                    base_currency: base_balance,
+                    settlement_currency: quote_balance,
+                }
+                expected_equity = quote_balance + base_balance * prices[timestamp]
+                observed = scored[timestamp]
+                if (
+                    set(observed["totals"]) - set(expected_totals)
+                    or any(
+                        observed["totals"].get(currency, Decimal(0)) != amount
+                        for currency, amount in expected_totals.items()
+                    )
+                    or observed["equity"] != expected_equity
+                ):
+                    raise ValueError(
+                        "Spot daily snapshot mismatch at "
+                        f"{timestamp}: observed={observed}, "
+                        f"expected_totals={expected_totals}, "
+                        f"expected_equity={expected_equity}",
+                    )
+
+        detail.update(
+            {
+                "snapshot_count": len(rows),
+                "scoring_snapshot_count": len(scored),
+                "first_scoring_snapshot_ns": expected_timestamps[0],
+                "last_scoring_snapshot_ns": expected_timestamps[-1],
+                "post_event_native_snapshot_count": len(expected_timestamps),
+                "profile": config.market_profile.value,
+            },
+        )
+        return True, detail
+    except Exception as exc:
+        detail["errors"] = [f"{type(exc).__name__}: {exc}"]
+        return False, detail
+
+
+def _validate_material_valuation_grid(
+    *,
+    resolved_data: tuple[Any, ...],
+    observations: dict[str, Any],
+    instrument_id: str,
+    execution_bar_type: str,
+    scoring_start_ns: int,
+    scoring_end_exclusive_ns: int,
+    perpetual: bool,
+) -> tuple[bool, bool, dict[str, Any]]:
+    """Bind persisted daily/8-hour valuation callbacks to DatasetRelease bytes.
+
+    This projection is deliberately local to the read-only checker.  It does
+    not import a reporting or Strategy helper, and therefore cannot accept a
+    jointly forged mark and portfolio snapshot merely because both forgeries
+    agree.  Bars and marks at ``scoring_end_exclusive`` are completed causal
+    observations and are intentionally included.
+    """
+
+    expected_bar_fields = {
+        "bar_type",
+        "ts_event",
+        "ts_init",
+        "callback_clock_ns",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume",
+    }
+    expected_mark_fields = {
+        "instrument_id",
+        "value",
+        "ts_event",
+        "ts_init",
+    }
+    try:
+        observed_bars = observations["valuation_bars"]
+        observed_marks = observations["mark_price_updates"]
+        if not isinstance(observed_bars, list) or not isinstance(observed_marks, list):
+            raise ValueError("material valuation observations are absent")
+        if any(not isinstance(item, dict) or set(item) != expected_bar_fields for item in observed_bars):
+            raise ValueError("valuation Bar field set is not exact")
+        if any(not isinstance(item, dict) or set(item) != expected_mark_fields for item in observed_marks):
+            raise ValueError("valuation Mark field set is not exact")
+
+        expected_bars = [
+            {
+                "bar_type": str(item.bar_type),
+                "ts_event": int(item.ts_event),
+                "ts_init": int(item.ts_init),
+                "callback_clock_ns": int(item.ts_init),
+                "open": str(item.open),
+                "high": str(item.high),
+                "low": str(item.low),
+                "close": str(item.close),
+                "volume": str(item.volume),
+            }
+            for item in resolved_data
+            if isinstance(item, Bar)
+            and str(item.bar_type) == execution_bar_type
+            and str(item.bar_type.instrument_id) == instrument_id
+            and scoring_start_ns <= int(item.ts_init) <= scoring_end_exclusive_ns
+            and int(item.ts_init) % DAY_NS == 0
+        ]
+        expected_marks = [
+            {
+                "instrument_id": str(item.instrument_id),
+                "value": str(item.value),
+                "ts_event": int(item.ts_event),
+                "ts_init": int(item.ts_init),
+            }
+            for item in resolved_data
+            if isinstance(item, MarkPriceUpdate)
+            and str(item.instrument_id) == instrument_id
+            and scoring_start_ns <= int(item.ts_init) <= scoring_end_exclusive_ns
+            and int(item.ts_init) % (8 * 60 * 60 * 1_000_000_000) == 0
+        ]
+        expected_bars.sort(key=lambda item: (int(item["ts_init"]), item["bar_type"]))
+        expected_marks.sort(key=lambda item: int(item["ts_init"]))
+
+        bar_timestamps = [int(item["ts_init"]) for item in observed_bars]
+        mark_timestamps = [int(item["ts_init"]) for item in observed_marks]
+        bar_ok = bool(
+            observed_bars == expected_bars
+            and bar_timestamps == sorted(bar_timestamps)
+            and len(bar_timestamps) == len(set(bar_timestamps))
+        )
+        mark_ok = bool(
+            observed_marks == expected_marks
+            and mark_timestamps == sorted(mark_timestamps)
+            and len(mark_timestamps) == len(set(mark_timestamps))
+            and (perpetual or not observed_marks)
+        )
+        return bar_ok, mark_ok, {
+            "expected_daily_bar_count": len(expected_bars),
+            "observed_daily_bar_count": len(observed_bars),
+            "expected_eight_hour_mark_count": len(expected_marks),
+            "observed_eight_hour_mark_count": len(observed_marks),
+            "daily_bar_timestamps": bar_timestamps,
+            "eight_hour_mark_timestamps": mark_timestamps,
+            "resolved_dataset_projection_used": True,
+        }
+    except Exception as exc:
+        return False, False, {
+            "expected_daily_bar_count": None,
+            "observed_daily_bar_count": (
+                len(observations.get("valuation_bars", []))
+                if isinstance(observations.get("valuation_bars"), list)
+                else None
+            ),
+            "expected_eight_hour_mark_count": None,
+            "observed_eight_hour_mark_count": (
+                len(observations.get("mark_price_updates", []))
+                if isinstance(observations.get("mark_price_updates"), list)
+                else None
+            ),
+            "resolved_dataset_projection_used": True,
+            "detail": f"{type(exc).__name__}: {exc}",
+        }
+
+
+def _independent_semantic_order_event(event: dict[str, Any]) -> dict[str, Any]:
+    """Project native order events without importing the runner's helper."""
+
+    excluded = {
+        "event_id",
+        "causation_id",
+        "client_order_id",
+        "venue_order_id",
+        "trade_id",
+        "position_id",
+        "strategy_id",
+        "trader_id",
+        "run_id",
+        "instance_id",
+    }
+    return {key: value for key, value in event.items() if key not in excluded}
+
+
+def _independent_semantic_position_sequence(
+    position_rows: list[dict[str, str]],
+) -> list[dict[str, Any]]:
+    """Independently rebuild the replay-stable Position projection."""
+
+    occurrence_by_native_id: dict[str, str] = {}
+    semantic_rows: list[dict[str, Any]] = []
+    for row in position_rows:
+        native_position_id = row.get("position_id", "")
+        if not native_position_id:
+            raise ValueError("position projection has an empty native Position ID")
+        if native_position_id not in occurrence_by_native_id:
+            occurrence_by_native_id[native_position_id] = (
+                f"POSITION_OCCURRENCE_{len(occurrence_by_native_id) + 1:06d}"
+            )
+        semantic_rows.append(
+            {
+                "row_type": row["row_type"],
+                "ts_event": int(row["ts_event"]),
+                "instrument_id": row["instrument_id"],
+                "position_id": occurrence_by_native_id[native_position_id],
+                "signed_qty": row["signed_qty"],
+                "quantity": row["quantity"],
+                "avg_px_open": row["avg_px_open"],
+                "realized_pnl": row["realized_pnl"],
+            },
+        )
+    return semantic_rows
+
+
+def _validate_execution_chain(
+    *,
+    result: dict[str, Any],
+    observations: dict[str, Any],
+    orders: list[dict[str, str]],
+    fills: list[dict[str, str]],
+    positions: list[dict[str, str]],
+    config: LabRunConfig,
+) -> tuple[bool, dict[str, Any]]:
+    """Bind submitted intent -> native order lifecycle -> Fill projections."""
+
+    errors: list[str] = []
+    try:
+        submitted_rows = observations.get("submitted_intents")
+        native_events = result.get("native_order_events")
+        semantic = result.get("semantic_sequence")
+        if not isinstance(submitted_rows, list) or not isinstance(native_events, list):
+            raise ValueError("submitted/native order event evidence is absent")
+        if not isinstance(semantic, dict) or not isinstance(semantic.get("orders"), list):
+            raise ValueError("semantic order sequence is absent")
+        if canonical_sha256(semantic) != result.get("semantic_digest"):
+            errors.append("SEMANTIC_DIGEST_MISMATCH")
+
+        submitted: dict[str, dict[str, Any]] = {}
+        for item in submitted_rows:
+            if not isinstance(item, dict):
+                raise ValueError("submitted intent is not an object")
+            client_id = str(item.get("client_order_id", ""))
+            if not client_id or client_id in submitted:
+                errors.append("SUBMITTED_INTENT_ID_CARDINALITY_MISMATCH")
+            submitted[client_id] = item
+
+        # A submitted record is not an independent source of truth: bind it
+        # back to the pre-submission intent captured before any guard or order
+        # factory call.  Suppressed/guarded intents may remain unmatched, but
+        # an invented submitted intent may not.
+        intent_binding_fields = (
+            "side",
+            "quantity",
+            "order_type",
+            "reason",
+            "signal_bar_interval_start_ns",
+            "signal_bar_interval_end_exclusive_ns",
+            "signal_bar_available_at_ns",
+            "decision_timestamp_ns",
+            "signal_timestamp_ns",
+        )
+        raw_intents = observations.get("intents")
+        if not isinstance(raw_intents, list) or any(
+            not isinstance(item, dict) for item in raw_intents
+        ):
+            errors.append("PRE_SUBMISSION_INTENT_EVIDENCE_INVALID")
+            raw_intent_material: list[dict[str, Any]] = []
+        else:
+            raw_intent_material = [
+                {field: item.get(field) for field in intent_binding_fields}
+                for item in raw_intents
+            ]
+        unmatched_intents = list(raw_intent_material)
+        for item in submitted_rows:
+            projection = {field: item.get(field) for field in intent_binding_fields}
+            if projection not in unmatched_intents:
+                errors.append("SUBMITTED_PRE_SUBMISSION_INTENT_MISMATCH")
+            else:
+                unmatched_intents.remove(projection)
+            if item.get("canonical_quantity") != item.get("quantity"):
+                errors.append("SUBMITTED_CANONICAL_QUANTITY_MISMATCH")
+
+        order_by_id: dict[str, dict[str, str]] = {}
+        for row in orders:
+            client_id = str(row.get("client_order_id", ""))
+            if not client_id or client_id in order_by_id:
+                errors.append("ORDER_ROW_ID_CARDINALITY_MISMATCH")
+            order_by_id[client_id] = row
+
+        events_by_id: dict[str, list[dict[str, Any]]] = defaultdict(list)
+        native_event_ids: set[str] = set()
+        for event in native_events:
+            if not isinstance(event, dict):
+                raise ValueError("native order event is not an object")
+            client_id = str(event.get("client_order_id", ""))
+            event_id = str(event.get("event_id", ""))
+            if not client_id or not event_id or event_id in native_event_ids:
+                errors.append("NATIVE_ORDER_EVENT_ID_INVALID")
+            native_event_ids.add(event_id)
+            events_by_id[client_id].append(event)
+
+        submitted_ids = set(submitted)
+        if submitted_ids != set(order_by_id) or submitted_ids != set(events_by_id):
+            errors.append("INTENT_ORDER_NATIVE_ID_SET_MISMATCH")
+
+        fills_by_order: dict[str, list[dict[str, str]]] = defaultdict(list)
+        fill_event_ids: set[str] = set()
+        for index, fill in enumerate(fills):
+            client_id = str(fill.get("client_order_id", ""))
+            event_id = str(fill.get("event_id", ""))
+            if (
+                int(fill.get("fill_index", -1)) != index
+                or not client_id
+                or not event_id
+                or event_id in fill_event_ids
+            ):
+                errors.append("FILL_ROW_ID_OR_SEQUENCE_INVALID")
+            fill_event_ids.add(event_id)
+            fills_by_order[client_id].append(fill)
+        if not set(fills_by_order).issubset(submitted_ids):
+            errors.append("FILL_WITHOUT_SUBMITTED_INTENT")
+
+        terminal_status = {
+            "OrderFilled": "FILLED",
+            "OrderRejected": "REJECTED",
+            "OrderCanceled": "CANCELED",
+            "OrderExpired": "EXPIRED",
+            "OrderDenied": "DENIED",
+        }
+        allowed_event_types = {
+            "OrderInitialized",
+            "OrderDenied",
+            "OrderSubmitted",
+            "OrderAccepted",
+            "OrderRejected",
+            "OrderPendingUpdate",
+            "OrderPendingCancel",
+            "OrderUpdated",
+            "OrderCanceled",
+            "OrderTriggered",
+            "OrderExpired",
+            "OrderFilled",
+        }
+        effective_latency = (
+            config.nautilus_venue_config.latency_model.effective_insert_latency_nanos
+        )
+        for client_id in sorted(submitted_ids):
+            intent = submitted[client_id]
+            row = order_by_id.get(client_id)
+            events = events_by_id.get(client_id, [])
+            if row is None or not events:
+                continue
+            initialized = events[0]
+            terminal = events[-1]
+            timestamps = [int(event["ts_event"]) for event in events]
+            order_fills = fills_by_order.get(client_id, [])
+            try:
+                initialized_quantity = Decimal(str(initialized["quantity"]))
+                row_quantity = Decimal(row["quantity"])
+                filled_quantity = Decimal(row["filled_qty"])
+                leaves_quantity = Decimal(row["leaves_qty"])
+                projected_fill_quantity = sum(
+                    (Decimal(fill["last_qty"]) for fill in order_fills),
+                    Decimal(0),
+                )
+                signal_timestamp = int(intent["signal_timestamp_ns"])
+                effective_insert = int(intent["effective_insert_at_ns"])
+                event_types = [str(event.get("type")) for event in events]
+                updated_events = [
+                    event for event in events if event.get("type") == "OrderUpdated"
+                ]
+                native_execution_quantity = (
+                    Decimal(str(updated_events[-1]["quantity"]))
+                    if updated_events
+                    else initialized_quantity
+                )
+                quote_quantity = intent.get("quote_quantity")
+                quote_conversion_ok = bool(
+                    not quote_quantity
+                    or (
+                        updated_events
+                        and updated_events[-1].get("is_quote_quantity") is False
+                    )
+                )
+                filled_terminal_ok = bool(
+                    row.get("status") != "FILLED"
+                    or (
+                        filled_quantity == row_quantity
+                        and leaves_quantity == 0
+                        and event_types[-1] == "OrderFilled"
+                    )
+                )
+                if (
+                    initialized.get("type") != "OrderInitialized"
+                    or event_types.count("OrderInitialized") != 1
+                    or event_types.count("OrderSubmitted") != 1
+                    or any(item not in allowed_event_types for item in event_types)
+                    or initialized.get("instrument_id") != config.instrument_id
+                    or initialized.get("order_side") != intent.get("side")
+                    or initialized.get("order_type") != intent.get("order_type")
+                    or initialized.get("time_in_force") != intent.get("time_in_force")
+                    or initialized.get("quote_quantity") is not quote_quantity
+                    or initialized_quantity != Decimal(str(intent["runtime_quantity"]))
+                    or (not quote_quantity and intent.get("runtime_zero_padding_only") is not True)
+                    or not quote_conversion_ok
+                    or row.get("instrument_id") != config.instrument_id
+                    or row.get("side") != intent.get("side")
+                    or row.get("order_type") != intent.get("order_type")
+                    or row.get("time_in_force") != intent.get("time_in_force")
+                    or row_quantity != native_execution_quantity
+                    or row_quantity != filled_quantity + leaves_quantity
+                    or filled_quantity != projected_fill_quantity
+                    or projected_fill_quantity > row_quantity
+                    or not filled_terminal_ok
+                    or int(row["initialized_ns"]) != timestamps[0]
+                    or timestamps[0] != signal_timestamp
+                    or effective_insert != signal_timestamp + effective_latency
+                    or timestamps != sorted(timestamps)
+                    or any(
+                        event.get("instrument_id") != config.instrument_id
+                        or int(event.get("ts_init", -1)) != int(event.get("ts_event", -2))
+                        or event.get("client_order_id") != client_id
+                        for event in events
+                    )
+                    or not row.get("terminal_ns")
+                    or int(row["terminal_ns"]) != timestamps[-1]
+                    or timestamps[-1] < effective_insert
+                    or terminal_status.get(str(terminal.get("type"))) != row.get("status")
+                    or any(
+                        fill.get("instrument_id") != config.instrument_id
+                        or fill.get("order_side") != intent.get("side")
+                        or fill.get("order_type") != intent.get("order_type")
+                        for fill in order_fills
+                    )
+                ):
+                    errors.append(f"ORDER_LIFECYCLE_MISMATCH:{client_id}")
+            except Exception:
+                errors.append(f"ORDER_LIFECYCLE_INVALID:{client_id}")
+
+        native_fill_events = [
+            event for event in native_events if event.get("type") == "OrderFilled"
+        ]
+        if len(native_fill_events) != len(fills):
+            errors.append("NATIVE_FILL_EVENT_CARDINALITY_MISMATCH")
+        else:
+            native_fill_fields = (
+                "event_id",
+                "client_order_id",
+                "venue_order_id",
+                "trade_id",
+                "position_id",
+                "account_id",
+                "instrument_id",
+                "order_side",
+                "order_type",
+                "last_qty",
+                "last_px",
+                "commission",
+                "currency",
+                "liquidity_side",
+                "ts_event",
+                "ts_init",
+            )
+            if any(
+                any(str(event.get(field)) != row.get(field) for field in native_fill_fields)
+                for event, row in zip(native_fill_events, fills, strict=True)
+            ):
+                errors.append("NATIVE_FILL_EVENT_PROJECTION_MISMATCH")
+
+        expected_semantic_orders = [
+            _independent_semantic_order_event(event) for event in native_events
+        ]
+        if semantic.get("orders") != expected_semantic_orders:
+            errors.append("SEMANTIC_NATIVE_ORDER_PROJECTION_MISMATCH")
+        try:
+            expected_semantic_positions = _independent_semantic_position_sequence(positions)
+        except Exception:
+            errors.append("SEMANTIC_NATIVE_POSITION_PROJECTION_INVALID")
+        else:
+            if semantic.get("positions") != expected_semantic_positions:
+                errors.append("SEMANTIC_NATIVE_POSITION_PROJECTION_MISMATCH")
+        backtest = result.get("backtest_result")
+        if (
+            not isinstance(backtest, dict)
+            or int(backtest.get("total_orders", -1)) != len(orders)
+            or int(backtest.get("total_positions", -1))
+            != sum(row.get("row_type") == "PositionOpened" for row in positions)
+        ):
+            errors.append("NATIVE_BACKTEST_TOTALS_MISMATCH")
+    except Exception as exc:
+        errors.append(f"EXECUTION_CHAIN_INVALID:{type(exc).__name__}:{exc}")
+
+    unique_errors = list(dict.fromkeys(errors))
+    return not unique_errors, {
+        "errors": unique_errors,
+        "submitted_intent_count": len(observations.get("submitted_intents", []))
+        if isinstance(observations.get("submitted_intents"), list)
+        else -1,
+        "order_row_count": len(orders),
+        "fill_row_count": len(fills),
+        "native_order_event_count": len(result.get("native_order_events", []))
+        if isinstance(result.get("native_order_events"), list)
+        else -1,
+    }
 
 
 def _account_balance_totals(rows: Any) -> dict[str, Decimal] | None:
@@ -454,9 +1281,10 @@ def validate_official_funding_binding(
         repetitions is None
         or declared_source_count != len(source_events)
         or declared_runtime_count != repetitions * len(source_events)
-        or set(source_by_boundary) != set(checkpoint_by_boundary)
     ):
         failures.append(FailureCode.FUNDING_AMBIGUOUS.value)
+    if set(source_by_boundary) != set(checkpoint_by_boundary):
+        failures.append(FailureCode.FUNDING_BOUNDARY_INVALID.value)
 
     expected_adjustments: list[tuple[int, Decimal]] = []
     applicable = 0
@@ -473,21 +1301,38 @@ def validate_official_funding_binding(
             if native_binding == FUNDING_NATIVE_BINDING_RC2_EXPLICIT_BOUNDARY_PAIR
             else None
         )
+        runtime_rates = []
+        runtime_boundaries_ok = True
+        for item in runtime_updates:
+            try:
+                runtime_rates.append(Decimal(str(item.get("rate"))))
+                if (
+                    int(item.get("ts_event", -1)) != boundary
+                    or int(item.get("ts_init", -1)) != boundary
+                    or item.get("next_funding_ns") != expected_next_funding_ns
+                ):
+                    runtime_boundaries_ok = False
+            except Exception:
+                runtime_boundaries_ok = False
+        if not runtime_boundaries_ok:
+            failures.append(FailureCode.FUNDING_BOUNDARY_INVALID.value)
+        rate_invalid = bool(runtime_rates) and any(item != rate for item in runtime_rates)
+        if rate_invalid:
+            failures.append(FailureCode.FUNDING_RATE_INVALID.value)
         runtime_pair_ok = bool(
             repetitions is not None
             and len(runtime_updates) == repetitions
             and checkpoint.get("source_event_key") == source_event["event_key"]
+            and runtime_boundaries_ok
+            and runtime_rates
+            and not rate_invalid
             and all(
-                Decimal(str(item.get("rate"))) == rate
-                and int(item.get("interval", -1))
+                int(item.get("interval", -1))
                 == int(source_event["funding_interval_hours"]) * 60
-                and int(item.get("ts_event", -1)) == boundary
-                and int(item.get("ts_init", -1)) == boundary
-                and item.get("next_funding_ns") == expected_next_funding_ns
                 for item in runtime_updates
             )
         )
-        if not runtime_pair_ok:
+        if not runtime_pair_ok and not rate_invalid and runtime_boundaries_ok:
             failures.append(FailureCode.FUNDING_AMBIGUOUS.value)
 
         positions = checkpoint.get("open_positions", [])
@@ -529,13 +1374,13 @@ def validate_official_funding_binding(
         else:
             applicable += 1
         if not checkpoint_position_ok:
-            failures.append(FailureCode.FUNDING_AMBIGUOUS.value)
+            failures.append(FailureCode.FUNDING_POSITION_INVALID.value)
             continue
         if expected_signed_qty == 0:
             if positions or native:
-                failures.append(FailureCode.FUNDING_DOUBLE_COUNT.value)
+                failures.append(FailureCode.FUNDING_UNEXPECTED_SETTLEMENT.value)
             if checkpoint.get("account_events_at_boundary"):
-                failures.append(FailureCode.FUNDING_DOUBLE_COUNT.value)
+                failures.append(FailureCode.FUNDING_UNEXPECTED_SETTLEMENT.value)
             before_totals = _account_balance_totals(
                 checkpoint.get("account_balances_before_boundary"),
             )
@@ -555,7 +1400,7 @@ def validate_official_funding_binding(
                 or after_totals is None
                 or (not lazy_initialization and before_totals != after_totals)
             ):
-                failures.append(FailureCode.FUNDING_AMBIGUOUS.value)
+                failures.append(FailureCode.FUNDING_UNEXPECTED_SETTLEMENT.value)
             continue
 
         mark = checkpoint.get("native_mark_price")
@@ -569,7 +1414,7 @@ def validate_official_funding_binding(
             or int(mark.get("ts_init", -1)) != int(expected_mark["ts_init"])
             or Decimal(str(mark.get("value"))) != Decimal(str(expected_mark["value"]))
         ):
-            failures.append(FailureCode.MARK_ROLE_INVALID.value)
+            failures.append(FailureCode.FUNDING_MARK_INVALID.value)
             continue
         mark_ts = int(mark.get("ts_event", -1))
         age = boundary - mark_ts
@@ -582,12 +1427,15 @@ def validate_official_funding_binding(
             != "LATEST_CAUSAL_AT_OR_BEFORE_FUNDING_TIMESTAMP"
             or int(checkpoint.get("native_mark_age_ns", -1)) != age
         ):
-            failures.append(FailureCode.MARK_ROLE_INVALID.value)
+            failures.append(FailureCode.FUNDING_MARK_INVALID.value)
             continue
 
         expected = (
             -expected_signed_qty * Decimal(str(mark["value"])) * rate
         ).quantize(Decimal("0.00000001"))
+        if len(native) == 0:
+            failures.append(FailureCode.FUNDING_MISSING.value)
+            continue
         if len(native) != 1:
             failures.append(FailureCode.FUNDING_DOUBLE_COUNT.value)
             continue
@@ -600,19 +1448,33 @@ def validate_official_funding_binding(
         )
         adjustment_money = str(adjustment.get("pnl_change", "")).split(" ", maxsplit=1)
         account_events = checkpoint.get("account_events_at_boundary")
+        try:
+            actual_amount = _commission_amount(str(adjustment.get("pnl_change")))
+        except Exception:
+            actual_amount = None
+        settlement_defects: list[str] = []
+        if int(adjustment.get("ts_event", -1)) != boundary or any(
+            int(event.get("ts_event", -1)) != boundary
+            for event in account_events or ()
+        ):
+            settlement_defects.append(FailureCode.FUNDING_BOUNDARY_INVALID.value)
+        if len(adjustment_money) != 2 or adjustment_money[1] != settlement_currency:
+            settlement_defects.append(FailureCode.FUNDING_CURRENCY_INVALID.value)
+        if actual_amount is not None and actual_amount == -expected and expected != 0:
+            settlement_defects.append(FailureCode.FUNDING_SIGN_INVALID.value)
+        elif actual_amount != expected:
+            settlement_defects.append(FailureCode.FUNDING_AMOUNT_INVALID.value)
         if not (
             adjustment.get("adjustment_type") == "FUNDING"
             and adjustment.get("instrument_id") == instrument_id
-            and int(adjustment.get("ts_event", -1)) == boundary
-            and _commission_amount(str(adjustment.get("pnl_change"))) == expected
-            and len(adjustment_money) == 2
-            and adjustment_money[1] == settlement_currency
             and str(adjustment.get("reason", "")).startswith("funding_settlement:")
             and isinstance(account_events, list)
             and bool(account_events)
-            and all(int(event.get("ts_event", -1)) == boundary for event in account_events)
         ):
-            failures.append(FailureCode.FUNDING_DOUBLE_COUNT.value)
+            settlement_defects.append(FailureCode.FUNDING_AMBIGUOUS.value)
+        failures.extend(settlement_defects)
+        if settlement_defects:
+            expected_adjustments.append((boundary, expected))
             continue
 
         before_totals = _account_balance_totals(
@@ -637,8 +1499,7 @@ def validate_official_funding_binding(
             )
         )
         if not account_delta_ok:
-            failures.append(FailureCode.FUNDING_DOUBLE_COUNT.value)
-            continue
+            failures.append(FailureCode.FUNDING_ACCOUNT_DELTA_INVALID.value)
         expected_adjustments.append((boundary, expected))
 
     actual_adjustments: list[tuple[int, Decimal]] = []
@@ -656,10 +1517,37 @@ def validate_official_funding_binding(
         except Exception:
             failures.append(FailureCode.FUNDING_AMBIGUOUS.value)
     actual_adjustments.sort()
-    if actual_adjustments != sorted(expected_adjustments):
-        failures.append(FailureCode.FUNDING_DOUBLE_COUNT.value)
+    expected_sorted = sorted(expected_adjustments)
+    if actual_adjustments != expected_sorted:
+        actual_ts = {item[0] for item in actual_adjustments}
+        expected_ts = {item[0] for item in expected_sorted}
+        missing_ts = expected_ts - actual_ts
+        extra_ts = actual_ts - expected_ts
+        if missing_ts:
+            failures.append(FailureCode.FUNDING_MISSING.value)
+        if extra_ts:
+            unknown = extra_ts - set(source_by_boundary)
+            if unknown:
+                failures.append(FailureCode.FUNDING_UNEXPECTED_SETTLEMENT.value)
+            elif expected_ts:
+                failures.append(FailureCode.FUNDING_DOUBLE_COUNT.value)
+        if not missing_ts and not extra_ts:
+            amount_mismatch = False
+            sign_mismatch = False
+            for timestamp, expected_amount in expected_sorted:
+                actual_amount = next(
+                    amount for ts, amount in actual_adjustments if ts == timestamp
+                )
+                if actual_amount == -expected_amount and expected_amount != 0:
+                    sign_mismatch = True
+                elif actual_amount != expected_amount:
+                    amount_mismatch = True
+            if sign_mismatch:
+                failures.append(FailureCode.FUNDING_SIGN_INVALID.value)
+            if amount_mismatch:
+                failures.append(FailureCode.FUNDING_AMOUNT_INVALID.value)
 
-    unique_failures = tuple(dict.fromkeys(failures))
+    unique_failures = ordered_funding_failure_codes(failures)
     return (
         not unique_failures,
         unique_failures,
@@ -687,12 +1575,13 @@ validate_owner_smoke_funding_binding = validate_official_funding_binding
 def check_evidence_directory(
     run_dir: Path,
     *,
-    repository_root: Path = ROOT,
+    repository_root: Path,
     official_source_required: bool | None = None,
     source_revision_current_head_required: bool = True,
 ) -> CheckerReport:
     """Check immutable files without writing to the directory or engine state."""
 
+    repository_root = require_repository_root(repository_root)
     checks: list[dict[str, Any]] = []
     failures: list[str] = []
     blocked: list[str] = []
@@ -732,6 +1621,41 @@ def check_evidence_directory(
         if official_source_required is None
         else official_source_required
     )
+    perpetual = (
+        config.market_profile
+        is MarketProfile.BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING
+    )
+    profile_required = {"funding.csv"} if perpetual else set()
+    if official and perpetual:
+        profile_required.add("funding_source.json")
+    profile_missing = sorted(profile_required - present)
+    spot_forbidden = (
+        sorted({"funding.csv", "funding_source.json"} & present)
+        if not perpetual
+        else []
+    )
+    checks.append(
+        {
+            "name": "profile_evidence_inventory",
+            "pass": not profile_missing and not spot_forbidden,
+            "missing": profile_missing,
+            "forbidden_present": spot_forbidden,
+            "spot_contract": "FUNDING_EVIDENCE_NOT_APPLICABLE_ABSENT",
+            "perpetual_contract": "FUNDING_CSV_REQUIRED_CANONICAL",
+        },
+    )
+    if profile_missing:
+        return CheckerReport(
+            CheckerOutcome.COMPONENT_CHECK_BLOCKED,
+            (FailureCode.EVIDENCE_INCOMPLETE.value,),
+            tuple(checks),
+        )
+    if spot_forbidden:
+        return CheckerReport(
+            CheckerOutcome.COMPONENT_CHECK_FAIL,
+            (FailureCode.DATA_ROLE_MISMATCH.value,),
+            tuple(checks),
+        )
     if official:
         official_missing = sorted(
             {
@@ -753,11 +1677,32 @@ def check_evidence_directory(
         if official_missing:
             blocked.append(FailureCode.EVIDENCE_INCOMPLETE.value)
 
+    official_qualification_fixture = False
+    if official and (run_dir / "strategy_identity.json").is_file():
+        try:
+            preliminary_identity = RegisteredStrategyIdentity.from_json_bytes(
+                (run_dir / "strategy_identity.json").read_bytes(),
+            )
+            official_qualification_fixture = bool(
+                preliminary_identity.qualification_fixture_only
+                and not preliminary_identity.profitability_claim_eligible
+            )
+        except Exception:
+            # The authoritative identity binding below records the structured
+            # failure.  A malformed identity never earns the qualification
+            # exception at this earlier dataset boundary.
+            official_qualification_fixture = False
+
     result = _read_json(run_dir / "nautilus_result.json")
     scoring_end_ns_contract = utc_datetime_to_ns(config.scoring_end_exclusive)
     warmup_start_ns_contract = utc_datetime_to_ns(config.warmup_start)
     execution_window = result.get("execution_data_window")
     observations_for_window = result.get("strategy_observations", {})
+    callback_summary = (
+        observations_for_window.get("engine_data_callbacks")
+        if isinstance(observations_for_window, dict)
+        else None
+    )
     callback_window_ok = bool(
         isinstance(observations_for_window, dict)
         and all(
@@ -773,12 +1718,76 @@ def check_evidence_directory(
             for item in observations_for_window.get("funding_rate_updates", [])
         )
     )
+    callback_binding_ok = False
+    if isinstance(execution_window, dict) and isinstance(callback_summary, dict):
+        try:
+            counts = callback_summary["counts"]
+            latest = callback_summary["latest_ts_init_by_type"]
+            samples = callback_summary["post_boundary_samples"]
+            callback_post_boundary_count = callback_summary["post_boundary_count"]
+            selected_post_boundary_count = execution_window[
+                "selected_post_boundary_data_count"
+            ]
+            expected_types = {"Bar", "MarkPriceUpdate", "FundingRateUpdate"}
+            samples_are_post_boundary = all(
+                isinstance(item, dict)
+                and item.get("event_type") in expected_types
+                and type(item.get("ts_init")) is int
+                and (
+                    int(item["ts_init"]) >= scoring_end_ns_contract
+                    if item["event_type"] == "FundingRateUpdate"
+                    else int(item["ts_init"]) > scoring_end_ns_contract
+                )
+                for item in samples
+            )
+            latest_are_in_window = all(
+                latest[name] is None
+                or (
+                    type(latest[name]) is int
+                    and (
+                        int(latest[name]) < scoring_end_ns_contract
+                        if name == "FundingRateUpdate"
+                        else int(latest[name]) <= scoring_end_ns_contract
+                    )
+                )
+                for name in expected_types
+            )
+            derived_post_boundary = bool(
+                selected_post_boundary_count or callback_post_boundary_count
+            )
+            callback_binding_ok = bool(
+                isinstance(counts, dict)
+                and set(counts) == expected_types
+                and all(type(counts[name]) is int and counts[name] >= 0 for name in expected_types)
+                and isinstance(latest, dict)
+                and set(latest) == expected_types
+                and type(callback_post_boundary_count) is int
+                and 0 <= callback_post_boundary_count <= sum(counts.values())
+                and isinstance(samples, list)
+                and len(samples) == min(callback_post_boundary_count, 16)
+                and samples_are_post_boundary
+                and latest_are_in_window
+                and type(selected_post_boundary_count) is int
+                and selected_post_boundary_count >= 0
+                and execution_window.get("engine_callback_summary") == callback_summary
+                and execution_window.get("engine_callback_summary_valid") is True
+                and execution_window.get("engine_callback_post_boundary_count")
+                == callback_post_boundary_count
+                and execution_window.get("engine_received_post_boundary_data")
+                is derived_post_boundary
+                and execution_window.get("engine_received_post_boundary_data_derived") is True
+                and execution_window.get("engine_received_post_boundary_data_basis")
+                == "SELECTED_ENGINE_INPUTS_AND_ACTUAL_STRATEGY_CALLBACK_COUNTERS"
+            )
+        except (KeyError, TypeError, ValueError):
+            callback_binding_ok = False
     execution_window_ok = bool(
         isinstance(execution_window, dict)
         and execution_window.get("status") == "PASS"
         and int(execution_window.get("warmup_start_ns", -1)) == warmup_start_ns_contract
         and int(execution_window.get("scoring_end_exclusive_ns", -1))
         == scoring_end_ns_contract
+        and callback_binding_ok
         and execution_window.get("engine_received_post_boundary_data") is False
         and execution_window.get("point_events_at_scoring_end_included") is False
         and execution_window.get("completed_interval_observations_at_scoring_end_included")
@@ -792,6 +1801,7 @@ def check_evidence_directory(
             "name": "engine_half_open_scoring_window",
             "pass": execution_window_ok,
             "callback_window_pass": callback_window_ok,
+            "callback_binding_pass": callback_binding_ok,
             "window": execution_window,
         },
     )
@@ -811,6 +1821,10 @@ def check_evidence_directory(
         binding_paths["runtime_identity_sha256"] = "runtime_identity.json"
     if official and (run_dir / "qualification_authority.json").is_file():
         binding_paths["qualification_authority_sha256"] = "qualification_authority.json"
+    if official and (run_dir / "dataset_rebuild_validation.json").is_file():
+        binding_paths[
+            "dataset_rebuild_validation_sha256"
+        ] = "dataset_rebuild_validation.json"
     binding_mismatches = [
         name
         for name, filename in binding_paths.items()
@@ -834,60 +1848,9 @@ def check_evidence_directory(
     if not runtime_ok:
         blocked.append(FailureCode.RUNTIME_LOCK_MISMATCH.value)
 
-    runtime_proof_ok = not official
-    runtime_proof_mismatches: list[str] = []
-    if official and (run_dir / "runtime_identity.json").is_file():
-        try:
-            runtime_lock = RuntimeLock.from_json_bytes(
-                (run_dir / "runtime.lock.json").read_bytes(),
-            )
-            runtime_identity = _read_json(run_dir / "runtime_identity.json")
-            validate_persisted_runtime_identity(runtime_lock, runtime_identity)
-            runtime_proof_ok = result.get("runtime_identity_verified") is True
-            if not runtime_proof_ok:
-                runtime_proof_mismatches = ["runtime_identity_verified"]
-        except Exception as exc:
-            runtime_proof_mismatches = [f"{type(exc).__name__}: {exc}"]
-            runtime_proof_ok = False
-    checks.append(
-        {
-            "name": "installed_runtime_payload_proof",
-            "pass": runtime_proof_ok,
-            "mismatches": runtime_proof_mismatches,
-        },
-    )
-    if not runtime_proof_ok:
-        blocked.append(FailureCode.RUNTIME_LOCK_MISMATCH.value)
-
-    profile_authority_ok = not official
-    profile_authority_detail: str | None = None
-    if official and (run_dir / "qualification_authority.json").is_file():
-        try:
-            validate_persisted_profile_authority(
-                _read_json(run_dir / "qualification_authority.json"),
-                repository_root=repository_root,
-                expected_profile_id=config.market_profile.value,
-                expected_runtime_lock_sha256=config.runtime_lock_sha256,
-            )
-            profile_authority_ok = (
-                result.get("qualified_profile_authority_verified") is True
-            )
-            if not profile_authority_ok:
-                profile_authority_detail = "Run did not attest Qualified Profile resolution"
-        except Exception as exc:
-            profile_authority_ok = False
-            profile_authority_detail = f"{type(exc).__name__}: {exc}"
-    if official:
-        checks.append(
-            {
-                "name": "qualified_profile_authority",
-                "pass": profile_authority_ok,
-                "detail": profile_authority_detail,
-            },
-        )
-        if not profile_authority_ok:
-            blocked.append(FailureCode.DOWNSTREAM_CONTRACT_FAILURE.value)
-
+    # SourceRevision is an input to the Official startup proof below. Resolve
+    # it before use; otherwise an UnboundLocalError is caught as a generic
+    # runtime mismatch and every genuine startup attestation fails silently.
     try:
         source = SourceRevision.from_json_bytes((run_dir / "source_revision.json").read_bytes())
         if official:
@@ -935,6 +1898,120 @@ def check_evidence_directory(
         )
     if not source_ok:
         blocked.append(FailureCode.EVIDENCE_INCOMPLETE.value)
+
+    runtime_proof_ok = not official
+    runtime_proof_mismatches: list[str] = []
+    if official and (run_dir / "runtime_identity.json").is_file():
+        try:
+            runtime_lock = RuntimeLock.from_json_bytes(
+                (run_dir / "runtime.lock.json").read_bytes(),
+            )
+            runtime_identity = _read_json(run_dir / "runtime_identity.json")
+            validate_persisted_runtime_identity(runtime_lock, runtime_identity)
+            startup = runtime_identity.get("startup_attestation")
+            startup_material = dict(startup) if isinstance(startup, dict) else {}
+            startup_declared_identity = startup_material.pop(
+                "attestation_identity",
+                None,
+            )
+            authority_path = repository_root / "runtime-bootstrap-authority.json"
+            bootstrap_path = repository_root / "scripts/isolated_runtime_bootstrap.py"
+            frozen_authority = subprocess.run(
+                [
+                    "git",
+                    "show",
+                    f"{source.git_commit}:runtime-bootstrap-authority.json",
+                ],
+                cwd=repository_root,
+                check=True,
+                capture_output=True,
+            ).stdout
+            frozen_bootstrap = subprocess.run(
+                [
+                    "git",
+                    "show",
+                    f"{source.git_commit}:scripts/isolated_runtime_bootstrap.py",
+                ],
+                cwd=repository_root,
+                check=True,
+                capture_output=True,
+            ).stdout
+            product_commit = startup_material.get("product", {}).get(
+                "source_commit",
+            )
+            product_is_ancestor = subprocess.run(
+                ["git", "merge-base", "--is-ancestor", str(product_commit), source.git_commit],
+                cwd=repository_root,
+                check=False,
+                capture_output=True,
+            ).returncode == 0
+            startup_ok = bool(
+                startup_material.get("schema")
+                == "isolated-runtime-bootstrap-attestation-v1"
+                and startup_declared_identity == canonical_sha256(startup_material)
+                and runtime_identity.get("startup_attestation_sha256")
+                == canonical_sha256(
+                    {
+                        **startup_material,
+                        "attestation_identity": startup_declared_identity,
+                    },
+                )
+                and runtime_identity.get("startup_verified_before_product_import") is True
+                and startup_material.get("target") == "crypto_lab.owner:main"
+                and startup_material.get("authority_sha256") == sha256_file(authority_path)
+                and startup_material.get("bootstrap_sha256") == sha256_file(bootstrap_path)
+                and frozen_authority == authority_path.read_bytes()
+                and frozen_bootstrap == bootstrap_path.read_bytes()
+                and product_is_ancestor
+            )
+            runtime_proof_ok = bool(
+                result.get("runtime_identity_verified") is True and startup_ok
+            )
+            if not runtime_proof_ok:
+                runtime_proof_mismatches = [
+                    "runtime_identity_verified_or_startup_attestation",
+                ]
+        except Exception as exc:
+            runtime_proof_mismatches = [f"{type(exc).__name__}: {exc}"]
+            runtime_proof_ok = False
+    checks.append(
+        {
+            "name": "installed_runtime_payload_proof",
+            "pass": runtime_proof_ok,
+            "mismatches": runtime_proof_mismatches,
+        },
+    )
+    if not runtime_proof_ok:
+        blocked.append(FailureCode.RUNTIME_STARTUP_MISMATCH.value)
+
+    profile_authority_ok = not official
+    profile_authority_detail: str | None = None
+    if official and (run_dir / "qualification_authority.json").is_file():
+        try:
+            validate_persisted_profile_authority(
+                _read_json(run_dir / "qualification_authority.json"),
+                repository_root=repository_root,
+                expected_profile_id=config.market_profile.value,
+                expected_runtime_lock_sha256=config.runtime_lock_sha256,
+            )
+            profile_authority_ok = (
+                result.get("qualified_profile_authority_verified") is True
+            )
+            if not profile_authority_ok:
+                profile_authority_detail = "Run did not attest Qualified Profile resolution"
+        except Exception as exc:
+            profile_authority_ok = False
+            profile_authority_detail = f"{type(exc).__name__}: {exc}"
+    if official:
+        checks.append(
+            {
+                "name": "qualified_profile_authority",
+                "pass": profile_authority_ok,
+                "detail": profile_authority_detail,
+            },
+        )
+        if not profile_authority_ok:
+            blocked.append(FailureCode.DOWNSTREAM_CONTRACT_FAILURE.value)
 
     dataset_bytes = (run_dir / "dataset_release.json").read_bytes()
     dataset_raw = _read_json(run_dir / "dataset_release.json")
@@ -985,6 +2062,45 @@ def check_evidence_directory(
     if not dataset_ok:
         blocked.append(FailureCode.DATA_HASH_MISMATCH.value)
 
+    rebuild_proof_ok = not official
+    rebuild_proof_detail = "NOT_APPLICABLE"
+    if official and isinstance(dataset, DatasetRelease):
+        contract = result.get("dataset_contract", {})
+        if dataset.normalizer_version == FULL_RAW_INVENTORY_NORMALIZER_VERSION:
+            try:
+                proof_path = run_dir / "dataset_rebuild_validation.json"
+                proof_bytes = proof_path.read_bytes()
+                proof = _read_json(proof_path)
+                validate_research_dataset_rebuild_proof(dataset, proof)
+                rebuild_proof_ok = bool(
+                    proof_bytes == canonical_json_bytes(proof) + b"\n"
+                    and contract.get("research_rebuild_validation_verified") is True
+                    and contract.get("research_rebuild_validation_ref")
+                    == RESEARCH_REBUILD_VALIDATION_REF
+                    and bindings.get("dataset_rebuild_validation_sha256")
+                    == sha256_file(proof_path)
+                )
+                rebuild_proof_detail = sha256_file(proof_path)
+            except Exception as exc:
+                rebuild_proof_ok = False
+                rebuild_proof_detail = f"{type(exc).__name__}: {exc}"
+        else:
+            rebuild_proof_ok = bool(
+                not (run_dir / "dataset_rebuild_validation.json").exists()
+                and contract.get("research_rebuild_validation_verified")
+                == "NOT_APPLICABLE"
+                and contract.get("research_rebuild_validation_ref") == "NOT_APPLICABLE"
+            )
+    checks.append(
+        {
+            "name": "dataset_rebuild_four_way_authority",
+            "pass": rebuild_proof_ok,
+            "detail": rebuild_proof_detail,
+        },
+    )
+    if not rebuild_proof_ok:
+        blocked.append(FailureCode.DATASET_RAW_INVENTORY_MISMATCH.value)
+
     if isinstance(dataset, SyntheticQualificationDatasetRelease):
         bar_times = sorted(
             item.ts_init for item in dataset.data if item.type == "Bar"
@@ -1008,15 +2124,40 @@ def check_evidence_directory(
         contract = result.get("dataset_contract", {})
         source_roles_ok = (
             dataset.is_current_contract
+            and (
+                not official
+                or (
+                    dataset.has_full_raw_inventory
+                    and dataset.normalizer_version
+                    == (
+                        M3_QUALIFICATION_FULL_RAW_INVENTORY_NORMALIZER_VERSION
+                        if official_qualification_fixture
+                        else FULL_RAW_INVENTORY_NORMALIZER_VERSION
+                    )
+                )
+            )
             and contract.get("source_roles_verified") is True
             and contract.get("dataset_release_id") == dataset.dataset_release_id
+            and (
+                not official
+                or (
+                    contract.get("full_raw_inventory_verified") is True
+                    and contract.get("raw_inventory_identity")
+                    == dataset.raw_inventory.raw_inventory_identity
+                    and int(contract.get("raw_inventory_object_count", -1))
+                    == dataset.raw_inventory.raw_object_count
+                )
+            )
         )
         catalog_binding_ok = (
             contract.get("catalog_identity_verified") is True
             and contract.get("catalog_identity") == dataset.catalog_identity
             and contract.get("caller_side_conversion_used") is False
         )
-        if dataset.normalizer_version == INSTRUMENT_REPAIR_NORMALIZER_VERSION:
+        if dataset.normalizer_version in {
+            INSTRUMENT_REPAIR_NORMALIZER_VERSION,
+            FULL_RAW_INVENTORY_NORMALIZER_VERSION,
+        }:
             acceptance = contract.get("market_state_acceptance")
             execution_role = next(
                 (
@@ -1222,13 +2363,15 @@ def check_evidence_directory(
         if not m3_source_ok:
             blocked.append(FailureCode.EVIDENCE_INCOMPLETE.value)
 
-    preflight_codes = [str(code) for code in result.get("preflight_failure_codes", [])]
+    preflight_codes = canonicalize_evidence_failure_codes(
+        result.get("preflight_failure_codes", []),
+    )
     if preflight_codes:
         checks.append(
             {
                 "name": "preflight",
                 "pass": False,
-                "failure_codes": preflight_codes,
+                "failure_codes": list(preflight_codes),
             },
         )
         blocked.extend(preflight_codes)
@@ -1285,6 +2428,50 @@ def check_evidence_directory(
             blocked.append(FailureCode.NETWORK_DURING_OFFICIAL_RUN.value)
 
     observations = result.get("strategy_observations", {})
+    if official and isinstance(dataset, DatasetRelease):
+        try:
+            resolved_for_valuation_grid = dataset.resolve_runtime_data(
+                repository_root / "data",
+            )
+            material_bar_ok, material_mark_ok, material_grid_detail = (
+                _validate_material_valuation_grid(
+                    resolved_data=resolved_for_valuation_grid.data,
+                    observations=observations,
+                    instrument_id=config.instrument_id,
+                    execution_bar_type=config.execution_bar_type,
+                    scoring_start_ns=utc_datetime_to_ns(config.scoring_start),
+                    scoring_end_exclusive_ns=utc_datetime_to_ns(
+                        config.scoring_end_exclusive,
+                    ),
+                    perpetual=perpetual,
+                )
+            )
+        except Exception as exc:
+            material_bar_ok = False
+            material_mark_ok = False
+            material_grid_detail = {
+                "resolved_dataset_projection_used": True,
+                "detail": f"{type(exc).__name__}: {exc}",
+            }
+        checks.append(
+            {
+                "name": "official_material_valuation_grid_binding",
+                "pass": material_bar_ok and material_mark_ok,
+                "daily_bar_grid_pass": material_bar_ok,
+                "eight_hour_mark_grid_pass": material_mark_ok,
+                **material_grid_detail,
+            },
+        )
+        if not material_bar_ok:
+            failures.append(FailureCode.PERFORMANCE_METRICS_INVALID.value)
+        if not material_mark_ok:
+            failures.append(
+                (
+                    FailureCode.MARK_ROLE_INVALID
+                    if perpetual
+                    else FailureCode.PERFORMANCE_METRICS_INVALID
+                ).value,
+            )
     bars = observations.get("bars", [])
     visibility_ok = all(
         int(item["callback_clock_ns"]) >= int(item["ts_init"])
@@ -1351,6 +2538,11 @@ def check_evidence_directory(
                 )
                 signal_ok = signal_ok and bool(
                     index >= sma_lookback - 1
+                    and int(signal["signal_bar_interval_start_ns"]) == end_ns - DAY_NS
+                    and int(signal["signal_bar_interval_start_ns"])
+                    >= utc_datetime_to_ns(config.scoring_start)
+                    and int(signal["signal_bar_interval_end_exclusive_ns"])
+                    <= utc_datetime_to_ns(config.scoring_end_exclusive)
                     and int(signal["completed_daily_bar_count"])
                     == min(index + 1, sma_lookback)
                     and abs(native_sma - exact_sma) <= Decimal("0.0000000001")
@@ -1370,7 +2562,20 @@ def check_evidence_directory(
             },
         )
         if not signal_ok:
-            failures.append(FailureCode.LOOKAHEAD_DETECTED.value)
+            warmup_signal_violation = any(
+                isinstance(signal, dict)
+                and type(signal.get("signal_bar_interval_start_ns")) is int
+                and int(signal["signal_bar_interval_start_ns"])
+                < utc_datetime_to_ns(config.scoring_start)
+                for signal in signals
+            )
+            failures.append(
+                (
+                    FailureCode.WARMUP_SCORING_ELIGIBILITY_VIOLATION
+                    if warmup_signal_violation
+                    else FailureCode.LOOKAHEAD_DETECTED
+                ).value,
+            )
 
     if is_weekly_tsmom:
         daily = observations.get("daily_signal_bars", [])
@@ -1392,7 +2597,8 @@ def check_evidence_directory(
             index
             for index, end_ns in enumerate(ends)
             if index >= 28
-            and scoring_start_ns <= end_ns < scoring_end_ns
+            and end_ns - DAY_NS >= scoring_start_ns
+            and end_ns <= scoring_end_ns
             and is_monday_utc_boundary(end_ns)
         ]
         signal_ok = daily_ok and len(signals) == len(expected_indices)
@@ -1421,7 +2627,11 @@ def check_evidence_directory(
                     exact_fraction = Decimal(0)
                 end_ns = ends[index]
                 signal_ok = signal_ok and bool(
-                    int(signal["signal_bar_interval_end_exclusive_ns"]) == end_ns
+                    int(signal["signal_bar_interval_start_ns"]) == end_ns - DAY_NS
+                    and int(signal["signal_bar_interval_start_ns"]) >= scoring_start_ns
+                    and int(signal["signal_bar_interval_end_exclusive_ns"]) == end_ns
+                    and int(signal["signal_bar_interval_end_exclusive_ns"])
+                    <= scoring_end_ns
                     and int(signal["signal_bar_available_at_ns"]) == end_ns
                     and int(signal["decision_timestamp_ns"]) == end_ns
                     and int(signal["signal_timestamp_ns"]) >= end_ns
@@ -1444,7 +2654,19 @@ def check_evidence_directory(
             },
         )
         if not signal_ok:
-            failures.append(FailureCode.LOOKAHEAD_DETECTED.value)
+            warmup_signal_violation = any(
+                isinstance(signal, dict)
+                and type(signal.get("signal_bar_interval_start_ns")) is int
+                and int(signal["signal_bar_interval_start_ns"]) < scoring_start_ns
+                for signal in signals
+            )
+            failures.append(
+                (
+                    FailureCode.WARMUP_SCORING_ELIGIBILITY_VIOLATION
+                    if warmup_signal_violation
+                    else FailureCode.LOOKAHEAD_DETECTED
+                ).value,
+            )
 
     if is_buy_and_hold:
         entries = observations.get("benchmark_entries", [])
@@ -1477,16 +2699,37 @@ def check_evidence_directory(
     }
     scoring_start_ns = utc_datetime_to_ns(config.scoring_start)
     scoring_end_ns = utc_datetime_to_ns(config.scoring_end_exclusive)
-    eligibility_ok = all(
-        int(item.get("decision_timestamp_ns", item["signal_bar_interval_start_ns"]))
-        >= scoring_start_ns
-        and int(item.get("decision_timestamp_ns", item["signal_bar_interval_end_exclusive_ns"]))
-        < scoring_end_ns
-        and int(item["signal_bar_interval_end_exclusive_ns"])
-        <= int(item.get("decision_timestamp_ns", item["signal_bar_interval_end_exclusive_ns"]))
-        and int(item["signal_timestamp_ns"]) >= int(item["signal_bar_available_at_ns"])
-        for item in submitted.values()
-    )
+    eligibility_ok = True
+    warmup_submission_violation = False
+    for item in submitted.values():
+        try:
+            interval_start_ns = int(item["signal_bar_interval_start_ns"])
+            interval_end_ns = int(item["signal_bar_interval_end_exclusive_ns"])
+            available_at_ns = int(item["signal_bar_available_at_ns"])
+            signal_timestamp_ns = int(item["signal_timestamp_ns"])
+            decision_timestamp_ns = int(item["decision_timestamp_ns"])
+            effective_insert_at_ns = int(item["effective_insert_at_ns"])
+            warmup_submission_violation = bool(
+                warmup_submission_violation or interval_start_ns < scoring_start_ns
+            )
+            eligibility_ok = bool(
+                eligibility_ok
+                and interval_start_ns < interval_end_ns
+                and interval_start_ns >= scoring_start_ns
+                and interval_end_ns <= scoring_end_ns
+                and available_at_ns == interval_end_ns
+                and decision_timestamp_ns >= interval_end_ns
+                and decision_timestamp_ns <= signal_timestamp_ns
+                and decision_timestamp_ns < scoring_end_ns
+                and signal_timestamp_ns >= available_at_ns
+                and signal_timestamp_ns < scoring_end_ns
+                and effective_insert_at_ns
+                == signal_timestamp_ns
+                + config.nautilus_venue_config.latency_model.effective_insert_latency_nanos
+                and effective_insert_at_ns < scoring_end_ns
+            )
+        except (KeyError, TypeError, ValueError):
+            eligibility_ok = False
     checks.append(
         {
             "name": "submitted_signal_bar_eligibility",
@@ -1495,7 +2738,13 @@ def check_evidence_directory(
         },
     )
     if not eligibility_ok:
-        failures.append(FailureCode.LOOKAHEAD_DETECTED.value)
+        failures.append(
+            (
+                FailureCode.WARMUP_SCORING_ELIGIBILITY_VIOLATION
+                if warmup_submission_violation
+                else FailureCode.LOOKAHEAD_DETECTED
+            ).value,
+        )
 
     fills = _read_csv(run_dir / "fills.csv")
     causal_ok = True
@@ -1562,14 +2811,21 @@ def check_evidence_directory(
     if not fill_digest_ok:
         failures.append(FailureCode.FILL_MUTATION_DETECTED.value)
 
-    guard_codes = [
-        item["failure_code"] for item in observations.get("guard_failures", [])
-    ]
+    raw_guard_failures = observations.get("guard_failures", [])
+    raw_guard_codes: object = (
+        [
+            item.get("failure_code") if isinstance(item, dict) else None
+            for item in raw_guard_failures
+        ]
+        if isinstance(raw_guard_failures, list)
+        else raw_guard_failures
+    )
+    guard_codes = canonicalize_evidence_failure_codes(raw_guard_codes)
     checks.append(
         {
             "name": "pre_submit_guards",
             "pass": not guard_codes,
-            "failure_codes": guard_codes,
+            "failure_codes": list(guard_codes),
         },
     )
     blocked.extend(guard_codes)
@@ -1639,6 +2895,23 @@ def check_evidence_directory(
 
     positions = _read_csv(run_dir / "positions.csv")
     account_rows = _read_csv(run_dir / "account.csv")
+    execution_chain_ok, execution_chain_detail = _validate_execution_chain(
+        result=result,
+        observations=observations,
+        orders=orders,
+        fills=fills,
+        positions=positions,
+        config=config,
+    )
+    checks.append(
+        {
+            "name": "intent_native_order_fill_execution_chain",
+            "pass": execution_chain_ok,
+            **execution_chain_detail,
+        },
+    )
+    if not execution_chain_ok:
+        failures.append(FailureCode.CAUSAL_EXECUTION_UNRESOLVED.value)
     if config.market_profile is MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY:
         quote_currency = config.initial_capital.currency
         metadata_path = run_dir / "instrument_metadata.json"
@@ -1960,6 +3233,105 @@ def check_evidence_directory(
                         failures.append(code)
             if not exact_mark_ok:
                 blocked.append(FailureCode.MARK_ROLE_INVALID.value)
+
+        # Hashes prove bytes, not financial possibility.  Re-resolve the
+        # immutable DatasetRelease and independently replay every native Fill,
+        # NETTING position transition, commission, Funding cash movement and
+        # terminal valuation.  This validator is read-only and is not imported
+        # by the execution path.
+        if official:
+            try:
+                resolved_for_reconciliation = dataset.resolve_runtime_data(
+                    repository_root / "data",
+                )
+                terminal_marks = [
+                    item
+                    for item in resolved_for_reconciliation.data
+                    if isinstance(item, MarkPriceUpdate)
+                    and str(item.instrument_id) == config.instrument_id
+                    and int(item.ts_event) == scoring_end_ns
+                    and int(item.ts_init) == scoring_end_ns
+                ]
+                if len(terminal_marks) != 1:
+                    raise ValueError(
+                        "exactly one causal terminal MarkPriceUpdate is required",
+                    )
+                terminal_mark_update = terminal_marks[0]
+                instrument_contract = result["dataset_contract"]["instrument"]
+                settlement_currency = str(instrument_contract["settlement_currency"])
+                settlement_precision = int(
+                    instrument_contract["settlement_currency_precision"],
+                )
+                if not 0 <= settlement_precision <= 18:
+                    raise ValueError("settlement currency precision is invalid")
+                native_account_ok, native_account_detail = (
+                    validate_perpetual_native_account_projection(
+                        native_account_events=result["semantic_sequence"]["account_events"],
+                        account_rows=account_rows,
+                        instrument_id=config.instrument_id,
+                        settlement_currency=settlement_currency,
+                    )
+                )
+                checks.append(
+                    {
+                        "name": "perpetual_native_account_projection",
+                        "pass": native_account_ok,
+                        **native_account_detail,
+                    },
+                )
+                if not native_account_ok:
+                    failures.append(FailureCode.PERPETUAL_RECONCILIATION_FAILURE.value)
+                reconciliation = validate_perpetual_reconciliation(
+                    fills=fills,
+                    account_rows=account_rows,
+                    position_rows=positions,
+                    funding_rows=funding_rows,
+                    native_completed_trades=_read_json(
+                        run_dir / "native_completed_trades.json",
+                    ),
+                    native_closed_position_snapshots=result[
+                        "native_closed_position_snapshots"
+                    ],
+                    terminal_portfolio=result["terminal_portfolio"],
+                    terminal_mark={
+                        "instrument_id": str(terminal_mark_update.instrument_id),
+                        "value": str(terminal_mark_update.value),
+                        "ts_event": int(terminal_mark_update.ts_event),
+                        "ts_init": int(terminal_mark_update.ts_init),
+                    },
+                    run_id=config.run_id,
+                    instrument_id=config.instrument_id,
+                    settlement_currency=settlement_currency,
+                    initial_balance=config.initial_capital.amount,
+                    taker_fee=config.fee_assumption.taker_fee,
+                    quantity_increment=Decimal(str(instrument_contract["size_increment"])),
+                    price_precision=int(instrument_contract["price_precision"]),
+                    size_precision=int(instrument_contract["size_precision"]),
+                    margin_maint=Decimal(str(instrument_contract["margin_maint"])),
+                    multiplier=Decimal(str(instrument_contract["multiplier"])),
+                    money_quantum=Decimal(1).scaleb(-settlement_precision),
+                    scoring_end_exclusive_ns=scoring_end_ns,
+                )
+                reconciliation_ok = reconciliation.passed
+                reconciliation_detail = {
+                    **reconciliation.detail,
+                    "errors": list(reconciliation.errors),
+                }
+            except Exception as exc:
+                reconciliation_ok = False
+                reconciliation_detail = {
+                    "errors": [f"{type(exc).__name__}: {exc}"],
+                    "native_financial_state_mutated_by_validator": False,
+                }
+            checks.append(
+                {
+                    "name": "perpetual_full_financial_reconciliation",
+                    "pass": reconciliation_ok,
+                    **reconciliation_detail,
+                },
+            )
+            if not reconciliation_ok:
+                failures.append(FailureCode.PERPETUAL_RECONCILIATION_FAILURE.value)
         if is_m3_qualification and not isinstance(dataset, SyntheticQualificationDatasetRelease):
             try:
                 funding_source = _read_json(run_dir / "funding_source.json")
@@ -2045,6 +3417,35 @@ def check_evidence_directory(
             )
             if not lifecycle_ok:
                 failures.append(FailureCode.PERP_PROFILE_INVALID.value)
+
+    if official and strategy_family in NATIVE_RESEARCH_FAMILIES:
+        if native_evidence_ok:
+            daily_snapshot_ok, daily_snapshot_detail = (
+                _validate_official_daily_portfolio_snapshots(
+                    run_dir=run_dir,
+                    config=config,
+                    result=result,
+                    observations=observations,
+                    fills=fills,
+                    funding_rows=(funding_rows if perpetual else []),
+                    base_currency=(None if perpetual else base_currency),
+                )
+            )
+        else:
+            daily_snapshot_ok = False
+            daily_snapshot_detail = {
+                "errors": ["native financial evidence is incomplete"],
+                "native_financial_state_mutated_by_validator": False,
+            }
+        checks.append(
+            {
+                "name": "official_daily_portfolio_financial_reconciliation",
+                "pass": daily_snapshot_ok,
+                **daily_snapshot_detail,
+            },
+        )
+        if not daily_snapshot_ok and native_evidence_ok:
+            failures.append(FailureCode.PERFORMANCE_METRICS_INVALID.value)
 
     boundary = observations.get("scoring_boundary")
     boundary_ok = boundary is not None and (

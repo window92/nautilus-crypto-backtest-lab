@@ -1,0 +1,22 @@
+$ /home/builder/projects/nautilus-crypto-backtest-lab/.venv/bin/python -m unittest -v tests.unit.test_m4_multiprocess_locking tests.adversarial.test_r2_locking_durability
+exit_code=0
+duration_seconds=2.174713
+
+test_holdout_crash_before_atomic_replace_preserves_head_and_recovers (tests.unit.test_m4_multiprocess_locking.MultiprocessHistoryLockTests.test_holdout_crash_before_atomic_replace_preserves_head_and_recovers) ... ok
+test_nonoverlapping_holdout_updates_are_not_lost (tests.unit.test_m4_multiprocess_locking.MultiprocessHistoryLockTests.test_nonoverlapping_holdout_updates_are_not_lost) ... ok
+test_overlapping_holdout_consumers_have_exactly_one_winner (tests.unit.test_m4_multiprocess_locking.MultiprocessHistoryLockTests.test_overlapping_holdout_consumers_have_exactly_one_winner) ... ok
+test_process_crash_releases_lock_but_partial_state_remains_fail_closed (tests.unit.test_m4_multiprocess_locking.MultiprocessHistoryLockTests.test_process_crash_releases_lock_but_partial_state_remains_fail_closed) ... ok
+test_trial_start_sequence_and_hash_chain_are_atomic_across_processes (tests.unit.test_m4_multiprocess_locking.MultiprocessHistoryLockTests.test_trial_start_sequence_and_hash_chain_are_atomic_across_processes) ... ok
+test_concurrent_recovery_appends_at_most_one_anchor (tests.adversarial.test_r2_locking_durability.R2LockingAndDurabilityTests.test_concurrent_recovery_appends_at_most_one_anchor) ... ok
+test_exact_start_suffix_recovers_missing_anchor (tests.adversarial.test_r2_locking_durability.R2LockingAndDurabilityTests.test_exact_start_suffix_recovers_missing_anchor) ... ok
+test_exact_terminal_suffix_recovers_missing_anchor (tests.adversarial.test_r2_locking_durability.R2LockingAndDurabilityTests.test_exact_terminal_suffix_recovers_missing_anchor) ... ok
+test_journal_holdout_and_anchor_symlinks_fail_closed (tests.adversarial.test_r2_locking_durability.R2LockingAndDurabilityTests.test_journal_holdout_and_anchor_symlinks_fail_closed) ... ok
+test_lock_file_symlink_is_rejected_without_touching_target (tests.adversarial.test_r2_locking_durability.R2LockingAndDurabilityTests.test_lock_file_symlink_is_rejected_without_touching_target) ... ok
+test_planned_and_started_are_one_durable_append_batch (tests.adversarial.test_r2_locking_durability.R2LockingAndDurabilityTests.test_planned_and_started_are_one_durable_append_batch) ... ok
+test_recovery_rejects_nonmatching_suffix_with_structured_code (tests.adversarial.test_r2_locking_durability.R2LockingAndDurabilityTests.test_recovery_rejects_nonmatching_suffix_with_structured_code) ... ok
+test_symlinked_parent_and_nonregular_authority_are_rejected (tests.adversarial.test_r2_locking_durability.R2LockingAndDurabilityTests.test_symlinked_parent_and_nonregular_authority_are_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 13 tests in 1.504s
+
+OK

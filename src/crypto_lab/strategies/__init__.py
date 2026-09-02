@@ -5,6 +5,8 @@ from crypto_lab.strategies.base import FirstEligibleBarQualificationFixture
 from crypto_lab.strategies.base import OrderIntent
 from crypto_lab.strategies.base import StrategyPlan
 from crypto_lab.strategies.base import StrategySpec
+from crypto_lab.strategies.base import spot_base_buy_maximum_cost
+from crypto_lab.strategies.base import spot_quote_buy_capacity
 from crypto_lab.strategies.daily_sma_trend import BtcusdtDailyPriceVsSma20Trend
 from crypto_lab.strategies.daily_sma_trend import TargetState
 from crypto_lab.strategies.daily_sma_trend import classify_target
@@ -40,6 +42,8 @@ __all__ = [
     "RegisteredStrategyIdentity",
     "StrategyPlan",
     "StrategySpec",
+    "spot_base_buy_maximum_cost",
+    "spot_quote_buy_capacity",
     "BtcusdtDailyPriceVsSma20Trend",
     "TargetState",
     "classify_target",

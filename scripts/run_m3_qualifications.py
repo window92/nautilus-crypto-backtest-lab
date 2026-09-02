@@ -5,11 +5,12 @@ from __future__ import annotations
 
 import csv
 import json
-import os
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
+from collections.abc import Mapping
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -20,6 +21,7 @@ from crypto_lab.config import SourceRevision
 from crypto_lab.hashing import canonical_json_bytes
 from crypto_lab.hashing import canonical_sha256
 from crypto_lab.hashing import sha256_file
+from crypto_lab.git_identity import require_repository_root
 from crypto_lab.m3 import EXPOSED_QUALIFICATION_LIMITATION
 from crypto_lab.m3 import M3NegativeControl
 from crypto_lab.m3 import MechanicalIntegrity
@@ -32,22 +34,19 @@ from crypto_lab.m3 import qualification_dataset_release
 from crypto_lab.m3 import qualification_strategy_inputs
 
 
-ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_OUTPUT = ROOT / "evidence/m3/m3-acceptance-001"
-
-
 def _write_json(path: Path, value: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_bytes(canonical_json_bytes(value) + b"\n")
 
 
-def _git(*args: str) -> str:
+def _git(repository: Path, *args: str) -> str:
     return subprocess.run(
-        ["git", *args], cwd=ROOT, check=True, capture_output=True, text=True,
+        ["git", *args], cwd=repository, check=True, capture_output=True, text=True,
     ).stdout.strip()
 
 
 def _run_child(
+    repository: Path,
     staging: Path,
     *,
     label: str,
@@ -58,26 +57,37 @@ def _run_child(
     summary_path = staging / "attempt-summaries" / f"{label}.json"
     evidence_root = staging / "runs" / label
     command = [
-        str(ROOT / ".venv/bin/python"),
-        str(ROOT / "scripts/run_m3_child.py"),
+        str(repository / ".venv/bin/python"),
+        "-I",
+        "-P",
+        "-S",
+        "-B",
+        "-X",
+        "pycache_prefix=/dev/null",
+        str(repository / "scripts/isolated_runtime_bootstrap.py"),
+        "--authority",
+        str(repository / "runtime-bootstrap-authority.json"),
+        "--repository",
+        str(repository),
+        "--script",
+        "scripts/run_m3_child.py",
+        "--",
         "--profile", profile,
         "--run-id", run_id,
+        "--repository", str(repository),
         "--evidence-root", str(evidence_root),
         "--summary", str(summary_path),
         *extra,
     ]
     env = {
-        **os.environ,
+        "PATH": "/usr/bin:/bin",
         "TZ": "UTC",
         "LANG": "C.UTF-8",
         "LC_ALL": "C.UTF-8",
-        "PYTHONDONTWRITEBYTECODE": "1",
-        "PYTHONPATH": str(ROOT / "src"),
-        "PYTEST_ADDOPTS": "-p no:cacheprovider",
     }
     completed = subprocess.run(
         command,
-        cwd=ROOT,
+        cwd=repository,
         env=env,
         check=False,
         capture_output=True,
@@ -102,9 +112,15 @@ def _run_child(
 def _assert_positive(summary: dict[str, Any], label: str) -> None:
     if not (
         summary["state"] == "COMPLETED"
-        and summary["checker_outcome"] == "CHECK_PASS"
+        and summary["component_validation_outcome"] == "COMPONENT_CHECK_PASS"
         and not summary["failure_codes"]
         and summary["fills_count"] > 0
+        and summary.get("runtime_startup_verified") is True
+        and summary.get("runtime_startup_target") == "scripts/run_m3_child.py"
+        and re.fullmatch(
+            r"[0-9a-f]{64}",
+            str(summary.get("runtime_startup_attestation_sha256", "")),
+        )
     ):
         raise RuntimeError(f"positive profile {label} did not pass: {summary}")
 
@@ -136,14 +152,18 @@ def _published_summary(summary: dict[str, Any], staging: Path) -> dict[str, Any]
     return published
 
 
-def _duplicate_funding_control(staging: Path, perpetual: dict[str, Any]) -> dict[str, Any]:
+def _duplicate_funding_control(
+    repository: Path,
+    staging: Path,
+    perpetual: dict[str, Any],
+) -> dict[str, Any]:
     source = Path(perpetual["evidence_dir"])
     target = staging / "checker-tamper" / "duplicate-funding-settlement"
     shutil.copytree(source, target)
     funding = target / "funding.csv"
     rows = funding.read_text(encoding="utf-8").splitlines()
     funding.write_text("\n".join([*rows, rows[1]]) + "\n", encoding="utf-8")
-    report = check_evidence_directory(target)
+    report = check_evidence_directory(target, repository_root=repository)
     result = {
         "schema": "m3-checker-tamper-control-v1",
         "control": "DUPLICATE_FUNDING_SETTLEMENT",
@@ -161,23 +181,49 @@ def main() -> int:
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
+    parser.add_argument("--repository", type=Path, required=True)
+    parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--resume-staging", type=Path)
     parser.add_argument("--required-remote-ref")
     parser.add_argument("--run-id-prefix", default="m3")
     args = parser.parse_args()
+    state = sys.modules.get("_crypto_lab_verified_bootstrap")
+    attestation = getattr(state, "ATTESTATION", None)
+    product = attestation.get("product") if isinstance(attestation, Mapping) else None
+    if (
+        not isinstance(attestation, Mapping)
+        or attestation.get("target") != "scripts/run_m3_qualifications.py"
+        or not isinstance(product, Mapping)
+    ):
+        raise RuntimeError(
+            "RUNTIME_STARTUP_MISMATCH: M3 qualification requires isolated bootstrap",
+        )
+    repository = require_repository_root(
+        args.repository,
+        expected_repository_identity=product.get("repository_identity"),
+        expected_git_commit=product.get("source_commit"),
+        expected_git_tree=product.get("source_tree"),
+    )
+    if str(repository) != attestation.get("repository_root"):
+        raise RuntimeError(
+            "RUNTIME_STARTUP_MISMATCH: qualification repository differs from bootstrap root",
+        )
     if not re.fullmatch(r"[a-z0-9][a-z0-9-]{0,80}", args.run_id_prefix):
         raise ValueError("run-id-prefix must be a safe lowercase identity component")
     output = args.output.resolve()
     if output.exists():
         raise FileExistsError(f"refusing to overwrite M3 evidence: {output}")
-    branch = _git("branch", "--show-current")
+    branch = _git(repository, "branch", "--show-current")
     if not branch:
         raise RuntimeError("accepted M3 qualifications require a symbolic branch")
     required_remote_ref = args.required_remote_ref or f"origin/{branch}"
-    if args.resume_staging is None and _git("status", "--porcelain=v1"):
+    if args.resume_staging is None and _git(repository, "status", "--porcelain=v1"):
         raise RuntimeError("accepted M3 qualifications require a clean committed worktree")
-    if _git("rev-parse", "HEAD") != _git("rev-parse", required_remote_ref):
+    if _git(repository, "rev-parse", "HEAD") != _git(
+        repository,
+        "rev-parse",
+        required_remote_ref,
+    ):
         raise RuntimeError(
             f"accepted M3 qualifications require HEAD == {required_remote_ref}",
         )
@@ -192,9 +238,10 @@ def main() -> int:
             raise FileNotFoundError("resume staging lacks the frozen M3 baseline")
         frozen_baseline = json.loads((staging / "baseline.json").read_text(encoding="utf-8"))
         if (
-            frozen_baseline["head"] != _git("rev-parse", "HEAD")
+            frozen_baseline["head"] != _git(repository, "rev-parse", "HEAD")
             or frozen_baseline["required_remote_ref"] != required_remote_ref
-            or frozen_baseline["remote_tip"] != _git("rev-parse", required_remote_ref)
+            or frozen_baseline["remote_tip"]
+            != _git(repository, "rev-parse", required_remote_ref)
             or frozen_baseline["clean_worktree"] is not True
         ):
             raise RuntimeError("resume staging is not bound to the current committed source")
@@ -213,16 +260,16 @@ def main() -> int:
     baseline = {
         "schema": "m3-baseline-v1",
         "user": subprocess.run(["whoami"], check=True, capture_output=True, text=True).stdout.strip(),
-        "repository": str(ROOT),
+        "repository": str(repository),
         "branch": branch,
-        "head": _git("rev-parse", "HEAD"),
+        "head": _git(repository, "rev-parse", "HEAD"),
         "required_remote_ref": required_remote_ref,
-        "remote_tip": _git("rev-parse", required_remote_ref),
-        "git_tree": _git("rev-parse", "HEAD^{tree}"),
+        "remote_tip": _git(repository, "rev-parse", required_remote_ref),
+        "git_tree": _git(repository, "rev-parse", "HEAD^{tree}"),
         "clean_worktree": True,
-        "ssot_sha256": sha256_file(ROOT / "SSOT.md"),
-        "runtime_lock_sha256": sha256_file(ROOT / "runtime.lock.json"),
-        "dependency_lock_sha256": sha256_file(ROOT / "requirements.lock.txt"),
+        "ssot_sha256": sha256_file(repository / "SSOT.md"),
+        "runtime_lock_sha256": sha256_file(repository / "runtime.lock.json"),
+        "dependency_lock_sha256": sha256_file(repository / "requirements.lock.txt"),
         "run_purpose": "QUALIFICATION",
         "official_run": False,
         "network_used": False,
@@ -234,7 +281,10 @@ def main() -> int:
         profile.value: {
             "strategy_spec": qualification_strategy_inputs(profile).strategy_spec.to_builtins(),
             "strategy_plan": qualification_strategy_inputs(profile).strategy_plan.material_payload(),
-            "dataset_release_id": qualification_dataset_release(profile).dataset_release_id,
+            "dataset_release_id": qualification_dataset_release(
+                profile,
+                repository_root=repository,
+            ).dataset_release_id,
         }
         for profile in MarketProfile
     }
@@ -244,24 +294,28 @@ def main() -> int:
     if args.resume_staging is None:
         accepted = {
             "spot_primary": _run_child(
+                repository,
                 staging,
                 label="spot-primary",
                 profile="spot",
                 run_id=f"{args.run_id_prefix}-spot-primary",
             ),
             "spot_replay": _run_child(
+                repository,
                 staging,
                 label="spot-replay",
                 profile="spot",
                 run_id=f"{args.run_id_prefix}-spot-replay",
             ),
             "perp_primary": _run_child(
+                repository,
                 staging,
                 label="perpetual-primary",
                 profile="perpetual",
                 run_id=f"{args.run_id_prefix}-perpetual-primary",
             ),
             "perp_replay": _run_child(
+                repository,
                 staging,
                 label="perpetual-replay",
                 profile="perpetual",
@@ -309,6 +363,7 @@ def main() -> int:
             (M3NegativeControl.PERP_POST_BOUNDARY_OPEN, "perpetual"),
         ):
             controls[control.value] = _run_child(
+                repository,
                 staging,
                 label=control.value.lower(),
                 profile=profile,
@@ -316,6 +371,7 @@ def main() -> int:
                 extra=("--negative-control", control.value),
             )
         controls["PROHIBITED_MARK_FALLBACK"] = _run_child(
+            repository,
             staging,
             label="prohibited-mark-fallback",
             profile="perpetual",
@@ -323,6 +379,7 @@ def main() -> int:
             extra=("--invalid-mark-binding",),
         )
         controls["NETWORK_ATTEMPT"] = _run_child(
+            repository,
             staging,
             label="network-attempt",
             profile="spot",
@@ -330,6 +387,7 @@ def main() -> int:
             extra=("--network-attempt",),
         )
         controls["DUPLICATE_FUNDING_SETTLEMENT"] = _duplicate_funding_control(
+            repository,
             staging,
             accepted["perp_primary"],
         )
@@ -358,7 +416,10 @@ def main() -> int:
     ):
         raise RuntimeError("post-boundary position received prior funding")
     duplicate = controls["DUPLICATE_FUNDING_SETTLEMENT"]["checker"]
-    if duplicate["outcome"] != "CHECK_FAIL" or "FUNDING_DOUBLE_COUNT" not in duplicate["failure_codes"]:
+    if (
+        duplicate["outcome"] != "COMPONENT_CHECK_FAIL"
+        or "FUNDING_DOUBLE_COUNT" not in duplicate["failure_codes"]
+    ):
         raise RuntimeError("duplicate funding settlement checker control did not fail")
     published_controls = {
         name: (
@@ -376,6 +437,7 @@ def main() -> int:
         "BAR_BASED_ESTIMATED_EXECUTION",
         "ESTIMATED_FEE_0.001",
         "CURRENT_METADATA_NOT_EXACT_HISTORICAL_VENUE_RULES",
+        "LEGACY_ACQUISITION_HEADERS_NOT_RECORDED_RAW_BYTES_AND_CHECKSUMS_VERIFIED",
     )
     records: list[QualifiedProfileRecord] = []
     mechanical: dict[str, MechanicalIntegrityResult] = {}
@@ -404,15 +466,18 @@ def main() -> int:
         record = QualifiedProfileRecord.create(
             profile_id=profile,
             qualification_state=ProfileQualificationState.QUALIFIED,
-            runtime_lock_sha256=sha256_file(ROOT / "runtime.lock.json"),
+            runtime_lock_sha256=sha256_file(repository / "runtime.lock.json"),
             source_revision=source,
             base_dataset_release_id=base_id,
-            dataset_release_id=qualification_dataset_release(profile).dataset_release_id,
+            dataset_release_id=qualification_dataset_release(
+                profile,
+                repository_root=repository,
+            ).dataset_release_id,
             strategy_spec_id=canonical_sha256(
                 {key: value for key, value in strategy_spec.items() if key != "strategy_id"},
             ),
             accepted_run_ids=(primary["run_id"], replay["run_id"]),
-            checker_result="CHECK_PASS",
+            checker_result="COMPONENT_CHECK_PASS",
             replay_result="PASS",
             evidence_references=(
                 str(Path(primary["evidence_dir"]).relative_to(staging)),
@@ -423,14 +488,14 @@ def main() -> int:
         records.append(record)
         integrity = MechanicalIntegrityResult(
             state=MechanicalIntegrity.PASS,
-            checker_result="CHECK_PASS",
+            checker_result="COMPONENT_CHECK_PASS",
             replay_result="PASS",
             run_ids=(primary["run_id"], replay["run_id"]),
             failure_codes=(),
         )
         mechanical[profile.value] = integrity
         bundle = QualificationDownstreamBundle(
-            schema_version=1,
+            schema_version=2,
             profile_record=record,
             run_result=_published_summary(primary, staging),
             evidence_manifest=json.loads(

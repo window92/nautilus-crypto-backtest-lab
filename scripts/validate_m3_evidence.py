@@ -10,20 +10,18 @@ from typing import Any
 
 from crypto_lab.hashing import canonical_sha256
 from crypto_lab.hashing import sha256_file
+from crypto_lab.git_identity import require_repository_root
 from crypto_lab.historical_contracts import validate_validator_contract
 from crypto_lab.m3 import QualificationDownstreamBundle
 from crypto_lab.m3 import QualifiedProfileRegistry
+from scripts.validate_audit_qualification import validate as validate_current_qualification
 
 
-ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_EVIDENCE = ROOT / "evidence/m3/m3-acceptance-001"
-
-
-def validate(evidence: Path = DEFAULT_EVIDENCE) -> dict[str, Any]:
+def _validate_legacy(evidence: Path, *, repository_root: Path) -> dict[str, Any]:
     checks: dict[str, bool] = {}
     historical_contract = validate_validator_contract(
-        Path(__file__).name,
-        repository_root=ROOT,
+        "validate_m3_evidence.py",
+        repository_root=repository_root,
     )
     checks["historical_contract_snapshot"] = historical_contract.acceptable
     summary = json.loads((evidence / "acceptance-summary.json").read_text(encoding="utf-8"))
@@ -108,12 +106,41 @@ def validate(evidence: Path = DEFAULT_EVIDENCE) -> dict[str, Any]:
     }
 
 
+def validate(evidence: Path, *, repository_root: Path) -> dict[str, Any]:
+    """Validate a qualification with the contract selected by registry schema.
+
+    Schema v1 evidence remains historical and is interpreted only by the
+    legacy validator contract above.  Schema v2 is current R2 evidence and
+    must use the current component-validation vocabulary and revalidation
+    path; silently falling back to legacy ``CHECK_*`` semantics is forbidden.
+    """
+
+    repository = require_repository_root(repository_root)
+    registry_payload = json.loads(
+        (evidence / "qualified-profile-registry.json").read_text(encoding="utf-8"),
+    )
+    schema_version = registry_payload.get("schema_version")
+    if schema_version == 2:
+        result = validate_current_qualification(
+            evidence,
+            repository_root=repository,
+        )
+        return {**result, "contract_mode": "R2_CURRENT"}
+    if schema_version == 1:
+        return {
+            **_validate_legacy(evidence, repository_root=repository),
+            "contract_mode": "LEGACY_V1",
+        }
+    raise ValueError("M3 qualification registry schema is unsupported")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--evidence", type=Path, default=DEFAULT_EVIDENCE)
+    parser.add_argument("--repository", type=Path, required=True)
+    parser.add_argument("--evidence", type=Path, required=True)
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
-    result = validate(args.evidence)
+    result = validate(args.evidence, repository_root=args.repository)
     payload = json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
     if args.output is None:
         print(payload, end="")

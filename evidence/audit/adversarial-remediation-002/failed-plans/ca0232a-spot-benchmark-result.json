@@ -1,0 +1,5 @@
+{
+  "detail": "EVIDENCE_INCOMPLETE: selected Run missing: checker.json",
+  "error_type": "ResearchError",
+  "status": "BLOCKED"
+}

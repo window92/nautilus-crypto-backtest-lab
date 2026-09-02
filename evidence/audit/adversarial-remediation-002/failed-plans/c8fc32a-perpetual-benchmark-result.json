@@ -1,0 +1,5 @@
+{
+  "detail": "PERFORMANCE_METRICS_INVALID: native Perpetual daily portfolio snapshot does not reconcile to Fills, Funding and causal Mark",
+  "error_type": "ResearchError",
+  "status": "BLOCKED"
+}

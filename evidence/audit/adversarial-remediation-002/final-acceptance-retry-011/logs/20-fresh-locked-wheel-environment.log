@@ -1,0 +1,72 @@
+$ FRESH_LOCKED_WHEEL_ENVIRONMENT '/usr/bin/python3.12 -m venv --copies /tmp/crypto-lab-r2-fresh-wheel-cizbfozn/venv' '/tmp/crypto-lab-r2-fresh-wheel-cizbfozn/venv/bin/python -m pip install --no-index --no-deps /tmp/nautilus-v2-gate.UKpWnpmd/download/nautilus_trader-2.0.0rc2-cp312-cp312-manylinux_2_34_x86_64.whl /tmp/r2-project-wheel-e569d66/dist/nautilus_crypto_backtest_lab-1.0.1.dev0-py3-none-any.whl' '/tmp/crypto-lab-r2-fresh-wheel-cizbfozn/venv/bin/python -m pip check' '/tmp/crypto-lab-r2-fresh-wheel-cizbfozn/venv/bin/python -I -P -c '"'"'from pathlib import Path; import crypto_lab, importlib.metadata as m; from crypto_lab.config import RuntimeLock; from crypto_lab.runtime import verify_runtime_lock; r=Path('"'"'"'"'"'"'"'"'/home/builder/projects/nautilus-crypto-backtest-lab'"'"'"'"'"'"'"'"'); o=Path(crypto_lab.__file__).resolve(); assert o.is_relative_to(Path('"'"'"'"'"'"'"'"'/tmp/crypto-lab-r2-fresh-wheel-cizbfozn/venv'"'"'"'"'"'"'"'"').resolve()); assert m.version('"'"'"'"'"'"'"'"'nautilus-crypto-backtest-lab'"'"'"'"'"'"'"'"') == '"'"'"'"'"'"'"'"'1.0.1.dev0'"'"'"'"'"'"'"'"'; print(verify_runtime_lock(RuntimeLock.from_json_bytes((r/'"'"'"'"'"'"'"'"'runtime.lock.json'"'"'"'"'"'"'"'"').read_bytes()), dependency_lock_path=r/'"'"'"'"'"'"'"'"'requirements.lock.txt'"'"'"'"'"'"'"'"')['"'"'"'"'"'"'"'"'installed_files_verified'"'"'"'"'"'"'"'"'])'"'"'' '/tmp/crypto-lab-r2-fresh-wheel-cizbfozn/venv/bin/python -m unittest -v tests.adversarial.test_r2_causality_boundaries tests.adversarial.test_r2_official_sealing tests.adversarial.test_r2_perpetual_reconciliation tests.adversarial.test_r2_spot_affordability_mutation'
+exit_code=0
+duration_seconds=8.845944
+
+$ /usr/bin/python3.12 -m venv --copies /tmp/crypto-lab-r2-fresh-wheel-cizbfozn/venv
+exit_code=0
+
+$ /tmp/crypto-lab-r2-fresh-wheel-cizbfozn/venv/bin/python -m pip install --no-index --no-deps /tmp/nautilus-v2-gate.UKpWnpmd/download/nautilus_trader-2.0.0rc2-cp312-cp312-manylinux_2_34_x86_64.whl /tmp/r2-project-wheel-e569d66/dist/nautilus_crypto_backtest_lab-1.0.1.dev0-py3-none-any.whl
+exit_code=0
+Processing /tmp/nautilus-v2-gate.UKpWnpmd/download/nautilus_trader-2.0.0rc2-cp312-cp312-manylinux_2_34_x86_64.whl
+Processing /tmp/r2-project-wheel-e569d66/dist/nautilus_crypto_backtest_lab-1.0.1.dev0-py3-none-any.whl
+Installing collected packages: nautilus-trader, nautilus-crypto-backtest-lab
+Successfully installed nautilus-crypto-backtest-lab-1.0.1.dev0 nautilus-trader-2.0.0rc2
+
+$ /tmp/crypto-lab-r2-fresh-wheel-cizbfozn/venv/bin/python -m pip check
+exit_code=0
+No broken requirements found.
+
+$ /tmp/crypto-lab-r2-fresh-wheel-cizbfozn/venv/bin/python -I -P -c 'from pathlib import Path; import crypto_lab, importlib.metadata as m; from crypto_lab.config import RuntimeLock; from crypto_lab.runtime import verify_runtime_lock; r=Path('"'"'/home/builder/projects/nautilus-crypto-backtest-lab'"'"'); o=Path(crypto_lab.__file__).resolve(); assert o.is_relative_to(Path('"'"'/tmp/crypto-lab-r2-fresh-wheel-cizbfozn/venv'"'"').resolve()); assert m.version('"'"'nautilus-crypto-backtest-lab'"'"') == '"'"'1.0.1.dev0'"'"'; print(verify_runtime_lock(RuntimeLock.from_json_bytes((r/'"'"'runtime.lock.json'"'"').read_bytes()), dependency_lock_path=r/'"'"'requirements.lock.txt'"'"')['"'"'installed_files_verified'"'"'])'
+exit_code=0
+True
+
+$ /tmp/crypto-lab-r2-fresh-wheel-cizbfozn/venv/bin/python -m unittest -v tests.adversarial.test_r2_causality_boundaries tests.adversarial.test_r2_official_sealing tests.adversarial.test_r2_perpetual_reconciliation tests.adversarial.test_r2_spot_affordability_mutation
+exit_code=0
+test_checker_rejects_signal_end_after_scoring_boundary (tests.adversarial.test_r2_causality_boundaries.R2CausalityBoundaryTests.test_checker_rejects_signal_end_after_scoring_boundary) ... ok
+test_checker_rejects_submitted_warmup_interval_for_spot_and_perpetual (tests.adversarial.test_r2_causality_boundaries.R2CausalityBoundaryTests.test_checker_rejects_submitted_warmup_interval_for_spot_and_perpetual) ... ok
+test_full_signal_interval_not_decision_timestamp_controls_eligibility (tests.adversarial.test_r2_causality_boundaries.R2CausalityBoundaryTests.test_full_signal_interval_not_decision_timestamp_controls_eligibility) ... ok
+test_post_boundary_flag_is_derived_from_inputs_and_actual_callback_counters (tests.adversarial.test_r2_causality_boundaries.R2CausalityBoundaryTests.test_post_boundary_flag_is_derived_from_inputs_and_actual_callback_counters) ... ok
+test_qualification_request_never_infers_authority_from_package_location (tests.adversarial.test_r2_causality_boundaries.R2CausalityBoundaryTests.test_qualification_request_never_infers_authority_from_package_location) ... ok
+test_weekly_first_eligible_signal_is_one_week_after_scoring_start_for_both_profiles (tests.adversarial.test_r2_causality_boundaries.R2CausalityBoundaryTests.test_weekly_first_eligible_signal_is_one_week_after_scoring_start_for_both_profiles) ... ok
+test_canonical_no_fill_stream_may_be_empty_but_funding_csv_may_not (tests.adversarial.test_r2_official_sealing.OfficialSealingAdversarialTests.test_canonical_no_fill_stream_may_be_empty_but_funding_csv_may_not) ... ok
+test_complete_exact_package_has_official_seal_pass (tests.adversarial.test_r2_official_sealing.OfficialSealingAdversarialTests.test_complete_exact_package_has_official_seal_pass) ... ok
+test_extra_modified_and_empty_leaf_are_rejected (tests.adversarial.test_r2_official_sealing.OfficialSealingAdversarialTests.test_extra_modified_and_empty_leaf_are_rejected) ... ok
+test_manifest_builder_cannot_authorize_a_preexisting_extra_leaf (tests.adversarial.test_r2_official_sealing.OfficialSealingAdversarialTests.test_manifest_builder_cannot_authorize_a_preexisting_extra_leaf) ... ok
+test_manifest_status_and_seal_tamper_each_fail (tests.adversarial.test_r2_official_sealing.OfficialSealingAdversarialTests.test_manifest_status_and_seal_tamper_each_fail) ... ok
+test_missing_mandatory_funding_is_structured_failure (tests.adversarial.test_r2_official_sealing.OfficialSealingAdversarialTests.test_missing_mandatory_funding_is_structured_failure) ... ok
+test_public_api_rejects_injected_component_pass_oracle (tests.adversarial.test_r2_official_sealing.OfficialSealingAdversarialTests.test_public_api_rejects_injected_component_pass_oracle) ... ok
+test_research_release_requires_rebuild_proof_as_a_sealed_leaf (tests.adversarial.test_r2_official_sealing.OfficialSealingAdversarialTests.test_research_release_requires_rebuild_proof_as_a_sealed_leaf) ... ok
+test_symlink_leaf_is_rejected_before_hash_trust (tests.adversarial.test_r2_official_sealing.OfficialSealingAdversarialTests.test_symlink_leaf_is_rejected_before_hash_trust) ... ok
+test_unknown_root_fields_fail_after_all_downstream_hashes_are_rebuilt (tests.adversarial.test_r2_official_sealing.OfficialSealingAdversarialTests.test_unknown_root_fields_fail_after_all_downstream_hashes_are_rebuilt) ... ok
+test_account_plus_10000_is_rejected (tests.adversarial.test_r2_perpetual_reconciliation.PerpetualReconciliationAdversarialTests.test_account_plus_10000_is_rejected) ... ok
+test_commission_currency_and_amount_are_rejected (tests.adversarial.test_r2_perpetual_reconciliation.PerpetualReconciliationAdversarialTests.test_commission_currency_and_amount_are_rejected) ... ok
+test_completed_lifecycle_native_values_and_extra_currency_are_bound (tests.adversarial.test_r2_perpetual_reconciliation.PerpetualReconciliationAdversarialTests.test_completed_lifecycle_native_values_and_extra_currency_are_bound) ... ok
+test_deleted_duplicate_and_wrong_sign_funding_are_rejected (tests.adversarial.test_r2_perpetual_reconciliation.PerpetualReconciliationAdversarialTests.test_deleted_duplicate_and_wrong_sign_funding_are_rejected) ... ok
+test_deleted_duplicate_fill_and_bad_reversal_are_rejected (tests.adversarial.test_r2_perpetual_reconciliation.PerpetualReconciliationAdversarialTests.test_deleted_duplicate_fill_and_bad_reversal_are_rejected) ... ok
+test_final_position_tamper_is_rejected (tests.adversarial.test_r2_perpetual_reconciliation.PerpetualReconciliationAdversarialTests.test_final_position_tamper_is_rejected) ... ok
+test_known_result_reconciles_every_financial_layer (tests.adversarial.test_r2_perpetual_reconciliation.PerpetualReconciliationAdversarialTests.test_known_result_reconciles_every_financial_layer) ... ok
+test_locked_free_margin_tamper_is_rejected (tests.adversarial.test_r2_perpetual_reconciliation.PerpetualReconciliationAdversarialTests.test_locked_free_margin_tamper_is_rejected) ... ok
+test_native_account_projection_binds_margin_and_csv_rows (tests.adversarial.test_r2_perpetual_reconciliation.PerpetualReconciliationAdversarialTests.test_native_account_projection_binds_margin_and_csv_rows) ... ok
+test_native_completed_schema_and_run_identity_are_strict (tests.adversarial.test_r2_perpetual_reconciliation.PerpetualReconciliationAdversarialTests.test_native_completed_schema_and_run_identity_are_strict) ... ok
+test_native_reported_account_pair_is_bound_without_double_counting (tests.adversarial.test_r2_perpetual_reconciliation.PerpetualReconciliationAdversarialTests.test_native_reported_account_pair_is_bound_without_double_counting) ... ok
+test_no_fill_no_position_run_reconciles_without_inventing_state (tests.adversarial.test_r2_perpetual_reconciliation.PerpetualReconciliationAdversarialTests.test_no_fill_no_position_run_reconciles_without_inventing_state) ... ok
+test_pinned_f64_money_rounding_matches_runtime_and_not_decimal_shortcuts (tests.adversarial.test_r2_perpetual_reconciliation.PerpetualReconciliationAdversarialTests.test_pinned_f64_money_rounding_matches_runtime_and_not_decimal_shortcuts)
+Bind exact rc2 binary64 scaling and midpoint behavior. ... ok
+test_position_snapshot_fields_type_and_side_are_mandatory (tests.adversarial.test_r2_perpetual_reconciliation.PerpetualReconciliationAdversarialTests.test_position_snapshot_fields_type_and_side_are_mandatory) ... ok
+test_real_retry_006_tie_replays_native_unrealized_money_exactly (tests.adversarial.test_r2_perpetual_reconciliation.PerpetualReconciliationAdversarialTests.test_real_retry_006_tie_replays_native_unrealized_money_exactly) ... ok
+test_realized_unrealized_and_terminal_mark_tamper_are_rejected (tests.adversarial.test_r2_perpetual_reconciliation.PerpetualReconciliationAdversarialTests.test_realized_unrealized_and_terminal_mark_tamper_are_rejected) ... ok
+test_retained_candidate_a_pinned_f64_reconciles_positions_and_daily_equity (tests.adversarial.test_r2_perpetual_reconciliation.PerpetualReconciliationAdversarialTests.test_retained_candidate_a_pinned_f64_reconciles_positions_and_daily_equity)
+Golden regression for the first real multi-cycle Candidate failure. ... ok
+test_retained_native_benchmark_account_shape_reconciles_exactly (tests.adversarial.test_r2_perpetual_reconciliation.PerpetualReconciliationAdversarialTests.test_retained_native_benchmark_account_shape_reconciles_exactly)
+Exercise the real rc2 reported/unreported funding AccountState pairs. ... ok
+test_unbound_account_delta_is_rejected (tests.adversarial.test_r2_perpetual_reconciliation.PerpetualReconciliationAdversarialTests.test_unbound_account_delta_is_rejected) ... ok
+test_base_quantity_cost_adds_not_subtracts_commission (tests.adversarial.test_r2_spot_affordability_mutation.SpotAffordabilityMutationControls.test_base_quantity_cost_adds_not_subtracts_commission) ... ok
+test_dataset_acceptance_sentinel_uses_reserved_quote_sizing (tests.adversarial.test_r2_spot_affordability_mutation.SpotAffordabilityMutationControls.test_dataset_acceptance_sentinel_uses_reserved_quote_sizing)
+The real 1,000,000 USDT max-price bound must not block the sentinel. ... ok
+test_invalid_affordability_domain_fails_closed (tests.adversarial.test_r2_spot_affordability_mutation.SpotAffordabilityMutationControls.test_invalid_affordability_domain_fails_closed) ... ok
+test_quote_capacity_reserves_fee_and_both_rounding_budgets (tests.adversarial.test_r2_spot_affordability_mutation.SpotAffordabilityMutationControls.test_quote_capacity_reserves_fee_and_both_rounding_budgets) ... ok
+
+----------------------------------------------------------------------
+Ran 39 tests in 4.247s
+
+OK

@@ -34,6 +34,10 @@ class HistoryAttackFixture:
             ["git", "-C", str(root), "remote", "add", "origin", "https://example.invalid/history.git"],
             check=True,
         )
+        (root / "SSOT.md").write_text("synthetic history authority\n", encoding="utf-8")
+        package = root / "src/crypto_lab"
+        package.mkdir(parents=True)
+        (package / "sealing.py").write_text("# authority marker\n", encoding="utf-8")
         research = root / "research"
         research.mkdir()
         (research / "trials.jsonl").write_bytes(b"")

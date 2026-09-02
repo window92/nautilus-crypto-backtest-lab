@@ -1,0 +1,5 @@
+$ /home/builder/projects/nautilus-crypto-backtest-lab/.data-venv/bin/python /home/builder/projects/nautilus-crypto-backtest-lab/scripts/validate_free_official_raw_objects.py --database /home/builder/projects/nautilus-crypto-backtest-lab/data/duckdb/adversarial-remediation-002/retry-009/primary.duckdb
+exit_code=0
+duration_seconds=1.763255
+
+{"allowed_hosts": ["api.github.com", "data-api.binance.vision", "data.binance.vision", "fapi.binance.com", "raw.githubusercontent.com", "www.binance.com"], "database_path": "data/duckdb/adversarial-remediation-002/retry-009/primary.duckdb", "duckdb_version": "1.4.5", "extensions_loaded": false, "failures": [], "hash_or_size_failure_count": 0, "network_used": false, "raw_byte_occurrences_checked": 678954172, "raw_object_count": 2243, "schema": "free-official-binance-raw-rehash-v1", "source_locator_count": 2243, "status": "PASS", "unauthorized_hosts": []}

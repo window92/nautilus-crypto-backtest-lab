@@ -22,6 +22,7 @@ from crypto_lab.status import FailureCode
 from crypto_lab.strategies.base import GuardedCausalStrategy
 from crypto_lab.strategies.base import OrderIntent
 from crypto_lab.strategies.base import StrategySpec
+from crypto_lab.strategies.base import signal_interval_is_scoring_eligible
 
 
 DAY_NS = 86_400_000_000_000
@@ -370,6 +371,8 @@ class BtcusdtDailyPriceVsSma20Trend(GuardedCausalStrategy):
     def on_bar(self, bar: Bar) -> None:
         assert self._daily_bar_type is not None
         if bar.bar_type != self._daily_bar_type:
+            self._record_engine_data_callback("Bar", bar)
+            self._record_material_valuation_bar(bar)
             self.observations["execution_bar_callbacks"] += 1
             self._boundary_snapshot(int(self.clock.timestamp_ns()))
             self._submit_pending_reversal_if_ready(int(self.clock.timestamp_ns()))
@@ -391,7 +394,12 @@ class BtcusdtDailyPriceVsSma20Trend(GuardedCausalStrategy):
         if not self._sma.initialized:
             return
         interval_start = int(bar.ts_init) - DAY_NS
-        if interval_start < self._scoring_start_ns or int(bar.ts_init) > self._scoring_end_exclusive_ns:
+        if not signal_interval_is_scoring_eligible(
+            interval_start_ns=interval_start,
+            interval_end_exclusive_ns=int(bar.ts_init),
+            scoring_start_ns=self._scoring_start_ns,
+            scoring_end_exclusive_ns=self._scoring_end_exclusive_ns,
+        ):
             return
         close = Decimal(str(bar.close))
         sma = Decimal(str(self._sma.value))
@@ -424,6 +432,8 @@ class BtcusdtDailyPriceVsSma20Trend(GuardedCausalStrategy):
         redundant presentation copy, not stronger financial evidence.
         """
 
+        self._record_engine_data_callback("MarkPriceUpdate", event)
+        self._record_material_valuation_mark(event)
         self.observations["mark_price_update_count"] += 1
         self.observations["latest_mark_price_update"] = {
             "instrument_id": str(event.instrument_id),
