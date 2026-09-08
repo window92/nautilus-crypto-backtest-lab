@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the additive retry-012 explicit-repository-root supersession registry."""
+"""Build the additive pre-closure explicit-repository-root supersession registry."""
 
 from __future__ import annotations
 
@@ -70,11 +70,67 @@ EXPECTED_REPOSITORY_ROOT_EVIDENCE_IDENTITIES = {
         "development/adversarial-remediation-002-retry-012-spot-candidate-b-"
         "run-978d34af0dbe"
     ): "40907dfa7e15db0d49f6fc211bf4012c701147df7e02b4b145089e83986f570a",
+    "runs/adversarial-remediation-002-retry-013-perpetual-benchmark-run-509fe0e72c26": (
+        "81e1ede1b60a7764df0f5c76aeb4c03b38a85aa75d98e909f3b1763bdc2148f9"
+    ),
+    "runs/adversarial-remediation-002-retry-013-perpetual-candidate-a-run-c5aecd7ca99c": (
+        "6d87135482d5caa5c7e46029c5ddbff35cd2e207eed7727b99b1cd76fe9c3028"
+    ),
+    "runs/adversarial-remediation-002-retry-013-perpetual-candidate-b-run-d3aebef34b1f": (
+        "b3a2582a4916261f65dc6555812a40666cda9059bacec9d881ee09ccc7bcd558"
+    ),
+    "runs/adversarial-remediation-002-retry-013-spot-benchmark-run-682626a9b6b2": (
+        "1584c4c2b2944e9813691f6870fd70526cdde6ed8cfa9e47427aa3f7e04a0fe9"
+    ),
+    "runs/adversarial-remediation-002-retry-013-spot-candidate-a-run-1b6fe098dd9f": (
+        "a922bdfb1d10b58edc1a2918bb832f4443cc56f8284dcfe221779bd65e0fcb40"
+    ),
+    "runs/adversarial-remediation-002-retry-013-spot-candidate-b-run-ce61e7d7331f": (
+        "2544b2892ed17ce0cefc5f17d6598fa3d59d9fe1b90238916c6e0a2459f0efdb"
+    ),
+    "runs/adversarial-remediation-002-retry-014-spot-benchmark-run-9e0a0ecf1bc8": (
+        "e5d163f4de6343a8cf27dacb072419230911cfaba0f95690e094fff7e43ff7cd"
+    ),
+    (
+        "runs/replays/adversarial-remediation-002-retry-013-perpetual-benchmark-"
+        "buy-and-hold-1x-development/adversarial-remediation-002-retry-013-"
+        "perpetual-benchmark-run-509fe0e72c26"
+    ): "cfc0b20c4bc14c30146ba090910daf9176129df1f1ecd7420ca6989601a04c29",
+    (
+        "runs/replays/adversarial-remediation-002-retry-013-perpetual-candidate-a-"
+        "development/adversarial-remediation-002-retry-013-perpetual-candidate-a-"
+        "run-c5aecd7ca99c"
+    ): "34da6180cab5795e05c7629fb911998416ec189f442fa62d661aec7f7bc5b1ec",
+    (
+        "runs/replays/adversarial-remediation-002-retry-013-perpetual-candidate-b-"
+        "development/adversarial-remediation-002-retry-013-perpetual-candidate-b-"
+        "run-d3aebef34b1f"
+    ): "e4b587d4c8cc56dae0f71d9889b6a6b8dd7907ef6ecf5cefc050c2f9fa7b2a9b",
+    (
+        "runs/replays/adversarial-remediation-002-retry-013-spot-benchmark-"
+        "buy-and-hold-1x-development/adversarial-remediation-002-retry-013-"
+        "spot-benchmark-run-682626a9b6b2"
+    ): "041e81e079425f38547c96ecf23cc5f1c93d6642c4dfb8e699becb33b761d47d",
+    (
+        "runs/replays/adversarial-remediation-002-retry-013-spot-candidate-a-"
+        "development/adversarial-remediation-002-retry-013-spot-candidate-a-"
+        "run-1b6fe098dd9f"
+    ): "01c05ad9ed3d7a0d0a76da79967fdaf2340c4d910bc6238dbc29c288de822297",
+    (
+        "runs/replays/adversarial-remediation-002-retry-013-spot-candidate-b-"
+        "development/adversarial-remediation-002-retry-013-spot-candidate-b-"
+        "run-ce61e7d7331f"
+    ): "12c3f8e4e6382f6b071c9d440e511baa488d2454c21ca4c79015da8380de6208",
+    (
+        "runs/replays/adversarial-remediation-002-retry-014-spot-benchmark-"
+        "buy-and-hold-1x-development/adversarial-remediation-002-retry-014-"
+        "spot-benchmark-run-9e0a0ecf1bc8"
+    ): "e2cd8e2ee6547e8ecb1d494092ba5a3eff34be299e2691a721393ddc263b321d",
 }
 
 
 class RepositoryRootSupersessionBuildError(ValueError):
-    """The frozen retry-012 supersession registry could not be proven."""
+    """The frozen pre-closure supersession registry could not be proven."""
 
 
 def _recorded_at_utc(value: str) -> datetime:

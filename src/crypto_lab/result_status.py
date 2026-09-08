@@ -783,6 +783,95 @@ R2_REPOSITORY_ROOT_SUPERSEDED_RESULTS: dict[str, dict[str, str]] = {
             "run-978d34af0dbe"
         ),
     },
+    "retry-013-perpetual-benchmark": {
+        "market_profile": "BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING",
+        "result_class": HistoricalResultClass.BENCHMARK.value,
+        "primary_path": (
+            "runs/adversarial-remediation-002-retry-013-perpetual-benchmark-run-"
+            "509fe0e72c26"
+        ),
+        "replay_path": (
+            "runs/replays/adversarial-remediation-002-retry-013-perpetual-benchmark-"
+            "buy-and-hold-1x-development/adversarial-remediation-002-retry-013-"
+            "perpetual-benchmark-run-509fe0e72c26"
+        ),
+    },
+    "retry-013-perpetual-candidate-a": {
+        "market_profile": "BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING",
+        "result_class": HistoricalResultClass.CANDIDATE.value,
+        "primary_path": (
+            "runs/adversarial-remediation-002-retry-013-perpetual-candidate-a-run-"
+            "c5aecd7ca99c"
+        ),
+        "replay_path": (
+            "runs/replays/adversarial-remediation-002-retry-013-perpetual-candidate-a-"
+            "development/adversarial-remediation-002-retry-013-perpetual-candidate-a-"
+            "run-c5aecd7ca99c"
+        ),
+    },
+    "retry-013-perpetual-candidate-b": {
+        "market_profile": "BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING",
+        "result_class": HistoricalResultClass.CANDIDATE.value,
+        "primary_path": (
+            "runs/adversarial-remediation-002-retry-013-perpetual-candidate-b-run-"
+            "d3aebef34b1f"
+        ),
+        "replay_path": (
+            "runs/replays/adversarial-remediation-002-retry-013-perpetual-candidate-b-"
+            "development/adversarial-remediation-002-retry-013-perpetual-candidate-b-"
+            "run-d3aebef34b1f"
+        ),
+    },
+    "retry-013-spot-benchmark": {
+        "market_profile": "BINANCE_SPOT_CASH_LONG_ONLY",
+        "result_class": HistoricalResultClass.BENCHMARK.value,
+        "primary_path": (
+            "runs/adversarial-remediation-002-retry-013-spot-benchmark-run-682626a9b6b2"
+        ),
+        "replay_path": (
+            "runs/replays/adversarial-remediation-002-retry-013-spot-benchmark-"
+            "buy-and-hold-1x-development/adversarial-remediation-002-retry-013-"
+            "spot-benchmark-run-682626a9b6b2"
+        ),
+    },
+    "retry-013-spot-candidate-a": {
+        "market_profile": "BINANCE_SPOT_CASH_LONG_ONLY",
+        "result_class": HistoricalResultClass.CANDIDATE.value,
+        "primary_path": (
+            "runs/adversarial-remediation-002-retry-013-spot-candidate-a-run-"
+            "1b6fe098dd9f"
+        ),
+        "replay_path": (
+            "runs/replays/adversarial-remediation-002-retry-013-spot-candidate-a-"
+            "development/adversarial-remediation-002-retry-013-spot-candidate-a-"
+            "run-1b6fe098dd9f"
+        ),
+    },
+    "retry-013-spot-candidate-b": {
+        "market_profile": "BINANCE_SPOT_CASH_LONG_ONLY",
+        "result_class": HistoricalResultClass.CANDIDATE.value,
+        "primary_path": (
+            "runs/adversarial-remediation-002-retry-013-spot-candidate-b-run-"
+            "ce61e7d7331f"
+        ),
+        "replay_path": (
+            "runs/replays/adversarial-remediation-002-retry-013-spot-candidate-b-"
+            "development/adversarial-remediation-002-retry-013-spot-candidate-b-"
+            "run-ce61e7d7331f"
+        ),
+    },
+    "retry-014-spot-benchmark": {
+        "market_profile": "BINANCE_SPOT_CASH_LONG_ONLY",
+        "result_class": HistoricalResultClass.BENCHMARK.value,
+        "primary_path": (
+            "runs/adversarial-remediation-002-retry-014-spot-benchmark-run-9e0a0ecf1bc8"
+        ),
+        "replay_path": (
+            "runs/replays/adversarial-remediation-002-retry-014-spot-benchmark-"
+            "buy-and-hold-1x-development/adversarial-remediation-002-retry-014-"
+            "spot-benchmark-run-9e0a0ecf1bc8"
+        ),
+    },
 }
 
 
@@ -2863,7 +2952,7 @@ def build_repository_root_supersession_record_v8(
     result_class: HistoricalResultClass,
     copy_role: HistoricalCopyRole,
 ) -> dict[str, Any]:
-    """Bind one immutable retry-012 Run superseded by the explicit-root fix."""
+    """Bind one immutable pre-closure Run superseded by the explicit-root fix."""
 
     run, relative = _resolved_run_path(run_directory, repository_root)
     evidence_hashes: dict[str, str] = {}
@@ -2900,7 +2989,7 @@ def build_repository_root_supersession_registry_v8(
     source_commit: str,
     recorded_at_utc: datetime,
 ) -> bytes:
-    """Return the canonical closed retry-012 explicit-root registry."""
+    """Return the canonical closed pre-closure explicit-root registry."""
 
     if recorded_at_utc.tzinfo is None or recorded_at_utc.utcoffset() != UTC.utcoffset(
         recorded_at_utc,

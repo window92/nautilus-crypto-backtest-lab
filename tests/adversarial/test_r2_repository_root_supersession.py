@@ -102,7 +102,7 @@ def _recompute(value: dict[str, object]) -> bytes:
 
 
 class R2RepositoryRootSupersessionTests(unittest.TestCase):
-    def test_exact_retry_012_scope_is_canonical_and_only_superseded(self) -> None:
+    def test_exact_pre_closure_scope_is_canonical_and_only_superseded(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             registry_path, _runs, payload = _fixture(Path(temporary))
             registry = load_historical_result_registry(registry_path)
@@ -114,7 +114,10 @@ class R2RepositoryRootSupersessionTests(unittest.TestCase):
                 recorded_at_utc=RECORDED,
             )
         self.assertEqual(rebuilt, payload)
-        self.assertEqual(len(registry.records), 12)
+        self.assertEqual(
+            len(registry.records),
+            2 * len(R2_REPOSITORY_ROOT_SUPERSEDED_RESULTS),
+        )
         self.assertTrue(
             all(
                 record.historical_run_status is HistoricalRunStatus.SUPERSEDED
@@ -128,7 +131,7 @@ class R2RepositoryRootSupersessionTests(unittest.TestCase):
             ),
         )
 
-    def test_every_retry_012_primary_and_replay_is_ineligible(self) -> None:
+    def test_every_pre_closure_primary_and_replay_is_ineligible(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             registry, runs, _payload = _fixture(root)
