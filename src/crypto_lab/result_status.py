@@ -518,6 +518,35 @@ R2_RUNTIME_SUPERSEDED_RESULTS.update({
 
 
 
+# Preserve the four completed retry-018 pairs before event-identity/root hardening.
+R2_RUNTIME_SUPERSEDED_RESULTS.update({
+    "retry-018-perpetual-benchmark": {
+        "market_profile": "BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING",
+        "result_class": "BENCHMARK",
+        "primary_path": "runs/adversarial-remediation-002-retry-018-perpetual-benchmark-run-e6befe0c82bf",
+        "replay_path": "runs/replays/adversarial-remediation-002-retry-018-perpetual-benchmark-buy-and-hold-1x-development/adversarial-remediation-002-retry-018-perpetual-benchmark-run-e6befe0c82bf"
+    },
+    "retry-018-spot-benchmark": {
+        "market_profile": "BINANCE_SPOT_CASH_LONG_ONLY",
+        "result_class": "BENCHMARK",
+        "primary_path": "runs/adversarial-remediation-002-retry-018-spot-benchmark-run-831d097d2f8f",
+        "replay_path": "runs/replays/adversarial-remediation-002-retry-018-spot-benchmark-buy-and-hold-1x-development/adversarial-remediation-002-retry-018-spot-benchmark-run-831d097d2f8f"
+    },
+    "retry-018-spot-candidate-a": {
+        "market_profile": "BINANCE_SPOT_CASH_LONG_ONLY",
+        "result_class": "CANDIDATE",
+        "primary_path": "runs/adversarial-remediation-002-retry-018-spot-candidate-a-run-fe32ee3970b4",
+        "replay_path": "runs/replays/adversarial-remediation-002-retry-018-spot-candidate-a-development/adversarial-remediation-002-retry-018-spot-candidate-a-run-fe32ee3970b4"
+    },
+    "retry-018-spot-candidate-b": {
+        "market_profile": "BINANCE_SPOT_CASH_LONG_ONLY",
+        "result_class": "CANDIDATE",
+        "primary_path": "runs/adversarial-remediation-002-retry-018-spot-candidate-b-run-656547f31d36",
+        "replay_path": "runs/replays/adversarial-remediation-002-retry-018-spot-candidate-b-development/adversarial-remediation-002-retry-018-spot-candidate-b-run-656547f31d36"
+    }
+})
+
+
 R2_CLAIM_SCHEMA_SUPERSEDED_RESULTS: dict[str, dict[str, str]] = {
     "retry-008-perpetual-benchmark": {
         "market_profile": "BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING",

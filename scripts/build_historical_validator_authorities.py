@@ -401,7 +401,7 @@ def _tree_inventory(repository: Path, locator: str) -> list[dict[str, Any]]:
 def external_root_identity(repository: Path, locator: str) -> dict[str, Any]:
     """Return the canonical pre-commit inventory expectation for one root."""
 
-    repository = Path(repository).resolve(strict=True)
+    repository = _require_repository_root(repository)
     locator = _safe_relative(locator, label="external root locator")
     inventory = _tree_inventory(repository, locator)
     return {

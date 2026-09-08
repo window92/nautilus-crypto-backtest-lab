@@ -24,6 +24,7 @@ AUTHORITY_SENSITIVE_SOURCES = (
     "src/crypto_lab/exposure.py",
     "src/crypto_lab/git_identity.py",
     "src/crypto_lab/historical_contracts.py",
+    "src/crypto_lab/historical_executor.py",
     "src/crypto_lab/history.py",
     "src/crypto_lab/host_acceptance.py",
     "src/crypto_lab/legacy_publication.py",

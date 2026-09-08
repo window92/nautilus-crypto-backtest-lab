@@ -16,6 +16,7 @@ from typing import Any
 from crypto_lab.historical_contracts import HistoricalAuthorityError
 from crypto_lab.historical_contracts import HistoricalValidatorAuthority
 from crypto_lab.historical_contracts import validate_historical_validator_authority
+from crypto_lab.git_identity import require_repository_root
 
 
 _SAFE = re.compile(r"[A-Za-z0-9_.-]+")
@@ -419,10 +420,12 @@ def execute_historical_validator(
 ) -> HistoricalExecutionResult:
     """Run exact historical bytes in an independent clone and isolated Python."""
 
-    repository_input = Path(repository_root)
-    if repository_input.is_symlink():
-        raise HistoricalAuthorityError("EXECUTABLE_CLOSURE_MISMATCH", "repository is a symlink")
-    repository = repository_input.resolve(strict=True)
+    try:
+        repository = require_repository_root(repository_root)
+    except (TypeError, ValueError) as exc:
+        raise HistoricalAuthorityError(
+            'EXECUTABLE_CLOSURE_MISMATCH', f'repository authority is invalid: {exc}',
+        ) from exc
     validation = validate_historical_validator_authority(
         authority,
         repository_root=repository,

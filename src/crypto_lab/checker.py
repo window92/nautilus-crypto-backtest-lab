@@ -1249,6 +1249,10 @@ def validate_official_funding_binding(
     position_timestamps = [item[0] for item in source_positions]
 
     checkpoint_by_boundary: dict[int, dict[str, Any]] = {}
+    source_boundary_by_key = {
+        item['event_key']: boundary for boundary, item in source_by_boundary.items()
+    }
+    native_slots_by_reason: dict[str, set[int]] = defaultdict(set)
     for item in checkpoints:
         try:
             boundary = int(item["boundary_ns"])
@@ -1258,6 +1262,15 @@ def validate_official_funding_binding(
         if boundary in checkpoint_by_boundary:
             failures.append(FailureCode.FUNDING_DOUBLE_COUNT.value)
         checkpoint_by_boundary[boundary] = item
+        source_boundary = source_boundary_by_key.get(item.get('source_event_key'))
+        native = item.get('native_adjustments')
+        if source_boundary is not None and isinstance(native, list):
+            for adjustment in native:
+                if (isinstance(adjustment, dict)
+                    and adjustment.get('adjustment_type') == 'FUNDING'
+                    and adjustment.get('instrument_id') == instrument_id
+                    and str(adjustment.get('reason', '')).startswith('funding_settlement:')):
+                    native_slots_by_reason[adjustment['reason']].add(source_boundary)
 
     declared_source_count = int(
         dataset_contract.get(
@@ -1528,8 +1541,23 @@ def validate_official_funding_binding(
             money = str(row.get("pnl_change", "")).split(" ", maxsplit=1)
             if len(money) != 2 or money[1] != settlement_currency:
                 failures.append(FailureCode.FUNDING_CURRENCY_INVALID.value)
+            timestamp = int(row['ts_event'])
+            native_slots = native_slots_by_reason.get(row['reason'], set())
+            if len(native_slots) > 1 or (
+                not native_slots
+                and checkpoint_by_boundary.get(timestamp, {}).get('native_adjustments')
+            ):
+                failures.append(FailureCode.FUNDING_AMBIGUOUS.value)
+            elif native_slots:
+                native_slot = next(iter(native_slots))
+                if timestamp != native_slot:
+                    failures.append(FailureCode.FUNDING_BOUNDARY_INVALID.value)
+                    # This bucket identifies the same persisted native event
+                    # for cardinality diagnosis only. The observed timestamp
+                    # remains invalid; no evidence or native state is repaired.
+                    timestamp = native_slot
             actual_adjustments.append(
-                (int(row["ts_event"]), _commission_amount(row["pnl_change"])),
+                (timestamp, _commission_amount(row["pnl_change"])),
             )
         except Exception:
             failures.append(FailureCode.FUNDING_AMBIGUOUS.value)

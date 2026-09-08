@@ -7,6 +7,17 @@ remains `SSOT.md`; this file does not change normative behavior.
 
 ### Multi-boundary funding diagnostics
 
+- Bind each funding CSV row to its native event identity before diagnosing
+  boundary/cardinality mismatches. A shifted timestamp is a boundary failure,
+  not a fabricated missing/unexpected pair; real duplicate/missing events
+  remain independently diagnosed and unbound event identities fail closed.
+- Require an explicit absolute root at the low-level historical executor and
+  external inventory boundary too, before path normalization or execution.
+  Real relative-root, missing-root and symlink controls cover these APIs.
+- Retain the completed retry-018 Spot pairs and Perpetual benchmark pair as
+  immutable superseded evidence before the final source rebuild. The other
+  two retry-018 workflows were never started.
+
 - Derive funding cardinality from the source schedule and causal native
   position independently of mark/checkpoint validation. Invalid marks,
   positions and boundaries no longer manufacture duplicate-settlement codes.

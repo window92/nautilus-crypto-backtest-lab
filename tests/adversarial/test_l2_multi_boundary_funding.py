@@ -134,26 +134,58 @@ class RealMultiBoundaryFundingTests(unittest.TestCase):
         self.case['checkpoints'].remove(cp)
         self.assertCodes(self.case, ['FUNDING_BOUNDARY_INVALID'])
 
+    def test_csv_timestamp_change_with_same_native_identity_is_boundary_failure(self):
+        row = self.case['funding_rows'][0]
+        row['ts_event'] = str(int(row['ts_event'])+1)
+        self.assertCodes(self.case, ['FUNDING_BOUNDARY_INVALID'])
+
+    def test_bad_csv_timestamp_does_not_hide_a_real_duplicate_or_other_missing_row(self):
+        case = copy.deepcopy(self.case)
+        extra = copy.deepcopy(case['funding_rows'][0])
+        extra['ts_event'] = str(int(extra['ts_event'])+1)
+        case['funding_rows'].append(extra)
+        self.assertCodes(case, ['FUNDING_DOUBLE_COUNT','FUNDING_BOUNDARY_INVALID'])
+        case = copy.deepcopy(self.case)
+        case['funding_rows'][0]['ts_event'] = str(int(case['funding_rows'][0]['ts_event'])+1)
+        case['funding_rows'].pop(1)
+        self.assertCodes(case, ['FUNDING_MISSING','FUNDING_BOUNDARY_INVALID'])
+
+    def test_csv_native_event_identity_must_match_without_timestamp_only_fallback(self):
+        self.case['funding_rows'][0]['reason'] = 'funding_settlement:unbound-event'
+        self.assertCodes(self.case, ['FUNDING_AMBIGUOUS'])
+
 
 class HostRealFundingDiagnosticTests(unittest.TestCase):
     def test_real_full_checker_and_seal_reject_mark_and_position_without_false_duplicate(self):
         original = {p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in RUN.iterdir() if p.is_file()}
-        for name in ('MARK_INVALID','POSITION_INVALID'):
+        for name in ('MARK_INVALID','POSITION_INVALID','CSV_BOUNDARY_INVALID'):
             with self.subTest(defect=name), tempfile.TemporaryDirectory() as temporary:
                 copied = Path(temporary) / 'run'
                 shutil.copytree(RUN, copied)
                 case = native_case()
                 case['mark_source_events'] = copy.deepcopy(case['mark_source_events'])
-                mutate(case, name)
-                path = copied / 'nautilus_result.json'
-                result = json.loads(path.read_bytes())
-                result['native_funding_checkpoints'] = case['checkpoints']
-                path.write_text(json.dumps(result,sort_keys=True,separators=(',',':'))+'\n')
+                if name == 'CSV_BOUNDARY_INVALID':
+                    funding = case['funding_rows']
+                    funding[0]['ts_event'] = str(int(funding[0]['ts_event'])+1)
+                    with (copied/'funding.csv').open('w',newline='') as stream:
+                        writer = csv.DictWriter(stream,fieldnames=list(funding[0]),lineterminator='\n')
+                        writer.writeheader()
+                        writer.writerows(funding)
+                else:
+                    mutate(case, name)
+                    path = copied / 'nautilus_result.json'
+                    result = json.loads(path.read_bytes())
+                    result['native_funding_checkpoints'] = case['checkpoints']
+                    path.write_text(json.dumps(result,sort_keys=True,separators=(',',':'))+'\n')
                 before = {p.name:p.read_bytes() for p in copied.iterdir() if p.is_file()}
                 check = check_evidence_directory(copied,repository_root=ROOT,
                                                  source_revision_current_head_required=False)
                 self.assertEqual(check.outcome.value, 'COMPONENT_CHECK_FAIL')
-                self.assertEqual(check.failure_codes, ('FUNDING_'+name,))
+                if name == 'CSV_BOUNDARY_INVALID':
+                    self.assertEqual([code for code in check.failure_codes if code.startswith('FUNDING_')],
+                                     ['FUNDING_BOUNDARY_INVALID'])
+                else:
+                    self.assertEqual(check.failure_codes, ('FUNDING_'+name,))
                 seal = verify_official_seal(copied,repository_root=ROOT,
                                            source_revision_current_head_required=False)
                 self.assertNotEqual(seal.outcome.value, 'OFFICIAL_SEAL_PASS')

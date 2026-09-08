@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import tempfile
 import unittest
+from contextlib import chdir
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
@@ -333,6 +334,15 @@ class HistoricalBuilderFixture:
 
 
 class HistoricalAuthorityBuilderTests(unittest.TestCase):
+    def test_external_inventory_requires_explicit_absolute_repository(self) -> None:
+        link = Path(self.temporary.name)/'repository-link'
+        link.symlink_to(self.fixture.repository, target_is_directory=True)
+        with chdir(self.fixture.repository):
+            for root, message in [(None,'pathlib.Path'), (Path('.'),'absolute'),
+                                  (Path(self.temporary.name)/'missing','does not exist'), (link,'symlink')]:
+                with self.subTest(root=root), self.assertRaisesRegex(HistoricalAuthorityBuildError, message):
+                    external_root_identity(root, 'data/source')
+
     def setUp(self) -> None:
         self.temporary = tempfile.TemporaryDirectory()
         self.fixture = HistoricalBuilderFixture(Path(self.temporary.name))

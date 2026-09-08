@@ -145,6 +145,10 @@ class R2RuntimeSupersessionStatusTests(unittest.TestCase):
                 "retry-017-perpetual-benchmark:REPLAY",
                 "retry-017-perpetual-candidate-a:PRIMARY",
                 "retry-017-perpetual-candidate-b:REPLAY",
+                "retry-018-spot-benchmark:PRIMARY",
+                "retry-018-spot-candidate-a:REPLAY",
+                "retry-018-spot-candidate-b:PRIMARY",
+                "retry-018-perpetual-benchmark:REPLAY",
             ):
                 with self.subTest(key=key), self.assertRaises(ResultNotActiveError):
                     require_active_result(

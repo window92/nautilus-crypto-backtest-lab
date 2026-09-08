@@ -7,6 +7,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from contextlib import chdir
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
@@ -215,6 +216,19 @@ class HistoricalValidatorIdentityTests(unittest.TestCase):
         self.fixture.write_manifest(manifest)
         with self.assertRaisesRegex(HistoricalAuthorityError, "EXECUTION_PLAN_MISMATCH"):
             load_historical_authority_manifest(self.fixture.manifest_path)
+
+    def test_direct_executor_rejects_relative_root_before_historical_execution(self) -> None:
+        link = self.fixture.root / 'repository-link'
+        link.symlink_to(self.fixture.repository, target_is_directory=True)
+        with chdir(self.fixture.repository):
+            for root, message in [(None,'required'), (Path('.'),'absolute'),
+                                  (self.fixture.root/'missing','does not exist'), (link,'symlink')]:
+                with self.subTest(root=root), self.assertRaisesRegex(HistoricalAuthorityError, message):
+                    execute_historical_validator(
+                        self.fixture.authority(), repository_root=root,
+                        runtime_profile=self.fixture.runtime.runtime_profile,
+                        bootstrap_path=BOOTSTRAP,
+                    )
 
     def test_bound_external_input_tamper_fails_before_validator(self) -> None:
         self.fixture.invalid_evidence.write_text('{"valid":true}\n', encoding="utf-8")
