@@ -34,6 +34,7 @@ from crypto_lab.runtime import verify_runtime_lock
 
 EXPECTED_EPOCH = "adversarial-remediation-002"
 R2_MODULES = (
+    "tests.adversarial.test_l2_multi_boundary_funding",
     "tests.adversarial.test_historical_bootstrap_selection",
     "tests.adversarial.test_r2_causality_boundaries",
     "tests.adversarial.test_r2_execution_chain",
@@ -65,6 +66,7 @@ R2_MODULES = (
     "tests.unit.test_r2_official_rebuild_plan",
 )
 MUTATION_MODULES = (
+    "tests.adversarial.test_l2_multi_boundary_funding",
     "tests.adversarial.test_historical_bootstrap_selection",
     "tests.adversarial.test_r2_causality_boundaries",
     "tests.adversarial.test_r2_execution_chain",

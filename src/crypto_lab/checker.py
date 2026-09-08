@@ -1287,10 +1287,26 @@ def validate_official_funding_binding(
         failures.append(FailureCode.FUNDING_BOUNDARY_INVALID.value)
 
     expected_adjustments: list[tuple[int, Decimal]] = []
+    # Cardinality comes from the source schedule and causal native position,
+    # never from the subset whose mark/rate/checkpoint passed validation.
+    # Otherwise a bad mark removes an expectation and is misdiagnosed as a
+    # duplicate settlement in any multi-boundary Run.
+    eligible_boundaries: set[int] = set()
     applicable = 0
     no_position = 0
     mark_ages: list[int] = []
     for boundary, source_event in source_by_boundary.items():
+        position_index = bisect_left(position_timestamps, boundary) - 1
+        expected_signed_qty = (
+            Decimal(0)
+            if position_index < 0
+            else source_positions[position_index][2]
+        )
+        if expected_signed_qty == 0:
+            no_position += 1
+        else:
+            applicable += 1
+            eligible_boundaries.add(boundary)
         checkpoint = checkpoint_by_boundary.get(boundary)
         if checkpoint is None:
             continue
@@ -1346,12 +1362,9 @@ def validate_official_funding_binding(
         ):
             failures.append(FailureCode.FUNDING_AMBIGUOUS.value)
             continue
-        position_index = bisect_left(position_timestamps, boundary) - 1
-        expected_signed_qty = (
-            Decimal(0)
-            if position_index < 0
-            else source_positions[position_index][2]
-        )
+        # Diagnose real native multiplicity even if another field is invalid.
+        if len(native) > 1:
+            failures.append(FailureCode.FUNDING_DOUBLE_COUNT.value)
         checkpoint_signed_qty = Decimal(0)
         if positions:
             try:
@@ -1369,10 +1382,6 @@ def validate_official_funding_binding(
                 )
             )
         )
-        if expected_signed_qty == 0:
-            no_position += 1
-        else:
-            applicable += 1
         if not checkpoint_position_ok:
             failures.append(FailureCode.FUNDING_POSITION_INVALID.value)
             continue
@@ -1503,6 +1512,11 @@ def validate_official_funding_binding(
         expected_adjustments.append((boundary, expected))
 
     actual_adjustments: list[tuple[int, Decimal]] = []
+    instrument_contract = dataset_contract.get("instrument")
+    settlement_currency = (
+        instrument_contract.get("settlement_currency")
+        if isinstance(instrument_contract, dict) else None
+    )
     for row in funding_rows:
         try:
             if (
@@ -1511,40 +1525,31 @@ def validate_official_funding_binding(
                 or not str(row.get("reason", "")).startswith("funding_settlement:")
             ):
                 raise ValueError("funding row role mismatch")
+            money = str(row.get("pnl_change", "")).split(" ", maxsplit=1)
+            if len(money) != 2 or money[1] != settlement_currency:
+                failures.append(FailureCode.FUNDING_CURRENCY_INVALID.value)
             actual_adjustments.append(
                 (int(row["ts_event"]), _commission_amount(row["pnl_change"])),
             )
         except Exception:
             failures.append(FailureCode.FUNDING_AMBIGUOUS.value)
-    actual_adjustments.sort()
-    expected_sorted = sorted(expected_adjustments)
-    if actual_adjustments != expected_sorted:
-        actual_ts = {item[0] for item in actual_adjustments}
-        expected_ts = {item[0] for item in expected_sorted}
-        missing_ts = expected_ts - actual_ts
-        extra_ts = actual_ts - expected_ts
-        if missing_ts:
-            failures.append(FailureCode.FUNDING_MISSING.value)
-        if extra_ts:
-            unknown = extra_ts - set(source_by_boundary)
-            if unknown:
-                failures.append(FailureCode.FUNDING_UNEXPECTED_SETTLEMENT.value)
-            elif expected_ts:
-                failures.append(FailureCode.FUNDING_DOUBLE_COUNT.value)
-        if not missing_ts and not extra_ts:
-            amount_mismatch = False
-            sign_mismatch = False
-            for timestamp, expected_amount in expected_sorted:
-                actual_amount = next(
-                    amount for ts, amount in actual_adjustments if ts == timestamp
-                )
-                if actual_amount == -expected_amount and expected_amount != 0:
-                    sign_mismatch = True
-                elif actual_amount != expected_amount:
-                    amount_mismatch = True
-            if sign_mismatch:
+    actual_by_boundary: dict[int, list[Decimal]] = defaultdict(list)
+    for timestamp, amount in actual_adjustments:
+        actual_by_boundary[timestamp].append(amount)
+    if eligible_boundaries - actual_by_boundary.keys():
+        failures.append(FailureCode.FUNDING_MISSING.value)
+    if actual_by_boundary.keys() - eligible_boundaries:
+        failures.append(FailureCode.FUNDING_UNEXPECTED_SETTLEMENT.value)
+    if any(len(amounts) > 1 for amounts in actual_by_boundary.values()):
+        failures.append(FailureCode.FUNDING_DOUBLE_COUNT.value)
+    # Check every independently computable amount, including when another
+    # boundary is missing or invalid. No first-match selection can hide a
+    # second malformed settlement.
+    for timestamp, expected_amount in expected_adjustments:
+        for actual_amount in actual_by_boundary.get(timestamp, ()):
+            if actual_amount == -expected_amount and expected_amount != 0:
                 failures.append(FailureCode.FUNDING_SIGN_INVALID.value)
-            if amount_mismatch:
+            elif actual_amount != expected_amount:
                 failures.append(FailureCode.FUNDING_AMOUNT_INVALID.value)
 
     unique_failures = ordered_funding_failure_codes(failures)

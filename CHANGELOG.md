@@ -5,6 +5,19 @@ remains `SSOT.md`; this file does not change normative behavior.
 
 ## [Unreleased] - 1.0.1.dev0
 
+### Multi-boundary funding diagnostics
+
+- Derive funding cardinality from the source schedule and causal native
+  position independently of mark/checkpoint validation. Invalid marks,
+  positions and boundaries no longer manufacture duplicate-settlement codes.
+- Reject real duplicate CSV/native settlements, unexpected flat-position
+  settlements, and CSV-only wrong currency. Check every computable amount
+  even when another boundary is invalid or missing; never modify native state.
+- Add real persisted 636-boundary/542-settlement negative regressions without
+  mocks, plus full Host checker/seal controls. Keep exact-host tests executable
+  separately from portable CI. Preserve retry-017 bytes as superseded history
+  before rebuilding runtime authority, qualification and Development evidence.
+
 ### Host Acceptance evidence binding repair
 
 - Host Acceptance v2 verifies the referenced committed acceptance record,

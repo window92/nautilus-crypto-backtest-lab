@@ -476,6 +476,48 @@ R2_RUNTIME_SUPERSEDED_RESULTS.update({
 })
 
 
+# Retry-017 is retained unchanged after the multi-boundary funding diagnostic repair.
+R2_RUNTIME_SUPERSEDED_RESULTS.update({
+    "retry-017-spot-benchmark": {
+        "market_profile": "BINANCE_SPOT_CASH_LONG_ONLY",
+        "result_class": "BENCHMARK",
+        "primary_path": "runs/adversarial-remediation-002-retry-017-spot-benchmark-run-16147e079965",
+        "replay_path": "runs/replays/adversarial-remediation-002-retry-017-spot-benchmark-buy-and-hold-1x-development/adversarial-remediation-002-retry-017-spot-benchmark-run-16147e079965"
+    },
+    "retry-017-spot-candidate-a": {
+        "market_profile": "BINANCE_SPOT_CASH_LONG_ONLY",
+        "result_class": "CANDIDATE",
+        "primary_path": "runs/adversarial-remediation-002-retry-017-spot-candidate-a-run-9c834f598670",
+        "replay_path": "runs/replays/adversarial-remediation-002-retry-017-spot-candidate-a-development/adversarial-remediation-002-retry-017-spot-candidate-a-run-9c834f598670"
+    },
+    "retry-017-spot-candidate-b": {
+        "market_profile": "BINANCE_SPOT_CASH_LONG_ONLY",
+        "result_class": "CANDIDATE",
+        "primary_path": "runs/adversarial-remediation-002-retry-017-spot-candidate-b-run-78a761838c6e",
+        "replay_path": "runs/replays/adversarial-remediation-002-retry-017-spot-candidate-b-development/adversarial-remediation-002-retry-017-spot-candidate-b-run-78a761838c6e"
+    },
+    "retry-017-perpetual-benchmark": {
+        "market_profile": "BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING",
+        "result_class": "BENCHMARK",
+        "primary_path": "runs/adversarial-remediation-002-retry-017-perpetual-benchmark-run-0ecef1839e9e",
+        "replay_path": "runs/replays/adversarial-remediation-002-retry-017-perpetual-benchmark-buy-and-hold-1x-development/adversarial-remediation-002-retry-017-perpetual-benchmark-run-0ecef1839e9e"
+    },
+    "retry-017-perpetual-candidate-a": {
+        "market_profile": "BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING",
+        "result_class": "CANDIDATE",
+        "primary_path": "runs/adversarial-remediation-002-retry-017-perpetual-candidate-a-run-55681bcb7efc",
+        "replay_path": "runs/replays/adversarial-remediation-002-retry-017-perpetual-candidate-a-development/adversarial-remediation-002-retry-017-perpetual-candidate-a-run-55681bcb7efc"
+    },
+    "retry-017-perpetual-candidate-b": {
+        "market_profile": "BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING",
+        "result_class": "CANDIDATE",
+        "primary_path": "runs/adversarial-remediation-002-retry-017-perpetual-candidate-b-run-1d6744832d2c",
+        "replay_path": "runs/replays/adversarial-remediation-002-retry-017-perpetual-candidate-b-development/adversarial-remediation-002-retry-017-perpetual-candidate-b-run-1d6744832d2c"
+    }
+})
+
+
+
 R2_CLAIM_SCHEMA_SUPERSEDED_RESULTS: dict[str, dict[str, str]] = {
     "retry-008-perpetual-benchmark": {
         "market_profile": "BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING",
