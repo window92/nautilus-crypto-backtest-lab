@@ -5,10 +5,12 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 from pathlib import Path
 from typing import Any
 
 from crypto_lab.hashing import canonical_json_bytes
+from crypto_lab.hashing import sha256_file
 from crypto_lab.git_identity import require_repository_root
 from crypto_lab.historical_contracts import HistoricalAuthorityError
 from crypto_lab.historical_contracts import load_historical_authority_manifest
@@ -32,6 +34,18 @@ def _legacy_declared_validators(repository_root: Path) -> set[str]:
     return set(validators)
 
 
+def bound_historical_bootstrap(repository: Path, runtime_profile: dict[str, Any]) -> Path:
+    """Select the preserved bootstrap by the immutable historical profile hash."""
+    digest = runtime_profile.get('bootstrap_sha256')
+    if not isinstance(digest, str) or re.fullmatch(r'[0-9a-f]{64}', digest) is None:
+        raise HistoricalAuthorityError('RUNTIME_PROFILE_INVALID', 'bootstrap identity is invalid')
+    path = repository / 'contracts/historical-bootstrap' / f'{digest}.py'
+    if (path.is_symlink() or not path.is_file() or path.resolve() != path
+            or sha256_file(path) != digest):
+        raise HistoricalAuthorityError('RUNTIME_PROFILE_INVALID', 'preserved bootstrap identity differs')
+    return path
+
+
 def run_acceptance(
     *,
     repository_root: Path,
@@ -45,11 +59,6 @@ def run_acceptance(
         repository_root / "contracts/historical-validator-authorities-v2.json"
         if authority_path is None
         else authority_path
-    )
-    bootstrap_path = (
-        repository_root / "scripts/isolated_runtime_bootstrap.py"
-        if bootstrap_path is None
-        else bootstrap_path
     )
     manifest = load_historical_authority_manifest(authority_path)
     plan = tuple(manifest["execution_plan"])
@@ -68,7 +77,8 @@ def run_acceptance(
                 authority,
                 repository_root=repository_root,
                 runtime_profile=profile,
-                bootstrap_path=bootstrap_path,
+                bootstrap_path=(bound_historical_bootstrap(repository_root, profile)
+                                if bootstrap_path is None else bootstrap_path),
             )
         except HistoricalAuthorityError as exc:
             results[name] = {

@@ -465,6 +465,17 @@ R2_RUNTIME_SUPERSEDED_RESULTS.update({
 })
 
 
+# The completed retry-016 benchmark predates the pinned historical-bootstrap fix.
+R2_RUNTIME_SUPERSEDED_RESULTS.update({
+    "retry-016-spot-benchmark": {
+        "market_profile": "BINANCE_SPOT_CASH_LONG_ONLY",
+        "result_class": "BENCHMARK",
+        "primary_path": "runs/adversarial-remediation-002-retry-016-spot-benchmark-run-0897cdbb1086",
+        "replay_path": "runs/replays/adversarial-remediation-002-retry-016-spot-benchmark-buy-and-hold-1x-development/adversarial-remediation-002-retry-016-spot-benchmark-run-0897cdbb1086"
+    }
+})
+
+
 R2_CLAIM_SCHEMA_SUPERSEDED_RESULTS: dict[str, dict[str, str]] = {
     "retry-008-perpetual-benchmark": {
         "market_profile": "BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING",

@@ -465,6 +465,26 @@ EXPECTED_RUNTIME_SUPERSESSION_EVIDENCE_HASHES.update({
 })
 
 
+EXPECTED_RUNTIME_SUPERSESSION_EVIDENCE_HASHES.update({
+    "runs/adversarial-remediation-002-retry-016-spot-benchmark-run-0897cdbb1086": {
+        "component_validation.json": "73f729ed809ec02b9437b2606dd4a2ca88769729e79c4b0b6d35d8f2a8fa7fc2",
+        "evidence_manifest.json": "f20b7ba5005900726204db43b24fa2f6612657e7078f0e65d8ddac874f48010b",
+        "official_seal.json": "7300720ab1ce6146514ab4616668b6fe6debe5cbbab74715b1efbce3dda1222a",
+        "runtime_identity.json": "f8322646dfde3294127258b21253cc4608212678afe429943ecce97308e6e5fa",
+        "source_revision.json": "00826f9e5d112b1b389651699108271772481529f38b19c14a67616d4d0c7ce4",
+        "status.json": "95b827d488bbfb6a900b674bfd1d8dcf5ed2c7709a49d6695e99fd420a1381be"
+    },
+    "runs/replays/adversarial-remediation-002-retry-016-spot-benchmark-buy-and-hold-1x-development/adversarial-remediation-002-retry-016-spot-benchmark-run-0897cdbb1086": {
+        "component_validation.json": "73f729ed809ec02b9437b2606dd4a2ca88769729e79c4b0b6d35d8f2a8fa7fc2",
+        "evidence_manifest.json": "19b4ae1fc22118413dc5d051a0116cfe748f0f48f8d7630b0a193cc1532afb7d",
+        "official_seal.json": "369b2f8dbd9c846047b3a4d5cdafd687015c19005045f6f57bc5a9f5a4214eac",
+        "runtime_identity.json": "f8322646dfde3294127258b21253cc4608212678afe429943ecce97308e6e5fa",
+        "source_revision.json": "7dabda1481febf56c729f8d7ebf35d31c0ed0200b950ab2efe0094f440aa34d9",
+        "status.json": "08463f73ad5cf9afcaf49f4d21ae122d29ba6054f0f8e4ccf0180af255a50cf7"
+    }
+})
+
+
 class RuntimeSupersessionBuildError(ValueError):
     """The frozen runtime-supersession registry could not be proven."""
 

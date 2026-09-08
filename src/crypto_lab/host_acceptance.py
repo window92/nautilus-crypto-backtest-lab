@@ -30,7 +30,7 @@ SOURCE_FILES = (
     'requirements.data.lock.txt', 'data-tool.lock.json', '.github/workflows/ci.yml',
     'evidence/audit/adversarial-remediation-002/data-rebuild-validation.json',
 )
-SOURCE_TREES = ('src', 'tests', 'scripts', 'schemas', 'configs')
+SOURCE_TREES = ('src', 'tests', 'scripts', 'schemas', 'configs', 'contracts', '.github')
 RELEASE_DIR = Path('data/releases')
 PHASE_LABELS = (
     'FULL_TEST_DISCOVERY', 'INDEPENDENT_FRESH_PROCESS_DISCOVERY', 'REVERSE_TEST_ORDER',
