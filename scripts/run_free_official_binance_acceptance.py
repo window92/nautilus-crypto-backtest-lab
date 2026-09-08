@@ -232,7 +232,14 @@ def main() -> int:
     reverse_dir = output / "reverse"
     reverse_command = command(
         "REVERSE_DETERMINISTIC_ORDER",
-        [PROJECT_PYTHON, ROOT / "scripts/run_reverse_test_order.py", "--output-dir", reverse_dir],
+        [
+            PROJECT_PYTHON,
+            ROOT / "scripts/run_reverse_test_order.py",
+            "--repository",
+            ROOT,
+            "--output-dir",
+            reverse_dir,
+        ],
     )
     reverse = (
         json.loads((reverse_dir / "result.json").read_text(encoding="utf-8"))

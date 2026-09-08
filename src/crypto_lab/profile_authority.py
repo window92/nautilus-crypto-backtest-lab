@@ -8,6 +8,7 @@ import re
 from pathlib import Path
 from typing import Any
 
+from crypto_lab.git_identity import require_repository_root
 from crypto_lab.hashing import canonical_sha256
 from crypto_lab.hashing import sha256_file
 
@@ -25,7 +26,7 @@ def _require_sha256(value: str, *, field: str) -> None:
 
 
 def _contained_registry(repository_root: Path, registry_ref: str) -> Path:
-    root = Path(repository_root).resolve(strict=True)
+    root = require_repository_root(repository_root)
     if not isinstance(registry_ref, str) or not registry_ref:
         raise ProfileAuthorityError("qualified profile registry reference is unsafe")
     relative = Path(registry_ref)
@@ -78,9 +79,9 @@ def resolve_profile_authority(
     records = document.get("records") if isinstance(document, dict) else None
     if (
         not isinstance(records, list)
-        or document.get("schema_version") != 1
+        or document.get("schema_version") != 2
         or document.get("registry_content_sha256")
-        != canonical_sha256({"schema_version": 1, "records": records})
+        != canonical_sha256({"schema_version": 2, "records": records})
     ):
         raise ProfileAuthorityError("qualified profile registry identity is invalid")
     matches = [
@@ -101,10 +102,11 @@ def resolve_profile_authority(
     if canonical_sha256(material) != qualified_profile_record_id:
         raise ProfileAuthorityError("Qualified Profile record identity is invalid")
     if (
-        record.get("profile_id") != expected_profile_id
+        record.get("schema_version") != 2
+        or record.get("profile_id") != expected_profile_id
         or record.get("runtime_lock_sha256") != expected_runtime_lock_sha256
         or record.get("qualification_state") != "QUALIFIED"
-        or record.get("checker_result") != "CHECK_PASS"
+        or record.get("checker_result") != "COMPONENT_CHECK_PASS"
         or record.get("replay_result") != "PASS"
         or not isinstance(record.get("accepted_run_ids"), list)
         or len(record["accepted_run_ids"]) != 2
@@ -114,7 +116,7 @@ def resolve_profile_authority(
     ):
         raise ProfileAuthorityError("Qualified Profile record is not eligible for this Run")
     return {
-        "schema": "qualified-profile-authority-v1",
+        "schema": "qualified-profile-authority-v2",
         "qualified_profile_record_id": qualified_profile_record_id,
         "qualified_profile_registry_ref": registry_ref,
         "qualified_profile_registry_sha256": registry_sha256,

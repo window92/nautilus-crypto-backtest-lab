@@ -1,0 +1,1 @@
+{"checker_outcome":"COMPONENT_CHECK_BLOCKED","component_validation_outcome":"COMPONENT_CHECK_BLOCKED","failure_codes":["MARK_ROLE_INVALID","DOWNSTREAM_CONTRACT_FAILURE"],"official_seal_outcome":"NOT_APPLICABLE","run_id":"adversarial-remediation-002-retry-016-m3-control-prohibited-mark-fallback","schema":"qualification-run-status-v2","started_run_retained":true,"state":"BLOCKED"}

@@ -1,0 +1,5 @@
+{
+  "detail": "RESEARCH_PROTOCOL_INVALID: protocol identity path collision",
+  "error_type": "ResearchError",
+  "status": "BLOCKED"
+}

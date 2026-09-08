@@ -12,7 +12,7 @@ from crypto_lab.owner import qualification_workflow_fixture_input
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--repository", type=Path, default=Path.cwd())
+    parser.add_argument("--repository", type=Path, required=True)
     parser.add_argument("--frozen-at-utc", required=True)
     parser.add_argument("--trial-id", required=True)
     parser.add_argument("--run-id", required=True)

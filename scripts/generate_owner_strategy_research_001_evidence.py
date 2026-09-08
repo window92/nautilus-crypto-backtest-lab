@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Validate and publish additive evidence for OWNER_STRATEGY_RESEARCH_001."""
+"""Validate historical-only OWNER_STRATEGY_RESEARCH_001 evidence.
+
+This retained legacy publisher cannot publish a current Official Result.
+"""
 
 from __future__ import annotations
 
@@ -17,6 +20,9 @@ from typing import Any
 from crypto_lab.checker import check_evidence_directory
 from crypto_lab.diagnostics import derive_performance_diagnostics
 from crypto_lab.hashing import canonical_sha256
+from crypto_lab.legacy_publication import LEGACY_HISTORICAL_ONLY_PUBLICATION
+from crypto_lab.legacy_publication import require_historical_only_replay
+from crypto_lab.legacy_publication import require_historical_only_result
 from crypto_lab.native_metrics import qualify_native_calmar
 from crypto_lab.native_positions import NativeCompletedPositionSequence
 from crypto_lab.reporting import PerformanceDiagnostics
@@ -29,6 +35,7 @@ from crypto_lab.research import evaluate_sample_adequacy
 
 ROOT = Path(__file__).resolve().parents[1]
 EPOCH = ROOT / "evidence/research/owner-strategy-research-001"
+PUBLICATION_CLASSIFICATION = LEGACY_HISTORICAL_ONLY_PUBLICATION
 BASELINE_COMMIT = "621caa3d71106f85f10015c54d0e31e75e0d42cd"
 EXPECTED_LOCKS = {
     "SSOT.md": "b4deb7048242239234de7eaa353b623b3e45247eb42f1021dbc26ffd910edb99",
@@ -230,6 +237,7 @@ def _check_by_name(checker: dict[str, Any], name: str) -> dict[str, Any]:
 
 def validate_run(key: str, spec: dict[str, str]) -> dict[str, Any]:
     run_dir = ROOT / spec["run_dir"]
+    require_historical_only_result(run_dir, repository_root=ROOT)
     protocol_path = ROOT / "research/protocols" / f"{spec['protocol_id']}.json"
     replay_path = ROOT / "research/replays" / f"{spec['trial_id']}.json"
     report_path = ROOT / "research/reports" / f"{spec['trial_id']}.json"
@@ -271,6 +279,7 @@ def validate_run(key: str, spec: dict[str, str]) -> dict[str, Any]:
         source_revision_current_head_required=False,
     ).to_builtins()
     replay = load(replay_path)
+    require_historical_only_replay(replay, repository_root=ROOT)
     report = load(report_path)
     workflow = load(workflow_path)
     result = load(required_paths["native_result"])

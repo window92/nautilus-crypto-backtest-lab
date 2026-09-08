@@ -19,6 +19,8 @@ if str(ROOT) not in sys.path:
 from crypto_lab.config import RuntimeLock
 from crypto_lab.data import DatasetRelease
 from crypto_lab.hashing import sha256_file
+from crypto_lab.m3 import PERPETUAL_QUALIFICATION_RELEASE_ID
+from crypto_lab.m3 import SPOT_QUALIFICATION_RELEASE_ID
 from crypto_lab.runtime import verify_runtime_lock
 from scripts.run_m2_acceptance import M0_MODULES
 from scripts.run_m2_acceptance import M1_MODULES
@@ -148,8 +150,8 @@ def non_test_checks() -> list[dict[str, Any]]:
     )
     release_checks: dict[str, bool] = {}
     for profile, release_id in (
-        ("spot", "cdb414f45064f46e13c936f87ae3629320a1f9a27bb15ef7822873a57e159a85"),
-        ("perpetual", "f7548369a20caf52a98d8a63d6e8a2bfaebe66aa8ffe1081135fa7b047de789d"),
+        ("spot", SPOT_QUALIFICATION_RELEASE_ID),
+        ("perpetual", PERPETUAL_QUALIFICATION_RELEASE_ID),
     ):
         release = DatasetRelease.from_json_bytes(
             (ROOT / "data/releases" / f"{release_id}.json").read_bytes(),

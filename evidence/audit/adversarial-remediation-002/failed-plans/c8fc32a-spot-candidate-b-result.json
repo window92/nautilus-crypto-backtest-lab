@@ -1,0 +1,22 @@
+{
+  "checker_outcome": "COMPONENT_CHECK_PASS",
+  "claim_eligibility": "INELIGIBLE",
+  "commits": [
+    "19a14471c24bf5951ee6f2e8ba1b16728aec5b75",
+    "f383abaded96253ca5648842a9d7f6bebf5bff48",
+    "7decbc236d31c3345fdfc1b9ea01def84d750599",
+    "48a00b0bfeca76f95898977d0578a4540fa39e6a",
+    "2495d81a4f239cbf1f5a75fa7c59f0a51d5da967"
+  ],
+  "final_holdout_used": false,
+  "history_anchor_sha256": "f5e8a38a0ef7795422c6b10dac5b833631e87e53b6e2bd20038b589f9e198cac",
+  "official_seal_outcome": "OFFICIAL_SEAL_PASS",
+  "real_profitability_claim": false,
+  "replay_identity": "8b5d5caa3241b2870213846e4f59c69821a5af364c2f37fdcf88c5c541f6c075",
+  "replay_result": "PASS",
+  "report_id": "20fe9c69bdda6ec499034539915a3076ac78a54e0ef1f949e8a0ee9725a864e5",
+  "run_id": "adversarial-remediation-002-retry-005-spot-candidate-b-run",
+  "run_state": "COMPLETED",
+  "status": "PASS",
+  "trial_id": "adversarial-remediation-002-retry-005-spot-candidate-b-development"
+}

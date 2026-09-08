@@ -14,6 +14,7 @@ from crypto_lab.reporting import write_report
 from crypto_lab.research import ClaimEvaluationInput
 from crypto_lab.research import ClaimScope
 from crypto_lab.research import MonteCarloStatus
+from crypto_lab.research import PartitionRole
 from crypto_lab.research import ResearchEligibility
 from crypto_lab.research import ResearchIntent
 from crypto_lab.research import SampleAdequacy
@@ -31,13 +32,15 @@ def claim_input(**changes: object) -> ClaimEvaluationInput:
     base = ClaimEvaluationInput(
         protocol=protocol,
         mechanical_integrity=MechanicalIntegrity.PASS,
-        checker_result="CHECK_PASS",
+        checker_result="COMPONENT_CHECK_PASS",
+        official_seal_result="OFFICIAL_SEAL_PASS",
         underlying_official_runs_valid=True,
         qualification_only=False,
         protocol_frozen_before_results=True,
         supporting_trial_protocol_ids=(protocol.protocol_id,),
         complete_trial_history=True,
         partitions_valid=True,
+        selected_partition_role=PartitionRole.FINAL_HOLDOUT,
         holdout_valid=True,
         benchmark_valid=True,
         multiple_testing_valid=True,
@@ -58,6 +61,26 @@ class ClaimGateTests(unittest.TestCase):
         self.assertEqual(result.research_eligibility, ResearchEligibility.ELIGIBLE)
         self.assertTrue(result.eligible_confirmatory_profitability_claim)
         self.assertIn("SYNTHETIC_CONTRACT_FIXTURE_NOT_REAL_CLAIM", result.limitations)
+
+    def test_development_partition_is_ineligible_without_claiming_holdout_consumption(self) -> None:
+        result = evaluate_claim(
+            claim_input(
+                selected_partition_role=PartitionRole.DEVELOPMENT,
+                holdout_valid=False,
+            ),
+        )
+        self.assertEqual(result.research_eligibility, ResearchEligibility.INELIGIBLE)
+        self.assertFalse(result.eligible_confirmatory_profitability_claim)
+        self.assertIn("FINAL_HOLDOUT_NOT_USED", result.reasons)
+        self.assertIn("CLAIM_INELIGIBLE", result.failure_codes)
+        self.assertNotIn("HOLDOUT_INVALID_OR_CONSUMED", result.reasons)
+        self.assertNotIn("HOLDOUT_ALREADY_CONSUMED", result.failure_codes)
+
+    def test_selected_invalid_final_holdout_retains_consumed_failure(self) -> None:
+        result = evaluate_claim(claim_input(holdout_valid=False))
+        self.assertEqual(result.research_eligibility, ResearchEligibility.INELIGIBLE)
+        self.assertIn("HOLDOUT_INVALID_OR_CONSUMED", result.reasons)
+        self.assertIn("HOLDOUT_ALREADY_CONSUMED", result.failure_codes)
 
     def test_profitability_never_overrides_failed_mechanical_integrity(self) -> None:
         result = evaluate_claim(

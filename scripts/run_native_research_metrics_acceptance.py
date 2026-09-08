@@ -252,6 +252,8 @@ def main() -> int:
         "REVERSE_DETERMINISTIC_ORDER",
         PROJECT_PYTHON,
         ROOT / "scripts/run_reverse_test_order.py",
+        "--repository",
+        ROOT,
         "--output-dir",
         reverse_root,
     )

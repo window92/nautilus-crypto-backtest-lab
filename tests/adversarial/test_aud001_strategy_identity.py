@@ -123,6 +123,7 @@ class Aud001StrategyIdentityTests(unittest.TestCase):
                             data=base.data,
                             strategy_plan=plan,
                             evidence_root=base.evidence_root,
+                            repository_root=base.repository_root,
                             qualification_control=base.qualification_control,
                         )
             self.assertEqual(list(Path(temporary).iterdir()), [])

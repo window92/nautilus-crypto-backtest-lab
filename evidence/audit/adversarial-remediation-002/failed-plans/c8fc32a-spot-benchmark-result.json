@@ -1,0 +1,22 @@
+{
+  "checker_outcome": "COMPONENT_CHECK_PASS",
+  "claim_eligibility": "INELIGIBLE",
+  "commits": [
+    "7d14468f3dd842ca06101035e29ec6baa6007a99",
+    "e69c136496158514d6dda5c9c5c2e6dd9b6a6e8b",
+    "0d2e65a8752225f2b1f25cfc7db3dff17812139d",
+    "1a674488744dc9eff85f4724c8836c083ccd1767",
+    "4d4b1ff8177bdda9577a48e86b9feec5d6d94cd6"
+  ],
+  "final_holdout_used": false,
+  "history_anchor_sha256": "e21389f1ce25ef4b1f7063ff0c9aa06afcf61d6df43eebbfab90095d2f0dcfc5",
+  "official_seal_outcome": "OFFICIAL_SEAL_PASS",
+  "real_profitability_claim": false,
+  "replay_identity": "33ec7cadae4eb043ccce31480945229a23bf9b20d43a1a2b93472e33db54e11f",
+  "replay_result": "PASS",
+  "report_id": "8fb76ef601f0eb8854eb8c78cfa70be26a1ac7b819e958a2ee03650a2a13a99e",
+  "run_id": "adversarial-remediation-002-retry-005-spot-benchmark-run",
+  "run_state": "COMPLETED",
+  "status": "PASS",
+  "trial_id": "adversarial-remediation-002-retry-005-spot-benchmark-buy-and-hold-1x-development"
+}

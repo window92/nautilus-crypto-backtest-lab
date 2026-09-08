@@ -9,6 +9,7 @@ or raw object.
 from __future__ import annotations
 
 import json
+import hashlib
 import sys
 import tempfile
 from datetime import UTC
@@ -16,6 +17,8 @@ from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
+from urllib.parse import parse_qsl
+from urllib.parse import urlsplit
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -25,12 +28,20 @@ if str(ROOT / "src") not in sys.path:
 from crypto_lab.config import MarketProfile
 from crypto_lab.data import FUNDING_NATIVE_BINDING_RC2_INTERVAL_BOUNDARY
 from crypto_lab.data import CatalogBuildResult
+from crypto_lab.data import DatasetRawInventory
 from crypto_lab.data import DatasetRelease
+from crypto_lab.data import M3_QUALIFICATION_FULL_RAW_INVENTORY_NORMALIZER_VERSION
+from crypto_lab.data import NOT_APPLICABLE
+from crypto_lab.data import NOT_AVAILABLE
+from crypto_lab.data import PublisherChecksumBinding
 from crypto_lab.data import RawObjectRecord
 from crypto_lab.data import RawObjectStore
+from crypto_lab.data import RawInventoryObject
+from crypto_lab.data import RawInventoryOrigin
 from crypto_lab.data import SourceObjectBinding
 from crypto_lab.data import SourceRole
 from crypto_lab.data import TimeRange
+from crypto_lab.data import bind_lossless_instrument_representation
 from crypto_lab.data import build_dataset_release
 from crypto_lab.data import build_nautilus_catalog
 from crypto_lab.data import catalog_semantic_inventory
@@ -41,6 +52,8 @@ from crypto_lab.data import parse_spot_instrument_metadata
 from crypto_lab.data import parse_usdm_instrument_metadata
 from crypto_lab.data import prove_funding_schedule
 from crypto_lab.data import verify_catalog_identity
+from crypto_lab.data import verify_dataset_raw_inventory
+from crypto_lab.data import verify_publisher_checksum
 from crypto_lab.hashing import canonical_json_bytes
 from crypto_lab.hashing import canonical_sha256
 from nautilus_trader.persistence import ParquetDataCatalog
@@ -51,6 +64,7 @@ CATALOG_ROOT = ROOT / "data/catalog"
 RELEASE_ROOT = ROOT / "data/releases"
 ACQUISITION_MANIFEST = ROOT / "evidence/m2/m2-acceptance-001/acquisition-manifest.json"
 BINDINGS_PATH = ROOT / "configs/m3/release-bindings.json"
+BINDINGS_V1_HISTORY_PATH = ROOT / "configs/m3/release-bindings-v1-historical.json"
 FEE_RATE = Decimal("0.001")
 FEE_BASIS = "SSOT_APPENDIX_A_M3_QUALIFICATION_ESTIMATED_FEE"
 CREATED_AT = datetime(2026, 8, 22, 12, 0, tzinfo=UTC)
@@ -102,6 +116,123 @@ def one(records: tuple[RawObjectRecord, ...], role: SourceRole) -> RawObjectReco
     return matches[0]
 
 
+def checksum_for(
+    records: tuple[RawObjectRecord, ...],
+    source: RawObjectRecord,
+) -> RawObjectRecord:
+    matches = [
+        record
+        for record in records
+        if record.source_role is SourceRole.PUBLISHER_CHECKSUM
+        and record.source_locator == f"{source.source_locator}.CHECKSUM"
+    ]
+    if len(matches) != 1:
+        raise RuntimeError(
+            f"expected one publisher checksum for {source.source_locator}, received {len(matches)}",
+        )
+    return matches[0]
+
+
+def legacy_origin(record: RawObjectRecord) -> RawInventoryOrigin:
+    """Bind the exact immutable RawObjectStore observation made by M2.
+
+    The legacy acquirer persisted a record only after ``urlopen`` returned a
+    successful response, but did not retain response headers.  The preserved
+    record bytes and their content hash are the acquisition authority here;
+    no response-header claim is manufactured.
+    """
+
+    observation_payload = record.to_json_bytes()
+    observation_id = hashlib.sha256(observation_payload).hexdigest()
+    locator_key = hashlib.sha256(record.source_locator.encode("utf-8")).hexdigest()
+    observation_path = RAW_ROOT / "observations" / locator_key / f"{observation_id}.json"
+    if (
+        observation_path.is_symlink()
+        or not observation_path.is_file()
+        or observation_path.read_bytes() != observation_payload
+    ):
+        raise RuntimeError(f"legacy acquisition observation is absent or changed: {observation_id}")
+    query_pairs = parse_qsl(urlsplit(record.source_locator).query, keep_blank_values=True)
+    if len({key for key, _ in query_pairs}) != len(query_pairs):
+        raise RuntimeError("legacy acquisition locator contains a duplicate query key")
+    return RawInventoryOrigin(
+        observation_id=observation_id,
+        source_role=record.source_role.value,
+        exact_locator=record.source_locator,
+        exact_query_json=canonical_json_bytes(dict(query_pairs)).decode("utf-8"),
+        http_status=200,
+        validation_status="RAW_PRESERVED",
+        delivery_classification=NOT_APPLICABLE,
+    )
+
+
+def build_full_inventory(
+    *,
+    records: tuple[RawObjectRecord, ...],
+    direct_sources: tuple[RawObjectRecord, ...],
+    store: RawObjectStore,
+    market_profile: MarketProfile,
+    instrument_id: str,
+    data_window_identity: str,
+    source_reconciliation_identity: str,
+) -> DatasetRawInventory:
+    """Close the qualification inventory over direct bytes and checksum bytes."""
+
+    selected: dict[str, RawObjectRecord] = {item.sha256: item for item in direct_sources}
+    checksums: dict[str, PublisherChecksumBinding] = {}
+    for source in direct_sources:
+        payload = store.read_bytes(source.sha256)
+        if len(payload) != source.byte_size:
+            raise RuntimeError(f"Raw byte-size mismatch: {source.sha256}")
+        if source.publisher_checksum == NOT_AVAILABLE:
+            continue
+        checksum = checksum_for(records, source)
+        checksum_payload = store.read_bytes(checksum.sha256)
+        if len(checksum_payload) != checksum.byte_size:
+            raise RuntimeError(f"publisher checksum byte-size mismatch: {checksum.sha256}")
+        verified = verify_publisher_checksum(
+            payload,
+            checksum_payload,
+            exact_filename=source.exact_filename,
+        )
+        if verified != source.sha256 or source.publisher_checksum != source.sha256:
+            raise RuntimeError(f"publisher checksum binding mismatch: {source.sha256}")
+        selected[checksum.sha256] = checksum
+        checksums[source.sha256] = PublisherChecksumBinding(
+            checksum_raw_object_sha256=checksum.sha256,
+            exact_filename=source.exact_filename,
+            publisher_sha256=source.sha256,
+        )
+    objects = tuple(
+        sorted(
+            (
+                RawInventoryObject(
+                    raw_object_sha256=record.sha256,
+                    byte_size=record.byte_size,
+                    instrument="BTCUSDT",
+                    market_profile=market_profile,
+                    origins=(legacy_origin(record),),
+                    publisher_checksum_bindings=(
+                        (checksums[record.sha256],)
+                        if record.sha256 in checksums
+                        else ()
+                    ),
+                )
+                for record in selected.values()
+            ),
+            key=lambda item: item.raw_object_sha256,
+        ),
+    )
+    return DatasetRawInventory.create(
+        market_profile=market_profile,
+        instrument_id=instrument_id,
+        data_window_identity=data_window_identity,
+        source_reconciliation_identity=source_reconciliation_identity,
+        raw_object_count=len(objects),
+        raw_objects=objects,
+    )
+
+
 def archive(store: RawObjectStore, record: RawObjectRecord, member: str) -> bytes:
     return extract_single_csv_archive(
         store.read_bytes(record.sha256),
@@ -114,6 +245,51 @@ def sliced(items: tuple[Any, ...], time_range: TimeRange, time_field: str) -> tu
         item
         for item in items
         if time_range.start_ns <= getattr(item, time_field) < time_range.end_ns
+    )
+
+
+def decimal_precision(value: Decimal) -> int:
+    return max(0, -value.as_tuple().exponent)
+
+
+def bind_qualification_representation(
+    metadata: Any,
+    *,
+    bars: tuple[Any, ...],
+    marks: tuple[Any, ...] = (),
+) -> Any:
+    price_values = tuple(
+        value
+        for bar in (*bars, *marks)
+        for value in (bar.open, bar.high, bar.low, bar.close)
+    )
+    volume_values = tuple(bar.volume for bar in bars)
+    price_precision = max(metadata.price_precision, *(decimal_precision(item) for item in price_values))
+    size_precision = max(metadata.size_precision, *(decimal_precision(item) for item in volume_values))
+    return bind_lossless_instrument_representation(
+        metadata,
+        price_precision=price_precision,
+        size_precision=size_precision,
+        representation_evidence={
+            "basis": "EXACT_QUALIFICATION_SOURCE_DECIMAL_LEXEMES",
+            "price_field_count": len(price_values),
+            "volume_field_count": len(volume_values),
+        },
+        economic_order_grid_evidence={
+            "historical_numeric_increments_proven": False,
+            "historical_exact_for_window": False,
+            "price_increment": {
+                "value": metadata.price_increment,
+                "authority": "CURRENT_EXCHANGE_INFO_DEVELOPMENT_QUALIFICATION_ONLY",
+                "source_raw_object_sha256": metadata.source_object_sha256,
+            },
+            "size_increment": {
+                "value": metadata.size_increment,
+                "authority": "CURRENT_EXCHANGE_INFO_DEVELOPMENT_QUALIFICATION_ONLY",
+                "source_raw_object_sha256": metadata.source_object_sha256,
+            },
+            "limits": "CURRENT_OFFICIAL_FILTERS_FAIL_CLOSED_FOR_EXPOSED_QUALIFICATION",
+        },
     )
 
 
@@ -264,10 +440,65 @@ def main() -> int:
         taker_fee_rate=FEE_RATE,
         fee_rate_basis=FEE_BASIS,
     )
+    spot_metadata = bind_qualification_representation(
+        spot_metadata,
+        bars=spot_bars,
+    )
+    perp_metadata = bind_qualification_representation(
+        perp_metadata,
+        bars=perp_bars,
+        marks=perp_marks,
+    )
     schedule = prove_funding_schedule(
         funding_rows,
         source_object_sha256=perp_funding_record.sha256,
         time_range=PERPETUAL_RANGE,
+    )
+
+    spot_direct = (spot_pre, spot_post, spot_meta_record)
+    perp_direct = (
+        perp_exec_record,
+        perp_mark_record,
+        perp_funding_record,
+        perp_meta_record,
+    )
+    spot_bindings = tuple(
+        sorted(
+            (SourceObjectBinding.from_raw(record) for record in spot_direct),
+            key=lambda item: (item.source_role.value, item.source_locator, item.sha256),
+        ),
+    )
+    perp_bindings = tuple(
+        sorted(
+            (SourceObjectBinding.from_raw(record) for record in perp_direct),
+            key=lambda item: (item.source_role.value, item.source_locator, item.sha256),
+        ),
+    )
+    spot_window_identity = canonical_sha256({"normalized_time_range": SPOT_RANGE})
+    perp_window_identity = canonical_sha256({"normalized_time_range": PERPETUAL_RANGE})
+    spot_reconciliation_identity = canonical_sha256(
+        [item.to_builtins() for item in spot_bindings],
+    )
+    perp_reconciliation_identity = canonical_sha256(
+        [item.to_builtins() for item in perp_bindings],
+    )
+    spot_raw_inventory = build_full_inventory(
+        records=records,
+        direct_sources=spot_direct,
+        store=store,
+        market_profile=MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY,
+        instrument_id="BTCUSDT.BINANCE",
+        data_window_identity=spot_window_identity,
+        source_reconciliation_identity=spot_reconciliation_identity,
+    )
+    perp_raw_inventory = build_full_inventory(
+        records=records,
+        direct_sources=perp_direct,
+        store=store,
+        market_profile=MarketProfile.BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING,
+        instrument_id="BTCUSDT-PERP.BINANCE",
+        data_window_identity=perp_window_identity,
+        source_reconciliation_identity=perp_reconciliation_identity,
     )
 
     spot_catalog = build_catalog_twice(
@@ -286,28 +517,21 @@ def main() -> int:
     spot_release = build_dataset_release(
         market_profile=MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY,
         instrument_id="BTCUSDT.BINANCE",
-        source_objects=tuple(
-            SourceObjectBinding.from_raw(record)
-            for record in (spot_pre, spot_post, spot_meta_record)
-        ),
+        source_objects=spot_bindings,
         normalized_time_range=SPOT_RANGE,
         instrument_metadata=spot_metadata,
         execution_bars=spot_bars,
         catalog_identity=spot_catalog.catalog_identity,
         created_at_utc=CREATED_AT,
+        data_window_identity=spot_window_identity,
+        source_reconciliation_identity=spot_reconciliation_identity,
+        normalizer_version=M3_QUALIFICATION_FULL_RAW_INVENTORY_NORMALIZER_VERSION,
+        raw_inventory=spot_raw_inventory,
     )
     perp_release = build_dataset_release(
         market_profile=MarketProfile.BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING,
         instrument_id="BTCUSDT-PERP.BINANCE",
-        source_objects=tuple(
-            SourceObjectBinding.from_raw(record)
-            for record in (
-                perp_exec_record,
-                perp_mark_record,
-                perp_funding_record,
-                perp_meta_record,
-            )
-        ),
+        source_objects=perp_bindings,
         normalized_time_range=PERPETUAL_RANGE,
         instrument_metadata=perp_metadata,
         execution_bars=perp_bars,
@@ -317,9 +541,15 @@ def main() -> int:
         funding_native_binding=FUNDING_NATIVE_BINDING_RC2_INTERVAL_BOUNDARY,
         catalog_identity=perp_catalog.catalog_identity,
         created_at_utc=CREATED_AT,
+        data_window_identity=perp_window_identity,
+        source_reconciliation_identity=perp_reconciliation_identity,
+        normalizer_version=M3_QUALIFICATION_FULL_RAW_INVENTORY_NORMALIZER_VERSION,
+        raw_inventory=perp_raw_inventory,
     )
     verify_catalog_identity(spot_release, spot_catalog.semantic_inventory)
     verify_catalog_identity(perp_release, perp_catalog.semantic_inventory)
+    verify_dataset_raw_inventory(spot_release, ROOT / "data")
+    verify_dataset_raw_inventory(perp_release, ROOT / "data")
     persist_release(spot_release, spot_metadata)
     persist_release(
         perp_release,
@@ -330,7 +560,8 @@ def main() -> int:
     )
 
     bindings = {
-        "schema": "m3-qualification-release-bindings-v1",
+        "schema": "m3-qualification-release-bindings-v2",
+        "normalizer_version": M3_QUALIFICATION_FULL_RAW_INVENTORY_NORMALIZER_VERSION,
         "fee_assumption": {
             "maker_fee": FEE_RATE,
             "taker_fee": FEE_RATE,
@@ -342,6 +573,8 @@ def main() -> int:
             "dataset_release_id": spot_release.dataset_release_id,
             "instrument_metadata_identity": spot_metadata.instrument_metadata_identity,
             "catalog_identity": spot_catalog.catalog_identity,
+            "raw_inventory_identity": spot_raw_inventory.raw_inventory_identity,
+            "raw_object_count": spot_raw_inventory.raw_object_count,
         },
         "perpetual": {
             "base_dataset_release_id": "749e654402021fafafe4a3269005c5ef1253c3743f04c35622726bca957a356b",
@@ -352,6 +585,8 @@ def main() -> int:
             "official_source_event_count": 1,
             "native_runtime_update_count": 2,
             "native_binding": FUNDING_NATIVE_BINDING_RC2_INTERVAL_BOUNDARY,
+            "raw_inventory_identity": perp_raw_inventory.raw_inventory_identity,
+            "raw_object_count": perp_raw_inventory.raw_object_count,
         },
         "raw_objects_changed": False,
         "network_used": False,
@@ -360,7 +595,11 @@ def main() -> int:
     }
     payload = canonical_json_bytes(bindings) + b"\n"
     if BINDINGS_PATH.exists() and BINDINGS_PATH.read_bytes() != payload:
-        raise FileExistsError(f"refusing to overwrite different {BINDINGS_PATH}")
+        prior = BINDINGS_PATH.read_bytes()
+        prior_value = json.loads(prior)
+        if prior_value.get("schema") != "m3-qualification-release-bindings-v1":
+            raise FileExistsError(f"refusing to overwrite different {BINDINGS_PATH}")
+        preserve_exact(BINDINGS_V1_HISTORY_PATH, prior)
     BINDINGS_PATH.parent.mkdir(parents=True, exist_ok=True)
     BINDINGS_PATH.write_bytes(payload)
     print(json.dumps(bindings, sort_keys=True, default=str))

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import re
@@ -320,6 +321,17 @@ print(json.dumps({
 
 
 class NewDuckDBContractTests(unittest.TestCase):
+    def test_builder_pins_the_current_authorized_ssot_bytes(self) -> None:
+        source = (ROOT / "scripts/build_free_official_binance_release.py").read_text(
+            encoding="utf-8",
+        )
+        match = re.search(r'^EXPECTED_SSOT_IDENTITY = "([0-9a-f]{64})"$', source, re.MULTILINE)
+        self.assertIsNotNone(match)
+        self.assertEqual(
+            match.group(1),
+            hashlib.sha256((ROOT / "SSOT.md").read_bytes()).hexdigest(),
+        )
+
     def test_constraints_rollback_readonly_and_exact_types(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             result = subprocess.run(

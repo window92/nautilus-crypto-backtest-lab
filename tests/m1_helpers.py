@@ -40,6 +40,7 @@ from crypto_lab.timestamps import unix_ns_to_utc_datetime
 from tests.helpers import load_spot_config_dict
 
 
+ROOT = Path(__file__).resolve().parents[1]
 MIGRATION_COMMIT = "c305417a38f9e0acdcd611c9c211f24fc73ccdcf"
 MIGRATION_TREE = "d31ab84af7d79bb14b715d2967552057718e746e"
 SPOT_ID = InstrumentId.from_str("BTCUSDT.BINANCE")
@@ -369,6 +370,7 @@ def make_request(
         data=data,
         strategy_plan=plan,
         evidence_root=evidence_root,
+        repository_root=ROOT,
         qualification_control=qualification_control,
     )
 

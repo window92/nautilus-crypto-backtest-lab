@@ -277,6 +277,8 @@ CREATE TABLE dataset_releases (
     partition_geometry_identity VARCHAR NOT NULL CHECK (regexp_full_match(partition_geometry_identity, '[0-9a-f]{64}')),
     minute_coverage_identity VARCHAR NOT NULL CHECK (regexp_full_match(minute_coverage_identity, '[0-9a-f]{64}')),
     source_reconciliation_identity VARCHAR NOT NULL CHECK (regexp_full_match(source_reconciliation_identity, '[0-9a-f]{64}')),
+    raw_inventory_identity VARCHAR NOT NULL CHECK (regexp_full_match(raw_inventory_identity, '[0-9a-f]{64}')),
+    raw_inventory_object_count BIGINT NOT NULL CHECK (raw_inventory_object_count > 0),
     catalog_identity VARCHAR NOT NULL CHECK (regexp_full_match(catalog_identity, '[0-9a-f]{64}')),
     semantic_release_json VARCHAR NOT NULL,
     status VARCHAR NOT NULL CHECK (status = 'PASS'),
@@ -296,7 +298,11 @@ CREATE TABLE release_members (
     member_type VARCHAR NOT NULL CHECK (member_type IN ('RAW_OBJECT', 'EXECUTION_BAR', 'MARK_BAR', 'FUNDING_EVENT', 'MINUTE_DISPOSITION', 'INSTRUMENT_METADATA')),
     member_identity VARCHAR NOT NULL,
     source_raw_object_sha256 VARCHAR REFERENCES raw_objects(raw_object_sha256),
-    PRIMARY KEY (dataset_release_id, member_type, member_identity)
+    PRIMARY KEY (dataset_release_id, member_type, member_identity),
+    CHECK (
+        (member_type = 'RAW_OBJECT' AND source_raw_object_sha256 = member_identity)
+        OR (member_type != 'RAW_OBJECT')
+    )
 );
 
 CREATE TABLE validation_results (

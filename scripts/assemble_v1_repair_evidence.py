@@ -627,7 +627,14 @@ def main() -> int:
                 },
                 {
                     "gate": "REVERSE_DETERMINISTIC_ORDER",
-                    "command": [".venv/bin/python", "scripts/run_reverse_test_order.py", "--output-dir", str(reverse_output)],
+                    "command": [
+                        ".venv/bin/python",
+                        "scripts/run_reverse_test_order.py",
+                        "--repository",
+                        str(ROOT),
+                        "--output-dir",
+                        str(reverse_output),
+                    ],
                     "returncode": 0,
                 },
                 {

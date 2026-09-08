@@ -10,12 +10,16 @@ does not change the orchestration process.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
+import pwd
+import re
 import shutil
 import subprocess
 import sys
 import tempfile
+from collections.abc import Mapping
 from dataclasses import dataclass
 from dataclasses import fields
 from dataclasses import replace
@@ -37,6 +41,10 @@ from crypto_lab.config import RunPurpose
 from crypto_lab.config import SourceRevision
 from crypto_lab.config import StrictModel
 from crypto_lab.data import DatasetRelease
+from crypto_lab.data import FULL_RAW_INVENTORY_NORMALIZER_VERSION
+from crypto_lab.data import M3_QUALIFICATION_FULL_RAW_INVENTORY_NORMALIZER_VERSION
+from crypto_lab.data import RESEARCH_REBUILD_VALIDATION_REF
+from crypto_lab.data import validate_research_dataset_rebuild_proof
 from crypto_lab.diagnostics import DiagnosticResolution
 from crypto_lab.diagnostics import derive_benchmark_evidence
 from crypto_lab.diagnostics import derive_diagnostic_resolution
@@ -47,6 +55,7 @@ from crypto_lab.status import FailureCode
 from crypto_lab.diagnostics import write_performance_diagnostics
 from crypto_lab.exposure import AuthoritativeExposureResolver
 from crypto_lab.git_identity import capture_actual_source_revision
+from crypto_lab.git_identity import require_repository_root
 from crypto_lab.git_identity import worktree_is_clean
 from crypto_lab.hashing import canonical_json_bytes
 from crypto_lab.hashing import canonical_sha256
@@ -59,6 +68,7 @@ from crypto_lab.official import OfficialEvidenceLocator
 from crypto_lab.official import OfficialEvidenceResolver
 from crypto_lab.paths import validate_safe_component
 from crypto_lab.reporting import ReportOutput
+from crypto_lab.reporting import REQUIRED_SCIENTIFIC_LIMITATIONS
 from crypto_lab.research import PartitionRole
 from crypto_lab.research import BenchmarkSpec
 from crypto_lab.research import CandidateSpec
@@ -80,6 +90,8 @@ from crypto_lab.research import UtcInterval
 from crypto_lab.research import benchmark_trial_candidate_id
 from crypto_lab.runner import OfficialLabRunRequest
 from crypto_lab.runner import run_official_lab
+from crypto_lab.sealing import OfficialSealOutcome
+from crypto_lab.sealing import verify_official_seal
 from crypto_lab.strategies import StrategySpec
 from crypto_lab.strategies import resolve_registered_strategy_identity
 from crypto_lab.status import RunState
@@ -89,6 +101,129 @@ class OwnerWorkflowPurpose(StrEnum):
     OWNER_STUDY = "OWNER_STUDY"
     BENCHMARK_STUDY = "BENCHMARK_STUDY"
     QUALIFICATION_INTERFACE_FIXTURE = "QUALIFICATION_INTERFACE_FIXTURE"
+
+
+DEVELOPMENT_CLAIM_CONTROL_TOKENS = (
+    *REQUIRED_SCIENTIFIC_LIMITATIONS,
+    "FINAL_HOLDOUT_USED_FALSE",
+    "REAL_PROFITABILITY_CLAIM_FALSE",
+    "LIVE_TRADING_AUTHORIZATION_FALSE",
+)
+
+
+def _require_scientific_claim_contract(value: OwnerWorkflowInput) -> None:
+    """Fail before Official construction when Development claims omit locked limits."""
+
+    if (
+        value.workflow_purpose is OwnerWorkflowPurpose.QUALIFICATION_INTERFACE_FIXTURE
+        or value.partition_role is not PartitionRole.DEVELOPMENT
+    ):
+        return
+    tokens = {
+        token.strip()
+        for token in value.protocol.claim_basis.split(";")
+        if token.strip()
+    }
+    missing = tuple(token for token in DEVELOPMENT_CLAIM_CONTROL_TOKENS if token not in tokens)
+    if missing:
+        raise ResearchError(
+            FailureCode.RESEARCH_PROTOCOL_INVALID,
+            "Development claim basis omits mandatory exact tokens: " + ",".join(missing),
+        )
+
+
+def _startup_state_to_builtins(value: Any) -> Any:
+    """Reconstruct the canonical JSON shape from bootstrap-frozen state."""
+
+    if isinstance(value, Mapping):
+        if not all(isinstance(key, str) for key in value):
+            raise TypeError("bootstrap state mappings require string keys")
+        return {key: _startup_state_to_builtins(item) for key, item in value.items()}
+    if isinstance(value, tuple):
+        return [_startup_state_to_builtins(item) for item in value]
+    if value is None or isinstance(value, (str, int, bool)):
+        return value
+    raise TypeError(f"unsupported bootstrap state value: {type(value).__name__}")
+
+
+def _require_verified_startup() -> dict[str, Any]:
+    """Reject every direct/forged call before Owner workflow side effects."""
+
+    module = sys.modules.get("_crypto_lab_verified_bootstrap")
+    attestation = getattr(module, "ATTESTATION", None)
+    encoded = getattr(module, "ATTESTATION_JSON", None)
+    declared_hash = getattr(module, "ATTESTATION_SHA256", None)
+    try:
+        parsed = json.loads(encoded)
+        canonical = json.dumps(
+            parsed,
+            ensure_ascii=False,
+            allow_nan=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+        identity_material = dict(parsed)
+        attestation_identity = identity_material.pop("attestation_identity")
+        identity_bytes = json.dumps(
+            identity_material,
+            ensure_ascii=False,
+            allow_nan=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+        product = parsed["product"]
+        valid = bool(
+            parsed["schema"] == "isolated-runtime-bootstrap-attestation-v1"
+            and parsed["target"] == "crypto_lab.owner:main"
+            and product["package_prefix"] == "crypto_lab"
+            and isinstance(product["source_commit"], str)
+            and len(product["source_commit"]) == 40
+            and isinstance(product["source_tree"], str)
+            and len(product["source_tree"]) == 40
+            and isinstance(parsed["repository_root"], str)
+            and Path(parsed["repository_root"]).is_absolute()
+            and isinstance(attestation_identity, str)
+            and attestation_identity == hashlib.sha256(identity_bytes).hexdigest()
+            and encoded.encode("utf-8") == canonical
+            and declared_hash == hashlib.sha256(canonical).hexdigest()
+            and _startup_state_to_builtins(attestation) == parsed
+            and dict(parsed["environment"]) == _official_child_environment()
+        )
+    except Exception:
+        valid = False
+    if not valid:
+        raise ResearchError(
+            FailureCode.RUNTIME_STARTUP_MISMATCH,
+            "Owner workflow requires the verified isolated bootstrap entrypoint",
+        )
+    return parsed
+
+
+def _require_startup_repository(
+    repository_root: Path,
+    startup: dict[str, Any],
+) -> Path:
+    """Bind the target argument to the exact root verified by the bootstrap."""
+
+    product = startup["product"]
+    try:
+        repository = require_repository_root(
+            repository_root,
+            expected_repository_identity=product["repository_identity"],
+            expected_git_commit=product["source_commit"],
+            expected_git_tree=product["source_tree"],
+        )
+    except (TypeError, ValueError) as exc:
+        raise ResearchError(
+            FailureCode.RUNTIME_STARTUP_MISMATCH,
+            f"Owner repository authority differs: {exc}",
+        ) from exc
+    if str(repository) != startup["repository_root"]:
+        raise ResearchError(
+            FailureCode.RUNTIME_STARTUP_MISMATCH,
+            "Owner repository argument differs from the bootstrap-bound root",
+        )
+    return repository
 
 
 class OwnerWorkflowInput(StrictModel):
@@ -140,6 +275,7 @@ class OwnerWorkflowResult:
     run_id: str
     run_state: str
     checker_outcome: str
+    official_seal_outcome: str
     claim_eligibility: str
     real_profitability_claim: bool
     report_id: str
@@ -156,6 +292,7 @@ class OwnerWorkflowResult:
             "run_id": self.run_id,
             "run_state": self.run_state,
             "checker_outcome": self.checker_outcome,
+            "official_seal_outcome": self.official_seal_outcome,
             "claim_eligibility": self.claim_eligibility,
             "real_profitability_claim": self.real_profitability_claim,
             "report_id": self.report_id,
@@ -173,6 +310,47 @@ def _load_terminal_run(path: Path) -> tuple[dict[str, Any], dict[str, Any]]:
     if not isinstance(status, dict) or not isinstance(result, dict):
         raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "terminal Run evidence must be JSON objects")
     return status, result
+
+
+def _revalidate_component(
+    directory: Path,
+    *,
+    repository: Path,
+    current_head_required: bool,
+):
+    persisted = json.loads(
+        (directory / "component_validation.json").read_text(encoding="utf-8"),
+    )
+    regenerated = check_evidence_directory(
+        directory,
+        repository_root=repository,
+        official_source_required=True,
+        source_revision_current_head_required=current_head_required,
+    )
+    if regenerated.to_builtins() != persisted:
+        raise ResearchError(
+            FailureCode.EVIDENCE_INCOMPLETE,
+            "component validation is stale or forged",
+        )
+    return regenerated
+
+
+def _require_official_seal(
+    directory: Path,
+    *,
+    repository: Path,
+    current_head_required: bool,
+) -> None:
+    seal = verify_official_seal(
+        directory,
+        repository_root=repository,
+        source_revision_current_head_required=current_head_required,
+    )
+    if seal.outcome is not OfficialSealOutcome.OFFICIAL_SEAL_PASS:
+        raise ResearchError(
+            FailureCode.OFFICIAL_SEAL_FAILURE,
+            "Official Run root attestation is not valid",
+        )
 
 
 def _write_research_diagnostics(
@@ -245,14 +423,14 @@ def _replay_material(
     matched = bool(
         primary_status.get("state") == "COMPLETED"
         and replay_status.get("state") == "COMPLETED"
-        and primary_status.get("checker_outcome") == "CHECK_PASS"
-        and replay_status.get("checker_outcome") == "CHECK_PASS"
+        and primary_status.get("component_validation_outcome") == "COMPONENT_CHECK_PASS"
+        and replay_status.get("component_validation_outcome") == "COMPONENT_CHECK_PASS"
         and primary_config == replay_config
         and primary_semantic == replay_semantic
         and read_only_checker_revalidated
     )
     return {
-        "schema": "owner-deterministic-replay-v1",
+        "schema": "owner-deterministic-replay-v2",
         "trial_id": trial_id,
         "primary_run_ref": primary_ref,
         "replay_run_ref": replay_ref,
@@ -262,8 +440,14 @@ def _replay_material(
         "replay_semantic_digest": replay_semantic,
         "primary_state": str(primary_status.get("state")),
         "replay_state": str(replay_status.get("state")),
-        "primary_checker": str(primary_status.get("checker_outcome")),
-        "replay_checker": str(replay_status.get("checker_outcome")),
+        "primary_component_validation": str(
+            primary_status.get("component_validation_outcome"),
+        ),
+        "replay_component_validation": str(
+            replay_status.get("component_validation_outcome"),
+        ),
+        "primary_official_seal": "OFFICIAL_SEAL_PASS" if read_only_checker_revalidated else "FAIL",
+        "replay_official_seal": "OFFICIAL_SEAL_PASS" if read_only_checker_revalidated else "FAIL",
         "fresh_processes": True,
         "read_only_checker_revalidated": read_only_checker_revalidated,
         "result": "PASS" if matched else "FAIL",
@@ -289,14 +473,19 @@ def _read_replay_evidence(repository: Path, trial_id: str) -> dict[str, Any]:
     replay_status, replay_result = _load_terminal_run(replay_dir)
     checker_revalidated = True
     for directory in (primary_dir, replay_dir):
-        persisted = json.loads((directory / "checker.json").read_text(encoding="utf-8"))
-        regenerated = check_evidence_directory(
-            directory,
-            repository_root=repository,
-            official_source_required=True,
-            source_revision_current_head_required=False,
-        )
-        checker_revalidated = checker_revalidated and regenerated.to_builtins() == persisted
+        try:
+            _revalidate_component(
+                directory,
+                repository=repository,
+                current_head_required=False,
+            )
+            _require_official_seal(
+                directory,
+                repository=repository,
+                current_head_required=False,
+            )
+        except ResearchError:
+            checker_revalidated = False
     derived = _replay_material(
         trial_id=trial_id,
         primary_ref=str(payload["primary_run_ref"]),
@@ -382,28 +571,123 @@ def _status_paths(repository: Path) -> tuple[str, ...]:
 
 
 def _official_child_environment() -> dict[str, str]:
-    """Bind the Official child to the already-adopted Runtime Lock environment."""
+    """Return the complete environment, not an overlay on caller state."""
 
     return {
-        **os.environ,
-        "TZ": "UTC",
+        "PATH": "/usr/bin:/bin",
         "LANG": "C.UTF-8",
         "LC_ALL": "C.UTF-8",
+        "TZ": "UTC",
     }
 
 
-def _official_child_command(repository: Path, workflow_path: Path) -> list[str]:
-    """Use the repository CLI once, avoiding ``runpy`` module re-execution."""
+def _checkpoint_push_environment() -> dict[str, str]:
+    """Return the complete credential-broker environment for Git publication only."""
 
-    child_entrypoint = repository / "scripts/run_owner_workflow.py"
-    if child_entrypoint.is_symlink() or not child_entrypoint.is_file():
+    try:
+        account = pwd.getpwuid(os.getuid())
+        home = Path(account.pw_dir)
+        metadata = home.lstat()
+    except (KeyError, OSError) as exc:
+        raise ResearchError(
+            FailureCode.TRIAL_HISTORY_INCOMPLETE,
+            "checkpoint publisher account home is unavailable",
+        ) from exc
+    if (
+        not home.is_absolute()
+        or home.is_symlink()
+        or not home.is_dir()
+        or metadata.st_uid != os.getuid()
+    ):
+        raise ResearchError(
+            FailureCode.TRIAL_HISTORY_INCOMPLETE,
+            "checkpoint publisher account home identity is unsafe",
+        )
+    git_config = home / ".gitconfig"
+    gh_config = home / ".config" / "gh"
+    state_home = home / ".local" / "state"
+    try:
+        git_config_metadata = git_config.lstat()
+        gh_config_metadata = gh_config.lstat()
+        state_home_metadata = state_home.lstat()
+    except OSError as exc:
+        raise ResearchError(
+            FailureCode.TRIAL_HISTORY_INCOMPLETE,
+            "checkpoint credential-broker locators are unavailable",
+        ) from exc
+    if (
+        git_config.is_symlink()
+        or not git_config.is_file()
+        or git_config_metadata.st_uid != os.getuid()
+        or gh_config.is_symlink()
+        or not gh_config.is_dir()
+        or gh_config_metadata.st_uid != os.getuid()
+        or state_home.is_symlink()
+        or not state_home.is_dir()
+        or state_home_metadata.st_uid != os.getuid()
+    ):
+        raise ResearchError(
+            FailureCode.TRIAL_HISTORY_INCOMPLETE,
+            "checkpoint credential-broker locator identity is unsafe",
+        )
+    return {
+        **_official_child_environment(),
+        "GH_CONFIG_DIR": str(gh_config),
+        "GIT_CONFIG_GLOBAL": str(git_config),
+        "GIT_CONFIG_NOSYSTEM": "1",
+        "GIT_TERMINAL_PROMPT": "0",
+        "XDG_STATE_HOME": str(state_home),
+    }
+
+
+def _checkpoint_push_command(branch: str) -> list[str]:
+    """Build the non-interactive push command with repository hooks disabled."""
+
+    if (
+        not branch
+        or branch.startswith("-")
+        or any(character.isspace() for character in branch)
+    ):
+        raise ResearchError(
+            FailureCode.TRIAL_HISTORY_INCOMPLETE,
+            "checkpoint branch name is unsafe",
+        )
+    return [
+        "git",
+        "-c",
+        "core.hooksPath=/dev/null",
+        "push",
+        "origin",
+        f"HEAD:refs/heads/{branch}",
+    ]
+
+
+def _official_child_command(repository: Path, workflow_path: Path) -> list[str]:
+    """Enter the child only through the stdlib isolated bootstrap."""
+
+    bootstrap = repository / "scripts/isolated_runtime_bootstrap.py"
+    authority = repository / "runtime-bootstrap-authority.json"
+    if bootstrap.is_symlink() or not bootstrap.is_file():
         raise ResearchError(
             FailureCode.EVIDENCE_INCOMPLETE,
-            "Official child entrypoint is missing or is a symlink",
+            "Official isolated bootstrap is missing or is a symlink",
         )
     return [
         sys.executable,
-        str(child_entrypoint),
+        "-I",
+        "-P",
+        "-S",
+        "-B",
+        "-X",
+        "pycache_prefix=/dev/null",
+        str(bootstrap),
+        "--authority",
+        str(authority),
+        "--repository",
+        str(repository),
+        "--entrypoint",
+        "crypto_lab.owner:main",
+        "--",
         "--child",
         "--input",
         str(workflow_path),
@@ -440,7 +724,17 @@ def _checkpoint(
         raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE, "empty authoritative checkpoint")
     _git(repository, "commit", "-m", message)
     branch = _git(repository, "symbolic-ref", "--quiet", "--short", "HEAD")
-    _git(repository, "push", "origin", f"HEAD:refs/heads/{branch}")
+    push = subprocess.run(
+        _checkpoint_push_command(branch),
+        cwd=repository,
+        env=_checkpoint_push_environment(),
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if push.returncode != 0:
+        detail = push.stderr.strip() or push.stdout.strip() or "git push failed"
+        raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE, detail)
     head = _git(repository, "rev-parse", "HEAD")
     remote = _git(repository, "rev-parse", f"refs/remotes/origin/{branch}")
     clean, unexpected_after = worktree_is_clean(repository)
@@ -538,6 +832,49 @@ def _reconcile_recoverable_history(
 
     current_anchors = history.anchors.read_anchors()
     committed_anchors = history.anchors.committed_anchors()
+    # A process can be lost after the batched PLANNED/STARTED Journal fsync and
+    # before the immediately following Anchor fsync.  Recover only that exact
+    # suffix after independently deriving its TrialDefinition from the
+    # committed workflow authorization.  Any other unanchored bytes remain a
+    # structured durability failure; they are never interpreted heuristically.
+    if current_anchors and current_anchors == committed_anchors:
+        records = history.journal.read_records()
+        base_count = current_anchors[-1].trial_record_count
+        unanchored = records[base_count:]
+        if unanchored:
+            if (
+                len(unanchored) != 2
+                or unanchored[0].state is not TrialState.PLANNED
+                or unanchored[1].state is not TrialState.STARTED
+                or unanchored[0].trial_id != unanchored[1].trial_id
+            ):
+                raise ResearchError(
+                    FailureCode.JOURNAL_DURABILITY_FAILURE,
+                    "unanchored history is not one recoverable PLANNED/STARTED batch",
+                )
+            trial_id = unanchored[0].trial_id
+            workflow = workflows.get(trial_id)
+            if workflow is None:
+                raise ResearchError(
+                    FailureCode.JOURNAL_DURABILITY_FAILURE,
+                    "unanchored Trial start has no committed workflow authorization",
+                )
+            expected = _expected_committed_workflow_definition(repository, workflow)
+            if any(
+                _trial_definition_from_record(record) != expected
+                for record in unanchored
+            ):
+                raise ResearchError(
+                    FailureCode.JOURNAL_DURABILITY_FAILURE,
+                    "unanchored Trial start differs from committed workflow authorization",
+                )
+            recovered = history.anchors.recover_unanchored_trial_start(expected)
+            if recovered is None:
+                raise ResearchError(
+                    FailureCode.JOURNAL_DURABILITY_FAILURE,
+                    "recoverable Trial start did not produce its missing Anchor",
+                )
+            current_anchors = history.anchors.read_anchors()
     extension_present = current_anchors != committed_anchors
     history.reconcile()
     if not extension_present:
@@ -584,36 +921,250 @@ def _reconcile_recoverable_history(
     return True
 
 
-def _qualified_profile(
-    repository: Path,
-    value: OwnerWorkflowInput,
-) -> tuple[QualifiedProfileRecord, Path]:
-    candidates = (
+def _qualified_profile_registry_candidates(repository: Path) -> tuple[Path, ...]:
+    """Return Git-committed qualification authorities newest first.
+
+    A frozen list makes every new qualification require a Product-Code change,
+    which immediately makes that qualification stale.  Enumerating Git HEAD
+    breaks that cycle while ensuring an untracked directory cannot become
+    authority merely because it has a larger retry suffix.
+    """
+
+    root = "evidence/audit/adversarial-remediation-002"
+    listing = subprocess.run(
+        [
+            "git",
+            "--no-replace-objects",
+            "ls-tree",
+            "-r",
+            "--name-only",
+            "HEAD",
+            "--",
+            root,
+        ],
+        cwd=repository,
+        env={
+            **_official_child_environment(),
+            "GIT_CONFIG_NOSYSTEM": "1",
+            "GIT_NO_REPLACE_OBJECTS": "1",
+        },
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if listing.returncode != 0:
+        raise ResearchError(
+            FailureCode.DOWNSTREAM_CONTRACT_FAILURE,
+            "cannot enumerate committed Qualified Profile registries",
+        )
+    pattern = re.compile(
+        rf"^{re.escape(root)}/qualification-retry-([0-9]{{3}})/"
+        r"qualified-profile-registry[.]json$",
+    )
+    retry_paths: dict[int, Path] = {}
+    for relative in listing.stdout.splitlines():
+        match = pattern.fullmatch(relative)
+        if match is None:
+            continue
+        epoch = int(match.group(1))
+        if epoch in retry_paths:
+            raise ResearchError(
+                FailureCode.DOWNSTREAM_CONTRACT_FAILURE,
+                "duplicate committed qualification retry authority",
+            )
+        retry_paths[epoch] = repository / relative
+    ordered_retries = tuple(
+        retry_paths[epoch]
+        for epoch in sorted(retry_paths, reverse=True)
+    )
+    return ordered_retries + (
+        repository
+        / "evidence/audit/adversarial-remediation-002/qualification/qualified-profile-registry.json",
         repository
         / "evidence/audit/comprehensive-remediation-001/qualification-runtime-proof/qualified-profile-registry.json",
         repository
         / "evidence/audit/comprehensive-remediation-001/qualification/qualified-profile-registry.json",
         repository / "evidence/m3/m3-acceptance-001/qualified-profile-registry.json",
     )
-    matches: list[tuple[QualifiedProfileRecord, Path]] = []
-    for registry_path in candidates:
-        if not registry_path.is_file():
-            continue
-        registry = QualifiedProfileRegistry.from_json_bytes(registry_path.read_bytes())
-        matches.extend(
-            (item, registry_path)
-            for item in registry.records
-            if item.qualified_profile_record_id == value.qualified_profile_record_id
+
+
+def _committed_qualified_profile_registry_bytes(
+    repository: Path,
+    registry_path: Path,
+) -> bytes:
+    """Read the selected Registry only when worktree bytes equal Git HEAD."""
+
+    lexical = Path(os.path.abspath(registry_path))
+    try:
+        relative = lexical.relative_to(repository).as_posix()
+        resolved = lexical.resolve(strict=True)
+    except (OSError, ValueError) as exc:
+        raise ResearchError(
+            FailureCode.DOWNSTREAM_CONTRACT_FAILURE,
+            "Current Qualified Profile registry is unavailable",
+        ) from exc
+    if (
+        resolved != lexical
+        or lexical.is_symlink()
+        or not lexical.is_file()
+    ):
+        raise ResearchError(
+            FailureCode.DOWNSTREAM_CONTRACT_FAILURE,
+            "Current Qualified Profile registry is unavailable",
         )
+    committed = subprocess.run(
+        ["git", "--no-replace-objects", "show", f"HEAD:{relative}"],
+        cwd=repository,
+        env={
+            **_official_child_environment(),
+            "GIT_CONFIG_NOSYSTEM": "1",
+            "GIT_NO_REPLACE_OBJECTS": "1",
+        },
+        check=False,
+        capture_output=True,
+    )
+    try:
+        current = lexical.read_bytes()
+    except OSError as exc:
+        raise ResearchError(
+            FailureCode.DOWNSTREAM_CONTRACT_FAILURE,
+            "Current Qualified Profile registry is unavailable",
+        ) from exc
+    if committed.returncode != 0 or committed.stdout != current:
+        raise ResearchError(
+            FailureCode.DOWNSTREAM_CONTRACT_FAILURE,
+            "Current Qualified Profile registry differs from Git HEAD",
+        )
+    return committed.stdout
+
+
+_QUALIFICATION_EXECUTABLE_CLOSURE = (
+    "SSOT.md",
+    "pyproject.toml",
+    "requirements.lock.txt",
+    "runtime.lock.json",
+    "runtime-bootstrap-authority.json",
+    "configs/m3",
+    "src",
+    "scripts/build_runtime_bootstrap_authority.py",
+    "scripts/isolated_runtime_bootstrap.py",
+    "scripts/prepare_adversarial_remediation_002_runs.py",
+    "scripts/run_m3_child.py",
+    "scripts/run_m3_qualifications.py",
+    "scripts/validate_audit_qualification.py",
+    "scripts/validate_m3_evidence.py",
+)
+
+
+def _require_qualification_executable_closure_current(
+    repository: Path,
+    source_commit: str,
+) -> None:
+    """Require the newest Registry to qualify the current executable closure."""
+
+    if (
+        len(source_commit) != 40
+        or any(character not in "0123456789abcdef" for character in source_commit)
+    ):
+        raise ResearchError(
+            FailureCode.DOWNSTREAM_CONTRACT_FAILURE,
+            "Qualified Profile Source Revision is invalid",
+        )
+    environment = {
+        **_official_child_environment(),
+        "GIT_CONFIG_NOSYSTEM": "1",
+        "GIT_NO_REPLACE_OBJECTS": "1",
+    }
+    ancestor = subprocess.run(
+        [
+            "git",
+            "--no-replace-objects",
+            "merge-base",
+            "--is-ancestor",
+            source_commit,
+            "HEAD",
+        ],
+        cwd=repository,
+        env=environment,
+        check=False,
+        capture_output=True,
+    )
+    if ancestor.returncode != 0:
+        raise ResearchError(
+            FailureCode.DOWNSTREAM_CONTRACT_FAILURE,
+            "Qualified Profile Source Revision is not current ancestry",
+        )
+    closure = subprocess.run(
+        [
+            "git",
+            "--no-replace-objects",
+            "diff",
+            "--quiet",
+            source_commit,
+            "HEAD",
+            "--",
+            *_QUALIFICATION_EXECUTABLE_CLOSURE,
+        ],
+        cwd=repository,
+        env=environment,
+        check=False,
+        capture_output=True,
+    )
+    if closure.returncode != 0:
+        raise ResearchError(
+            FailureCode.DOWNSTREAM_CONTRACT_FAILURE,
+            "Qualified Profile executable closure differs from current Git HEAD",
+        )
+
+
+def _qualified_profile(
+    repository: Path,
+    value: OwnerWorkflowInput,
+) -> tuple[QualifiedProfileRecord, Path]:
+    candidates = _qualified_profile_registry_candidates(repository)
+    if not candidates:
+        raise ResearchError(
+            FailureCode.DOWNSTREAM_CONTRACT_FAILURE,
+            "Current Qualified Profile registry is unavailable",
+        )
+    registry_path = candidates[0]
+    try:
+        registry = QualifiedProfileRegistry.from_json_bytes(
+            _committed_qualified_profile_registry_bytes(repository, registry_path),
+        )
+    except ResearchError:
+        raise
+    except (TypeError, ValueError) as exc:
+        raise ResearchError(
+            FailureCode.DOWNSTREAM_CONTRACT_FAILURE,
+            "Current Qualified Profile registry is invalid",
+        ) from exc
+    matches = [
+        item
+        for item in registry.records
+        if item.qualified_profile_record_id == value.qualified_profile_record_id
+    ]
     if len(matches) != 1:
         raise ResearchError(
             FailureCode.DOWNSTREAM_CONTRACT_FAILURE,
-            "Qualified Profile locator must resolve exactly once",
+            "Qualified Profile must resolve exactly once in the current authority",
         )
-    record, registry_path = matches[0]
+    record = matches[0]
+    if (
+        getattr(value, "workflow_purpose", OwnerWorkflowPurpose.OWNER_STUDY)
+        is not OwnerWorkflowPurpose.QUALIFICATION_INTERFACE_FIXTURE
+    ):
+        _require_qualification_executable_closure_current(
+            repository,
+            record.source_revision.git_commit,
+        )
     if record.profile_id is not value.protocol.market_profile:
         raise ResearchError(FailureCode.DOWNSTREAM_CONTRACT_FAILURE, "Qualified Profile locator mismatch")
-    if record.checker_result != "CHECK_PASS" or record.replay_result != "PASS":
+    if (
+        record.schema_version != 2
+        or record.checker_result != "COMPONENT_CHECK_PASS"
+        or record.replay_result != "PASS"
+    ):
         raise ResearchError(FailureCode.DOWNSTREAM_CONTRACT_FAILURE, "Qualified Profile is unavailable")
     if record.runtime_lock_sha256 != sha256_file(repository / "runtime.lock.json"):
         raise ResearchError(
@@ -632,7 +1183,62 @@ def _release(repository: Path, value: OwnerWorkflowInput) -> DatasetRelease:
         or release.dataset_release_id not in value.protocol.dataset_release_ids
     ):
         raise ResearchError(FailureCode.DOWNSTREAM_CONTRACT_FAILURE, "Dataset Release locator mismatch")
+    expected_normalizer = (
+        M3_QUALIFICATION_FULL_RAW_INVENTORY_NORMALIZER_VERSION
+        if value.workflow_purpose is OwnerWorkflowPurpose.QUALIFICATION_INTERFACE_FIXTURE
+        else FULL_RAW_INVENTORY_NORMALIZER_VERSION
+    )
+    if (
+        not release.has_full_raw_inventory
+        or release.normalizer_version != expected_normalizer
+    ):
+        raise ResearchError(
+            FailureCode.DATASET_RAW_INVENTORY_MISMATCH,
+            "Dataset Release is not eligible for this Owner workflow purpose",
+        )
     return release
+
+
+def _research_rebuild_validation(
+    repository: Path,
+    *,
+    release: DatasetRelease,
+    source_revision: SourceRevision,
+) -> tuple[dict[str, Any], str]:
+    ref = RESEARCH_REBUILD_VALIDATION_REF
+    path = repository / ref
+    try:
+        if path.is_symlink() or not path.is_file() or path.resolve(strict=True).parent != path.parent:
+            raise ValueError("proof is not a contained regular file")
+        payload = path.read_bytes()
+        if payload != canonical_json_bytes(json.loads(payload)) + b"\n":
+            raise ValueError("proof is not canonical JSON")
+        frozen = subprocess.run(
+            ["git", "--no-replace-objects", "show", f"{source_revision.git_commit}:{ref}"],
+            cwd=repository,
+            env={
+                "PATH": "/usr/bin:/bin",
+                "LANG": "C.UTF-8",
+                "LC_ALL": "C.UTF-8",
+                "TZ": "UTC",
+                "GIT_CONFIG_NOSYSTEM": "1",
+                "GIT_NO_REPLACE_OBJECTS": "1",
+            },
+            check=True,
+            capture_output=True,
+        ).stdout
+        if frozen != payload:
+            raise ValueError("proof bytes differ from the Run Source Revision")
+        value = json.loads(payload)
+        if not isinstance(value, dict):
+            raise ValueError("proof root is not an object")
+        validate_research_dataset_rebuild_proof(release, value)
+    except Exception as exc:
+        raise ResearchError(
+            FailureCode.DATASET_RAW_INVENTORY_MISMATCH,
+            f"Dataset rebuild validation is unavailable or invalid: {exc}",
+        ) from exc
+    return value, ref
 
 
 def _refreeze_protocol(protocol: ResearchProtocol) -> ResearchProtocol:
@@ -667,7 +1273,8 @@ def build_official_request(
 ) -> OfficialLabRunRequest:
     """Resolve Profile and Dataset identities into one immutable Official request."""
 
-    repository = Path(repository_root).resolve(strict=True)
+    _require_scientific_claim_contract(value)
+    repository = require_repository_root(repository_root)
     profile, registry_path = _qualified_profile(repository, value)
     release = _release(repository, value)
     template_dir = registry_path.parent / profile.evidence_references[0]
@@ -742,6 +1349,14 @@ def build_official_request(
         random_seeds=(NamedSeed(name="fill_model", value=0), NamedSeed(name="protocol", value=value.seed)),
         research_protocol_id=value.protocol.protocol_id,
     )
+    rebuild_validation: dict[str, Any] | None = None
+    rebuild_validation_ref = "NOT_APPLICABLE"
+    if value.workflow_purpose is not OwnerWorkflowPurpose.QUALIFICATION_INTERFACE_FIXTURE:
+        rebuild_validation, rebuild_validation_ref = _research_rebuild_validation(
+            repository,
+            release=release,
+            source_revision=source_revision,
+        )
     return OfficialLabRunRequest(
         lab_run_config=config,
         source_revision=source_revision,
@@ -751,6 +1366,8 @@ def build_official_request(
         qualified_profile_record_id=profile.qualified_profile_record_id,
         qualified_profile_registry_ref=registry_path.relative_to(repository).as_posix(),
         qualified_profile_registry_sha256=sha256_file(registry_path),
+        dataset_rebuild_validation=rebuild_validation,
+        dataset_rebuild_validation_ref=rebuild_validation_ref,
         evidence_root=repository / "runs",
         repository_root=repository,
     )
@@ -932,22 +1549,10 @@ def qualification_workflow_fixture_input(
 ) -> OwnerWorkflowInput:
     """Build the fixed exposed-data interface fixture, never an Owner study."""
 
-    repository = Path(repository_root).resolve(strict=True)
-    current_registry = (
-        repository
-        / "evidence/audit/comprehensive-remediation-001/qualification-runtime-proof/qualified-profile-registry.json"
-    )
-    prior_audit_registry = (
-        repository
-        / "evidence/audit/comprehensive-remediation-001/qualification/qualified-profile-registry.json"
-    )
+    repository = require_repository_root(repository_root)
     registry_path = next(
         path
-        for path in (
-            current_registry,
-            prior_audit_registry,
-            repository / "evidence/m3/m3-acceptance-001/qualified-profile-registry.json",
-        )
+        for path in _qualified_profile_registry_candidates(repository)
         if path.is_file()
     )
     registry = QualifiedProfileRegistry.from_json_bytes(
@@ -962,6 +1567,11 @@ def qualification_workflow_fixture_input(
         raise ResearchError(
             FailureCode.RUNTIME_LOCK_MISMATCH,
             "qualification fixture requires a profile qualified by the active Runtime Lock",
+        )
+    if profile.schema_version != 2 or profile.checker_result != "COMPONENT_CHECK_PASS":
+        raise ResearchError(
+            FailureCode.DOWNSTREAM_CONTRACT_FAILURE,
+            "qualification fixture requires a current component-validated profile",
         )
     release_id = profile.dataset_release_id
     release = DatasetRelease.from_json_bytes(
@@ -1100,6 +1710,7 @@ def _child_run(
     *,
     evidence_root: Path | None = None,
 ) -> int:
+    _require_verified_startup()
     value = OwnerWorkflowInput.from_json_bytes(input_path.read_bytes())
     protocol_path = repository / "research/protocols" / f"{value.protocol.protocol_id}.json"
     if ResearchProtocol.from_json_bytes(protocol_path.read_bytes()) != value.protocol:
@@ -1182,17 +1793,21 @@ def _recover_started(
             try:
                 status = json.loads(status_path.read_text(encoding="utf-8"))
                 parsed = TrialState(str(status["state"]))
-                persisted_checker = json.loads((run_dir / "checker.json").read_text(encoding="utf-8"))
-                regenerated = check_evidence_directory(
+                regenerated = _revalidate_component(
                     run_dir,
-                    repository_root=repository,
-                    official_source_required=True,
-                    source_revision_current_head_required=False,
+                    repository=repository,
+                    current_head_required=False,
                 )
+                if parsed is TrialState.COMPLETED:
+                    _require_official_seal(
+                        run_dir,
+                        repository=repository,
+                        current_head_required=False,
+                    )
                 complete_terminal = (
                     parsed in TERMINAL_TRIAL_STATES
-                    and regenerated.to_builtins() == persisted_checker
                     and (run_dir / "evidence_manifest.json").is_file()
+                    and (run_dir / "official_seal.json").is_file()
                 )
             except Exception:
                 complete_terminal = False
@@ -1300,15 +1915,16 @@ def _resume_completed_workflow(
         raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE,
             "terminal trial differs from committed workflow authorization",
         )
-    persisted_checker = json.loads((run_dir / "checker.json").read_text(encoding="utf-8"))
-    checker = check_evidence_directory(
+    checker = _revalidate_component(
         run_dir,
-        repository_root=repository,
-        official_source_required=True,
-        source_revision_current_head_required=False,
+        repository=repository,
+        current_head_required=False,
     )
-    if checker.to_builtins() != persisted_checker:
-        raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "terminal Run checker is stale or forged")
+    _require_official_seal(
+        run_dir,
+        repository=repository,
+        current_head_required=False,
+    )
     replay = (
         _read_replay_evidence(repository, value.trial_id)
         if value.workflow_purpose in {
@@ -1423,6 +2039,7 @@ def _resume_completed_workflow(
         run_id=value.run_id,
         run_state=terminal.state.value,
         checker_outcome=checker.outcome.value,
+        official_seal_outcome="OFFICIAL_SEAL_PASS",
         claim_eligibility=report.claim_evaluation.research_eligibility.value,
         real_profitability_claim=bool(report.json_payload["profitability_claim_is_real"]),
         report_id=report.report_id,
@@ -1441,7 +2058,8 @@ def execute_owner_workflow(
 ) -> OwnerWorkflowResult:
     """Execute a complete checkpointed workflow using public identities only."""
 
-    repository = Path(repository_root).resolve(strict=True)
+    startup = _require_verified_startup()
+    repository = _require_startup_repository(repository_root, startup)
     history = _history(repository)
     recovered = _recover_started(repository, history)
     if recovered:
@@ -1546,21 +2164,19 @@ def execute_owner_workflow(
             primary_child.returncode == 0 and replay_child.returncode == 0
         )
         for staged_run in (staged_primary, staged_replay):
-            if not (staged_run / "checker.json").is_file():
+            if not (staged_run / "component_validation.json").is_file():
                 read_only_checker_revalidated = False
                 continue
             try:
-                persisted = json.loads(
-                    (staged_run / "checker.json").read_text(encoding="utf-8"),
-                )
-                regenerated = check_evidence_directory(
+                _revalidate_component(
                     staged_run,
-                    repository_root=repository,
-                    official_source_required=True,
+                    repository=repository,
+                    current_head_required=True,
                 )
-                read_only_checker_revalidated = bool(
-                    read_only_checker_revalidated
-                    and regenerated.to_builtins() == persisted
+                _require_official_seal(
+                    staged_run,
+                    repository=repository,
+                    current_head_required=True,
                 )
             except Exception:
                 read_only_checker_revalidated = False
@@ -1582,7 +2198,10 @@ def execute_owner_workflow(
             _load_terminal_run(run_dir)
             if run_dir.exists() and (run_dir / "status.json").is_file()
             else (
-                {"state": "ABORTED", "checker_outcome": "CHECK_BLOCKED"},
+                {
+                    "state": "ABORTED",
+                    "component_validation_outcome": "COMPONENT_CHECK_BLOCKED",
+                },
                 {
                     "config_sha256": definition.config_sha256,
                     "semantic_digest": "UNAVAILABLE",
@@ -1593,7 +2212,10 @@ def execute_owner_workflow(
             _load_terminal_run(replay_dir)
             if replay_dir.exists() and (replay_dir / "status.json").is_file()
             else (
-                {"state": "ABORTED", "checker_outcome": "CHECK_BLOCKED"},
+                {
+                    "state": "ABORTED",
+                    "component_validation_outcome": "COMPONENT_CHECK_BLOCKED",
+                },
                 {
                     "config_sha256": definition.config_sha256,
                     "semantic_digest": "UNAVAILABLE",
@@ -1718,15 +2340,16 @@ def execute_owner_workflow(
             ),
         )
 
-    persisted_checker = json.loads((run_dir / "checker.json").read_text(encoding="utf-8"))
-    checker = check_evidence_directory(
+    checker = _revalidate_component(
         run_dir,
-        repository_root=repository,
-        official_source_required=True,
-        source_revision_current_head_required=False,
+        repository=repository,
+        current_head_required=False,
     )
-    if checker.to_builtins() != persisted_checker:
-        raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "read-only checker differs from Run evidence")
+    _require_official_seal(
+        run_dir,
+        repository=repository,
+        current_head_required=False,
+    )
     diagnostic, diagnostic_paths = _write_research_diagnostics(
         value,
         repository=repository,
@@ -1774,6 +2397,7 @@ def execute_owner_workflow(
         run_id=value.run_id,
         run_state=terminal_state.value,
         checker_outcome=checker.outcome.value,
+        official_seal_outcome="OFFICIAL_SEAL_PASS",
         claim_eligibility=report.claim_evaluation.research_eligibility.value,
         real_profitability_claim=bool(report.json_payload["profitability_claim_is_real"]),
         report_id=report.report_id,
@@ -1786,15 +2410,16 @@ def execute_owner_workflow(
 
 
 def main(argv: list[str] | None = None) -> int:
+    startup = _require_verified_startup()
     parser = argparse.ArgumentParser(description="Run one strict checkpointed Owner workflow")
     parser.add_argument("--input", type=Path, required=True)
-    parser.add_argument("--repository", type=Path, default=Path.cwd())
+    parser.add_argument("--repository", type=Path, required=True)
     parser.add_argument("--output", type=Path)
     parser.add_argument("--child", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--child-evidence-root", type=Path, help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
-    repository = args.repository.resolve(strict=True)
     try:
+        repository = _require_startup_repository(args.repository, startup)
         if args.child:
             return _child_run(
                 args.input,

@@ -240,6 +240,8 @@ def main() -> int:
             [
                 str(ROOT / ".venv/bin/python"),
                 str(ROOT / "scripts/run_reverse_test_order.py"),
+                "--repository",
+                str(ROOT),
                 "--output-dir",
                 str(reverse_dir),
             ],

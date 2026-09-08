@@ -37,20 +37,21 @@ class AuditResearchValidatorTests(unittest.TestCase):
         self.assertIn(missing_object, message)
         self.assertIn("does not resolve", message)
 
-    def test_final_six_development_runs_revalidate_from_committed_evidence(self) -> None:
+    def test_legacy_six_development_runs_cannot_revalidate_as_current_results(self) -> None:
         result = validate(DEFAULT_FREEZE, require_remote_tip=False)
-        self.assertEqual(result["status"], "PASS", result["failures"])
-        self.assertEqual(result["validated_run_count"], 6)
-        self.assertEqual(result["validated_evidence_directory_count"], 12)
+        self.assertEqual(result["status"], "FAIL")
+        self.assertEqual(result["validated_run_count"], 0)
+        self.assertEqual(len(result["failures"]), 6)
         self.assertEqual(result["holdout_entry_count"], 0)
         self.assertFalse(result["final_holdout_used"])
         self.assertFalse(result["profitability_claim_authorized"])
-        self.assertEqual(
-            {item["market_profile"] for item in result["runs"]},
-            {
-                "BINANCE_SPOT_CASH_LONG_ONLY",
-                "BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING",
-            },
+        self.assertTrue(
+            all(
+                "result is not ACTIVE" in failure
+                or "required result-status registry is missing" in failure
+                or "final primary Run is revoked" in failure
+                for failure in result["failures"]
+            ),
         )
 
 

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import subprocess
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -20,3 +22,55 @@ def load_source_revision_dict() -> dict[str, Any]:
 
 def encode_config(data: dict[str, Any]) -> bytes:
     return json.dumps(data, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+
+
+def initialize_product_repository(root: Path) -> Path:
+    """Create the smallest explicit Git product root accepted by L-4 tests."""
+
+    root.mkdir(parents=True, exist_ok=True)
+    if (root / ".git").is_dir():
+        return root
+    subprocess.run(
+        ["git", "init", "-b", "main"],
+        cwd=root,
+        check=True,
+        capture_output=True,
+    )
+    isolate_temporary_git_maintenance(root)
+    subprocess.run(["git", "config", "user.name", "Test Product"], cwd=root, check=True)
+    subprocess.run(
+        ["git", "config", "user.email", "test-product@example.invalid"],
+        cwd=root,
+        check=True,
+    )
+    subprocess.run(
+        ["git", "remote", "add", "origin", "https://example.invalid/test-product.git"],
+        cwd=root,
+        check=True,
+    )
+    (root / "SSOT.md").write_text("synthetic test product authority\n", encoding="utf-8")
+    package = root / "src/crypto_lab"
+    package.mkdir(parents=True)
+    (package / "sealing.py").write_text("# synthetic authority marker\n", encoding="utf-8")
+    subprocess.run(["git", "add", "."], cwd=root, check=True)
+    subprocess.run(
+        ["git", "commit", "-m", "initialize synthetic product authority"],
+        cwd=root,
+        check=True,
+        capture_output=True,
+    )
+    return root
+
+
+def isolate_temporary_git_maintenance(root: Path) -> None:
+    """Keep auto-GC children from racing TemporaryDirectory cleanup.
+
+    This changes only a disposable fixture's local Git config, never the
+    product repository, and does not suppress cleanup errors or test failures.
+    """
+    root = root.resolve(strict=True)
+    temporary = Path(tempfile.gettempdir()).resolve(strict=True)
+    if root == temporary or not root.is_relative_to(temporary):
+        raise ValueError('Git maintenance isolation requires a disposable temporary repository')
+    for key, value in [('gc.auto','0'), ('maintenance.auto','false')]:
+        subprocess.run(['git','config','--local',key,value],cwd=root,check=True)

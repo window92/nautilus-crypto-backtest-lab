@@ -12,6 +12,8 @@ from crypto_lab.config import SourceRevision
 from crypto_lab.hashing import canonical_sha256
 from crypto_lab.hashing import sha256_file
 from crypto_lab.m3 import QualifiedProfileRegistry
+from crypto_lab.profile_authority import ProfileAuthorityError
+from crypto_lab.profile_authority import resolve_profile_authority
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -37,7 +39,7 @@ def csv_rows(path: Path) -> list[dict[str, str]]:
 
 
 class M3RealProfileQualifications(unittest.TestCase):
-    def test_accepted_runs_are_clean_committed_qualification_source_and_offline(self) -> None:
+    def test_historical_v1_runs_are_clean_committed_and_offline_diagnostics(self) -> None:
         baseline = json_file(EVIDENCE / "baseline.json")
         self.assertTrue(baseline["clean_worktree"])
         self.assertEqual(baseline["head"], baseline["origin_main"])
@@ -64,7 +66,7 @@ class M3RealProfileQualifications(unittest.TestCase):
             self.assertEqual(native["project_funding_postings"], 0)
             self.assertFalse(native["project_financial_ledger"])
 
-    def test_spot_real_path_is_causal_cash_long_only_and_fee_exactly_once(self) -> None:
+    def test_historical_v1_spot_path_records_causal_cash_and_fee_diagnostics(self) -> None:
         directory = run_dir("spot-primary")
         config = LabRunConfig.from_json_bytes((directory / "lab_run_config.json").read_bytes())
         native = json_file(directory / "nautilus_result.json")
@@ -72,6 +74,7 @@ class M3RealProfileQualifications(unittest.TestCase):
         fills = csv_rows(directory / "fills.csv")
         account = csv_rows(directory / "account.csv")
         self.assertEqual(checker["outcome"], "CHECK_PASS")
+        self.assertFalse(checker["outcome"].startswith("COMPONENT_"))
         self.assertEqual(config.nautilus_venue_config.account_type, "CASH")
         self.assertEqual(config.nautilus_venue_config.oms_type, "NETTING")
         self.assertFalse(config.nautilus_venue_config.allow_cash_borrowing)
@@ -102,13 +105,14 @@ class M3RealProfileQualifications(unittest.TestCase):
         self.assertEqual(control["fills_count"], 0)
         self.assertEqual(control["orders_count"], 0)
 
-    def test_perpetual_real_path_is_causal_netting_and_uses_repaired_limits(self) -> None:
+    def test_historical_v1_perpetual_path_records_netting_and_limit_diagnostics(self) -> None:
         directory = run_dir("perpetual-primary")
         config = LabRunConfig.from_json_bytes((directory / "lab_run_config.json").read_bytes())
         native = json_file(directory / "nautilus_result.json")
         fills = csv_rows(directory / "fills.csv")
         checker = json_file(directory / "checker.json")
         self.assertEqual(checker["outcome"], "CHECK_PASS")
+        self.assertFalse(checker["outcome"].startswith("COMPONENT_"))
         self.assertEqual(config.nautilus_venue_config.account_type, "MARGIN")
         self.assertEqual(config.nautilus_venue_config.oms_type, "NETTING")
         self.assertEqual(config.nautilus_venue_config.default_leverage, Decimal("1"))
@@ -194,6 +198,11 @@ class M3RealProfileQualifications(unittest.TestCase):
         self.assertIn("MARK_ROLE_INVALID", controls["PROHIBITED_MARK_FALLBACK"]["failure_codes"])
         self.assertEqual(controls["PROHIBITED_MARK_FALLBACK"]["fills_count"], 0)
         self.assertEqual(controls["DUPLICATE_FUNDING_SETTLEMENT"]["checker"]["outcome"], "CHECK_FAIL")
+        self.assertFalse(
+            controls["DUPLICATE_FUNDING_SETTLEMENT"]["checker"]["outcome"].startswith(
+                "COMPONENT_",
+            ),
+        )
         self.assertIn(
             "FUNDING_DOUBLE_COUNT",
             controls["DUPLICATE_FUNDING_SETTLEMENT"]["checker"]["failure_codes"],
@@ -209,22 +218,39 @@ class M3RealProfileQualifications(unittest.TestCase):
         self.assertIn("NETWORK_DURING_OFFICIAL_RUN", network["failure_codes"])
         self.assertEqual(network["fills_count"], 0)
 
-    def test_replays_registry_and_all_run_manifests_are_content_valid(self) -> None:
+    def test_legacy_replays_registry_and_manifests_are_intact_but_not_current_authority(self) -> None:
         replay = json_file(EVIDENCE / "deterministic-replay.json")
         self.assertEqual({item["result"] for item in replay.values()}, {"PASS"})
         self.assertTrue(all(item["fresh_processes"] for item in replay.values()))
         registry = QualifiedProfileRegistry.from_json_bytes(
             (EVIDENCE / "qualified-profile-registry.json").read_bytes(),
         )
+        self.assertEqual(registry.schema_version, 1)
         self.assertEqual(len(registry.records), 2)
         for record in registry.records:
+            self.assertEqual(record.schema_version, 1)
             self.assertEqual(record.qualification_state.value, "QUALIFIED")
             self.assertEqual(record.checker_result, "CHECK_PASS")
             self.assertEqual(record.replay_result, "PASS")
             self.assertEqual(len(record.accepted_run_ids), 2)
+            with self.assertRaises(ProfileAuthorityError):
+                resolve_profile_authority(
+                    repository_root=ROOT,
+                    registry_ref=(EVIDENCE / "qualified-profile-registry.json")
+                    .relative_to(ROOT)
+                    .as_posix(),
+                    registry_sha256=sha256_file(
+                        EVIDENCE / "qualified-profile-registry.json",
+                    ),
+                    qualified_profile_record_id=record.qualified_profile_record_id,
+                    expected_profile_id=record.profile_id.value,
+                    expected_runtime_lock_sha256=sha256_file(ROOT / "runtime.lock.json"),
+                )
         for name in ("spot-primary", "spot-replay", "perpetual-primary", "perpetual-replay"):
             directory = run_dir(name)
             manifest = json_file(directory / "evidence_manifest.json")
+            self.assertFalse((directory / "component_validation.json").exists())
+            self.assertFalse((directory / "official_seal.json").exists())
             self.assertEqual(canonical_sha256(manifest["entries"]), manifest["inventory_content_sha256"])
             for item in manifest["entries"]:
                 path = directory / item["path"]

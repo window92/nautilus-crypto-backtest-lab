@@ -113,6 +113,7 @@ def request_for(release: DatasetRelease, evidence_root: Path) -> LabRunRequest:
             qualification_attempt_all_intents=False,
         ),
         evidence_root=evidence_root,
+        repository_root=ROOT,
         qualification_control=QualificationControl.STANDARD,
     )
 

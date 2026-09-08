@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Assemble fail-closed evidence for OWNER_SMOKE_002 replacement 001."""
+"""Assemble retained historical-only OWNER_SMOKE_002 replacement evidence.
+
+This legacy assembly path cannot publish a current Official Result.
+"""
 
 from __future__ import annotations
 
@@ -19,12 +22,16 @@ from xml.sax.saxutils import escape
 from crypto_lab.checker import check_evidence_directory
 from crypto_lab.diagnostics import derive_performance_diagnostics
 from crypto_lab.hashing import canonical_sha256
+from crypto_lab.legacy_publication import LEGACY_HISTORICAL_ONLY_PUBLICATION
+from crypto_lab.legacy_publication import require_historical_only_replay
+from crypto_lab.legacy_publication import require_historical_only_result
 from crypto_lab.reporting import PerformanceDiagnostics
 from crypto_lab.research import ResearchProtocol
 
 
 ROOT = Path(__file__).resolve().parents[1]
 EVIDENCE = ROOT / "evidence/research/owner-smoke-002-replacement-001"
+PUBLICATION_CLASSIFICATION = LEGACY_HISTORICAL_ONLY_PUBLICATION
 REPAIR_EVIDENCE = ROOT / "evidence/repair/instrument-representation-funding-checker-001"
 BASELINE_COMMIT = "07432371c82cc62b1ff05ed5900a4d50c91df385"
 SSOT_SHA256 = "b4deb7048242239234de7eaa353b623b3e45247eb42f1021dbc26ffd910edb99"
@@ -217,6 +224,7 @@ def exposure(events: list[dict[str, str]]) -> tuple[int, str]:
 def profile_view(label: str, spec: dict[str, str]) -> dict[str, Any]:
     trial_id = spec["trial_id"]
     run_dir = ROOT / spec["run_dir"]
+    require_historical_only_result(run_dir, repository_root=ROOT)
     workflow_path = ROOT / "research/workflows" / f"{trial_id}.json"
     replay_path = ROOT / "research/replays" / f"{trial_id}.json"
     report_path = ROOT / "research/reports" / f"{trial_id}.json"
@@ -224,6 +232,7 @@ def profile_view(label: str, spec: dict[str, str]) -> dict[str, Any]:
     performance_path = ROOT / "research/performance" / f"{load(run_dir / 'status.json')['run_id']}.json"
     workflow = load(workflow_path)
     replay = load(replay_path)
+    require_historical_only_replay(replay, repository_root=ROOT)
     report = load(report_path)
     protocol = ResearchProtocol.from_json_bytes(protocol_path.read_bytes())
     checker_path = run_dir / "checker.json"

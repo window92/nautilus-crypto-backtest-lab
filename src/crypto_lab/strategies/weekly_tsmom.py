@@ -24,6 +24,7 @@ from crypto_lab.timestamps import unix_ns_to_utc_datetime
 from crypto_lab.strategies.base import GuardedCausalStrategy
 from crypto_lab.strategies.base import OrderIntent
 from crypto_lab.strategies.base import StrategySpec
+from crypto_lab.strategies.base import signal_interval_is_scoring_eligible
 from crypto_lab.strategies.daily_sma_trend import DAY_NS
 from crypto_lab.strategies.daily_sma_trend import TargetState
 from crypto_lab.strategies.daily_sma_trend import validate_completed_utc_daily_bar
@@ -349,6 +350,8 @@ class _NativeEquityTargetStrategy(GuardedCausalStrategy):
         return True
 
     def on_mark_price(self, event: Any) -> None:
+        self._record_engine_data_callback("MarkPriceUpdate", event)
+        self._record_material_valuation_mark(event)
         self.observations["mark_price_update_count"] += 1
         self.observations["latest_mark_price_update"] = {
             "instrument_id": str(event.instrument_id),
@@ -564,6 +567,8 @@ class BtcusdtWeeklyTsmom28(_NativeEquityTargetStrategy):
     def on_bar(self, bar: Bar) -> None:
         assert self._daily_bar_type is not None
         if bar.bar_type != self._daily_bar_type:
+            self._record_engine_data_callback("Bar", bar)
+            self._record_material_valuation_bar(bar)
             self.observations["execution_bar_callbacks"] += 1
             self._boundary_snapshot(int(self.clock.timestamp_ns()))
             self._submit_pending_reversal_if_ready(int(self.clock.timestamp_ns()))
@@ -577,9 +582,10 @@ class BtcusdtWeeklyTsmom28(_NativeEquityTargetStrategy):
         if len(self._closes) > LOOKBACK_CLOSES:
             self._closes.pop(0)
         end_ns = int(bar.ts_init)
+        start_ns = end_ns - DAY_NS
         self.observations["daily_signal_bars"].append(
             {
-                "interval_start_ns": end_ns - DAY_NS,
+                "interval_start_ns": start_ns,
                 "interval_end_exclusive_ns": end_ns,
                 "available_at_ns": end_ns,
                 "close": str(close),
@@ -589,8 +595,12 @@ class BtcusdtWeeklyTsmom28(_NativeEquityTargetStrategy):
         if (
             len(self._closes) != LOOKBACK_CLOSES
             or not is_monday_utc_boundary(end_ns)
-            or end_ns < self._scoring_start_ns
-            or end_ns >= self._scoring_end_exclusive_ns
+            or not signal_interval_is_scoring_eligible(
+                interval_start_ns=start_ns,
+                interval_end_exclusive_ns=end_ns,
+                scoring_start_ns=self._scoring_start_ns,
+                scoring_end_exclusive_ns=self._scoring_end_exclusive_ns,
+            )
         ):
             return
         closes = tuple(self._closes)
@@ -612,7 +622,7 @@ class BtcusdtWeeklyTsmom28(_NativeEquityTargetStrategy):
             fraction = Decimal(0)
         target_quantity, native_equity = self._target_quantity(fraction, close)
         signal = {
-            "signal_bar_interval_start_ns": end_ns - DAY_NS,
+            "signal_bar_interval_start_ns": start_ns,
             "signal_bar_interval_end_exclusive_ns": end_ns,
             "signal_bar_available_at_ns": end_ns,
             "signal_timestamp_ns": int(self.clock.timestamp_ns()),
@@ -698,6 +708,8 @@ class BtcusdtBuyAndHold1x(_NativeEquityTargetStrategy):
         self._boundary_snapshot(int(self.clock.timestamp_ns()))
 
     def on_bar(self, bar: Bar) -> None:
+        self._record_engine_data_callback("Bar", bar)
+        self._record_material_valuation_bar(bar)
         self.observations["execution_bar_callbacks"] += 1
         self._boundary_snapshot(int(self.clock.timestamp_ns()))
         self._refresh_live_order()
@@ -705,7 +717,12 @@ class BtcusdtBuyAndHold1x(_NativeEquityTargetStrategy):
             return
         interval_end = int(bar.ts_init)
         interval_start = interval_end - int(bar.bar_type.spec.get_interval_ns())
-        if interval_start < self._scoring_start_ns or interval_end >= self._scoring_end_exclusive_ns:
+        if not signal_interval_is_scoring_eligible(
+            interval_start_ns=interval_start,
+            interval_end_exclusive_ns=interval_end,
+            scoring_start_ns=self._scoring_start_ns,
+            scoring_end_exclusive_ns=self._scoring_end_exclusive_ns,
+        ):
             return
         close = Decimal(str(bar.close))
         quantity, native_equity = self._target_quantity(Decimal(1), close)

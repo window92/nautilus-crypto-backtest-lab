@@ -1,0 +1,5 @@
+{
+  "detail": "DOWNSTREAM_CONTRACT_FAILURE: Official Run terminal state is FAILED; evidence was retained",
+  "error_type": "ResearchError",
+  "status": "BLOCKED"
+}

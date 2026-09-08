@@ -153,7 +153,7 @@ class DataProvenanceContractTests(unittest.TestCase):
         self.assertEqual(digest, "f51971ed7a09b172c82ff5965f2899d2a302dd71a2af60eb7c920133567b4354")
         self.assertEqual(manifest["candidate_ssot_sha256"], digest)
 
-    def test_candidate_004_historical_bytes_and_current_material_contract_match(self) -> None:
+    def test_candidate_004_historical_bytes_are_preserved_and_r2_contract_is_additive(self) -> None:
         candidate_dir = (
             ROOT
             / "evidence/repair/free-official-binance-data-duckdb-001/ssot-candidate-004"
@@ -170,11 +170,11 @@ class DataProvenanceContractTests(unittest.TestCase):
             "b4deb7048242239234de7eaa353b623b3e45247eb42f1021dbc26ffd910edb99",
         )
         self.assertEqual(manifest["candidate_ssot_sha256"], historical_digest)
-        contract_boundary = b"## 0. Read this first\n"
-        self.assertEqual(
-            root_bytes.partition(contract_boundary)[2],
-            candidate_bytes.partition(contract_boundary)[2],
-        )
+        self.assertNotEqual(root_bytes, candidate_bytes)
+        self.assertIn(b"previously adopted SSOT bytes remain immutable", root_bytes)
+        self.assertIn(b"COMPONENT_CHECK_PASS", root_bytes)
+        self.assertIn(b"OFFICIAL_SEAL_PASS", root_bytes)
+        self.assertIn(b"Full signal-interval eligibility", root_bytes)
 
     def test_three_way_official_kline_agreement(self) -> None:
         rest = kline(KlineSource.SPOT_REST, source_sha=SOURCE_A)

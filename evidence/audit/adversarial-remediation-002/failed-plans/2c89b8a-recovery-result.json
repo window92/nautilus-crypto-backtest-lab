@@ -1,0 +1,5 @@
+{
+  "detail": "TRIAL_HISTORY_INCOMPLETE: interrupted trials were terminalized; submit a new trial_id/run_id: adversarial-remediation-002-spot-benchmark-buy-and-hold-1x-development",
+  "error_type": "ResearchError",
+  "status": "BLOCKED"
+}

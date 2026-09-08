@@ -1,0 +1,1 @@
+{"checker_outcome":"COMPONENT_CHECK_BLOCKED","component_validation_outcome":"COMPONENT_CHECK_BLOCKED","failure_codes":["NETWORK_DURING_OFFICIAL_RUN"],"official_seal_outcome":"NOT_APPLICABLE","run_id":"adversarial-remediation-002-retry-011-m3-control-network-attempt","schema":"qualification-run-status-v2","started_run_retained":true,"state":"BLOCKED"}

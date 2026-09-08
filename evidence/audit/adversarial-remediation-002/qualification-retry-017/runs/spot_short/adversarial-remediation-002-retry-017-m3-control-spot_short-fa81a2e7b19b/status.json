@@ -1,0 +1,1 @@
+{"checker_outcome":"COMPONENT_CHECK_BLOCKED","component_validation_outcome":"COMPONENT_CHECK_BLOCKED","failure_codes":["SPOT_SHORT_OR_BORROW_DETECTED"],"official_seal_outcome":"NOT_APPLICABLE","run_id":"adversarial-remediation-002-retry-017-m3-control-spot_short","schema":"qualification-run-status-v2","started_run_retained":true,"state":"BLOCKED"}

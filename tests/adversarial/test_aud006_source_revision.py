@@ -13,18 +13,29 @@ from pathlib import Path
 from crypto_lab.git_identity import GitIdentityError
 from crypto_lab.git_identity import capture_actual_source_revision
 from crypto_lab.git_identity import verify_source_revision
+from tests.helpers import initialize_product_repository
+from tests.helpers import isolate_temporary_git_maintenance
 
 
 ROOT = Path(__file__).resolve().parents[2]
 
 
 class Aud006SourceRevisionTests(unittest.TestCase):
+    def test_temporary_git_has_no_background_maintenance_and_cleanup_is_strict(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = initialize_product_repository(Path(temporary))
+            for key, expected in [('gc.auto','0'), ('maintenance.auto','false')]:
+                self.assertEqual(subprocess.check_output(
+                    ['git','config','--local','--get',key],cwd=root,text=True,
+                ).strip(), expected)
+        self.assertFalse(root.exists())
+        with self.assertRaises(ValueError):
+            isolate_temporary_git_maintenance(Path('/'))
+
     def _repository(self, root: Path) -> Path:
-        subprocess.run(["git", "init", "-b", "main", str(root)], check=True, capture_output=True)
-        subprocess.run(["git", "-C", str(root), "config", "user.name", "Repair Test"], check=True)
-        subprocess.run(["git", "-C", str(root), "config", "user.email", "repair@example.invalid"], check=True)
+        initialize_product_repository(root)
         subprocess.run(
-            ["git", "-C", str(root), "remote", "add", "origin", "https://example.invalid/exact.git"],
+            ["git", "-C", str(root), "remote", "set-url", "origin", "https://example.invalid/exact.git"],
             check=True,
         )
         (root / "tracked.txt").write_text("source\n", encoding="utf-8")
@@ -175,6 +186,7 @@ Path(sys.argv[4]).write_text(json.dumps({
                     check=True,
                     capture_output=True,
                 )
+                isolate_temporary_git_maintenance(repository)
                 subprocess.run(
                     ["git", "-C", str(repository), "config", "user.name", "Repair Test"],
                     check=True,
@@ -250,7 +262,7 @@ Path(sys.argv[4]).write_text(json.dumps({
                 self.assertEqual(process.returncode, 0, process.stderr + process.stdout)
                 result = json.loads(output_path.read_text(encoding="utf-8"))
                 self.assertEqual(result["state"], "BLOCKED")
-                self.assertEqual(result["checker"], "CHECK_BLOCKED")
+                self.assertEqual(result["checker"], "COMPONENT_CHECK_BLOCKED")
                 self.assertIn("EVIDENCE_INCOMPLETE", result["failure_codes"])
                 self.assertFalse(result["engine_executed"])
                 self.assertFalse(result["engine_completed"])

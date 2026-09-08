@@ -18,13 +18,14 @@ from typing import Any, Iterable
 import duckdb
 
 from crypto_lab.config import MarketProfile
+from crypto_lab.data import DatasetRawInventory
 from crypto_lab.data import DatasetRelease
+from crypto_lab.data import assert_official_active_raw_inventory
+from crypto_lab.git_identity import require_repository_root
 from crypto_lab.hashing import canonical_json_bytes
 from crypto_lab.hashing import canonical_sha256
 
 
-ROOT = Path(__file__).resolve().parents[1]
-DATA_ROOT = ROOT / "data"
 EXPECTED_DUCKDB_VERSION = "1.4.5"
 SPOT_PROFILE = MarketProfile.BINANCE_SPOT_CASH_LONG_ONLY.value
 PERP_PROFILE = MarketProfile.BINANCE_USDM_LINEAR_PERPETUAL_ONE_WAY_NETTING.value
@@ -103,6 +104,7 @@ def compare_build_results(primary: dict[str, Any], rebuilt: dict[str, Any]) -> d
         "instrument_metadata_identities",
         "market_state_acceptance",
         "superseded_dataset_releases",
+        "full_raw_inventory_gate",
     )
     mismatches = [key for key in exact_keys if primary.get(key) != rebuilt.get(key)]
     if mismatches:
@@ -129,7 +131,242 @@ def compare_build_results(primary: dict[str, Any], rebuilt: dict[str, Any]) -> d
     }
 
 
-def database_gate(path: Path) -> dict[str, Any]:
+def _add_relational_source_hashes(
+    connection: duckdb.DuckDBPyConnection,
+    hashes: set[str],
+    table: str,
+) -> None:
+    for (payload,) in connection.execute(
+        f"SELECT DISTINCT source_sha256s_json FROM {table}",
+    ).fetchall():
+        values = json.loads(payload)
+        if not isinstance(values, list) or any(not isinstance(item, str) for item in values):
+            raise RuntimeError(f"DATA_HASH_MISMATCH: malformed source inventory in {table}")
+        hashes.update(values)
+
+
+def independent_participation_projection(
+    connection: duckdb.DuckDBPyConnection,
+    profile: str,
+) -> set[str]:
+    """Derive Raw membership without consuming builder result fields."""
+
+    hashes: set[str] = set()
+    if profile == SPOT_PROFILE:
+        _add_relational_source_hashes(connection, hashes, "spot_execution_bars_1m")
+        hashes.update(
+            row[0]
+            for row in connection.execute(
+                "SELECT DISTINCT source_raw_object_sha256 FROM spot_agg_trades",
+            ).fetchall()
+        )
+        for first, second in connection.execute(
+            """
+            SELECT DISTINCT raw_trade_source_sha256, aggtrade_source_sha256
+            FROM verified_no_trade_intervals
+            """,
+        ).fetchall():
+            hashes.update((first, second))
+    else:
+        _add_relational_source_hashes(connection, hashes, "perpetual_execution_bars_1m")
+        _add_relational_source_hashes(connection, hashes, "perpetual_mark_bars_1m")
+        _add_relational_source_hashes(connection, hashes, "perpetual_funding_events")
+        hashes.update(
+            row[0]
+            for row in connection.execute(
+                """
+                SELECT DISTINCT raw_object_sha256 FROM source_observations
+                WHERE parsed_event_time_ms IS NULL AND semantic_row_sha256 IS NULL
+                  AND validation_status = 'UNAVAILABLE'
+                  AND delivery_classification = 'REDUNDANT_OFFICIAL_DELIVERY_ROLE_UNAVAILABLE'
+                  AND source_role LIKE '%MARK%' AND instrument = 'BTCUSDT'
+                """,
+            ).fetchall()
+        )
+    observation_map = dict(
+        connection.execute(
+            "SELECT observation_id, raw_object_sha256 FROM source_observations",
+        ).fetchall(),
+    )
+    for (payload,) in connection.execute(
+        "SELECT source_observation_ids_json FROM source_conflicts WHERE market_profile = ?",
+        [profile],
+    ).fetchall():
+        values = json.loads(payload)
+        if not isinstance(values, list) or any(item not in observation_map for item in values):
+            raise RuntimeError("DATA_HASH_MISMATCH: conflict observation projection is unresolved")
+        hashes.update(observation_map[item] for item in values)
+    hashes.update(
+        row[0]
+        for row in connection.execute(
+            """
+            SELECT DISTINCT binding.source_raw_object_sha256
+            FROM instrument_metadata_source_bindings AS binding
+            JOIN instrument_metadata AS metadata
+              ON metadata.instrument_metadata_identity = binding.instrument_metadata_identity
+            WHERE metadata.market_profile = ?
+            """,
+            [profile],
+        ).fetchall()
+    )
+    for archive_sha256, checksum_sha256 in connection.execute(
+        "SELECT archive_raw_object_sha256, checksum_raw_object_sha256 FROM publisher_checksums",
+    ).fetchall():
+        if archive_sha256 in hashes:
+            hashes.add(checksum_sha256)
+    return hashes
+
+
+def validate_full_raw_inventories(
+    connection: duckdb.DuckDBPyConnection,
+    *,
+    repository_root: Path,
+) -> list[dict[str, Any]]:
+    """Independently validate release/member/semantic/blob four-way equality."""
+
+    raw_rows = {
+        row[0]: (int(row[1]), str(row[2]), bool(row[3]))
+        for row in connection.execute(
+            "SELECT raw_object_sha256, byte_size, local_path, content_verified FROM raw_objects",
+        ).fetchall()
+    }
+    results: list[dict[str, Any]] = []
+    union_declared: set[str] = set()
+    for row in connection.execute(
+        """
+        SELECT dataset_release_id, market_profile, raw_inventory_identity,
+               raw_inventory_object_count, semantic_release_json
+        FROM dataset_releases ORDER BY market_profile
+        """,
+    ).fetchall():
+        release_id, profile, inventory_identity, inventory_count, semantic_json = row
+        release = DatasetRelease.from_json_bytes(str(semantic_json).encode("utf-8"))
+        inventory = release.raw_inventory
+        if (
+            release.dataset_release_id != release_id
+            or not isinstance(inventory, DatasetRawInventory)
+            or inventory.raw_inventory_identity != inventory_identity
+            or inventory.raw_object_count != int(inventory_count)
+        ):
+            raise RuntimeError(
+                "DATASET_RAW_INVENTORY_MISMATCH: DatasetRelease Raw inventory DB binding differs",
+            )
+        declared = {item.raw_object_sha256 for item in inventory.raw_objects}
+        members = {
+            item[0]
+            for item in connection.execute(
+                """
+                SELECT member_identity FROM release_members
+                WHERE dataset_release_id = ? AND member_type = 'RAW_OBJECT'
+                """,
+                [release_id],
+            ).fetchall()
+        }
+        projected = independent_participation_projection(connection, profile)
+        verified: set[str] = set()
+        for digest in sorted(projected):
+            database_binding = raw_rows.get(digest)
+            if database_binding is None:
+                continue
+            expected_size, local_path, content_verified = database_binding
+            source = Path(local_path)
+            if not source.is_absolute():
+                source = repository_root / source
+            if (
+                content_verified
+                and source.is_file()
+                and not source.is_symlink()
+                and source.stat().st_size == expected_size
+                and hash_file(source) == digest
+            ):
+                verified.add(digest)
+        if not declared == members == projected == verified:
+            raise RuntimeError(
+                "DATASET_RAW_INVENTORY_MISMATCH: "
+                "release/member/participation/blob inventory differs "
+                f"declared={len(declared)} members={len(members)} "
+                f"projected={len(projected)} verified={len(verified)}",
+            )
+        union_declared.update(declared)
+        inventory_by_hash = {item.raw_object_sha256: item for item in inventory.raw_objects}
+        if any(
+            item.byte_size != raw_rows[digest][0]
+            for digest, item in inventory_by_hash.items()
+        ):
+            raise RuntimeError("DATA_HASH_MISMATCH: inventory byte size differs")
+        acquisition_rows: dict[str, list[tuple[Any, ...]]] = {}
+        for origin in connection.execute(
+            """
+            SELECT raw_object_sha256, observation_id, source_role, exact_locator,
+                   exact_query_json, http_status, validation_status,
+                   coalesce(delivery_classification, 'NOT_APPLICABLE')
+            FROM source_observations
+            WHERE parsed_event_time_ms IS NULL AND semantic_row_sha256 IS NULL
+            ORDER BY raw_object_sha256, source_role, exact_locator, exact_query_json, observation_id
+            """,
+        ).fetchall():
+            acquisition_rows.setdefault(origin[0], []).append(tuple(origin[1:]))
+        for digest, item in inventory_by_hash.items():
+            declared_origins = [
+                (
+                    origin.observation_id,
+                    origin.source_role,
+                    origin.exact_locator,
+                    origin.exact_query_json,
+                    origin.http_status,
+                    origin.validation_status,
+                    origin.delivery_classification,
+                )
+                for origin in item.origins
+            ]
+            if declared_origins != acquisition_rows.get(digest, []):
+                raise RuntimeError("DATA_SOURCE_INVALID: inventory acquisition origins differ")
+        declared_checksums = {
+            (
+                item.raw_object_sha256,
+                binding.checksum_raw_object_sha256,
+                binding.exact_filename,
+                binding.publisher_sha256,
+            )
+            for item in inventory.raw_objects
+            for binding in item.publisher_checksum_bindings
+        }
+        database_checksums = {
+            tuple(item)
+            for item in connection.execute(
+                """
+                SELECT archive_raw_object_sha256, checksum_raw_object_sha256,
+                       exact_filename, publisher_sha256 FROM publisher_checksums
+                """,
+            ).fetchall()
+            if item[0] in declared
+        }
+        if declared_checksums != database_checksums:
+            raise RuntimeError("DATA_SOURCE_INVALID: inventory publisher checksums differ")
+        results.append(
+            {
+                "market_profile": profile,
+                "dataset_release_id": release_id,
+                "raw_inventory_identity": inventory_identity,
+                "raw_object_count": len(declared),
+                "four_way_equality": True,
+            },
+        )
+    extra_checksums = [
+        row
+        for row in connection.execute(
+            """
+            SELECT archive_raw_object_sha256, checksum_raw_object_sha256
+            FROM publisher_checksums
+            """,
+        ).fetchall()
+        if row[0] not in union_declared or row[1] not in union_declared
+    ]
+    assert_official_active_raw_inventory(set(raw_rows), union_declared, extra_checksums)
+    return results
+
+
+def database_gate(path: Path, *, repository_root: Path) -> dict[str, Any]:
     connection = configure_database(path)
     try:
         table_count = int(
@@ -237,6 +474,10 @@ def database_gate(path: Path) -> dict[str, Any]:
                 "SELECT count(*) FROM instrument_metadata_source_bindings",
             ).fetchone()[0],
         )
+        full_raw_inventory_results = validate_full_raw_inventories(
+            connection,
+            repository_root=repository_root,
+        )
     finally:
         connection.close()
     expected_dispositions = {
@@ -276,6 +517,7 @@ def database_gate(path: Path) -> dict[str, Any]:
             for row in supersessions
         )
         or instrument_source_binding_count != 6
+        or len(full_raw_inventory_results) != 2
     ):
         raise RuntimeError("read-only DuckDB acceptance gate failed")
     return {
@@ -302,6 +544,7 @@ def database_gate(path: Path) -> dict[str, Any]:
         "nautilus_market_state_acceptance": [list(row) for row in acceptance_rows],
         "dataset_release_supersessions": [list(row) for row in supersessions],
         "instrument_metadata_source_binding_count": instrument_source_binding_count,
+        "full_raw_inventory_results": full_raw_inventory_results,
     }
 
 
@@ -333,7 +576,61 @@ def preserve_file(source: Path, target: Path) -> None:
         raise RuntimeError(f"materialized file hash mismatch: {target}")
 
 
-def materialize_catalog(source: Path, target: Path) -> dict[str, Any]:
+def preserve_raw_independent_copy(source: Path, target: Path) -> None:
+    """Atomically materialize Raw bytes without sharing an inode with the corpus."""
+
+    if source.is_symlink() or not source.is_file():
+        raise RuntimeError(f"Raw source must be a regular non-symlink file: {source}")
+    digest = hash_file(source)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    if target.exists() or target.is_symlink():
+        if (
+            target.is_symlink()
+            or not target.is_file()
+            or target.stat().st_size != source.stat().st_size
+            or hash_file(target) != digest
+        ):
+            raise RuntimeError(f"content-addressed Raw collision: {target}")
+        return
+    descriptor, temporary_name = tempfile.mkstemp(prefix=f".{target.name}.", dir=target.parent)
+    temporary = Path(temporary_name)
+    try:
+        with source.open("rb") as input_stream, os.fdopen(descriptor, "wb") as output_stream:
+            for chunk in iter(lambda: input_stream.read(1024 * 1024), b""):
+                output_stream.write(chunk)
+            output_stream.flush()
+            os.fsync(output_stream.fileno())
+            os.fchmod(output_stream.fileno(), stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
+            os.fsync(output_stream.fileno())
+        os.replace(temporary, target)
+        directory_descriptor = os.open(
+            target.parent,
+            os.O_RDONLY | getattr(os, "O_DIRECTORY", 0),
+        )
+        try:
+            os.fsync(directory_descriptor)
+        finally:
+            os.close(directory_descriptor)
+    finally:
+        if temporary.exists():
+            temporary.unlink()
+    if (
+        target.is_symlink()
+        or not target.is_file()
+        or target.stat().st_size != source.stat().st_size
+        or hash_file(target) != digest
+        or (target.stat().st_dev, target.stat().st_ino)
+        == (source.stat().st_dev, source.stat().st_ino)
+    ):
+        raise RuntimeError(f"independent Raw materialization failed: {target}")
+
+
+def materialize_catalog(
+    source: Path,
+    target: Path,
+    *,
+    repository_root: Path,
+) -> dict[str, Any]:
     source_inventory = directory_inventory(source)
     if target.exists():
         if directory_inventory(target) != source_inventory:
@@ -343,7 +640,7 @@ def materialize_catalog(source: Path, target: Path) -> dict[str, Any]:
         for item in source_inventory:
             preserve_file(source / item["path"], target / item["path"])
     return {
-        "path": str(target.relative_to(ROOT)),
+        "path": str(target.relative_to(repository_root)),
         "physical_inventory_identity": canonical_sha256(source_inventory),
         "file_count": len(source_inventory),
         "size_bytes": sum(item["size_bytes"] for item in source_inventory),
@@ -356,11 +653,13 @@ def materialize_releases(
     database_path: Path,
     primary_catalog_root: Path,
     artifact_root: Path,
+    repository_root: Path,
 ) -> dict[str, Any]:
+    data_root = repository_root / "data"
     connection = configure_database(database_path)
     try:
         raw_paths = {
-            digest: ROOT / local_path
+            digest: repository_root / local_path
             for digest, local_path in connection.execute(
                 "SELECT raw_object_sha256, local_path FROM raw_objects",
             ).fetchall()
@@ -373,24 +672,30 @@ def materialize_releases(
         profile_dir = "spot" if profile == SPOT_PROFILE else "perpetual"
         catalog = materialize_catalog(
             primary_catalog_root / profile_dir,
-            DATA_ROOT / "catalog" / release.catalog_identity,
+            data_root / "catalog" / release.catalog_identity,
+            repository_root=repository_root,
         )
         for suffix in (
             f"{release.dataset_release_id}.json",
             f"{release.instrument_metadata_identity}.metadata.json",
             f"{release.derived_validation_identity}.market-state.json",
         ):
-            preserve_file(artifact_root / suffix, DATA_ROOT / "releases" / suffix)
+            preserve_file(artifact_root / suffix, data_root / "releases" / suffix)
         if profile == PERP_PROFILE:
             suffix = f"{release.funding_data_identity}.funding.json"
-            preserve_file(artifact_root / suffix, DATA_ROOT / "releases" / suffix)
-        for source in release.source_objects:
-            preserve_file(
-                raw_paths[source.sha256],
-                DATA_ROOT / "raw/sha256" / source.sha256[:2] / f"{source.sha256}.blob",
+            preserve_file(artifact_root / suffix, data_root / "releases" / suffix)
+        if not isinstance(release.raw_inventory, DatasetRawInventory):
+            raise RuntimeError("typed full Raw inventory is required for materialization")
+        for raw_object in release.raw_inventory.raw_objects:
+            preserve_raw_independent_copy(
+                raw_paths[raw_object.raw_object_sha256],
+                data_root
+                / "raw/sha256"
+                / raw_object.raw_object_sha256[:2]
+                / f"{raw_object.raw_object_sha256}.blob",
             )
         frozen = DatasetRelease.from_json_bytes(
-            (DATA_ROOT / "releases" / f"{release.dataset_release_id}.json").read_bytes(),
+            (data_root / "releases" / f"{release.dataset_release_id}.json").read_bytes(),
         )
         if frozen != release:
             raise RuntimeError("frozen DatasetRelease bytes differ from rebuilt release")
@@ -399,6 +704,8 @@ def materialize_releases(
             "catalog_identity": release.catalog_identity,
             "catalog": catalog,
             "source_object_count": len(release.source_objects),
+            "raw_inventory_identity": release.raw_inventory.raw_inventory_identity,
+            "raw_inventory_object_count": release.raw_inventory.raw_object_count,
         }
     return result
 
@@ -501,13 +808,16 @@ def compare_funding_rows(
 def resolve_and_compare_catalogs(
     primary: dict[str, Any],
     database_path: Path,
+    *,
+    repository_root: Path,
 ) -> dict[str, Any]:
+    data_root = repository_root / "data"
     connection = configure_database(database_path)
     result: dict[str, Any] = {}
     try:
         for profile, release_material in sorted(primary["releases"].items()):
             release = DatasetRelease.from_json_bytes(canonical_json_bytes(release_material))
-            resolved = release.resolve_runtime_data(DATA_ROOT)
+            resolved = release.resolve_runtime_data(data_root)
             actual_identity = canonical_sha256(resolved.semantic_inventory)
             if actual_identity != release.catalog_identity:
                 raise RuntimeError("fresh-process catalog identity mismatch")
@@ -543,6 +853,7 @@ def resolve_and_compare_catalogs(
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
+    parser.add_argument("--repository", type=Path, required=True)
     parser.add_argument("--primary-result", type=Path, required=True)
     parser.add_argument("--independent-result", type=Path, required=True)
     parser.add_argument("--primary-catalog-root", type=Path, required=True)
@@ -552,31 +863,32 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def rooted(path: Path) -> Path:
-    return path if path.is_absolute() else ROOT / path
+def rooted(repository: Path, path: Path) -> Path:
+    return path if path.is_absolute() else repository / path
 
 
 def main() -> int:
     arguments = parse_args()
-    primary_result_path = rooted(arguments.primary_result)
-    independent_result_path = rooted(arguments.independent_result)
-    primary_catalog_root = rooted(arguments.primary_catalog_root)
-    independent_catalog_root = rooted(arguments.independent_catalog_root)
-    artifact_root = rooted(arguments.artifact_root)
-    output = rooted(arguments.output)
+    repository = require_repository_root(arguments.repository)
+    primary_result_path = rooted(repository, arguments.primary_result)
+    independent_result_path = rooted(repository, arguments.independent_result)
+    primary_catalog_root = rooted(repository, arguments.primary_catalog_root)
+    independent_catalog_root = rooted(repository, arguments.independent_catalog_root)
+    artifact_root = rooted(repository, arguments.artifact_root)
+    output = rooted(repository, arguments.output)
     if duckdb.__version__ != EXPECTED_DUCKDB_VERSION:
         raise RuntimeError("DuckDB identity mismatch")
     primary = load_json(primary_result_path)
     rebuilt = load_json(independent_result_path)
     comparison = compare_build_results(primary, rebuilt)
-    primary_database = ROOT / primary["database_path"]
-    rebuilt_database = ROOT / rebuilt["database_path"]
+    primary_database = repository / primary["database_path"]
+    rebuilt_database = repository / rebuilt["database_path"]
     if hash_file(primary_database) != primary["database_file_sha256"]:
         raise RuntimeError("primary physical database identity changed")
     if hash_file(rebuilt_database) != rebuilt["database_file_sha256"]:
         raise RuntimeError("independent physical database identity changed")
-    primary_gate = database_gate(primary_database)
-    independent_gate = database_gate(rebuilt_database)
+    primary_gate = database_gate(primary_database, repository_root=repository)
+    independent_gate = database_gate(rebuilt_database, repository_root=repository)
     if primary_gate != independent_gate:
         raise RuntimeError("independent read-only validation result mismatch")
 
@@ -597,10 +909,15 @@ def main() -> int:
         database_path=primary_database,
         primary_catalog_root=primary_catalog_root,
         artifact_root=artifact_root,
+        repository_root=repository,
     )
-    catalog_validation = resolve_and_compare_catalogs(primary, primary_database)
+    catalog_validation = resolve_and_compare_catalogs(
+        primary,
+        primary_database,
+        repository_root=repository,
+    )
     result = {
-        "schema": "free-official-binance-deterministic-rebuild-validation-v1",
+        "schema": "free-official-binance-deterministic-rebuild-validation-v2-full-raw-inventory",
         "status": "PASS",
         "duckdb_version": duckdb.__version__,
         "comparison": comparison,

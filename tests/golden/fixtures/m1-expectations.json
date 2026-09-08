@@ -12,7 +12,7 @@
   "G03": {
     "zero_latency_fill_price": "100.01",
     "zero_latency_fill_time_ns": 60000000000,
-    "checker_outcome": "CHECK_FAIL",
+    "checker_outcome": "COMPONENT_CHECK_FAIL",
     "failure_code": "SAME_BAR_EXECUTION_DETECTED"
   },
   "G07": {

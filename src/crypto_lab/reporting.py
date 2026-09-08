@@ -7,6 +7,7 @@ import tempfile
 from dataclasses import fields
 from datetime import UTC
 from datetime import datetime
+from datetime import timedelta
 from decimal import Decimal
 from decimal import ROUND_HALF_EVEN
 from decimal import localcontext
@@ -36,6 +37,27 @@ from crypto_lab.status import FailureCode
 
 
 QUANTUM = Decimal("0.00000001")
+OFFICIAL_ANNUALIZATION_DAYS = Decimal("365.2425")
+OFFICIAL_RISK_MINIMUM_SAMPLE_COUNT = 30
+OFFICIAL_EQUITY_OBSERVATION_BASIS = (
+    "DAILY_MARKED_NATIVE_PORTFOLIO_EQUITY_SCORING_ONLY"
+)
+NATIVE_STATISTICS_DIAGNOSTIC_ROLE = "DIAGNOSTIC_ONLY_NOT_OFFICIAL_METRIC_INPUT"
+
+REQUIRED_SCIENTIFIC_LIMITATIONS = (
+    "BAR_BASED_EXECUTION_NO_ORDER_BOOK_SPREAD_DEPTH_OR_QUEUE",
+    "HISTORICAL_ACCOUNT_FEE_TIER_NOT_PROVEN",
+    "HISTORICAL_EXCHANGE_FILTERS_NOT_FULLY_PROVEN",
+    "LIQUIDATION_SIMULATION_NOT_AVAILABLE",
+    "PERPETUAL_LEVERAGE_FIXED_AT_ONE_IN_V1",
+    "TERMINAL_OPEN_POSITION_IS_MARKED_NOT_ACTUALLY_CLOSED",
+    "DAILY_DRAWDOWN_DOES_NOT_CAPTURE_INTRADAY_DRAWDOWN",
+    "SINGLE_INSTRUMENT_BTCUSDT_ONLY",
+    "DEVELOPMENT_ONLY_DATA",
+    "FINAL_HOLDOUT_NOT_USED",
+    "NO_PROFITABILITY_AUTHORIZATION",
+    "NOT_VALIDATED_FOR_LIVE_TRADING",
+)
 
 
 def _rounded(value: Decimal) -> Decimal:
@@ -50,6 +72,19 @@ class EquityObservation(StrictModel):
         _require_utc(self.timestamp, "equity.timestamp")
         if not self.equity.is_finite():
             raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "Equity must be finite")
+
+
+class DailyReturnObservation(StrictModel):
+    timestamp: datetime
+    return_value: Decimal
+
+    def __post_init__(self) -> None:
+        _require_utc(self.timestamp, "daily_return.timestamp")
+        if not self.return_value.is_finite():
+            raise ResearchError(
+                FailureCode.EVIDENCE_INCOMPLETE,
+                "daily portfolio return must be finite",
+            )
 
 
 class DrawdownObservation(StrictModel):
@@ -149,14 +184,21 @@ def _native(value: str, *, unit: str, metric: str) -> DiagnosticValue:
     )
 
 
-def _undefined(*, unit: str, formula: str, inputs: tuple[str, ...], reason: str) -> DiagnosticValue:
+def _undefined(
+    *,
+    unit: str,
+    formula: str,
+    inputs: tuple[str, ...],
+    reason: str,
+    source: str = "PROJECT_FALLBACK_ABSENT_NAUTILUS_NATIVE_METRIC",
+) -> DiagnosticValue:
     return DiagnosticValue(
         status="UNDEFINED",
         value="UNDEFINED",
         unit=unit,
         formula=formula,
         inputs=inputs,
-        source="PROJECT_FALLBACK_ABSENT_NAUTILUS_NATIVE_METRIC",
+        source=source,
         undefined_reason=reason,
     )
 
@@ -170,8 +212,23 @@ class PerformanceDiagnostics(StrictModel):
     scored_start: datetime
     scoring_end_exclusive: datetime
     settlement_currency: str
+    valuation_frequency: str
+    annualization_days: Decimal
+    minimum_risk_sample_count: int
+    native_statistics_role: str
+    daily_return_sample_count: int
+    intraday_drawdown_captured: bool
+    scientific_limitations: tuple[str, ...]
+    ending_equity: DiagnosticValue
     total_return: DiagnosticValue
     cagr: DiagnosticValue
+    sharpe: DiagnosticValue
+    sortino: DiagnosticValue
+    fees: DiagnosticValue
+    funding: DiagnosticValue
+    realized_pnl: DiagnosticValue
+    unrealized_pnl: DiagnosticValue
+    total_pnl: DiagnosticValue
     calendar_year_returns: tuple[CalendarYearReturn, ...]
     max_drawdown: DiagnosticValue
     max_drawdown_duration: DiagnosticValue
@@ -181,6 +238,7 @@ class PerformanceDiagnostics(StrictModel):
     win_rate: DiagnosticValue
     max_consecutive_losses: DiagnosticValue
     equity_curve: tuple[EquityObservation, ...]
+    daily_returns: tuple[DailyReturnObservation, ...]
     drawdown_curve: tuple[DrawdownObservation, ...]
     drawdown_episodes: tuple[DrawdownEpisode, ...]
     benchmark_comparison: DiagnosticValue
@@ -189,7 +247,7 @@ class PerformanceDiagnostics(StrictModel):
     claim_scope: str
 
     def __post_init__(self) -> None:
-        if self.schema_version != 1:
+        if self.schema_version != 2:
             raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "unknown diagnostics schema")
         _require_sha256(self.diagnostics_id, "diagnostics.diagnostics_id")
         _require_nonempty(self.run_id, "diagnostics.run_id")
@@ -198,6 +256,21 @@ class PerformanceDiagnostics(StrictModel):
         _require_utc(self.scoring_end_exclusive, "diagnostics.scoring_end_exclusive")
         if self.scored_start >= self.scoring_end_exclusive:
             raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "diagnostics scored interval is empty")
+        if (
+            self.equity_observation_basis != OFFICIAL_EQUITY_OBSERVATION_BASIS
+            or self.valuation_frequency != "DAILY_MARKED_PORTFOLIO_EQUITY_UTC"
+            or self.annualization_days != OFFICIAL_ANNUALIZATION_DAYS
+            or self.minimum_risk_sample_count != OFFICIAL_RISK_MINIMUM_SAMPLE_COUNT
+            or self.native_statistics_role != NATIVE_STATISTICS_DIAGNOSTIC_ROLE
+            or self.daily_return_sample_count != len(self.daily_returns)
+            or self.intraday_drawdown_captured
+            or self.scientific_limitations != REQUIRED_SCIENTIFIC_LIMITATIONS
+        ):
+            raise ResearchError(
+                FailureCode.PERFORMANCE_METRICS_INVALID,
+                "official performance-metric basis is invalid",
+            )
+        _validate_official_performance_metrics(self)
         for identity in self.input_evidence_hashes.values():
             _require_sha256(identity, "diagnostics.input_evidence_hashes")
         if canonical_sha256(self.material_payload()) != self.diagnostics_id:
@@ -213,7 +286,7 @@ class PerformanceDiagnostics(StrictModel):
 
     @classmethod
     def create(cls, **values: Any) -> PerformanceDiagnostics:
-        material = {"schema_version": 1, **values}
+        material = {"schema_version": 2, **values}
         return cls(diagnostics_id=canonical_sha256(material), **material)
 
 
@@ -468,6 +541,213 @@ def _calendar_returns(
     return tuple(result)
 
 
+def _official_daily_returns(
+    observations: tuple[EquityObservation, ...],
+) -> tuple[tuple[DailyReturnObservation, ...], str | None]:
+    result: list[DailyReturnObservation] = []
+    for previous, current in zip(observations, observations[1:], strict=False):
+        if previous.equity <= 0:
+            return (
+                (),
+                "UNDEFINED_NON_POSITIVE_PREVIOUS_DAILY_EQUITY;"
+                f"timestamp={previous.timestamp.isoformat()}",
+            )
+        result.append(
+            DailyReturnObservation(
+                timestamp=current.timestamp,
+                return_value=current.equity / previous.equity - Decimal(1),
+            ),
+        )
+    return tuple(result), None
+
+
+def _official_risk_metric(
+    returns: tuple[DailyReturnObservation, ...],
+    *,
+    metric: str,
+    invalid_returns_reason: str | None,
+) -> DiagnosticValue:
+    formula = {
+        "SHARPE": (
+            "sqrt(365.2425) * mean(daily_marked_portfolio_returns) / "
+            "sample_stddev(daily_marked_portfolio_returns)"
+        ),
+        "SORTINO": (
+            "sqrt(365.2425) * mean(daily_marked_portfolio_returns) / "
+            "sqrt(mean(min(daily_return,0)^2))"
+        ),
+    }[metric]
+    inputs = ("official_daily_marked_portfolio_equity",)
+    if invalid_returns_reason is not None:
+        return _undefined(
+            unit="annualized_ratio",
+            formula=formula,
+            inputs=inputs,
+            reason=invalid_returns_reason,
+            source="OFFICIAL_DAILY_MARKED_PORTFOLIO_EQUITY",
+        )
+    if len(returns) < OFFICIAL_RISK_MINIMUM_SAMPLE_COUNT:
+        return _undefined(
+            unit="annualized_ratio",
+            formula=formula,
+            inputs=inputs,
+            reason=(
+                "INELIGIBLE_MINIMUM_30_DAILY_RETURN_SAMPLES;"
+                f"observed={len(returns)}"
+            ),
+            source="OFFICIAL_DAILY_MARKED_PORTFOLIO_EQUITY",
+        )
+    values = tuple(item.return_value for item in returns)
+    mean = sum(values, Decimal(0)) / Decimal(len(values))
+    with localcontext() as context:
+        context.prec = 50
+        annualizer = Decimal("365.2425").sqrt()
+        if metric == "SHARPE":
+            variance = sum(
+                ((value - mean) ** 2 for value in values),
+                Decimal(0),
+            ) / Decimal(len(values) - 1)
+            denominator = variance.sqrt()
+            undefined_reason = "UNDEFINED_ZERO_DAILY_RETURN_VARIANCE"
+        else:
+            downside_variance = sum(
+                (min(value, Decimal(0)) ** 2 for value in values),
+                Decimal(0),
+            ) / Decimal(len(values))
+            denominator = downside_variance.sqrt()
+            undefined_reason = "UNDEFINED_ZERO_DOWNSIDE_DEVIATION"
+        if denominator == 0:
+            return _undefined(
+                unit="annualized_ratio",
+                formula=formula,
+                inputs=inputs,
+                reason=undefined_reason,
+                source="OFFICIAL_DAILY_MARKED_PORTFOLIO_EQUITY",
+            )
+        value = annualizer * mean / denominator
+    return _calculated(
+        value,
+        unit="annualized_ratio",
+        formula=formula,
+        inputs=inputs,
+        source="OFFICIAL_DAILY_MARKED_PORTFOLIO_EQUITY",
+    )
+
+
+def _official_cagr(
+    *,
+    initial_capital: Decimal,
+    ending_equity: Decimal,
+    scored_days: Decimal,
+) -> DiagnosticValue:
+    formula = "(ending_equity / starting_equity)^(365.2425 / scored_days) - 1"
+    inputs = ("official_daily_marked_portfolio_equity", "scored_days")
+    if ending_equity <= 0 or scored_days <= 0:
+        return _undefined(
+            unit="ratio_per_year",
+            formula=formula,
+            inputs=inputs,
+            reason="UNDEFINED_NON_POSITIVE_ENDING_EQUITY_OR_SCORED_DURATION",
+            source="OFFICIAL_DAILY_MARKED_PORTFOLIO_EQUITY",
+        )
+    with localcontext() as context:
+        context.prec = 50
+        annualized = (
+            (ending_equity / initial_capital).ln()
+            * (OFFICIAL_ANNUALIZATION_DAYS / scored_days)
+        ).exp() - 1
+    return _calculated(
+        annualized,
+        unit="ratio_per_year",
+        formula=formula,
+        inputs=inputs,
+        source="OFFICIAL_DAILY_MARKED_PORTFOLIO_EQUITY",
+    )
+
+
+def _validate_official_performance_metrics(value: PerformanceDiagnostics) -> None:
+    observations = value.equity_curve
+    if not observations or observations[0].timestamp != value.scored_start:
+        raise ResearchError(
+            FailureCode.PERFORMANCE_METRICS_INVALID,
+            "Official Equity curve does not begin at scoring_start",
+        )
+    if observations[-1].timestamp != value.scoring_end_exclusive or any(
+        right.timestamp - left.timestamp != timedelta(days=1)
+        for left, right in zip(observations, observations[1:], strict=False)
+    ):
+        raise ResearchError(
+            FailureCode.PERFORMANCE_METRICS_INVALID,
+            "Official Equity curve is not the exact UTC-daily scoring grid",
+        )
+    if observations[0].equity <= 0:
+        raise ResearchError(
+            FailureCode.PERFORMANCE_METRICS_INVALID,
+            "Official starting Equity must be positive",
+        )
+    daily_returns, invalid_returns_reason = _official_daily_returns(observations)
+    if value.daily_returns != daily_returns:
+        raise ResearchError(
+            FailureCode.PERFORMANCE_METRICS_INVALID,
+            "persisted daily returns differ from marked portfolio Equity",
+        )
+    expected_ending = _calculated(
+        observations[-1].equity,
+        unit=value.settlement_currency,
+        formula="last official daily marked portfolio Equity at scoring_end_exclusive",
+        inputs=("official_daily_marked_portfolio_equity",),
+        source="OFFICIAL_DAILY_MARKED_PORTFOLIO_EQUITY",
+    )
+    expected_total = _calculated(
+        observations[-1].equity / observations[0].equity - 1,
+        unit="ratio",
+        formula="ending_equity / starting_equity - 1",
+        inputs=("official_daily_marked_portfolio_equity",),
+        source="OFFICIAL_DAILY_MARKED_PORTFOLIO_EQUITY",
+    )
+    scored_days = Decimal(
+        str((value.scoring_end_exclusive - value.scored_start).total_seconds()),
+    ) / Decimal(86400)
+    expected_cagr = _official_cagr(
+        initial_capital=observations[0].equity,
+        ending_equity=observations[-1].equity,
+        scored_days=scored_days,
+    )
+    drawdown_curve, _ = _drawdown_state(observations, value.scoring_end_exclusive)
+    expected_drawdown = _calculated(
+        max((item.drawdown for item in drawdown_curve), default=Decimal(0)),
+        unit="ratio",
+        formula="max((high_water_mark - equity) / high_water_mark)",
+        inputs=("official_daily_marked_portfolio_equity",),
+        source="OFFICIAL_DAILY_MARKED_PORTFOLIO_EQUITY",
+    )
+    expected_sharpe = _official_risk_metric(
+        daily_returns,
+        metric="SHARPE",
+        invalid_returns_reason=invalid_returns_reason,
+    )
+    expected_sortino = _official_risk_metric(
+        daily_returns,
+        metric="SORTINO",
+        invalid_returns_reason=invalid_returns_reason,
+    )
+    expected = {
+        "ending_equity": expected_ending,
+        "total_return": expected_total,
+        "cagr": expected_cagr,
+        "max_drawdown": expected_drawdown,
+        "sharpe": expected_sharpe,
+        "sortino": expected_sortino,
+    }
+    mismatched = [name for name, item in expected.items() if getattr(value, name) != item]
+    if mismatched:
+        raise ResearchError(
+            FailureCode.PERFORMANCE_METRICS_INVALID,
+            "Official metrics differ from daily marked portfolio Equity: "
+            + ",".join(mismatched),
+        )
+
+
 def generate_performance_diagnostics(
     *,
     run_id: str,
@@ -475,15 +755,14 @@ def generate_performance_diagnostics(
     scoring_end_exclusive: datetime,
     initial_capital: Decimal,
     settlement_currency: str,
-    equity_observation_basis: str,
     equity_observations: tuple[EquityObservation, ...],
-    native_metrics: dict[str, str],
     completed_trades: CompletedTradeSeries,
     benchmark_return: Decimal | None,
     sample_adequacy: SampleAdequacy,
     monte_carlo_status: MonteCarloStatus,
     claim_scope: str,
     input_evidence_hashes: dict[str, str],
+    financial_components: dict[str, Decimal] | None = None,
 ) -> PerformanceDiagnostics:
     if not initial_capital.is_finite() or initial_capital <= 0:
         raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "initial capital must be finite and positive")
@@ -496,39 +775,44 @@ def generate_performance_diagnostics(
         or equity_observations[-1].timestamp > scoring_end_exclusive
     ):
         raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "Equity observation lies outside scored interval")
-    ending = equity_observations[-1].equity
-    fallback_total = _rounded(ending / initial_capital - 1)
-    total_return = (
-        _native(native_metrics["total_return"], unit="ratio", metric="total_return")
-        if "total_return" in native_metrics
-        else _calculated(
-            fallback_total,
-            unit="ratio",
-            formula="ending_equity / starting_equity - 1",
-            inputs=("starting_equity", "ending_equity"),
+    if equity_observations[0].equity != initial_capital:
+        raise ResearchError(
+            FailureCode.EVIDENCE_INCOMPLETE,
+            "scoring must begin at frozen Initial Capital with no warm-up financial state",
         )
+    if (
+        equity_observations[0].timestamp != scored_start
+        or equity_observations[-1].timestamp != scoring_end_exclusive
+        or any(
+            right.timestamp - left.timestamp != timedelta(days=1)
+            for left, right in zip(
+                equity_observations,
+                equity_observations[1:],
+                strict=False,
+            )
+        )
+    ):
+        raise ResearchError(
+            FailureCode.EVIDENCE_INCOMPLETE,
+            "Official Equity observations must be one complete UTC-daily scoring grid",
+        )
+    ending = equity_observations[-1].equity
+    daily_returns, invalid_returns_reason = _official_daily_returns(equity_observations)
+    official_total_return = ending / initial_capital - 1
+    total_return = _calculated(
+        official_total_return,
+        unit="ratio",
+        formula="ending_equity / starting_equity - 1",
+        inputs=("official_daily_marked_portfolio_equity",),
+        source="OFFICIAL_DAILY_MARKED_PORTFOLIO_EQUITY",
     )
     seconds = Decimal(str((scoring_end_exclusive - scored_start).total_seconds()))
     scored_days = seconds / Decimal(86400)
-    if "cagr" in native_metrics:
-        cagr = _native(native_metrics["cagr"], unit="ratio_per_year", metric="cagr")
-    elif ending > 0 and scored_days > 0:
-        with localcontext() as context:
-            context.prec = 50
-            annualized = ((ending / initial_capital).ln() * (Decimal("365.2425") / scored_days)).exp() - 1
-        cagr = _calculated(
-            annualized,
-            unit="ratio_per_year",
-            formula="(ending_equity / starting_equity)^(365.2425 / scored_days) - 1",
-            inputs=("starting_equity", "ending_equity", "scored_days"),
-        )
-    else:
-        cagr = _undefined(
-            unit="ratio_per_year",
-            formula="(ending_equity / starting_equity)^(365.2425 / scored_days) - 1",
-            inputs=("starting_equity", "ending_equity", "scored_days"),
-            reason="requires positive ending Equity and positive scored duration",
-        )
+    cagr = _official_cagr(
+        initial_capital=initial_capital,
+        ending_equity=ending,
+        scored_days=scored_days,
+    )
     drawdown_curve, episodes = _drawdown_state(equity_observations, scoring_end_exclusive)
     max_drawdown_value = max((item.drawdown for item in drawdown_curve), default=Decimal(0))
     durations = [item.duration_seconds for item in episodes]
@@ -541,15 +825,12 @@ def generate_performance_diagnostics(
     time_under_water_value = (
         Decimal(sum(durations)) / seconds if seconds > 0 else Decimal(0)
     )
-    max_drawdown = (
-        _native(native_metrics["max_drawdown"], unit="ratio", metric="max_drawdown")
-        if "max_drawdown" in native_metrics
-        else _calculated(
-            max_drawdown_value,
-            unit="ratio",
-            formula="max((high_water_mark - equity) / high_water_mark)",
-            inputs=("finest_persisted_equity_curve",),
-        )
+    max_drawdown = _calculated(
+        max_drawdown_value,
+        unit="ratio",
+        formula="max((high_water_mark - equity) / high_water_mark)",
+        inputs=("official_daily_marked_portfolio_equity",),
+        source="OFFICIAL_DAILY_MARKED_PORTFOLIO_EQUITY",
     )
     max_drawdown_duration = _calculated(
         max_duration,
@@ -630,14 +911,9 @@ def generate_performance_diagnostics(
             inputs=("native_completed_trade_sequence",),
             reason=reason,
         )
-    run_return_for_benchmark = (
-        Decimal(native_metrics["total_return"])
-        if "total_return" in native_metrics
-        else fallback_total
-    )
     benchmark = (
         _calculated(
-            run_return_for_benchmark - benchmark_return,
+            official_total_return - benchmark_return,
             unit="return_difference",
             formula="run_total_return - frozen_benchmark_total_return",
             inputs=("run_total_return", "benchmark_total_return"),
@@ -650,15 +926,91 @@ def generate_performance_diagnostics(
             reason="frozen benchmark result is unavailable",
         )
     )
+    components = dict(financial_components or {})
+    if {
+        "fees",
+        "funding",
+        "realized_pnl",
+        "unrealized_pnl",
+        "total_pnl",
+    }.issubset(components):
+        if (
+            components["fees"] < 0
+            or components["total_pnl"]
+            != components["realized_pnl"] + components["unrealized_pnl"]
+            or ending != initial_capital + components["total_pnl"]
+        ):
+            raise ResearchError(
+                FailureCode.EVIDENCE_INCOMPLETE,
+                "financial components do not reconcile to Official ending Equity",
+            )
+
+    def component(name: str, *, default_reason: str) -> DiagnosticValue:
+        value = components.get(name)
+        if value is None:
+            return _undefined(
+                unit=settlement_currency,
+                formula=f"sum(native {name} evidence inside Scoring)",
+                inputs=("native_run_evidence",),
+                reason=default_reason,
+            )
+        if not value.is_finite():
+            raise ResearchError(
+                FailureCode.EVIDENCE_INCOMPLETE,
+                f"{name} financial component is non-finite",
+            )
+        return _calculated(
+            value,
+            unit=settlement_currency,
+            formula=f"sum(native {name} evidence inside Scoring)",
+            inputs=("native_run_evidence",),
+            source="INDEPENDENT_READ_ONLY_RECONCILIATION_OF_NATIVE_EVIDENCE",
+        )
+
     return PerformanceDiagnostics.create(
         run_id=run_id,
         input_evidence_hashes=input_evidence_hashes,
-        equity_observation_basis=equity_observation_basis,
+        equity_observation_basis=OFFICIAL_EQUITY_OBSERVATION_BASIS,
         scored_start=scored_start,
         scoring_end_exclusive=scoring_end_exclusive,
         settlement_currency=settlement_currency,
+        valuation_frequency="DAILY_MARKED_PORTFOLIO_EQUITY_UTC",
+        annualization_days=OFFICIAL_ANNUALIZATION_DAYS,
+        minimum_risk_sample_count=OFFICIAL_RISK_MINIMUM_SAMPLE_COUNT,
+        native_statistics_role=NATIVE_STATISTICS_DIAGNOSTIC_ROLE,
+        daily_return_sample_count=len(daily_returns),
+        intraday_drawdown_captured=False,
+        scientific_limitations=REQUIRED_SCIENTIFIC_LIMITATIONS,
+        ending_equity=_calculated(
+            ending,
+            unit=settlement_currency,
+            formula="last official daily marked portfolio Equity at scoring_end_exclusive",
+            inputs=("official_daily_marked_portfolio_equity",),
+            source="OFFICIAL_DAILY_MARKED_PORTFOLIO_EQUITY",
+        ),
         total_return=total_return,
         cagr=cagr,
+        sharpe=_official_risk_metric(
+            daily_returns,
+            metric="SHARPE",
+            invalid_returns_reason=invalid_returns_reason,
+        ),
+        sortino=_official_risk_metric(
+            daily_returns,
+            metric="SORTINO",
+            invalid_returns_reason=invalid_returns_reason,
+        ),
+        fees=component("fees", default_reason="NATIVE_FEE_EVIDENCE_UNAVAILABLE"),
+        funding=component("funding", default_reason="NATIVE_FUNDING_EVIDENCE_UNAVAILABLE"),
+        realized_pnl=component(
+            "realized_pnl",
+            default_reason="NATIVE_REALIZED_PNL_UNAVAILABLE",
+        ),
+        unrealized_pnl=component(
+            "unrealized_pnl",
+            default_reason="CAUSAL_TERMINAL_VALUATION_UNAVAILABLE",
+        ),
+        total_pnl=component("total_pnl", default_reason="NATIVE_TOTAL_PNL_UNAVAILABLE"),
         calendar_year_returns=_calendar_returns(
             equity_observations,
             scored_start,
@@ -672,6 +1024,7 @@ def generate_performance_diagnostics(
         win_rate=win_rate,
         max_consecutive_losses=max_consecutive_losses,
         equity_curve=equity_observations,
+        daily_returns=daily_returns,
         drawdown_curve=drawdown_curve,
         drawdown_episodes=episodes,
         benchmark_comparison=benchmark,
@@ -713,6 +1066,17 @@ class ReportInput(StrictModel):
             )
         if len(set(self.included_trial_ids)) != len(self.included_trial_ids):
             raise ResearchError(FailureCode.TRIAL_HISTORY_INCOMPLETE, "report contains duplicate trial identities")
+        if (
+            len(set(self.qualification_limitations))
+            != len(self.qualification_limitations)
+            or not set(REQUIRED_SCIENTIFIC_LIMITATIONS).issubset(
+                self.qualification_limitations,
+            )
+        ):
+            raise ResearchError(
+                FailureCode.CLAIM_INELIGIBLE,
+                "report omits a mandatory scientific limitation",
+            )
         started = {
             item.trial_id for item in self.trial_records if item.state is TrialState.STARTED
         }
@@ -758,9 +1122,8 @@ class ReportInput(StrictModel):
             benchmark_result={"state": "SYNTHETIC_VALID"},
             multiple_testing_treatment=protocol.multiple_testing_treatment,
             qualification_limitations=(
-                "BAR_BASED_ESTIMATED_EXECUTION",
-                "ESTIMATED_FEE",
-                "QUEUE_IMPACT_SPREAD_LIQUIDATION_UNSUPPORTED",
+                *REQUIRED_SCIENTIFIC_LIMITATIONS,
+                "SYNTHETIC_CONTRACT_FIXTURE_NOT_REAL_CLAIM",
             ),
             open_terminal_positions={},
             source_evidence_hashes={"synthetic-contract": "f" * 64},
@@ -788,6 +1151,18 @@ class ReportOutput(StrictModel):
         _require_sha256(self.report_id, "report.report_id")
         if canonical_sha256(self.material_payload()) != self.report_id:
             raise ResearchError(FailureCode.EVIDENCE_INCOMPLETE, "report content identity mismatch")
+        limitations = self.json_payload.get("qualification_limitations")
+        if (
+            not isinstance(limitations, list)
+            or not set(REQUIRED_SCIENTIFIC_LIMITATIONS).issubset(limitations)
+            or self.json_payload.get("profitability_claim_is_real") is not False
+            or self.json_payload.get("live_trading_authorized") is not False
+            or self.json_payload.get("final_holdout_used") is not False
+        ):
+            raise ResearchError(
+                FailureCode.CLAIM_INELIGIBLE,
+                "report attempts a claim outside the enforced V1 scientific scope",
+            )
         _freeze_field(self, "json_payload")
         _freeze_field(self, "source_evidence_hashes")
 
@@ -831,6 +1206,8 @@ def _build_report_from_resolved_evidence(value: ReportInput) -> ReportOutput:
         claim.research_eligibility is ResearchEligibility.ELIGIBLE
         and value.report_purpose == "OFFICIAL_RESEARCH_REPORT"
         and "SYNTHETIC_CONTRACT_FIXTURE_NOT_REAL_CLAIM" not in claim.limitations
+        and "DEVELOPMENT_ONLY_DATA" not in value.qualification_limitations
+        and "NO_PROFITABILITY_AUTHORIZATION" not in value.qualification_limitations
     )
     payload = {
         "schema": "m4-research-report-v1",
@@ -863,10 +1240,18 @@ def _build_report_from_resolved_evidence(value: ReportInput) -> ReportOutput:
         "open_terminal_positions": dict(value.open_terminal_positions),
         "estimated_bar_execution": True,
         "estimated_fee_limitation": True,
-        "queue_position_claim": "UNKNOWN",
-        "market_impact_claim": "UNKNOWN",
-        "historical_spread_claim": "UNKNOWN",
-        "liquidation_claim": "UNKNOWN",
+        "queue_position_claim": "NOT_MODELED",
+        "market_impact_claim": "NOT_MODELED",
+        "historical_spread_claim": "NOT_MODELED",
+        "liquidation_claim": "NOT_MODELED",
+        "historical_fee_tier_claim": "NOT_PROVEN",
+        "historical_exchange_filter_claim": "NOT_FULLY_PROVEN",
+        "perpetual_leverage": "FIXED_AT_ONE_IN_V1",
+        "terminal_position_disposition": "CAUSALLY_MARKED_NOT_ACTUALLY_CLOSED",
+        "drawdown_frequency": "DAILY_NOT_INTRADAY",
+        "development_only": True,
+        "final_holdout_used": False,
+        "live_trading_authorized": False,
         "profitability_claim_is_real": real_claim,
     }
     lines = [
@@ -977,12 +1362,18 @@ def write_report(output: ReportOutput, *, json_path: Path, markdown_path: Path) 
 
 __all__ = [
     "CalendarYearReturn",
+    "DailyReturnObservation",
     "DiagnosticValue",
     "DrawdownEpisode",
     "DrawdownObservation",
     "EquityObservation",
+    "NATIVE_STATISTICS_DIAGNOSTIC_ROLE",
     "NativeResearchMetricsReadiness",
+    "OFFICIAL_ANNUALIZATION_DAYS",
+    "OFFICIAL_EQUITY_OBSERVATION_BASIS",
+    "OFFICIAL_RISK_MINIMUM_SAMPLE_COUNT",
     "PerformanceDiagnostics",
+    "REQUIRED_SCIENTIFIC_LIMITATIONS",
     "ReportInput",
     "ReportOutput",
     "build_report",

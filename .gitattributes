@@ -9,3 +9,4 @@ evidence/repair/free-official-binance-data-duckdb-001/test-output.txt binary
 # Acceptance logs are generated, content-addressed audit transcripts. Preserve
 # their exact bytes and keep authored-source whitespace policy scoped to source.
 evidence/audit/comprehensive-remediation-001/acceptance-*/logs/*.log binary
+evidence/audit/adversarial-remediation-002/final-acceptance-*/logs/*.log binary

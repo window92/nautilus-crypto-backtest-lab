@@ -1,0 +1,2 @@
+adjustment_type,instrument_id,pnl_change,quantity_change,reason,ts_event
+FUNDING,BTCUSDT-PERP.BINANCE,-0.03746443 USDT,,funding_settlement:11d5bbc4-7e7a-47ef-bf3a-a8d3c2e4206b,1735718400000000000

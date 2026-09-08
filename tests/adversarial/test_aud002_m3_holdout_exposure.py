@@ -49,8 +49,12 @@ class Aud002M3HoldoutExposureTests(unittest.TestCase):
                 cwd=repository,
                 check=True,
             )
+            (repository / "SSOT.md").write_text(
+                "synthetic exposure Product authority\n",
+                encoding="utf-8",
+            )
             authority.write_text('{"authority":"original"}\n', encoding="utf-8")
-            subprocess.run(["git", "add", authority], cwd=repository, check=True)
+            subprocess.run(["git", "add", "SSOT.md", authority], cwd=repository, check=True)
             subprocess.run(
                 ["git", "commit", "-m", "record original M3 authority"],
                 cwd=repository,

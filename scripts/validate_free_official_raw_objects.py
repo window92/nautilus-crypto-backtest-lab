@@ -11,8 +11,8 @@ from urllib.parse import urlsplit
 
 import duckdb
 
+from crypto_lab.git_identity import require_repository_root
 
-ROOT = Path(__file__).resolve().parents[1]
 ALLOWED_HOSTS = {
     "api.github.com",
     "data-api.binance.vision",
@@ -33,9 +33,19 @@ def hash_file(path: Path) -> str:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
+    parser.add_argument("--repository", type=Path, required=True)
     parser.add_argument("--database", type=Path, required=True)
     args = parser.parse_args()
-    database = args.database if args.database.is_absolute() else ROOT / args.database
+    repository = require_repository_root(args.repository)
+    database = (
+        args.database
+        if args.database.is_absolute()
+        else repository / args.database
+    )
+    if database.is_symlink():
+        raise ValueError("database must not be a symlink")
+    database = database.resolve(strict=True)
+    database.relative_to(repository)
     connection = duckdb.connect(
         str(database),
         read_only=True,
@@ -59,9 +69,9 @@ def main() -> int:
     failures: list[dict[str, object]] = []
     total_bytes = 0
     for expected_sha256, expected_size, local_path in objects:
-        path = (ROOT / str(local_path)).resolve()
+        path = (repository / str(local_path)).resolve()
         try:
-            path.relative_to(ROOT)
+            path.relative_to(repository)
         except ValueError:
             failures.append({"path": str(local_path), "reason": "PATH_ESCAPE"})
             continue
@@ -93,7 +103,7 @@ def main() -> int:
     result = {
         "schema": "free-official-binance-raw-rehash-v1",
         "status": "PASS" if not failures and not bad_hosts else "FAIL",
-        "database_path": str(database.relative_to(ROOT)),
+        "database_path": str(database.relative_to(repository)),
         "raw_object_count": len(objects),
         "raw_byte_occurrences_checked": total_bytes,
         "hash_or_size_failure_count": len(failures),
