@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import re
+import subprocess
 from pathlib import Path
 from typing import Any
 
@@ -117,20 +119,48 @@ def validate_active_pointer(pointer: dict[str, Any], plan: dict[str, Any]) -> No
             "historical execution plans must remain enumerated",
         )
     if any(
-        not isinstance(item, dict) or item.get("status") == "CURRENT"
+        not isinstance(item, dict)
+        or set(item) != {"plan_ref", "plan_identity", "epoch", "status"}
+        or item.get("status") != "HISTORICAL"
+        or not isinstance(item.get("plan_identity"), str)
+        or re.fullmatch(r"[0-9a-f]{64}", item["plan_identity"]) is None
+        or item.get("epoch") == pointer.get("epoch")
+        or item.get("plan_ref") == pointer.get("plan_ref")
         for item in historical
     ):
         raise ExecutionPlanError(
             FailureCode.RESEARCH_PROTOCOL_INVALID,
             "historical execution plans must not be marked CURRENT",
         )
+    if len({item["epoch"] for item in historical}) != len(historical):
+        raise ExecutionPlanError(FailureCode.RESEARCH_PROTOCOL_INVALID, "duplicate historical epoch")
+
+
+def _committed_plan_file(root: Path, reference: str, *, label: str) -> dict[str, Any]:
+    relative = Path(reference)
+    if relative.is_absolute() or ".." in relative.parts or relative.as_posix() != reference:
+        raise ExecutionPlanError(FailureCode.RESEARCH_PROTOCOL_INVALID, f"unsafe {label} ref")
+    cursor = root
+    for part in relative.parts:
+        cursor /= part
+        if cursor.is_symlink():
+            raise ExecutionPlanError(FailureCode.RESEARCH_PROTOCOL_INVALID, f"symlink in {label}")
+    value = _read_json(cursor, label=label)
+    committed = subprocess.run(
+        ["git", "--no-replace-objects", "show", f"HEAD:{reference}"],
+        cwd=root, capture_output=True, check=False,
+    )
+    if committed.returncode != 0 or committed.stdout != cursor.read_bytes():
+        raise ExecutionPlanError(FailureCode.RESEARCH_PROTOCOL_INVALID, f"{label} is not committed")
+    return value
 
 
 def load_active_execution_plan(repository_root: Path) -> dict[str, Any]:
     """Resolve the committed ACTIVE pointer. Never rglob /tmp or historical plans."""
 
     root = require_repository_root(repository_root)
-    pointer = _read_json(root / ACTIVE_POINTER_RELATIVE, label="active execution-plan pointer")
+    pointer = _committed_plan_file(root, ACTIVE_POINTER_RELATIVE.as_posix(),
+                                   label="active execution-plan pointer")
     plan_ref = pointer.get("plan_ref")
     if not isinstance(plan_ref, str) or plan_ref.startswith("/") or ".." in Path(plan_ref).parts:
         raise ExecutionPlanError(
@@ -152,8 +182,18 @@ def load_active_execution_plan(repository_root: Path) -> dict[str, Any]:
             FailureCode.RESEARCH_PROTOCOL_INVALID,
             "retry-006 historical plan is not the current ACTIVE plan",
         )
-    plan = _read_json(plan_path, label="active execution plan")
+    if "historical" in Path(plan_ref).parts:
+        raise ExecutionPlanError(FailureCode.RESEARCH_PROTOCOL_INVALID, "historical plan cannot be ACTIVE")
+    plan = _committed_plan_file(root, plan_ref, label="active execution plan")
     validate_active_pointer(pointer, plan)
+    for binding in pointer["historical_plans"]:
+        historical = _committed_plan_file(root, binding["plan_ref"], label="historical execution plan")
+        material = dict(historical)
+        identity = material.pop("plan_identity", None)
+        if (identity != binding["plan_identity"] or identity != canonical_sha256(material)
+                or historical.get("epoch") != binding["epoch"]):
+            raise ExecutionPlanError(FailureCode.RESEARCH_PROTOCOL_INVALID,
+                                     "historical execution-plan identity differs")
     return {
         "pointer": pointer,
         "plan": plan,

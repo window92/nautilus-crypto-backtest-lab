@@ -5,6 +5,22 @@ remains `SSOT.md`; this file does not change normative behavior.
 
 ## [Unreleased] - 1.0.1.dev0
 
+### Host Acceptance evidence binding repair
+
+- Host Acceptance v2 verifies the referenced committed acceptance record,
+  exact file hash and content identity, successful gate/test inventory and
+  supporting logs, source commit/tree, locks, installed runtime, project Wheel,
+  Raw inventories, both DuckDB files, DatasetReleases and physical catalogs.
+  Missing, rehashed-but-inconsistent, failed or stale evidence fails closed.
+- Portable CI keeps the exact-host L-4 entrypoint tests in the full Host
+  Acceptance suite and exercises SourceRevision capture in a real Git fixture.
+  No required test is skipped or converted to an expected failure.
+- Corrected the historical retry-006 pointer identity and require committed
+  current/historical plan bindings. Original historical plan bytes are retained.
+- Completed and verified retry-015's six Primary/Replay pairs before retaining
+  them as runtime-authority-superseded evidence for the new source closure.
+  Replacement qualification and Development runs require fresh execution.
+
 ### Owner sign-off residual closure
 
 - Required an explicit `repository_root` for `verify_official_seal` and the

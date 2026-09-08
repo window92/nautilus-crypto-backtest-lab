@@ -24,6 +24,13 @@ from pathlib import Path
 from typing import Any
 
 from crypto_lab.git_identity import require_repository_root
+from crypto_lab.config import RuntimeLock
+from crypto_lab.execution_plan import load_active_execution_plan
+from crypto_lab.host_acceptance import (
+    ACCEPTANCE_SCHEMA, PHASE_LABELS, capture_acceptance_source,
+    collect_data_identities, executed_test_ids, verify_project_wheel,
+)
+from crypto_lab.runtime import verify_runtime_lock
 
 EXPECTED_EPOCH = "adversarial-remediation-002"
 R2_MODULES = (
@@ -234,7 +241,8 @@ def _run(
     duration = time.monotonic() - started
     combined = completed.stdout + completed.stderr
     counts = _test_counts(combined)
-    passed = completed.returncode == 0 and counts["skipped"] == 0
+    passed = (completed.returncode == 0 and counts["skipped"] == 0
+              and not re.search(r'expected failures=|unexpected successes=|expected failure|unexpected success', combined))
     log = logs / f"{ordinal:02d}-{label.lower().replace('_', '-')}.log"
     _write_log(
         log,
@@ -467,15 +475,20 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--plan", type=Path, required=True)
     parser.add_argument("--data-database", type=Path, required=True)
+    parser.add_argument("--independent-data-database", type=Path, required=True)
     parser.add_argument("--nautilus-wheel", type=Path, required=True)
     parser.add_argument("--project-wheel", type=Path, required=True)
     arguments = parser.parse_args(argv)
     repository = require_repository_root(arguments.repository)
+    source_snapshot = capture_acceptance_source(repository)
     project_python = repository / ".venv/bin/python"
     data_python = repository / ".data-venv/bin/python"
 
     output = _fresh_output(repository, arguments.output_dir)
     plan = _regular_input(arguments.plan, label="R2 execution plan")
+    active = load_active_execution_plan(repository)
+    if plan != repository / active['plan_path']:
+        raise ValueError('acceptance requires the committed ACTIVE plan')
     database = _regular_input(
         arguments.data_database
         if arguments.data_database.is_absolute()
@@ -484,6 +497,15 @@ def main(argv: list[str] | None = None) -> int:
     )
     nautilus_wheel = _regular_input(arguments.nautilus_wheel, label="Nautilus Wheel")
     project_wheel = _regular_input(arguments.project_wheel, label="project Wheel")
+    verify_project_wheel(repository, project_wheel)
+    independent_database = _regular_input(arguments.independent_data_database, label='independent DuckDB')
+    data_identities = collect_data_identities(
+        repository, primary_database=database, independent_database=independent_database,
+    )
+    runtime_identity = verify_runtime_lock(
+        RuntimeLock.from_json_bytes((repository / 'runtime.lock.json').read_bytes()),
+        dependency_lock_path=repository / 'requirements.lock.txt',
+    )
     plan_epoch = _plan_epoch(plan)
     runtime = json.loads((repository / "runtime.lock.json").read_text(encoding="utf-8"))
     if (
@@ -495,6 +517,9 @@ def main(argv: list[str] | None = None) -> int:
     qualification_evidence = _qualification_evidence_directory(repository, plan)
 
     output.mkdir(mode=0o700)
+    wheel_directory = output / 'project-wheel'
+    wheel_directory.mkdir()
+    shutil.copyfile(project_wheel, wheel_directory / project_wheel.name)
     logs = output / "logs"
     logs.mkdir()
     pycache = output / "pycache"
@@ -675,8 +700,12 @@ def main(argv: list[str] | None = None) -> int:
         if phase["label"]
         in {"FULL_TEST_DISCOVERY", "INDEPENDENT_FRESH_PROCESS_DISCOVERY", "REVERSE_TEST_ORDER"}
     ]
+    test_ids = sorted(executed_test_ids((logs / '01-full-test-discovery.log').read_text()))
     passed = bool(
         all(phase["status"] == "PASS" for phase in phases)
+        and [phase['label'] for phase in phases] == list(PHASE_LABELS)
+        and len(test_ids) == len(set(test_ids)) == full_counts[0]
+        and capture_acceptance_source(repository) == source_snapshot
         and len(full_counts) == 3
         and len(set(full_counts)) == 1
         and full_counts[0] not in {None, 0}
@@ -693,7 +722,11 @@ def main(argv: list[str] | None = None) -> int:
         if path.name != "acceptance.json"
     ]
     result = {
-        "schema": "adversarial-remediation-002-acceptance-v1",
+        "schema": ACCEPTANCE_SCHEMA,
+        **source_snapshot,
+        "test_ids": test_ids,
+        "runtime_identity": runtime_identity,
+        "data_identities": data_identities,
         "epoch": plan_epoch,
         "status": "PASS" if passed else "FAIL",
         "started_at_utc": started_at,
@@ -706,7 +739,7 @@ def main(argv: list[str] | None = None) -> int:
             text=True,
         ).stdout.strip(),
         "plan_sha256": _sha256(plan),
-        "data_database_path": str(database),
+        "data_database_path": database.relative_to(repository).as_posix(),
         "data_database_sha256": _sha256(database),
         "nautilus_wheel_filename": nautilus_wheel.name,
         "nautilus_wheel_sha256": _sha256(nautilus_wheel),

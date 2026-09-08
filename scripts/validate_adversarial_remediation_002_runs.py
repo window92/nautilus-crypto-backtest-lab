@@ -276,6 +276,19 @@ def _plan_execution_shape(
     ):
         _reject(FailureCode.RESEARCH_PROTOCOL_INVALID, stage, "unsafe R2 execution disposition")
     command = item.get("command_argv")
+    # These are immutable invocation records, not commands to execute here.
+    # A relocated audit uses its explicit repository_root for all authority
+    # reads while checking the two explicit roots recorded by the original CLI.
+    try:
+        recorded_roots = [command[index + 1] for index, token in enumerate(command)
+                          if token == '--repository']
+        if len(recorded_roots) != 2 or recorded_roots[0] != recorded_roots[1]:
+            raise ValueError('two identical explicit invocation roots required')
+        recorded_root = Path(recorded_roots[0])
+        if not recorded_root.is_absolute() or '..' in recorded_root.parts:
+            raise ValueError('recorded invocation root must be absolute')
+    except (IndexError, TypeError, ValueError) as exc:
+        _reject(FailureCode.RESEARCH_PROTOCOL_INVALID, stage, str(exc))
     expected_command = [
         "/usr/bin/env",
         "-i",
@@ -283,25 +296,25 @@ def _plan_execution_shape(
         "LANG=C.UTF-8",
         "LC_ALL=C.UTF-8",
         "TZ=UTC",
-        str(repository / ".venv/bin/python"),
+        str(recorded_root / ".venv/bin/python"),
         "-I",
         "-P",
         "-S",
         "-B",
         "-X",
         "pycache_prefix=/dev/null",
-        str(repository / "scripts/isolated_runtime_bootstrap.py"),
+        str(recorded_root / "scripts/isolated_runtime_bootstrap.py"),
         "--authority",
-        str(repository / "runtime-bootstrap-authority.json"),
+        str(recorded_root / "runtime-bootstrap-authority.json"),
         "--repository",
-        str(repository),
+        str(recorded_root),
         "--entrypoint",
         "crypto_lab.owner:main",
         "--",
         "--input",
         str(item.get("workflow_input")),
         "--repository",
-        str(repository),
+        str(recorded_root),
         "--output",
         str(item.get("result_summary")),
     ]
@@ -1108,6 +1121,9 @@ def _resolve_plan(
         path = plan.resolve(strict=True)
         if not path.is_file():
             _reject(FailureCode.EVIDENCE_INCOMPLETE, "plan", "plan must be a regular file")
+        loaded = load_active_execution_plan(repository)
+        if path != repository / loaded['plan_path']:
+            _reject(FailureCode.RESEARCH_PROTOCOL_INVALID, 'plan', 'only committed ACTIVE plan may be selected')
         return path
     if plan_root is not None:
         _reject(
@@ -1127,6 +1143,16 @@ def _resolve_plan(
             f"ACTIVE pointer epoch {pointer_epoch} differs from requested {epoch}",
         )
     return repository / loaded["plan_path"]
+
+
+def _require_normal_main_merge(repository: Path) -> None:
+    parents = _git_text(repository, 'rev-list', '--parents', '-n', '1', 'HEAD').split()[1:]
+    branch_tip = _git_text(repository, 'rev-parse', f'origin/{EXPECTED_BRANCH}')
+    if (len(parents) != 2 or parents[1] != branch_tip
+            or _git(repository, 'merge-base', '--is-ancestor', parents[0], parents[1]).returncode != 0
+            or _git_text(repository, 'rev-parse', 'HEAD^{tree}') !=
+            _git_text(repository, 'rev-parse', f'{branch_tip}^{{tree}}')):
+        _reject(FailureCode.TRIAL_HISTORY_INCOMPLETE, 'git', 'main is not the intact normal PR merge')
 
 
 def validate(
@@ -1161,12 +1187,16 @@ def validate(
 
         branch = _git_text(repository, "symbolic-ref", "--quiet", "--short", "HEAD")
         source_commit = _git_text(repository, "rev-parse", "HEAD")
-        if branch != EXPECTED_BRANCH:
+        if branch == 'main':
+            # Post-merge acceptance requires the normal merge of this repair
+            # branch, with unchanged Product/Evidence tree and retained history.
+            _require_normal_main_merge(repository)
+        elif branch != EXPECTED_BRANCH:
             _reject(FailureCode.TRIAL_HISTORY_INCOMPLETE, "git", "repair branch differs")
         if _git_text(repository, "status", "--porcelain=v1", "--untracked-files=all"):
             _reject(FailureCode.EVIDENCE_INCOMPLETE, "git", "validation requires a clean worktree")
         if require_remote_tip:
-            remote_ref = str(plan["source"]["remote_ref"])
+            remote_ref = 'origin/main' if branch == 'main' else str(plan["source"]["remote_ref"])
             if _git_text(repository, "rev-parse", remote_ref) != source_commit:
                 _reject(FailureCode.TRIAL_HISTORY_INCOMPLETE, "git", "HEAD differs from remote tip")
 

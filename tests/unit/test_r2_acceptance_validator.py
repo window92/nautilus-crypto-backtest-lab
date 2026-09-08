@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -29,6 +30,8 @@ from scripts.validate_adversarial_remediation_002_runs import validate_performan
 from scripts.validate_adversarial_remediation_002_runs import validate_plan_payload
 from scripts.validate_adversarial_remediation_002_runs import validate_rebuild_payload
 from scripts.validate_adversarial_remediation_002_runs import validate_report_claim_projection
+from scripts.validate_adversarial_remediation_002_runs import _require_normal_main_merge
+from tests.helpers import initialize_product_repository
 from scripts.validate_adversarial_remediation_002_runs import validate_replay_payload
 
 
@@ -163,6 +166,43 @@ def replay_payload() -> dict[str, object]:
 
 
 class R2AcceptanceValidatorTests(unittest.TestCase):
+    def test_post_merge_gate_requires_two_ordered_parents_and_exact_branch_tree(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = initialize_product_repository(Path(temporary))
+            def git(*args):
+                return subprocess.run(['git', *args], cwd=root, check=True,
+                                      capture_output=True, text=True).stdout.strip()
+            base = git('rev-parse','HEAD')
+            git('switch','-c', EXPECTED_BRANCH)
+            (root / 'change.txt').write_text('repair\n')
+            git('add','change.txt')
+            git('commit','-m','repair')
+            head = git('rev-parse','HEAD')
+            git('update-ref',f'refs/remotes/origin/{EXPECTED_BRANCH}',head)
+            with self.assertRaises(R2ValidationFailure):
+                _require_normal_main_merge(root)
+            git('switch','main')
+            git('merge','--no-ff','-m','normal merge',EXPECTED_BRANCH)
+            _require_normal_main_merge(root)
+            git('update-ref',f'refs/remotes/origin/{EXPECTED_BRANCH}',base)
+            with self.assertRaises(R2ValidationFailure):
+                _require_normal_main_merge(root)
+
+    def test_recorded_execution_root_is_explicit_but_is_not_the_audit_root(self) -> None:
+        payload = plan_payload()
+        for item in payload['execution']:
+            item['command_argv'] = [x.replace(str(VALIDATOR_ROOT), '/explicit/recorded/execution')
+                                    for x in item['command_argv']]
+        payload.pop('plan_identity')
+        payload['plan_identity'] = canonical_sha256(payload)
+        validate_plan_payload(payload, repository_root=VALIDATOR_ROOT)
+        command = payload['execution'][0]['command_argv']
+        command[command.index('--repository')+1] = 'relative'
+        payload.pop('plan_identity')
+        payload['plan_identity'] = canonical_sha256(payload)
+        with self.assertRaises(R2ValidationFailure):
+            validate_plan_payload(payload, repository_root=VALIDATOR_ROOT)
+
     def test_master_acceptance_binds_the_exact_plan_epoch(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary) / "execution-plan.json"

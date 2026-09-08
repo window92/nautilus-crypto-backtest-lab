@@ -80,6 +80,8 @@ def main(argv: list[str] | None = None) -> int:
     passed = bool(
         result.wasSuccessful()
         and not result.skipped
+        and not result.expectedFailures
+        and not result.unexpectedSuccesses
         and len(discovered) == len(set(discovered)) == result.testsRun
     )
     payload = {

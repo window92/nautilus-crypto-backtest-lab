@@ -1,9 +1,13 @@
 from __future__ import annotations
 
 import unittest
+import json
+import tempfile
+from pathlib import Path
 
 from crypto_lab.execution_plan import ExecutionPlanError
 from crypto_lab.execution_plan import validate_active_pointer
+from crypto_lab.execution_plan import load_active_execution_plan, ACTIVE_POINTER_RELATIVE
 from crypto_lab.hashing import canonical_sha256
 from crypto_lab.status import FailureCode
 
@@ -39,6 +43,19 @@ def _pointer(plan: dict, *, status: str = "CURRENT", bindings=None, identity=Non
 
 
 class ActiveExecutionPlanPointerTests(unittest.TestCase):
+    def test_committed_historical_plan_identity_is_checked(self) -> None:
+        from tests.adversarial.test_l3_host_acceptance_attestation import AcceptanceFixture
+        with tempfile.TemporaryDirectory() as temporary:
+            fixture = AcceptanceFixture(Path(temporary))
+            root = fixture.root
+            loaded = load_active_execution_plan(root)
+            pointer = loaded['pointer']
+            pointer['historical_plans'][0]['plan_identity'] = '0' * 64
+            fixture.write(root / ACTIVE_POINTER_RELATIVE, pointer)
+            fixture.commit('wrong historical reference only')
+            with self.assertRaisesRegex(ExecutionPlanError, 'historical execution-plan identity'):
+                load_active_execution_plan(root)
+
     def test_current_pointer_accepts_matching_plan(self) -> None:
         plan = _plan(trial_ids=["a", "b", "c", "d", "e", "f"])
         validate_active_pointer(_pointer(plan), plan)

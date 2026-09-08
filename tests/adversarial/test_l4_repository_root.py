@@ -7,6 +7,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from unittest import mock
+from tests.helpers import initialize_product_repository
 
 from crypto_lab.git_identity import require_repository_root
 from crypto_lab.runner import capture_source_revision
@@ -35,6 +36,7 @@ AUTHORITY_SENSITIVE_SOURCES = (
     "src/crypto_lab/sealing.py",
     "scripts/build_adversarial_remediation_002_result_status.py",
     "scripts/build_historical_validator_authorities.py",
+    "scripts/build_host_acceptance_attestation.py",
     "scripts/build_r2_active_inventory_supersession_status.py",
     "scripts/build_r2_claim_holdout_supersession_status.py",
     "scripts/build_r2_claim_schema_supersession_status.py",
@@ -225,12 +227,60 @@ class RepositoryRootAuthorityTests(unittest.TestCase):
     def test_capture_source_revision_requires_explicit_repository(self) -> None:
         with self.assertRaises(TypeError):
             capture_source_revision()  # type: ignore[call-arg]
-        captured = capture_source_revision(ROOT)
-        self.assertEqual(captured.git_commit, subprocess.check_output(
+        # GitHub PR checkout is detached; an Official capture requires a
+        # symbolic branch. Exercise the positive contract in a real Git fixture.
+        with tempfile.TemporaryDirectory() as temporary:
+            repository = initialize_product_repository(Path(temporary))
+            captured = capture_source_revision(repository)
+            self.assertEqual(captured.git_commit, subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], cwd=repository, text=True,
+            ).strip())
+            subprocess.run(["git", "switch", "--detach", captured.git_commit],
+                           cwd=repository, check=True, capture_output=True)
+            with self.assertRaises(RuntimeError):
+                capture_source_revision(repository)
+
+    def test_official_path_uses_the_real_repository_root(self) -> None:
+        resolved = require_repository_root(ROOT)
+        self.assertEqual(resolved, ROOT.resolve())
+        head = subprocess.check_output(
             ["git", "rev-parse", "HEAD"],
             cwd=ROOT,
             text=True,
-        ).strip())
+        ).strip()
+        self.assertEqual(
+            require_repository_root(
+                ROOT,
+                expected_git_commit=head,
+                require_current_head=True,
+            ),
+            resolved,
+        )
+
+    def test_verify_official_seal_requires_repository_root(self) -> None:
+        fixture = _official_sealing.OfficialSealingAdversarialTests()
+        fixture.setUp()
+        try:
+            with self.assertRaises(TypeError):
+                verify_official_seal(fixture.run_dir)  # type: ignore[misc]
+            with self.assertRaisesRegex(ValueError, "required"):
+                verify_official_seal(fixture.run_dir, repository_root=None)
+            report = fixture._verify()
+            self.assertEqual(report.outcome, OfficialSealOutcome.OFFICIAL_SEAL_PASS)
+            checker = mock.patch("crypto_lab.checker.check_evidence_directory")
+            with checker as patched:
+                patched.return_value.to_builtins.return_value = fixture.component
+                verify_official_seal(fixture.run_dir, repository_root=ROOT)
+                kwargs = patched.call_args.kwargs
+                self.assertEqual(kwargs["repository_root"], ROOT.resolve())
+        finally:
+            fixture.tearDown()
+
+
+class HostRepositoryRootAuthorityTests(unittest.TestCase):
+    """Exact-host entrypoints remain mandatory in Full/Fresh/Reverse acceptance."""
+
+    _bootstrap_command = staticmethod(RepositoryRootAuthorityTests._bootstrap_command)
 
     def test_real_owner_and_m3_child_require_target_repository_argument(self) -> None:
         owner = subprocess.run(
@@ -336,41 +386,6 @@ class RepositoryRootAuthorityTests(unittest.TestCase):
             self.assertEqual(negative_payload["status"], "BLOCKED")
             self.assertIn("absolute", negative_payload["detail"])
 
-    def test_official_path_uses_the_real_repository_root(self) -> None:
-        resolved = require_repository_root(ROOT)
-        self.assertEqual(resolved, ROOT.resolve())
-        head = subprocess.check_output(
-            ["git", "rev-parse", "HEAD"],
-            cwd=ROOT,
-            text=True,
-        ).strip()
-        self.assertEqual(
-            require_repository_root(
-                ROOT,
-                expected_git_commit=head,
-                require_current_head=True,
-            ),
-            resolved,
-        )
-
-    def test_verify_official_seal_requires_repository_root(self) -> None:
-        fixture = _official_sealing.OfficialSealingAdversarialTests()
-        fixture.setUp()
-        try:
-            with self.assertRaises(TypeError):
-                verify_official_seal(fixture.run_dir)  # type: ignore[misc]
-            with self.assertRaisesRegex(ValueError, "required"):
-                verify_official_seal(fixture.run_dir, repository_root=None)
-            report = fixture._verify()
-            self.assertEqual(report.outcome, OfficialSealOutcome.OFFICIAL_SEAL_PASS)
-            checker = mock.patch("crypto_lab.checker.check_evidence_directory")
-            with checker as patched:
-                patched.return_value.to_builtins.return_value = fixture.component
-                verify_official_seal(fixture.run_dir, repository_root=ROOT)
-                kwargs = patched.call_args.kwargs
-                self.assertEqual(kwargs["repository_root"], ROOT.resolve())
-        finally:
-            fixture.tearDown()
 
 
 if __name__ == "__main__":
