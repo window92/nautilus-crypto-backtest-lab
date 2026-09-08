@@ -30,6 +30,11 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
+      - name: Bind exact GitHub repository identity
+        run: |
+          expected_origin="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}"
+          test "$(git remote get-url origin)" = "$expected_origin"
+          git remote set-url origin "${expected_origin}.git"
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0 (Node.js 24)
         with:
           python-version: "3.12.3"
