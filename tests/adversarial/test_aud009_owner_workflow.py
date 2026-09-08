@@ -23,6 +23,7 @@ from crypto_lab.research import ResearchError
 from crypto_lab.research import TrialDefinition
 from crypto_lab.research import TrialJournal
 from scripts.build_runtime_bootstrap_authority import build_authority
+from tests.helpers import isolate_temporary_git_maintenance
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -182,6 +183,7 @@ class Aud009OwnerWorkflowTests(unittest.TestCase):
             ):
                 shutil.rmtree(repository / relative, ignore_errors=True)
             _run("git", "init", "-b", "main", cwd=repository)
+            isolate_temporary_git_maintenance(repository)
             _run("git", "config", "user.name", "Owner Workflow Test", cwd=repository)
             _run(
                 "git",

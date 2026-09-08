@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import subprocess
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -35,6 +36,7 @@ def initialize_product_repository(root: Path) -> Path:
         check=True,
         capture_output=True,
     )
+    isolate_temporary_git_maintenance(root)
     subprocess.run(["git", "config", "user.name", "Test Product"], cwd=root, check=True)
     subprocess.run(
         ["git", "config", "user.email", "test-product@example.invalid"],
@@ -58,3 +60,17 @@ def initialize_product_repository(root: Path) -> Path:
         capture_output=True,
     )
     return root
+
+
+def isolate_temporary_git_maintenance(root: Path) -> None:
+    """Keep auto-GC children from racing TemporaryDirectory cleanup.
+
+    This changes only a disposable fixture's local Git config, never the
+    product repository, and does not suppress cleanup errors or test failures.
+    """
+    root = root.resolve(strict=True)
+    temporary = Path(tempfile.gettempdir()).resolve(strict=True)
+    if root == temporary or not root.is_relative_to(temporary):
+        raise ValueError('Git maintenance isolation requires a disposable temporary repository')
+    for key, value in [('gc.auto','0'), ('maintenance.auto','false')]:
+        subprocess.run(['git','config','--local',key,value],cwd=root,check=True)

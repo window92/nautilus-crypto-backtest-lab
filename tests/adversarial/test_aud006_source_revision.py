@@ -14,12 +14,24 @@ from crypto_lab.git_identity import GitIdentityError
 from crypto_lab.git_identity import capture_actual_source_revision
 from crypto_lab.git_identity import verify_source_revision
 from tests.helpers import initialize_product_repository
+from tests.helpers import isolate_temporary_git_maintenance
 
 
 ROOT = Path(__file__).resolve().parents[2]
 
 
 class Aud006SourceRevisionTests(unittest.TestCase):
+    def test_temporary_git_has_no_background_maintenance_and_cleanup_is_strict(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = initialize_product_repository(Path(temporary))
+            for key, expected in [('gc.auto','0'), ('maintenance.auto','false')]:
+                self.assertEqual(subprocess.check_output(
+                    ['git','config','--local','--get',key],cwd=root,text=True,
+                ).strip(), expected)
+        self.assertFalse(root.exists())
+        with self.assertRaises(ValueError):
+            isolate_temporary_git_maintenance(Path('/'))
+
     def _repository(self, root: Path) -> Path:
         initialize_product_repository(root)
         subprocess.run(
@@ -174,6 +186,7 @@ Path(sys.argv[4]).write_text(json.dumps({
                     check=True,
                     capture_output=True,
                 )
+                isolate_temporary_git_maintenance(repository)
                 subprocess.run(
                     ["git", "-C", str(repository), "config", "user.name", "Repair Test"],
                     check=True,
